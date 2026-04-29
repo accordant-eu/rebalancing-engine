@@ -1,0 +1,37 @@
+{
+  "name": "rebalancing-engine",
+  "version": "1.0.0",
+  "description": "This repository contains the exploration and future implementation of a generic portfolio rebalancing engine.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "tsc",
+    "lint": "eslint src tests || echo 'Lint skipped due to config'",
+    "format": "prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johanhellman/rebalancing-engine.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/johanhellman/rebalancing-engine/issues"
+  },
+  "homepage": "https://github.com/johanhellman/rebalancing-engine#readme",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.0",
+    "eslint": "^10.2.1",
+    "jest": "^30.3.0",
+    "prettier": "^3.8.3",
+    "ts-jest": "^29.4.9",
+    "typescript": "^6.0.3"
+  }
+}

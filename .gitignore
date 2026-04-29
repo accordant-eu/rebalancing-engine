@@ -8,3 +8,9 @@
 # Agent
 .cursor/
 .windsurfrules
+
+# Node.js
+node_modules/
+dist/
+coverage/
+.env
