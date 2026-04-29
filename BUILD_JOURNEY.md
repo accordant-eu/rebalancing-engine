@@ -31,12 +31,14 @@ This file is the living project journal. It captures the journey from initializa
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 2026-04-29 | Initialize `BUILD_JOURNEY.md` & `AGENTS.md` | Accepted | Establish project hygiene and agent guidelines before coding. | N/A | High | Wait for PRD |
 | 2026-04-29 | Tech Stack Selection | Deferred | PRD / Architecture vision not yet provided. | N/A | High | Await PRD ingestion |
+| 2026-04-29 | Define MVP Scope | Accepted | PRD dictates an offline, deterministic, cash-aware threshold strategy as MVP. | MVP Plan | Medium | Await Tech Stack choice |
 
 ## 5. Iteration Log
 
 | Iteration | Date | Goal | Scope | Actions taken | Files changed | Learnings | Open questions | Next step |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | 2026-04-29 | Setup Project Hygiene | Phase 0: Init & Discovery | Inspected repo, created `BUILD_JOURNEY.md`, `AGENTS.md`, and `.gitignore`. | `BUILD_JOURNEY.md`, `AGENTS.md`, `.gitignore`, `README.md` | Repo is essentially empty with just one research doc. No existing stack to constrain future choices. | What stack/language will be chosen? | Await PRD for Phase 1. |
+| 2 | 2026-04-29 | PRD Planning | Phase 1: MVP Plan | Digested PRD, created `docs/MVP_Implementation_Plan.md`. | `docs/MVP_Implementation_Plan.md`, `BUILD_JOURNEY.md` | PRD demands strict determinism, BIAN models, and strategy isolation. MVP focuses strictly on offline threshold rebalancing. | What is the target programming language for the engine? | Await tech stack decision, then start Slice 1. |
 
 ## 6. Scope of Work
 
