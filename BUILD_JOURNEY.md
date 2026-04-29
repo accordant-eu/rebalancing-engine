@@ -4,6 +4,7 @@ This file is the living project journal. It captures the journey from initializa
 
 ## 1. Project Context
 - **Known Objective:** Prepare the repository for a future buildout of a generic portfolio rebalancing engine.
+- **Development Approach:** This project, including its documentation, scaffolding, and future implementations, is built heavily relying on LLM tools and AI-assisted editors.
 - **What is Not Yet Known:** The language, framework, database, deployment model, architecture, and exact MVP scope are not yet known.
 - **Next Steps:** A PRD / Architecture / Vision document will be provided later. No firm product or architecture decisions should be made before that input is reviewed.
 
