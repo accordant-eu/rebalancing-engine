@@ -14,4 +14,4 @@ The project is currently in the initial **discovery and planning phase**. No fir
 
 ## Getting Started
 
-*(Instructions for setting up the project will be added once a tech stack is selected.)*
+_(Instructions for setting up the project will be added once a tech stack is selected.)_

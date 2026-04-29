@@ -78,15 +78,15 @@ The generic rebalancing engine operates within a complex ecosystem of distinct u
 
 The comprehensive meta-analysis of portfolio rebalancing literature establishes a rigorous foundation for optimal policy design, yielding profound implications for the engine's architectural requirements.1 The research categorizes methodologies into distinct clusters, each dictating specific functional capabilities that the generic engine must eventually support.
 
-**Time-Invariant (Calendar-Based) Rebalancing:** This foundational approach mechanically restores portfolios to their target weights at fixed intervals, prioritizing risk control over return enhancement.1 While Vanguard’s historical analysis confirms its efficacy in constraining volatility, the strategy suffers from severe path-dependency risks and forces unnecessary trading in quiet markets.1 *Architectural Implication:* The engine must support calendar triggers as a baseline strategy module, capable of firing indiscriminately based on scheduling cron jobs rather than mathematical drift.
+**Time-Invariant (Calendar-Based) Rebalancing:** This foundational approach mechanically restores portfolios to their target weights at fixed intervals, prioritizing risk control over return enhancement.1 While Vanguard’s historical analysis confirms its efficacy in constraining volatility, the strategy suffers from severe path-dependency risks and forces unnecessary trading in quiet markets.1 _Architectural Implication:_ The engine must support calendar triggers as a baseline strategy module, capable of firing indiscriminately based on scheduling cron jobs rather than mathematical drift.
 
-**Threshold (Tolerance-Band) and Hybrid Rebalancing:** This approach combines continuous monitoring with execution contingent upon breaching predefined percentage thresholds.1 As endorsed by Daryanani and sovereign wealth funds like NBIM, this method dramatically reduces unnecessary transaction costs while allowing intra-band momentum to compound.1 *Architectural Implication:* The engine requires a high-frequency (daily or continuous) calculation capability. It must natively support complex configuration objects allowing for both absolute bands (e.g., ±5% of total portfolio) and relative bands (e.g., ±20% of the target weight), as relative bands are critical for preventing high-friction churn in minor asset allocations.1
+**Threshold (Tolerance-Band) and Hybrid Rebalancing:** This approach combines continuous monitoring with execution contingent upon breaching predefined percentage thresholds.1 As endorsed by Daryanani and sovereign wealth funds like NBIM, this method dramatically reduces unnecessary transaction costs while allowing intra-band momentum to compound.1 _Architectural Implication:_ The engine requires a high-frequency (daily or continuous) calculation capability. It must natively support complex configuration objects allowing for both absolute bands (e.g., ±5% of total portfolio) and relative bands (e.g., ±20% of the target weight), as relative bands are critical for preventing high-friction churn in minor asset allocations.1
 
-**Transaction-Cost-Aware Optimal Control:** Rigorous quantitative methodologies utilize stochastic programming to calculate multidimensional "no-trade regions," executing rebalancing only when the utility of variance reduction exceeds the marginal cost of trading.1 A critical finding from this cluster is the "rebalance to the boundary" rule: when facing proportional costs, portfolios should only be rebalanced to the nearest inner edge of the tolerance band, preserving capital.1 *Architectural Implication:* The engine's target execution logic cannot be hard-coded to a simple target reset. The Strategy Interface must accept dynamic execution targets, allowing optimal control modules to dictate partial fills and edge-boundary targeting.1
+**Transaction-Cost-Aware Optimal Control:** Rigorous quantitative methodologies utilize stochastic programming to calculate multidimensional "no-trade regions," executing rebalancing only when the utility of variance reduction exceeds the marginal cost of trading.1 A critical finding from this cluster is the "rebalance to the boundary" rule: when facing proportional costs, portfolios should only be rebalanced to the nearest inner edge of the tolerance band, preserving capital.1 _Architectural Implication:_ The engine's target execution logic cannot be hard-coded to a simple target reset. The Strategy Interface must accept dynamic execution targets, allowing optimal control modules to dictate partial fills and edge-boundary targeting.1
 
-**Tax-Aware and Direct Indexing Rebalancing:** For taxable investors, gross return is irrelevant; after-tax compounding is the only valid metric. Tax-aware methodologies deliver alpha through systematic "Highest In, First Out" (HIFO) lot accounting, continuous loss harvesting, and the intentional deferral of short-term capital gains.1 *Architectural Implication:* While full direct indexing is excluded from the MVP to manage complexity, the underlying data structures for Holdings must be designed to eventually accept lot-level granularity rather than merely aggregate asset-class positions.1
+**Tax-Aware and Direct Indexing Rebalancing:** For taxable investors, gross return is irrelevant; after-tax compounding is the only valid metric. Tax-aware methodologies deliver alpha through systematic "Highest In, First Out" (HIFO) lot accounting, continuous loss harvesting, and the intentional deferral of short-term capital gains.1 _Architectural Implication:_ While full direct indexing is excluded from the MVP to manage complexity, the underlying data structures for Holdings must be designed to eventually accept lot-level granularity rather than merely aggregate asset-class positions.1
 
-**Cash-Flow-Aware Routing:** Leading institutional research highlights that the most efficient rebalancing mechanism relies entirely on external cash flows.1 Directing incoming cash exclusively to underweighted assets, or sourcing withdrawals from overweighted assets, generates zero incremental transaction friction.1 *Architectural Implication:* Cash handling rules must be integrated into the core TradeProposalGenerator. The engine must natively prioritize the depletion of existing cash buffers and pending sweep transfers before authorizing secondary market sell orders.25
+**Cash-Flow-Aware Routing:** Leading institutional research highlights that the most efficient rebalancing mechanism relies entirely on external cash flows.1 Directing incoming cash exclusively to underweighted assets, or sourcing withdrawals from overweighted assets, generates zero incremental transaction friction.1 _Architectural Implication:_ Cash handling rules must be integrated into the core TradeProposalGenerator. The engine must natively prioritize the depletion of existing cash buffers and pending sweep transfers before authorizing secondary market sell orders.25
 
 ## **8\. MVP Scope**
 
@@ -156,19 +156,19 @@ The non-functional requirements dictate the system's operational characteristics
 
 The Domain Model defines the core entities utilizing a standardized, BIAN-aligned vocabulary to facilitate unambiguous communication between systems.5
 
-| Entity | Purpose | Key Fields | MVP Status |
-| :---- | :---- | :---- | :---- |
-| **Account** | The root entity representing the investor's sub-ledger. | accountId, investorId, policyId, cashBalance | Required |
-| **Instrument** | The tradable security or asset class definition. | instrumentId, symbol, assetClass, status | Required |
-| **ModelPortfolio** | A versioned collection of target weights. | modelId, version, allocations | Required |
-| **RebalancingPolicy** | The configuration defining active strategies and thresholds. | policyId, methodType, thresholds, minTradeSize | Required |
-| **PortfolioState** | A point-in-time snapshot of the account's economic reality. | valuationTimestamp, totalValue, holdings | Required |
-| **PriceSnapshot** | The reference market data utilized for valuation. | timestamp, instrumentId, price | Required |
-| **DriftMeasurement** | The calculated delta between current and target weights. | instrumentId, absoluteDrift, relativeDrift, status | Required |
-| **TradeProposal** | The overarching recommendation generated by the engine. | proposalId, triggerReason, proposedTrades, turnover | Required |
-| **ProposedTrade** | The individual execution instruction within a proposal. | instrumentId, action (BUY/SELL), quantity, value | Required |
-| **AuditRecord** | The immutable log of the entire decision-making process. | eventId, timestamp, inputState, policySnapshot, output | Required |
-| **TaxLot** | Granular basis tracking for individual shares. | lotId, costBasis, acquisitionDate | Deferred |
+| Entity                | Purpose                                                      | Key Fields                                             | MVP Status |
+| :-------------------- | :----------------------------------------------------------- | :----------------------------------------------------- | :--------- |
+| **Account**           | The root entity representing the investor's sub-ledger.      | accountId, investorId, policyId, cashBalance           | Required   |
+| **Instrument**        | The tradable security or asset class definition.             | instrumentId, symbol, assetClass, status               | Required   |
+| **ModelPortfolio**    | A versioned collection of target weights.                    | modelId, version, allocations                          | Required   |
+| **RebalancingPolicy** | The configuration defining active strategies and thresholds. | policyId, methodType, thresholds, minTradeSize         | Required   |
+| **PortfolioState**    | A point-in-time snapshot of the account's economic reality.  | valuationTimestamp, totalValue, holdings               | Required   |
+| **PriceSnapshot**     | The reference market data utilized for valuation.            | timestamp, instrumentId, price                         | Required   |
+| **DriftMeasurement**  | The calculated delta between current and target weights.     | instrumentId, absoluteDrift, relativeDrift, status     | Required   |
+| **TradeProposal**     | The overarching recommendation generated by the engine.      | proposalId, triggerReason, proposedTrades, turnover    | Required   |
+| **ProposedTrade**     | The individual execution instruction within a proposal.      | instrumentId, action (BUY/SELL), quantity, value       | Required   |
+| **AuditRecord**       | The immutable log of the entire decision-making process.     | eventId, timestamp, inputState, policySnapshot, output | Required   |
+| **TaxLot**            | Granular basis tracking for individual shares.               | lotId, costBasis, acquisitionDate                      | Deferred   |
 
 ## **12\. Shared Data Structures**
 
@@ -181,9 +181,9 @@ This structure defines the strategic mandate, including both the precise target 
 JSON
 
 {  
-  "modelId": "MOD-BAL-6040",  
-  "version": "1.2",  
-  "allocations":  
+ "modelId": "MOD-BAL-6040",  
+ "version": "1.2",  
+ "allocations":  
 }
 
 ### **PortfolioState**
@@ -193,12 +193,12 @@ This snapshot captures the exact economic reality of the account at the moment o
 JSON
 
 {  
-  "accountId": "ACC-10001",  
-  "valuationTimestamp": "2026-04-29T14:30:00Z",  
-  "totalValue": 105000.00,  
-  "cashBuffer": 5000.00,  
-  "holdings":,  
-  "pendingTransactions":  
+ "accountId": "ACC-10001",  
+ "valuationTimestamp": "2026-04-29T14:30:00Z",  
+ "totalValue": 105000.00,  
+ "cashBuffer": 5000.00,  
+ "holdings":,  
+ "pendingTransactions":  
 }
 
 ### **TradeProposal**
@@ -208,27 +208,27 @@ The output structure contains the actionable commands alongside the simulation a
 JSON
 
 {  
-  "proposalId": "PROP-9921",  
-  "accountId": "ACC-10001",  
-  "policyVersion": "v2.1",  
-  "triggerReason": "AAPL absolute weight 0.142 exceeds upper bound 0.150",  
-  "proposedTrades":,  
-  "estimatedPostTradeTurnover": 0.04,  
-  "complianceStatus": "PASSED"  
+ "proposalId": "PROP-9921",  
+ "accountId": "ACC-10001",  
+ "policyVersion": "v2.1",  
+ "triggerReason": "AAPL absolute weight 0.142 exceeds upper bound 0.150",  
+ "proposedTrades":,  
+ "estimatedPostTradeTurnover": 0.04,  
+ "complianceStatus": "PASSED"  
 }
 
 ## **13\. Common Functional Building Blocks**
 
 The architecture aggressively extracts common functions utilized across nearly all methodologies to prevent code duplication and ensure mathematical consistency.
 
-| Function | Purpose | Inputs | Outputs | Strategy Reuse |
-| :---- | :---- | :---- | :---- | :---- |
-| calculateMarketValues | Applies price snapshots to holding quantities deterministically. | Holdings, Prices | MarketValues | All Strategies |
-| calculateCurrentWeights | Determines the exact percentage composition of the portfolio. | MarketValues, TotalValue | CurrentWeights | All Strategies |
-| calculateDrift | Computes the absolute and relative delta against targets.31 | CurrentWeights, TargetAllocation | DriftMeasurements | All Strategies |
-| routeCashInflows | Allocates free cash to underweight assets to minimize selling friction.1 | CashBuffer, DriftMeasurements | BuyCandidates | Threshold, Cost-Aware |
-| applyMinimumConstraints | Filters out economically unviable fractional trades based on policy. | ProposedTrades, PolicyRules | FilteredTrades | All Strategies |
-| generateAuditRecord | Serializes the complete decision tree to a schema-constrained JSON object.10 | Inputs, Config, Outputs | AuditRecord | All Strategies |
+| Function                | Purpose                                                                      | Inputs                           | Outputs           | Strategy Reuse        |
+| :---------------------- | :--------------------------------------------------------------------------- | :------------------------------- | :---------------- | :-------------------- |
+| calculateMarketValues   | Applies price snapshots to holding quantities deterministically.             | Holdings, Prices                 | MarketValues      | All Strategies        |
+| calculateCurrentWeights | Determines the exact percentage composition of the portfolio.                | MarketValues, TotalValue         | CurrentWeights    | All Strategies        |
+| calculateDrift          | Computes the absolute and relative delta against targets.31                  | CurrentWeights, TargetAllocation | DriftMeasurements | All Strategies        |
+| routeCashInflows        | Allocates free cash to underweight assets to minimize selling friction.1     | CashBuffer, DriftMeasurements    | BuyCandidates     | Threshold, Cost-Aware |
+| applyMinimumConstraints | Filters out economically unviable fractional trades based on policy.         | ProposedTrades, PolicyRules      | FilteredTrades    | All Strategies        |
+| generateAuditRecord     | Serializes the complete decision tree to a schema-constrained JSON object.10 | Inputs, Config, Outputs          | AuditRecord       | All Strategies        |
 
 Abstracting these building blocks is critical. Regardless of whether a portfolio is rebalanced via a simple calendar rule or a complex optimal control algorithm, the underlying mathematics required to determine the current state and calculate drift remain identical. Premature abstraction is avoided by centralizing these pure functions within the core engine, allowing the strategy modules to focus exclusively on execution logic.
 
@@ -248,16 +248,16 @@ The engine isolates variable algorithmic logic into distinct, swappable Strategy
 
 The end-to-end execution follows a strict, deterministic sequence, moving from state ingestion through mathematical evaluation to immutable persistence.10
 
-1. **Ingestion**: The Data Ingestion Layer fetches PortfolioState, ModelPortfolio, and PriceSnapshot via API calls or Kafka event streams.11  
-2. **Validation**: The system validates data integrity, screening for stale prices, uninvestable model parameters, or negative cash balances.  
-3. **Valuation & Weighting**: The Calculation Engine normalizes quantities, applies prices, and establishes the precise CurrentWeights.  
-4. **Drift Analysis**: The core computes standard DriftMeasurements for all assets, identifying absolute and relative deviations.31  
-5. **Strategy Delegation**: The core passes the normalized state and drift measurements into the specifically configured StrategyModule (e.g., Threshold Strategy).3  
-6. **Trigger Evaluation**: The selected strategy module evaluates the data against its specific mathematical rules to determine if a rebalancing intervention is warranted.  
-7. **Cash-Aware Generation**: The strategy generates candidate trades, explicitly prioritizing the deployment of the CashBuffer to underweighted assets before initiating sell orders.17  
-8. **Constraint Application**: The Constraint Engine processes candidate trades against systemic filters, enforcing minimum trade sizes, round-lot rules, and specific client ESG/sustainability exclusions.9  
-9. **Simulation & Formatting**: The engine simulates the expected post-trade allocations and generates human-readable rationales via the Explanation Service.8  
-10. **Persistence**: The overarching TradeProposal and all inputs are serialized and committed to the Audit Store as an immutable JSON record.10  
+1. **Ingestion**: The Data Ingestion Layer fetches PortfolioState, ModelPortfolio, and PriceSnapshot via API calls or Kafka event streams.11
+2. **Validation**: The system validates data integrity, screening for stale prices, uninvestable model parameters, or negative cash balances.
+3. **Valuation & Weighting**: The Calculation Engine normalizes quantities, applies prices, and establishes the precise CurrentWeights.
+4. **Drift Analysis**: The core computes standard DriftMeasurements for all assets, identifying absolute and relative deviations.31
+5. **Strategy Delegation**: The core passes the normalized state and drift measurements into the specifically configured StrategyModule (e.g., Threshold Strategy).3
+6. **Trigger Evaluation**: The selected strategy module evaluates the data against its specific mathematical rules to determine if a rebalancing intervention is warranted.
+7. **Cash-Aware Generation**: The strategy generates candidate trades, explicitly prioritizing the deployment of the CashBuffer to underweighted assets before initiating sell orders.17
+8. **Constraint Application**: The Constraint Engine processes candidate trades against systemic filters, enforcing minimum trade sizes, round-lot rules, and specific client ESG/sustainability exclusions.9
+9. **Simulation & Formatting**: The engine simulates the expected post-trade allocations and generates human-readable rationales via the Explanation Service.8
+10. **Persistence**: The overarching TradeProposal and all inputs are serialized and committed to the Audit Store as an immutable JSON record.10
 11. **Workflow Handoff**: The finalized proposal is emitted to the front-end Advisor UI for review and manual approval.
 
 ## **16\. Component Architecture**
@@ -282,52 +282,52 @@ The API design is heavily inspired by modern, developer-friendly WealthTech plat
 
 **POST /api/v1/rebalance/evaluate**
 
-*Purpose:* Synchronously evaluates an account against its active policy and returns a comprehensive trade proposal. This endpoint is utilized heavily by interactive Advisor UI workflows.
+_Purpose:_ Synchronously evaluates an account against its active policy and returns a comprehensive trade proposal. This endpoint is utilized heavily by interactive Advisor UI workflows.
 
-* **Request Payload:**  
+- **Request Payload:**  
   JSON  
   {  
-    "accountId": "ACC-10001",  
-    "simulateOnly": true,  
-    "forceTrigger": false  
+   "accountId": "ACC-10001",  
+   "simulateOnly": true,  
+   "forceTrigger": false  
   }
 
-* **Response Payload:**  
+- **Response Payload:**  
   JSON  
   {  
-    "rebalanceNeeded": true,  
-    "triggerReason": "AAPL absolute weight 0.142 exceeds upper bound 0.150",  
-    "proposalId": "PROP-9921",  
-    "proposedTrades":,  
-    "simulation": { "estimatedTurnover": 0.04, "postTradeCash": 800.00 }  
+   "rebalanceNeeded": true,  
+   "triggerReason": "AAPL absolute weight 0.142 exceeds upper bound 0.150",  
+   "proposalId": "PROP-9921",  
+   "proposedTrades":,  
+   "simulation": { "estimatedTurnover": 0.04, "postTradeCash": 800.00 }  
   }
 
-* **Error Cases:** 404 Account Not Found, 400 Invalid Policy Configuration, 409 Stale Pricing Data Detected.
+- **Error Cases:** 404 Account Not Found, 400 Invalid Policy Configuration, 409 Stale Pricing Data Detected.
 
-**POST /api/v1/rebalance/approve** *Purpose:* Commits an accepted proposal, translating the static recommendation into actionable execution commands via the Command pattern 3, routing them to the downstream OMS.
+**POST /api/v1/rebalance/approve** _Purpose:_ Commits an accepted proposal, translating the static recommendation into actionable execution commands via the Command pattern 3, routing them to the downstream OMS.
 
-* **Request Payload:**  
+- **Request Payload:**  
   JSON  
   {  
-    "proposalId": "PROP-9921",  
-    "approvedBy": "ADV-001",  
-    "timestamp": "2026-04-29T14:35:00Z"  
+   "proposalId": "PROP-9921",  
+   "approvedBy": "ADV-001",  
+   "timestamp": "2026-04-29T14:35:00Z"  
   }
 
 ## **18\. Commonality and Reuse Analysis**
 
 Separating the generic engine capabilities from the strategy-specific implementations is the most critical architectural decision, preventing the technical debt common in monolithic financial software.
 
-| Capability / Structure | Common Across Approaches? | Required for MVP? | Recommended Abstraction | Notes |
-| :---- | :---- | :---- | :---- | :---- |
-| **Portfolio Valuation** | Yes | Yes | Core Engine Function | Must handle missing prices deterministically across all strategies. |
-| **Drift Calculation** | Yes | Yes | Core Engine Function | The underlying math is identical regardless of how the specific strategy utilizes the output.31 |
-| **Target Representation** | Yes | Yes | Shared Data Model | Must adhere to BIAN compliant structures for interoperability.5 |
-| **Trigger Evaluation** | No | Yes | Strategy Interface | Logic varies immensely (e.g., Thresholds vs. Optimal Control No-Trade Regions).1 |
-| **Cash Sweep/Routing** | Yes | Yes | Core Utility Function | Directing cash inflows to underweights is a universal best practice to minimize friction.1 |
-| **Constraint Engine** | Yes | Yes | Independent Service | Must evaluate MiFID II sustainability preferences and trade minimums universally.9 |
-| **Tax Lot Harvesting** | No | No | Specific Strategy Module | Highly complex, deferred past MVP. Requires granular HIFO accounting.1 |
-| **Audit Logging** | Yes | Yes | Core Service | Essential for compliance replay capability and DFAH validation.10 |
+| Capability / Structure    | Common Across Approaches? | Required for MVP? | Recommended Abstraction  | Notes                                                                                           |
+| :------------------------ | :------------------------ | :---------------- | :----------------------- | :---------------------------------------------------------------------------------------------- |
+| **Portfolio Valuation**   | Yes                       | Yes               | Core Engine Function     | Must handle missing prices deterministically across all strategies.                             |
+| **Drift Calculation**     | Yes                       | Yes               | Core Engine Function     | The underlying math is identical regardless of how the specific strategy utilizes the output.31 |
+| **Target Representation** | Yes                       | Yes               | Shared Data Model        | Must adhere to BIAN compliant structures for interoperability.5                                 |
+| **Trigger Evaluation**    | No                        | Yes               | Strategy Interface       | Logic varies immensely (e.g., Thresholds vs. Optimal Control No-Trade Regions).1                |
+| **Cash Sweep/Routing**    | Yes                       | Yes               | Core Utility Function    | Directing cash inflows to underweights is a universal best practice to minimize friction.1      |
+| **Constraint Engine**     | Yes                       | Yes               | Independent Service      | Must evaluate MiFID II sustainability preferences and trade minimums universally.9              |
+| **Tax Lot Harvesting**    | No                        | No                | Specific Strategy Module | Highly complex, deferred past MVP. Requires granular HIFO accounting.1                          |
+| **Audit Logging**         | Yes                       | Yes               | Core Service             | Essential for compliance replay capability and DFAH validation.10                               |
 
 Abstractions for the core calculation, constraints, and audit logging must be created immediately in the MVP. Premature abstraction regarding specific execution targets (e.g., building deep optimization models for tax efficiency) should be avoided until the second strategy module is introduced in Phase 6\.
 
@@ -337,38 +337,38 @@ The delivery plan is optimized for rapid value realization, dividing development
 
 **Phase 0 — Research-to-Requirements Translation**
 
-* *Objective:* Finalize BIAN-aligned domain models and JSON schemas.5  
-* *Proof Point:* Database schemas and API contracts successfully mocked and validated by frontend teams.
+- _Objective:_ Finalize BIAN-aligned domain models and JSON schemas.5
+- _Proof Point:_ Database schemas and API contracts successfully mocked and validated by frontend teams.
 
 **Phase 1 — Offline Calculator Prototype**
 
-* *Scope:* Process a single portfolio using static prices and a static target allocation. Implement the core valuation and drift calculation functions.  
-* *Proof Point:* The engine accurately calculates current weights and identifies absolute/relative drift according to threshold parameters.31
+- _Scope:_ Process a single portfolio using static prices and a static target allocation. Implement the core valuation and drift calculation functions.
+- _Proof Point:_ The engine accurately calculates current weights and identifies absolute/relative drift according to threshold parameters.31
 
 **Phase 2 — Trade Proposal Prototype (The MVP Engine)**
 
-* *Scope:* Implement the ThresholdStrategyModule and Cash Routing logic. Apply minimum trade size constraints to eliminate fractional noise.  
-* *Proof Point:* The engine generates mathematically accurate buy/sell instructions that measurably reduce unnecessary turnover by prioritizing cash inflows.30
+- _Scope:_ Implement the ThresholdStrategyModule and Cash Routing logic. Apply minimum trade size constraints to eliminate fractional noise.
+- _Proof Point:_ The engine generates mathematically accurate buy/sell instructions that measurably reduce unnecessary turnover by prioritizing cash inflows.30
 
 **Phase 3 — Explainability and Governance Integration**
 
-* *Scope:* Implement the JSON audit logger and natural language rationale generator. Ensure outputs natively support MiFID II periodic reporting prerequisites.8  
-* *Proof Point:* A compliance officer can read the JSON output and understand the precise mathematical and regulatory justification for a generated trade.
+- _Scope:_ Implement the JSON audit logger and natural language rationale generator. Ensure outputs natively support MiFID II periodic reporting prerequisites.8
+- _Proof Point:_ A compliance officer can read the JSON output and understand the precise mathematical and regulatory justification for a generated trade.
 
 **Phase 4 — Batch Scalability & Hardware Testing**
 
-* *Scope:* Transition from single-account API requests to high-throughput batching runs. Evaluate performance against latency constraints, identifying OOM boundaries for large workloads.28  
-* *Proof Point:* The engine successfully processes 10,000 accounts sequentially within an overnight batch window using static batching configurations.29
+- _Scope:_ Transition from single-account API requests to high-throughput batching runs. Evaluate performance against latency constraints, identifying OOM boundaries for large workloads.28
+- _Proof Point:_ The engine successfully processes 10,000 accounts sequentially within an overnight batch window using static batching configurations.29
 
 **Phase 5 — Review Workflow MVP**
 
-* *Scope:* Connect the engine to the Advisor Review UI. Enable manual approval and export of execution commands to the OMS.  
-* *Proof Point:* An advisor can view a proposal, visualize the simulation, approve the action, and generate a standardized order file. Fully automated STP execution remains disabled.
+- _Scope:_ Connect the engine to the Advisor Review UI. Enable manual approval and export of execution commands to the OMS.
+- _Proof Point:_ An advisor can view a proposal, visualize the simulation, approve the action, and generate a standardized order file. Fully automated STP execution remains disabled.
 
 **Phase 6 — Extensibility Validation (Second Strategy)**
 
-* *Scope:* Build and integrate the CalendarStrategyModule to prove the architecture supports swapping execution logic without modifying the core engine.3  
-* *Proof Point:* Engineering implements the new module rapidly, demonstrating the validity of the Strategy Pattern abstraction.
+- _Scope:_ Build and integrate the CalendarStrategyModule to prove the architecture supports swapping execution logic without modifying the core engine.3
+- _Proof Point:_ Engineering implements the new module rapidly, demonstrating the validity of the Strategy Pattern abstraction.
 
 ## **20\. Prioritized Backlog**
 
@@ -376,22 +376,22 @@ The product backlog is strictly prioritized to defend the MVP scope while mainta
 
 **Must-Have MVP:**
 
-* *Story:* As the calculation core, I must fetch portfolio holdings and static end-of-day prices to determine exact current market weights.  
-* *Story:* As a Portfolio Manager, I must be able to configure specific \+/- 5% absolute and \+/- 20% relative tolerance bands on a model allocation.1  
-* *Story:* As the execution generator, I must prioritize available cash buffers to purchase underweighted assets before generating sell orders.1
+- _Story:_ As the calculation core, I must fetch portfolio holdings and static end-of-day prices to determine exact current market weights.
+- _Story:_ As a Portfolio Manager, I must be able to configure specific \+/- 5% absolute and \+/- 20% relative tolerance bands on a model allocation.1
+- _Story:_ As the execution generator, I must prioritize available cash buffers to purchase underweighted assets before generating sell orders.1
 
 **Should-Have Near-Term:**
 
-* *Story:* As a Compliance Officer, I need an immutable JSON audit record of every proposal to satisfy MiFID II suitability and reporting regulations.8  
-* *Story:* As an Advisor, I must see a hard constraint warning if a proposed trade violates a client's configured ESG sustainability preference.23
+- _Story:_ As a Compliance Officer, I need an immutable JSON audit record of every proposal to satisfy MiFID II suitability and reporting regulations.8
+- _Story:_ As an Advisor, I must see a hard constraint warning if a proposed trade violates a client's configured ESG sustainability preference.23
 
 **Could-Have Later:**
 
-* *Story:* As a Quantitative Researcher, I want to configure the engine to utilize optimal control theory, deploying a "rebalance to boundary" execution rule to mathematically minimize proportional transaction costs.1
+- _Story:_ As a Quantitative Researcher, I want to configure the engine to utilize optimal control theory, deploying a "rebalance to boundary" execution rule to mathematically minimize proportional transaction costs.1
 
 **Explicitly Out of Scope for Now:**
 
-* *Story:* As a Tax Manager, I want the engine to automatically harvest short-term capital losses at the individual lot level using HIFO accounting methods.1
+- _Story:_ As a Tax Manager, I want the engine to automatically harvest short-term capital losses at the individual lot level using HIFO accounting methods.1
 
 ## **21\. Testing Strategy**
 
@@ -409,28 +409,28 @@ Financial data is inherently messy. The engine must safely handle ingestion exce
 
 **Must Handle in MVP:**
 
-* *Missing or Stale Prices:* If external market data is unavailable, the engine must immediately halt processing for the affected account, flag an operational error, and proceed to the next account. It must *never* assume a price of zero, as this triggers catastrophic rebalancing logic.  
-* *Pending Cash Withdrawals:* The system must deduct scheduled withdrawal amounts from the available CashBuffer before routing cash to potential trades, preventing account overdrafts.25  
-* *Uninvestable Models:* Models where target weights do not exactly sum to 100% must be violently rejected at ingestion.
+- _Missing or Stale Prices:_ If external market data is unavailable, the engine must immediately halt processing for the affected account, flag an operational error, and proceed to the next account. It must _never_ assume a price of zero, as this triggers catastrophic rebalancing logic.
+- _Pending Cash Withdrawals:_ The system must deduct scheduled withdrawal amounts from the available CashBuffer before routing cash to potential trades, preventing account overdrafts.25
+- _Uninvestable Models:_ Models where target weights do not exactly sum to 100% must be violently rejected at ingestion.
 
 **Should Warn in MVP:**
 
-* *Illiquid Assets or Suspended Instruments:* The engine must flag the asset, automatically exclude it from trade generation, and recalculate target weights proportionally across the remaining liquid assets to maintain general risk profiles.  
-* *Uneconomic Portfolios:* If the total account value is exceedingly small, absolute trade minimums will prevent effective rebalancing. The engine should suppress trades and warn the advisor of structural inefficiency.
+- _Illiquid Assets or Suspended Instruments:_ The engine must flag the asset, automatically exclude it from trade generation, and recalculate target weights proportionally across the remaining liquid assets to maintain general risk profiles.
+- _Uneconomic Portfolios:_ If the total account value is exceedingly small, absolute trade minimums will prevent effective rebalancing. The engine should suppress trades and warn the advisor of structural inefficiency.
 
 **Can Defer:**
 
-* *Multi-Currency Portfolios:* Initially, the engine will assume all instruments and cash settle in a single, unified base currency, deferring complex FX routing algorithms.
+- _Multi-Currency Portfolios:_ Initially, the engine will assume all instruments and cash settle in a single, unified base currency, deferring complex FX routing algorithms.
 
 ## **23\. Design Trade-Offs and Recommendations**
 
 Architectural decisions require balancing competing objectives, specifically prioritizing the speed of MVP delivery against the creation of a resilient, long-term technical foundation.
 
-**Simplicity versus Optimality (Execution Depth):** *Trade-off:* Rebalancing a portfolio entirely back to its original target weight is mathematically suboptimal in environments with high proportional transaction costs (like taxes or bid-ask spreads).1 Optimal control theory mandates rebalancing only to the nearest boundary. However, calculating these boundaries requires complex stochastic programming.2 *Recommendation:* The MVP will default to simple, full-target-reset logic, optimizing for tax-advantaged accounts where proportional costs are negligible.1 The architecture delegates the complex boundary execution to future optimal control modules.
+**Simplicity versus Optimality (Execution Depth):** _Trade-off:_ Rebalancing a portfolio entirely back to its original target weight is mathematically suboptimal in environments with high proportional transaction costs (like taxes or bid-ask spreads).1 Optimal control theory mandates rebalancing only to the nearest boundary. However, calculating these boundaries requires complex stochastic programming.2 _Recommendation:_ The MVP will default to simple, full-target-reset logic, optimizing for tax-advantaged accounts where proportional costs are negligible.1 The architecture delegates the complex boundary execution to future optimal control modules.
 
-**Batch Processing versus Real-Time Latency:** *Trade-off:* Real-time, event-driven calculation maximizes accuracy but requires immense low-latency computing infrastructure. Conversely, batch processing scales efficiently but relies on slightly stale end-of-day data. *Recommendation:* The architecture must implement static batching for overnight, systemic portfolio sweeps to maximize throughput and utilize hardware efficiently.28 Dynamic, low-latency API endpoints will be reserved exclusively for manual, ad-hoc queries initiated by advisors via the UI.
+**Batch Processing versus Real-Time Latency:** _Trade-off:_ Real-time, event-driven calculation maximizes accuracy but requires immense low-latency computing infrastructure. Conversely, batch processing scales efficiently but relies on slightly stale end-of-day data. _Recommendation:_ The architecture must implement static batching for overnight, systemic portfolio sweeps to maximize throughput and utilize hardware efficiently.28 Dynamic, low-latency API endpoints will be reserved exclusively for manual, ad-hoc queries initiated by advisors via the UI.
 
-**Generic Engine Configuration versus Client-Specific Customization:** *Trade-off:* Building generic interfaces and parameter-driven configurations requires significantly more initial engineering time than hard-coding client-specific rules directly into the application layer. *Recommendation:* Strict adherence to the Strategy Pattern is mandatory.3 Custom logic must reside in isolated strategy modules and never pollute the core calculation engine, ensuring the platform remains generic and scalable across a diverse client base.
+**Generic Engine Configuration versus Client-Specific Customization:** _Trade-off:_ Building generic interfaces and parameter-driven configurations requires significantly more initial engineering time than hard-coding client-specific rules directly into the application layer. _Recommendation:_ Strict adherence to the Strategy Pattern is mandatory.3 Custom logic must reside in isolated strategy modules and never pollute the core calculation engine, ensuring the platform remains generic and scalable across a diverse client base.
 
 ## **24\. Governance, Compliance, and Auditability**
 
@@ -448,57 +448,57 @@ In modern financial architecture, compliance and governance cannot be bolted on 
 
 Several operational ambiguities must be resolved prior to finalizing the system architecture:
 
-* How will the platform source, normalize, and validate intra-day pricing snapshots versus end-of-day pricing across highly disparate asset classes?  
-* What is the specific organizational threshold for minimum trade sizes, and will this threshold vary dynamically based on the specific custodian, broker, or instrument type?  
-* Should the calculation engine handle the mathematics of complex corporate actions (e.g., stock splits, mergers) natively, or can it safely assume the upstream Investment Book of Record (IBOR) has fully normalized these events prior to state ingestion?
+- How will the platform source, normalize, and validate intra-day pricing snapshots versus end-of-day pricing across highly disparate asset classes?
+- What is the specific organizational threshold for minimum trade sizes, and will this threshold vary dynamically based on the specific custodian, broker, or instrument type?
+- Should the calculation engine handle the mathematics of complex corporate actions (e.g., stock splits, mergers) natively, or can it safely assume the upstream Investment Book of Record (IBOR) has fully normalized these events prior to state ingestion?
 
 ## **26\. Recommended Next Steps**
 
-1. **Phase 0 Initiation:** Immediately finalize the precise BIAN-compliant JSON schemas required for the PortfolioState and TargetAllocation entities to establish the foundational data contracts.5  
-2. **API Mocking:** Establish a mock REST API environment to allow frontend and integration engineering teams to begin constructing the Advisor Review UI concurrently while the mathematical core is under development.  
-3. **Data Ingestion Pipeline Construction:** Begin architecting the ingestion layer, specifically connecting the engine to the core banking ledger utilizing Change Data Capture (CDC) and Kafka event streams to guarantee reliable, low-impact state capture.11  
+1. **Phase 0 Initiation:** Immediately finalize the precise BIAN-compliant JSON schemas required for the PortfolioState and TargetAllocation entities to establish the foundational data contracts.5
+2. **API Mocking:** Establish a mock REST API environment to allow frontend and integration engineering teams to begin constructing the Advisor Review UI concurrently while the mathematical core is under development.
+3. **Data Ingestion Pipeline Construction:** Begin architecting the ingestion layer, specifically connecting the engine to the core banking ledger utilizing Change Data Capture (CDC) and Kafka event streams to guarantee reliable, low-impact state capture.11
 4. **Establish the Testing Harness:** Deploy the initial "Golden Portfolio" scenarios and the Determinism-Faithfulness Assurance Harness (DFAH) 15 to ensure the very first calculation prototypes conform to strict mathematical precision and regulatory reproducibility standards.
 
 #### **Works cited**
 
-1. Portfolio Rebalancing Meta-Paper Synthesis  
-2. Optimal Symmetric No-trade Ranges in Asset Rebalancing Strategy with Transaction Costs, accessed April 29, 2026, [https://lab.ae.keio.ac.jp/\~hibiki\_lab/pdf\_k-ris/APJRI\_2014\_v8n2\_293-327.pdf](https://lab.ae.keio.ac.jp/~hibiki_lab/pdf_k-ris/APJRI_2014_v8n2_293-327.pdf)  
-3. Strategy \- Refactoring.Guru, accessed April 29, 2026, [https://refactoring.guru/design-patterns/strategy](https://refactoring.guru/design-patterns/strategy)  
-4. Difference between Strategy pattern and Command pattern \- GeeksforGeeks, accessed April 29, 2026, [https://www.geeksforgeeks.org/system-design/difference-between-strategy-pattern-and-command-pattern/](https://www.geeksforgeeks.org/system-design/difference-between-strategy-pattern-and-command-pattern/)  
-5. Models \- BIAN Services, accessed April 29, 2026, [https://bian-services.com/models/](https://bian-services.com/models/)  
-6. Modern AWS Data Strategy and Architecture for banking using BIAN Framework, accessed April 29, 2026, [https://aws.amazon.com/blogs/industries/modern-aws-data-strategy-and-architecture-for-banking-using-bian-framework/](https://aws.amazon.com/blogs/industries/modern-aws-data-strategy-and-architecture-for-banking-using-bian-framework/)  
-7. Complete Guide to RIA Portfolio Rebalancing Software \- Flyer Financial Technologies, accessed April 29, 2026, [https://flyerft.com/insights/education/portfolio-rebalancing-software-guide/](https://flyerft.com/insights/education/portfolio-rebalancing-software-guide/)  
-8. MiFID II Reporting to clients \- Hogan Lovells, accessed April 29, 2026, [https://www.hoganlovells.com/\~/media/hogan-lovells/pdf/mifid/subtopic-pdf/20mifid\_ii\_-\_investor\_protecton\_-\_reporting\_to\_clients-lqlqz.pdf](https://www.hoganlovells.com/~/media/hogan-lovells/pdf/mifid/subtopic-pdf/20mifid_ii_-_investor_protecton_-_reporting_to_clients-lqlqz.pdf)  
-9. Guidelines on certain aspects of the MiFID II suitability requirements \- | European Securities and Markets Authority, accessed April 29, 2026, [https://www.esma.europa.eu/sites/default/files/2023-04/ESMA35-43-3172\_Guidelines\_on\_certain\_aspects\_of\_the\_MiFID\_II\_suitability\_requirements.pdf](https://www.esma.europa.eu/sites/default/files/2023-04/ESMA35-43-3172_Guidelines_on_certain_aspects_of_the_MiFID_II_suitability_requirements.pdf)  
-10. Audit Log JSON Schema \- Mattermost documentation, accessed April 29, 2026, [https://docs.mattermost.com/administration-guide/comply/embedded-json-audit-log-schema.html](https://docs.mattermost.com/administration-guide/comply/embedded-json-audit-log-schema.html)  
-11. Four design patterns to innovate around a bank's core \- Infosys, accessed April 29, 2026, [https://www.infosys.com/iki/perspectives/four-design-patterns.html](https://www.infosys.com/iki/perspectives/four-design-patterns.html)  
-12. Which Portfolio Rebalancing Software is Right for You? Smartleaf's Response \-, accessed April 29, 2026, [https://wealthtechtoday.com/2013/03/20/which-portfolio-rebalancing-software-is-right-for-you-smartleafs-response/](https://wealthtechtoday.com/2013/03/20/which-portfolio-rebalancing-software-is-right-for-you-smartleafs-response/)  
-13. Aladdin | BlackRock, accessed April 29, 2026, [https://www.blackrock.com/institutions/en-us/investment-capabilities/technolgy/aladdin-portfolio-management-software](https://www.blackrock.com/institutions/en-us/investment-capabilities/technolgy/aladdin-portfolio-management-software)  
-14. Portfolio Rebalancing \- Alpaca Docs, accessed April 29, 2026, [https://docs.alpaca.markets/docs/portfolio-rebalancing](https://docs.alpaca.markets/docs/portfolio-rebalancing)  
-15. Replayable Financial Agents: A Determinism-Faithfulness Assurance Harness for Tool-Using LLM Agents \- arXiv, accessed April 29, 2026, [https://arxiv.org/html/2601.15322v1](https://arxiv.org/html/2601.15322v1)  
-16. BIAN Business Object Model (139 diagrams), accessed April 29, 2026, [https://bian.org/servicelandscape-8-0/views.html](https://bian.org/servicelandscape-8-0/views.html)  
-17. What role should auto sweep facilities play in a smarter liquidity strategy? \- Pine Labs, accessed April 29, 2026, [https://www.pinelabs.com/blog/what-role-should-auto-sweep-facilities-play-in-a-smarter-liquidity-strategy](https://www.pinelabs.com/blog/what-role-should-auto-sweep-facilities-play-in-a-smarter-liquidity-strategy)  
-18. Design and Effect of Different Rebalancing Concepts \- Complementa, accessed April 29, 2026, [https://complementa.ch/en/design-and-effect-rebalancing-concepts/](https://complementa.ch/en/design-and-effect-rebalancing-concepts/)  
-19. Exploring a Securities Portfolio Data Model Using Native JSON and Query Capabilities in Redis, accessed April 29, 2026, [https://redis.io/blog/securities-portfolio-data-model/](https://redis.io/blog/securities-portfolio-data-model/)  
-20. Article 25 Assessment of suitability and appropriateness and reporting to clients, accessed April 29, 2026, [https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-25-assessment-suitability-and](https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-25-assessment-suitability-and)  
-21. Advisor's Guide To Choosing The Best Portfolio Rebalancing Software, accessed April 29, 2026, [https://www.wealthmanagement.com/financial-technology/advisor-s-guide-to-choosing-the-best-portfolio-rebalancing-software](https://www.wealthmanagement.com/financial-technology/advisor-s-guide-to-choosing-the-best-portfolio-rebalancing-software)  
-22. CNMV Record Keeping Requirements \- Steel Eye, accessed April 29, 2026, [https://www.steel-eye.com/news/cnmv-record-keeping-requirements](https://www.steel-eye.com/news/cnmv-record-keeping-requirements)  
-23. Guidelines on certain aspects of the MiFID II suitability requirements \- ICMA, accessed April 29, 2026, [https://www.icmagroup.org/assets/MiFID-II-Suitability-Requirements-CP-AMIC-FINAL-response-27-April.pdf?vid=4](https://www.icmagroup.org/assets/MiFID-II-Suitability-Requirements-CP-AMIC-FINAL-response-27-April.pdf?vid=4)  
-24. Aladdin® Wealth | Wealth Management Software \- BlackRock, accessed April 29, 2026, [https://www.blackrock.com/aladdin/products/aladdin-wealth](https://www.blackrock.com/aladdin/products/aladdin-wealth)  
-25. Cash Pool Engine \- Montran, accessed April 29, 2026, [https://www.montran.com/solutions/cash-pool-engine/](https://www.montran.com/solutions/cash-pool-engine/)  
-26. How to Set Up A Cash Buffer in: IMF How To Notes Volume 2020 Issue 004 (2020), accessed April 29, 2026, [https://www.elibrary.imf.org/view/journals/061/2020/004/article-A001-en.xml](https://www.elibrary.imf.org/view/journals/061/2020/004/article-A001-en.xml)  
-27. MiFID II \- CNMV, accessed April 29, 2026, [https://www.cnmv.es/portal/mifidii\_mifir/mapamifid?lang=en](https://www.cnmv.es/portal/mifidii_mifir/mapamifid?lang=en)  
-28. Lenovo LLM Sizing Guide, accessed April 29, 2026, [https://lenovopress.lenovo.com/lp2130-lenovo-llm-sizing-guide](https://lenovopress.lenovo.com/lp2130-lenovo-llm-sizing-guide)  
-29. LLM Inference Performance Engineering: Best Practices | Databricks Blog, accessed April 29, 2026, [https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices](https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices)  
-30. Master Your Target Cash: Achieve Optimal Liquidity & Business Resilience \- Emagia, accessed April 29, 2026, [https://www.emagia.com/resources/glossary/target-cash/](https://www.emagia.com/resources/glossary/target-cash/)  
-31. How to Get Started with Rebalancing API \- Alpaca, accessed April 29, 2026, [https://alpaca.markets/learn/how-to-get-started-with-rebalancing-api](https://alpaca.markets/learn/how-to-get-started-with-rebalancing-api)  
-32. I am a College Student and I Built My Own Robo Advisor (Part 1\) \- Alpaca, accessed April 29, 2026, [https://alpaca.markets/learn/my-own-robo-advisor](https://alpaca.markets/learn/my-own-robo-advisor)  
-33. Bench360—Benchmarking Local LLM inference from 360° \- arXiv, accessed April 29, 2026, [https://arxiv.org/html/2511.16682v1](https://arxiv.org/html/2511.16682v1)  
-34. BIAN \- the Banking Industry Architecture Network, accessed April 29, 2026, [https://bian.org/](https://bian.org/)  
-35. RAPTOR: Reasoned Agentic Portfolio Trading with Orchestrated Rebalancing \- CEUR-WS.org, accessed April 29, 2026, [https://ceur-ws.org/Vol-4162/paper8.pdf](https://ceur-ws.org/Vol-4162/paper8.pdf)  
-36. A Beginner's Guide to the Strategy Design Pattern \- freeCodeCamp, accessed April 29, 2026, [https://www.freecodecamp.org/news/a-beginners-guide-to-the-strategy-design-pattern/](https://www.freecodecamp.org/news/a-beginners-guide-to-the-strategy-design-pattern/)  
-37. Portfolio Construction | AnalystPrep \- FRM Part 2 Study Notes, accessed April 29, 2026, [https://analystprep.com/study-notes/frm/portfolio-construction/](https://analystprep.com/study-notes/frm/portfolio-construction/)  
-38. Multi-Period Trading via Convex Optimization \- Stanford University, accessed April 29, 2026, [https://web.stanford.edu/\~boyd/papers/pdf/cvx\_portfolio.pdf](https://web.stanford.edu/~boyd/papers/pdf/cvx_portfolio.pdf)  
-39. How to Rebalance Your Stock Portfolio with Alpaca Trading API \~ Part II \- Intrinio \- Medium, accessed April 29, 2026, [https://intrinio.medium.com/how-to-rebalance-your-stock-portfolio-with-alpaca-trading-api-part-ii-5cbd8bc30107](https://intrinio.medium.com/how-to-rebalance-your-stock-portfolio-with-alpaca-trading-api-part-ii-5cbd8bc30107)  
-40. Questions and answers on the implementation of the MiFID II Directive \- CNMV, accessed April 29, 2026, [http://www.cnmv.es/loultimo/FAQMiFIDII\_EN.pdf](http://www.cnmv.es/loultimo/FAQMiFIDII_EN.pdf)  
+1. Portfolio Rebalancing Meta-Paper Synthesis
+2. Optimal Symmetric No-trade Ranges in Asset Rebalancing Strategy with Transaction Costs, accessed April 29, 2026, [https://lab.ae.keio.ac.jp/\~hibiki_lab/pdf_k-ris/APJRI_2014_v8n2_293-327.pdf](https://lab.ae.keio.ac.jp/~hibiki_lab/pdf_k-ris/APJRI_2014_v8n2_293-327.pdf)
+3. Strategy \- Refactoring.Guru, accessed April 29, 2026, [https://refactoring.guru/design-patterns/strategy](https://refactoring.guru/design-patterns/strategy)
+4. Difference between Strategy pattern and Command pattern \- GeeksforGeeks, accessed April 29, 2026, [https://www.geeksforgeeks.org/system-design/difference-between-strategy-pattern-and-command-pattern/](https://www.geeksforgeeks.org/system-design/difference-between-strategy-pattern-and-command-pattern/)
+5. Models \- BIAN Services, accessed April 29, 2026, [https://bian-services.com/models/](https://bian-services.com/models/)
+6. Modern AWS Data Strategy and Architecture for banking using BIAN Framework, accessed April 29, 2026, [https://aws.amazon.com/blogs/industries/modern-aws-data-strategy-and-architecture-for-banking-using-bian-framework/](https://aws.amazon.com/blogs/industries/modern-aws-data-strategy-and-architecture-for-banking-using-bian-framework/)
+7. Complete Guide to RIA Portfolio Rebalancing Software \- Flyer Financial Technologies, accessed April 29, 2026, [https://flyerft.com/insights/education/portfolio-rebalancing-software-guide/](https://flyerft.com/insights/education/portfolio-rebalancing-software-guide/)
+8. MiFID II Reporting to clients \- Hogan Lovells, accessed April 29, 2026, [https://www.hoganlovells.com/\~/media/hogan-lovells/pdf/mifid/subtopic-pdf/20mifid_ii\_-_investor_protecton\_-_reporting_to_clients-lqlqz.pdf](https://www.hoganlovells.com/~/media/hogan-lovells/pdf/mifid/subtopic-pdf/20mifid_ii_-_investor_protecton_-_reporting_to_clients-lqlqz.pdf)
+9. Guidelines on certain aspects of the MiFID II suitability requirements \- | European Securities and Markets Authority, accessed April 29, 2026, [https://www.esma.europa.eu/sites/default/files/2023-04/ESMA35-43-3172_Guidelines_on_certain_aspects_of_the_MiFID_II_suitability_requirements.pdf](https://www.esma.europa.eu/sites/default/files/2023-04/ESMA35-43-3172_Guidelines_on_certain_aspects_of_the_MiFID_II_suitability_requirements.pdf)
+10. Audit Log JSON Schema \- Mattermost documentation, accessed April 29, 2026, [https://docs.mattermost.com/administration-guide/comply/embedded-json-audit-log-schema.html](https://docs.mattermost.com/administration-guide/comply/embedded-json-audit-log-schema.html)
+11. Four design patterns to innovate around a bank's core \- Infosys, accessed April 29, 2026, [https://www.infosys.com/iki/perspectives/four-design-patterns.html](https://www.infosys.com/iki/perspectives/four-design-patterns.html)
+12. Which Portfolio Rebalancing Software is Right for You? Smartleaf's Response \-, accessed April 29, 2026, [https://wealthtechtoday.com/2013/03/20/which-portfolio-rebalancing-software-is-right-for-you-smartleafs-response/](https://wealthtechtoday.com/2013/03/20/which-portfolio-rebalancing-software-is-right-for-you-smartleafs-response/)
+13. Aladdin | BlackRock, accessed April 29, 2026, [https://www.blackrock.com/institutions/en-us/investment-capabilities/technolgy/aladdin-portfolio-management-software](https://www.blackrock.com/institutions/en-us/investment-capabilities/technolgy/aladdin-portfolio-management-software)
+14. Portfolio Rebalancing \- Alpaca Docs, accessed April 29, 2026, [https://docs.alpaca.markets/docs/portfolio-rebalancing](https://docs.alpaca.markets/docs/portfolio-rebalancing)
+15. Replayable Financial Agents: A Determinism-Faithfulness Assurance Harness for Tool-Using LLM Agents \- arXiv, accessed April 29, 2026, [https://arxiv.org/html/2601.15322v1](https://arxiv.org/html/2601.15322v1)
+16. BIAN Business Object Model (139 diagrams), accessed April 29, 2026, [https://bian.org/servicelandscape-8-0/views.html](https://bian.org/servicelandscape-8-0/views.html)
+17. What role should auto sweep facilities play in a smarter liquidity strategy? \- Pine Labs, accessed April 29, 2026, [https://www.pinelabs.com/blog/what-role-should-auto-sweep-facilities-play-in-a-smarter-liquidity-strategy](https://www.pinelabs.com/blog/what-role-should-auto-sweep-facilities-play-in-a-smarter-liquidity-strategy)
+18. Design and Effect of Different Rebalancing Concepts \- Complementa, accessed April 29, 2026, [https://complementa.ch/en/design-and-effect-rebalancing-concepts/](https://complementa.ch/en/design-and-effect-rebalancing-concepts/)
+19. Exploring a Securities Portfolio Data Model Using Native JSON and Query Capabilities in Redis, accessed April 29, 2026, [https://redis.io/blog/securities-portfolio-data-model/](https://redis.io/blog/securities-portfolio-data-model/)
+20. Article 25 Assessment of suitability and appropriateness and reporting to clients, accessed April 29, 2026, [https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-25-assessment-suitability-and](https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-25-assessment-suitability-and)
+21. Advisor's Guide To Choosing The Best Portfolio Rebalancing Software, accessed April 29, 2026, [https://www.wealthmanagement.com/financial-technology/advisor-s-guide-to-choosing-the-best-portfolio-rebalancing-software](https://www.wealthmanagement.com/financial-technology/advisor-s-guide-to-choosing-the-best-portfolio-rebalancing-software)
+22. CNMV Record Keeping Requirements \- Steel Eye, accessed April 29, 2026, [https://www.steel-eye.com/news/cnmv-record-keeping-requirements](https://www.steel-eye.com/news/cnmv-record-keeping-requirements)
+23. Guidelines on certain aspects of the MiFID II suitability requirements \- ICMA, accessed April 29, 2026, [https://www.icmagroup.org/assets/MiFID-II-Suitability-Requirements-CP-AMIC-FINAL-response-27-April.pdf?vid=4](https://www.icmagroup.org/assets/MiFID-II-Suitability-Requirements-CP-AMIC-FINAL-response-27-April.pdf?vid=4)
+24. Aladdin® Wealth | Wealth Management Software \- BlackRock, accessed April 29, 2026, [https://www.blackrock.com/aladdin/products/aladdin-wealth](https://www.blackrock.com/aladdin/products/aladdin-wealth)
+25. Cash Pool Engine \- Montran, accessed April 29, 2026, [https://www.montran.com/solutions/cash-pool-engine/](https://www.montran.com/solutions/cash-pool-engine/)
+26. How to Set Up A Cash Buffer in: IMF How To Notes Volume 2020 Issue 004 (2020), accessed April 29, 2026, [https://www.elibrary.imf.org/view/journals/061/2020/004/article-A001-en.xml](https://www.elibrary.imf.org/view/journals/061/2020/004/article-A001-en.xml)
+27. MiFID II \- CNMV, accessed April 29, 2026, [https://www.cnmv.es/portal/mifidii_mifir/mapamifid?lang=en](https://www.cnmv.es/portal/mifidii_mifir/mapamifid?lang=en)
+28. Lenovo LLM Sizing Guide, accessed April 29, 2026, [https://lenovopress.lenovo.com/lp2130-lenovo-llm-sizing-guide](https://lenovopress.lenovo.com/lp2130-lenovo-llm-sizing-guide)
+29. LLM Inference Performance Engineering: Best Practices | Databricks Blog, accessed April 29, 2026, [https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices](https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices)
+30. Master Your Target Cash: Achieve Optimal Liquidity & Business Resilience \- Emagia, accessed April 29, 2026, [https://www.emagia.com/resources/glossary/target-cash/](https://www.emagia.com/resources/glossary/target-cash/)
+31. How to Get Started with Rebalancing API \- Alpaca, accessed April 29, 2026, [https://alpaca.markets/learn/how-to-get-started-with-rebalancing-api](https://alpaca.markets/learn/how-to-get-started-with-rebalancing-api)
+32. I am a College Student and I Built My Own Robo Advisor (Part 1\) \- Alpaca, accessed April 29, 2026, [https://alpaca.markets/learn/my-own-robo-advisor](https://alpaca.markets/learn/my-own-robo-advisor)
+33. Bench360—Benchmarking Local LLM inference from 360° \- arXiv, accessed April 29, 2026, [https://arxiv.org/html/2511.16682v1](https://arxiv.org/html/2511.16682v1)
+34. BIAN \- the Banking Industry Architecture Network, accessed April 29, 2026, [https://bian.org/](https://bian.org/)
+35. RAPTOR: Reasoned Agentic Portfolio Trading with Orchestrated Rebalancing \- CEUR-WS.org, accessed April 29, 2026, [https://ceur-ws.org/Vol-4162/paper8.pdf](https://ceur-ws.org/Vol-4162/paper8.pdf)
+36. A Beginner's Guide to the Strategy Design Pattern \- freeCodeCamp, accessed April 29, 2026, [https://www.freecodecamp.org/news/a-beginners-guide-to-the-strategy-design-pattern/](https://www.freecodecamp.org/news/a-beginners-guide-to-the-strategy-design-pattern/)
+37. Portfolio Construction | AnalystPrep \- FRM Part 2 Study Notes, accessed April 29, 2026, [https://analystprep.com/study-notes/frm/portfolio-construction/](https://analystprep.com/study-notes/frm/portfolio-construction/)
+38. Multi-Period Trading via Convex Optimization \- Stanford University, accessed April 29, 2026, [https://web.stanford.edu/\~boyd/papers/pdf/cvx_portfolio.pdf](https://web.stanford.edu/~boyd/papers/pdf/cvx_portfolio.pdf)
+39. How to Rebalance Your Stock Portfolio with Alpaca Trading API \~ Part II \- Intrinio \- Medium, accessed April 29, 2026, [https://intrinio.medium.com/how-to-rebalance-your-stock-portfolio-with-alpaca-trading-api-part-ii-5cbd8bc30107](https://intrinio.medium.com/how-to-rebalance-your-stock-portfolio-with-alpaca-trading-api-part-ii-5cbd8bc30107)
+40. Questions and answers on the implementation of the MiFID II Directive \- CNMV, accessed April 29, 2026, [http://www.cnmv.es/loultimo/FAQMiFIDII_EN.pdf](http://www.cnmv.es/loultimo/FAQMiFIDII_EN.pdf)
 41. ESMA Final Report on the Guidelines on certain aspects of the MiFID II suitability requirements. International Bulletin of November 2022\. \- Boletín Internacional, accessed April 29, 2026, [https://boletininternacionalcnmv.es/en/esma-en/investor-protection-en/esma-final-report-on-the-guidelines-on-certain-aspects-of-the-mifid-ii-suitability-requirements-international-bulletin-of-november-2022/](https://boletininternacionalcnmv.es/en/esma-en/investor-protection-en/esma-final-report-on-the-guidelines-on-certain-aspects-of-the-mifid-ii-suitability-requirements-international-bulletin-of-november-2022/)

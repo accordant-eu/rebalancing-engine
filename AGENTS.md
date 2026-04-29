@@ -3,6 +3,7 @@
 These rules govern AI-assisted development in this repository. The project is in an early exploratory phase and may evolve into a generic portfolio rebalancing engine. The rules are stack-agnostic and broadly applicable.
 
 ## 1. Repository Stewardship
+
 - Inspect before changing.
 - Prefer small, reviewable changes.
 - Avoid broad rewrites unless explicitly justified.
@@ -11,6 +12,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - Keep generated or temporary files out of source control unless intentionally needed.
 
 ## 2. Decision Discipline
+
 - Do not make irreversible architectural decisions without evidence.
 - Mark uncertain decisions as provisional.
 - Prefer reversible choices during early exploration.
@@ -18,6 +20,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - Separate facts, assumptions, inferences, and decisions.
 
 ## 3. Implementation Discipline
+
 - Build incrementally.
 - Keep modules cohesive and loosely coupled.
 - Separate domain logic from integration concerns.
@@ -27,6 +30,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - Treat errors and edge cases intentionally.
 
 ## 4. Testing Discipline
+
 - Add or update tests with meaningful logic changes.
 - Prefer tests that validate behavior over implementation details.
 - Include edge cases and failure modes.
@@ -35,6 +39,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - If tests cannot be run, document why and what should be run.
 
 ## 5. Documentation Discipline
+
 - Update documentation when behavior, setup, assumptions, or architecture changes.
 - Keep `BUILD_JOURNEY.md` current.
 - Explain why changes were made, not only what changed.
@@ -42,6 +47,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - Document known gaps rather than hiding them.
 
 ## 6. Security and Privacy
+
 - Do not commit secrets, credentials, tokens, private keys, or real personal data.
 - Use environment variables or secret managers for sensitive configuration.
 - Keep sample data synthetic unless explicitly approved.
@@ -49,6 +55,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - Treat financial data as sensitive by default.
 
 ## 7. Data and Domain Integrity
+
 - Preserve traceability of inputs, calculations, and outputs.
 - Prefer deterministic calculations for financial logic.
 - Make rounding, precision, and valuation assumptions explicit.
@@ -56,6 +63,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - Keep auditability and reproducibility in mind from the start.
 
 ## 8. Dependency Hygiene
+
 - Avoid adding dependencies before confirming need.
 - Prefer well-maintained, widely used packages.
 - Document why a new dependency is introduced.
@@ -63,12 +71,14 @@ These rules govern AI-assisted development in this repository. The project is in
 - Respect existing dependency management conventions.
 
 ## 9. Tooling and Automation
+
 - Use existing linting, formatting, type-checking, testing, and CI tools where present.
 - Do not introduce heavy tooling unless justified.
 - Prefer commands that are easy for humans and agents to run.
 - Document common commands.
 
 ## 10. AI-Agent Behavior
+
 - State assumptions before acting on them.
 - Do not invent missing requirements.
 - Ask for clarification only when blocked.
