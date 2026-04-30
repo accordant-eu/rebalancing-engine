@@ -1,17 +1,83 @@
 # rebalancing-engine
 
-This repository contains the exploration and future implementation of a generic portfolio rebalancing engine.
+A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.js as an offline calculation core — no live integrations, no UI.
 
 ## Overview
 
-The project is currently in the initial **discovery and planning phase**. No firm architectural or tech stack decisions have been made yet. A formal Product Requirements Document (PRD) and Architecture Vision are pending.
+The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, and produces deterministic trade proposals and audit records. It is designed for auditability and reproducibility (MiFID II alignment).
+
+**Current status:** Slices 1–4 implemented and audited (Fixtures, Valuation, Drift, Threshold Trigger). Slices 5+ (Trade Proposals, Cash Routing, Simulation, Audit Records) in progress.
 
 ## Documentation
 
-- [`BUILD_JOURNEY.md`](BUILD_JOURNEY.md) - The living project journal that tracks assumptions, decisions, and development phases.
-- [`AGENTS.md`](AGENTS.md) - The generic rules and guidelines for AI-assisted development in this repository.
-- `docs/` - Contains exploratory research, including the meta-paper synthesis on portfolio rebalancing.
+- [`BUILD_JOURNEY.md`](BUILD_JOURNEY.md) — Living project journal tracking assumptions, decisions, and iteration progress.
+- [`AGENTS.md`](AGENTS.md) — AI-assisted development rules for this repository.
+- [`docs/MVP_Implementation_Plan.md`](docs/MVP_Implementation_Plan.md) — Slice-by-slice implementation plan.
+- [`docs/audits/`](docs/audits/) — Audit reports (red-team audit, test-case audit).
+- `docs/` — Background research and PRD.
 
 ## Getting Started
 
-_(Instructions for setting up the project will be added once a tech stack is selected.)_
+### Prerequisites
+
+- Node.js ≥ 18
+- npm ≥ 9
+
+### Install
+
+```bash
+npm install
+```
+
+### Run Tests
+
+```bash
+npm test
+```
+
+Runs all unit and edge-case tests via Jest. All tests are deterministic and offline — no external services required.
+
+### Run Tests (verbose)
+
+```bash
+npm test -- --verbose
+```
+
+### Type Check
+
+```bash
+npx tsc --noEmit
+```
+
+### Format
+
+```bash
+npm run format
+```
+
+## Project Structure
+
+```
+/
+├── src/
+│   ├── models/domain.ts       # Domain interfaces (PortfolioState, DriftMeasurement, etc.)
+│   ├── core/
+│   │   ├── valuation.ts       # Market value and weight calculation
+│   │   └── drift.ts           # Drift calculation and target validation
+│   └── strategy/
+│       └── threshold.ts       # Threshold-band trigger strategy
+├── tests/
+│   ├── fixtures/
+│   │   └── scenarios.json     # Synthetic JSON test scenarios
+│   ├── smoke.test.ts          # Structural import smoke tests
+│   ├── fixtures.test.ts       # Fixture schema validation
+│   ├── valuation.test.ts      # Valuation and weight tests
+│   ├── drift.test.ts          # Drift calculation tests
+│   ├── threshold.test.ts      # Threshold strategy tests
+│   └── edge-cases.test.ts     # Edge-case and integration tests
+└── docs/
+    ├── MVP_Implementation_Plan.md
+    └── audits/
+        ├── red-team-audit-current.md
+        └── test-case-audit.md
+```
