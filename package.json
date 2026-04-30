@@ -10,7 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "build": "tsc",
-    "lint": "eslint src tests || echo 'Lint skipped due to config'",
+    "lint": "eslint \"{src,tests}/**/*.ts\"",
     "format": "prettier --write ."
   },
   "repository": {
@@ -26,12 +26,14 @@
   },
   "homepage": "https://github.com/johanhellman/rebalancing-engine#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
     "eslint": "^10.2.1",
     "jest": "^30.3.0",
     "prettier": "^3.8.3",
     "ts-jest": "^29.4.9",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.1"
   }
 }

@@ -108,6 +108,15 @@ describe('Drift Calculation', () => {
     expect(tsla.currentWeight).toBe(0.4);
     expect(tsla.absoluteDrift).toBe(0.4);
     expect(tsla.isOutOfBand).toBe(true);
+
+    // AAPL is in the target (weight 1.0) but currently only 0.6 — severely underweight.
+    // Value: AAPL 100*150=15000, TSLA 50*200=10000, total=25000.
+    // AAPL current weight = 15000/25000 = 0.6, target = 1.0, drift = −0.4.
+    const aapl = drift.find((d) => d.instrumentId === 'AAPL')!;
+    expect(aapl.targetWeight).toBe(1.0);
+    expect(aapl.currentWeight).toBeCloseTo(0.6, 4);
+    expect(aapl.absoluteDrift).toBeCloseTo(-0.4, 4);
+    expect(aapl.isOutOfBand).toBe(true);
   });
 
   it('handles target not in holdings', () => {
@@ -126,5 +135,42 @@ describe('Drift Calculation', () => {
     expect(aapl.targetWeight).toBe(1.0);
     expect(aapl.absoluteDrift).toBe(-1.0);
     expect(aapl.isOutOfBand).toBe(true);
+  });
+
+  it('reports correct per-asset drift for multiple_assets_out_of_band scenario', () => {
+    // Fixture: AAPL qty=150, MSFT qty=50, GOOG qty=50 — all at price 100.
+    // Total value: 150*100 + 50*100 + 50*100 = 25000.
+    // AAPL current weight: 15000/25000 = 0.60, target 0.40 → drift +0.20 (out of band).
+    // MSFT current weight:  5000/25000 = 0.20, target 0.40 → drift −0.20 (out of band).
+    // GOOG current weight:  5000/25000 = 0.20, target 0.20 → drift  0.00 (in band).
+    const scenario = scenariosData.scenarios.find((s: any) => s.id === 'multiple_assets_out_of_band');
+    const state: PortfolioState = scenario.portfolioState;
+    const prices: PriceSnapshot = scenario.priceSnapshot;
+    const target: TargetAllocation = scenario.targetAllocation;
+    const policy: RebalancingPolicy = scenario.policy;
+
+    const valuation = calculateValuation(state, prices);
+    const weights = calculateCurrentWeights(valuation);
+    const drift = calculateDrift(weights, target, policy);
+
+    expect(drift.length).toBe(3);
+
+    const aapl = drift.find((d) => d.instrumentId === 'AAPL')!;
+    expect(aapl.currentWeight).toBeCloseTo(0.6, 4);
+    expect(aapl.targetWeight).toBe(0.4);
+    expect(aapl.absoluteDrift).toBeCloseTo(0.2, 4);
+    expect(aapl.isOutOfBand).toBe(true);
+
+    const msft = drift.find((d) => d.instrumentId === 'MSFT')!;
+    expect(msft.currentWeight).toBeCloseTo(0.2, 4);
+    expect(msft.targetWeight).toBe(0.4);
+    expect(msft.absoluteDrift).toBeCloseTo(-0.2, 4);
+    expect(msft.isOutOfBand).toBe(true);
+
+    const goog = drift.find((d) => d.instrumentId === 'GOOG')!;
+    expect(goog.currentWeight).toBeCloseTo(0.2, 4);
+    expect(goog.targetWeight).toBe(0.2);
+    expect(goog.absoluteDrift).toBeCloseTo(0.0, 4);
+    expect(goog.isOutOfBand).toBe(false);
   });
 });
