@@ -52,7 +52,7 @@
     },
     {
       "id": "multiple_assets_out_of_band",
-      "description": "Portfolio with multiple assets out of band",
+      "description": "Portfolio with two assets out of band (AAPL +20%, MSFT -20%) and one on target (GOOG 0%)",
       "portfolioState": {
         "accountId": "acc-3",
         "cash": 0,
