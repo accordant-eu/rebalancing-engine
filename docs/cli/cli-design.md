@@ -244,6 +244,121 @@ No `--strategy` flag. `rebalance inspect strategies` lists supported strategies 
 Validation:
 Tests cover strategy listing and existing policy-selected behavior.
 
+### Decision: Support stdin for scenario input only
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Scenario mode loads one complete scenario object or manifest, while explicit file mode combines four separate inputs.
+
+Options considered:
+
+1. Support `--scenario -` for `run` and `validate`.
+   - Benefits: Useful for generated scenarios and shell pipelines.
+   - Costs: Requires clear stdin errors and docs.
+
+2. Support stdin for all input files.
+   - Benefits: More flexible.
+   - Costs: Ambiguous when multiple explicit inputs need stdin.
+
+3. Keep stdin deferred.
+   - Benefits: Smallest CLI surface.
+   - Costs: Less pipeline-friendly.
+
+Preferred option:
+Option 1.
+
+Rationale:
+Reading one complete scenario payload from stdin improves usability without weakening auditability. Explicit-file stdin remains deferred.
+
+Implementation impact:
+`run --scenario -` and `validate --scenario -` read one JSON scenario object or manifest from stdin. Empty and malformed stdin are usage errors.
+
+Validation:
+CLI tests cover valid stdin, malformed stdin, empty stdin, and explicit-file stdin rejection.
+
+### Decision: Add per-scenario batch output files
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Batch mode already produces deterministic per-scenario results in memory. Reviewers and regression workflows benefit from one file per scenario.
+
+Options considered:
+
+1. Add `batch --output-dir <dir>`.
+   - Benefits: Practical for review, demos, and automated regression artifacts.
+   - Costs: Requires deterministic names and overwrite rules.
+
+2. Keep aggregate batch output only.
+   - Benefits: Simpler.
+   - Costs: Less useful when reviewing many scenarios.
+
+Preferred option:
+Option 1.
+
+Rationale:
+This is a low-risk CLI usability improvement because it does not change engine behavior or the aggregate batch contract.
+
+Implementation impact:
+`batch --output-dir <dir>` writes one file per scenario using sanitized scenario IDs. Files default to JSON when `--format` is omitted and follow the selected format when it is provided. Existing files require `--force`.
+
+Validation:
+CLI tests cover output writing, overwrite refusal, forced overwrite, partial failures, and exit codes.
+
+### Decision: Keep config files deferred
+
+Status: Deferred
+Date: 2026-05-02
+
+Context:
+Config files would add hidden defaults and precedence rules before repeated-use requirements are clear.
+
+Options considered:
+
+1. Add a CLI config file for defaults.
+2. Keep explicit scenario and policy files as the source of command behavior.
+
+Preferred option:
+Option 2.
+
+Rationale:
+Explicit file inputs remain the best fit for deterministic, auditable MVP workflows.
+
+Implementation impact:
+No `--config` flag is accepted.
+
+Validation:
+CLI tests confirm `--config` is rejected.
+
+### Decision: Keep validate on the engine path
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+`validate` currently exercises the same deterministic engine path as `run` and renders validation status.
+
+Options considered:
+
+1. Keep engine-path validation and document it.
+2. Add a separate schema-only validator.
+3. Add validation modes.
+
+Preferred option:
+Option 1.
+
+Rationale:
+Engine-path validation avoids drift between validation and executable behavior. Schema-only validation can be revisited after the project has a stable schema contract.
+
+Implementation impact:
+Help text and docs state that `validate` is not schema-only validation.
+
+Validation:
+CLI tests cover help wording and existing validation behavior.
+
 ## Exit Codes
 
 - `0`: command completed successfully.
@@ -253,7 +368,9 @@ Tests cover strategy listing and existing policy-selected behavior.
 
 ## Known Limitations
 
-- The CLI is offline and file-based only.
+- The CLI is offline and explicit-input oriented; `run` and `validate` also accept complete scenario payloads from stdin.
 - `--strategy` overrides are intentionally not supported.
-- Stdin input is deferred to avoid complicating the MVP input contract.
+- Stdin input is supported only for `run --scenario -` and `validate --scenario -`.
+- Config files remain deferred.
+- Explicit-file stdin and `batch --scenarios -` remain deferred.
 - JSON output uses existing audit records as the stable machine-readable recommendation contract.

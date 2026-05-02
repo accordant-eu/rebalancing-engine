@@ -19,6 +19,7 @@ import { validateScenarioFixture } from './validation';
 
 export interface CommandContext {
   cwd: string;
+  stdin?: string;
 }
 
 export interface CommandResult {
@@ -96,7 +97,7 @@ function executeValidate(
   const scenarios =
     scenarioPath === undefined
       ? [loadExplicitScenario(explicitPaths, context.cwd)]
-      : loadScenarioSelection(scenarioPath, scenarioId, context.cwd);
+      : loadScenarioSelection(scenarioPath, scenarioId, context.cwd, context.stdin);
   const results = scenarios.map((scenario) => validateScenarioFixture(scenario));
   const invalidCount = results.filter((result) => result.status === 'invalid').length;
   const warningCount = results.reduce(
@@ -145,7 +146,7 @@ function executeRun(
   const scenario =
     scenarioPath === undefined
       ? loadExplicitScenario(explicitPaths, context.cwd)
-      : loadOneScenario(scenarioPath, scenarioId, context.cwd);
+      : loadOneScenario(scenarioPath, scenarioId, context.cwd, context.stdin);
   const result = runScenario(scenario);
   const warningCount =
     result.status === 'success' ? result.auditRecord.outputs.tradeProposal.warnings.length : 0;
@@ -178,6 +179,7 @@ function executeBatch(
     throw new UsageError('Provide --scenarios <path>.');
   }
 
+  const format = getFormat(parsed.options);
   const input = loadScenarioManifests(scenariosPath, context.cwd);
   const results = runScenarios(input);
   const expectationsPath = getStringOption(parsed.options, 'expectations');
@@ -209,11 +211,83 @@ function executeBatch(
     expectationValidation,
   };
 
+  writeBatchScenarioOutputsIfRequested(results, parsed, context, format);
+
   return {
     exitCode: hasBlockingFailure ? 1 : exitCodeForStatus(0, warningCount, parsed),
     output: '',
     data,
   };
+}
+
+function writeBatchScenarioOutputsIfRequested(
+  results: BatchOutput['results'],
+  parsed: ParsedArgs,
+  context: CommandContext,
+  stdoutFormat: OutputFormat,
+): void {
+  const outputDir = getStringOption(parsed.options, 'output-dir');
+  if (outputDir === undefined) {
+    return;
+  }
+
+  const resolvedDir = path.resolve(context.cwd, outputDir);
+  fs.mkdirSync(resolvedDir, { recursive: true });
+
+  const perScenarioFormat =
+    getStringOption(parsed.options, 'format') === undefined ? 'json' : stdoutFormat;
+  const extension = perScenarioFormat === 'json' ? 'json' : 'txt';
+  const force = hasBooleanOption(parsed.options, 'force');
+
+  const plannedOutputs = results.map((result) => ({
+    result,
+    path: path.join(resolvedDir, `${sanitizeScenarioFileName(result.scenarioId)}.${extension}`),
+  }));
+  const outputPaths = new Set<string>();
+  for (const output of plannedOutputs) {
+    if (outputPaths.has(output.path)) {
+      throw new UsageError(
+        `Batch output scenario IDs produce duplicate file name: ${path.basename(output.path)}`,
+      );
+    }
+    outputPaths.add(output.path);
+  }
+
+  if (!force) {
+    const existingPath = plannedOutputs.find((output) => fs.existsSync(output.path))?.path;
+    if (existingPath !== undefined) {
+      throw new UsageError(
+        `Batch output file already exists: ${path.relative(context.cwd, existingPath)}. Use --force to overwrite.`,
+      );
+    }
+  }
+
+  for (const output of plannedOutputs) {
+    fs.writeFileSync(
+      output.path,
+      renderOutput(
+        {
+          command: 'run',
+          scenarioId: output.result.scenarioId,
+          status: output.result.status,
+          result: output.result,
+        },
+        perScenarioFormat,
+        false,
+      ),
+      'utf8',
+    );
+  }
+}
+
+function sanitizeScenarioFileName(scenarioId: string): string {
+  const sanitized = scenarioId
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return sanitized === '' || sanitized === '.' || sanitized === '..' ? 'scenario' : sanitized;
 }
 
 function executeInspect(

@@ -64,6 +64,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Defer full optimizer until objectives and constraints are explicit                 | Accepted                    | The current deterministic proposal engine is auditable and useful; a solver-backed optimizer needs documented objectives, constraints, explainability requirements, and dependency policy first.                         | Optimizer feasibility audit    | High          | Revisit when deterministic rules cannot satisfy a concrete use case     |
 | 2026-05-02 | Defer production surfaces until concrete consumers and operations are defined      | Accepted                    | API, UI, database, and live integrations introduce security, persistence, provider-contract, deployment, and regulatory decisions that are premature for the offline calculation core.                                   | Production boundary audit      | High          | Revisit with a dedicated productionization PRD                          |
 | 2026-05-02 | Add thin offline CLI around existing engine and fixture runner                     | Accepted                    | A documented `rebalance` CLI makes validation, single-scenario runs, batch regression checks, and inspection discoverable without changing the underlying deterministic engine.                                          | CLI design and tests           | High          | Revisit stdin/config/strategy overrides only with concrete user need    |
+| 2026-05-02 | Resolve CLI limitations pragmatically                                              | Accepted                    | Scenario stdin and per-scenario batch output files add useful low-risk workflows; config files and strategy overrides remain deferred; `validate` remains engine-path validation to avoid validator drift.               | CLI limitations review         | High          | Revisit config/strategy/schema-only validation only with concrete use   |
 | 2026-05-02 | Prioritize scheduled/recurring cash-flow semantics next                            | Accepted for planning       | Scheduled and recurring cash flows extend implemented offline cash-flow foundations, are testable with synthetic fixtures, and avoid premature optimizer, tax, or production infrastructure decisions.                   | Roadmap synthesis              | High          | Implement Slice 0/1 of scheduled cash-flow plan                         |
 | 2026-05-02 | Require CLI exposure decisions for future engine capabilities                      | Accepted                    | The CLI is now the first-class offline operational interface; future capabilities must be validated, runnable, inspectable, and documented through CLI workflows or explicitly excluded with rationale.                  | CLI design and roadmap         | High          | Apply to scheduled cash-flow increment and later PRDs                   |
 
@@ -107,10 +108,50 @@ Implementation impact:
 - Tests: Added CLI behavior coverage for help, usage errors, validation, run output, batch expectations, inspection, strict warning behavior, output-to-file behavior, and explicit input mode.
 - Fixtures: Existing synthetic fixtures remain unchanged and are used by the CLI tests.
 - Documentation: Added `docs/cli/cli-design.md` and a README CLI section covering setup, commands, input modes, output formats, exit codes, warnings, limitations, and tests.
-- Follow-up: Stdin, config files, per-scenario batch output directories, and CLI strategy overrides remain deferred until a concrete need exists.
+- Follow-up: Config files and CLI strategy overrides remain deferred until a concrete need exists. Scenario stdin and per-scenario batch output directories are handled by the later CLI limitation review.
 
 Validation:
 Run CLI tests, the full Jest suite, TypeScript checks, linting, formatting, and build before committing.
+
+Decision: Resolve CLI limitations pragmatically
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The CLI had five known limitations: no stdin support, no config file support, no per-scenario batch output directory, no CLI strategy override, and `validate` using the deterministic engine path instead of a separate schema-only validator. The project needs the CLI to be useful without adding hidden state or duplicating financial logic.
+
+Options considered:
+
+1. Implement every limitation immediately.
+   - Benefits: Maximum CLI feature coverage.
+   - Costs: Adds config precedence, broad override semantics, and validation-mode complexity before concrete workflows require them.
+   - Risks: Hidden inputs and duplicated validators could weaken auditability.
+
+2. Implement only high-value, low-risk CLI improvements and document intentional deferrals.
+   - Benefits: Improves pipeline and regression workflows while preserving explicit scenario/policy inputs.
+   - Costs: Config files and strategy comparison remain less convenient.
+   - Risks: Future users may still request broader overrides.
+
+3. Leave all limitations deferred.
+   - Benefits: Smallest change.
+   - Costs: Keeps obvious usability gaps in stdin and batch artifact workflows.
+
+Preferred option:
+Option 2.
+
+Rationale:
+`run --scenario -`, `validate --scenario -`, and `batch --output-dir <dir>` fit the current code shape and do not change engine semantics. Config files and strategy overrides would introduce hidden state or audited-input ambiguity. Keeping `validate` on the engine path avoids divergence until schema-only validation has a concrete need.
+
+Implementation impact:
+
+- Code: Added scenario stdin for `run` and `validate`; added `batch --output-dir <dir>` and `--force`; rejected explicit-file stdin and batch stdin.
+- CLI behavior: Per-scenario batch files use sanitized IDs, avoid overwrites by default, and default to JSON when no per-command format is specified.
+- Tests: Added CLI coverage for stdin success/failure, validate help semantics, batch output directory success/overwrite/partial-failure behavior, and unsupported `--config`/`--strategy` flags.
+- Documentation: Added `docs/cli/cli-limitations-and-decisions.md`; updated README, CLI design/audit docs, roadmap, fixture docs, and this build journey.
+
+Validation:
+Run CLI tests, full Jest suite, TypeScript checks, linting, formatting, build, scenario runner, and representative CLI smoke commands before committing.
 
 Decision: Adopt standing decision discipline in repository rules
 

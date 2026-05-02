@@ -21,15 +21,18 @@ Audited the implemented offline CLI wrapper for validation, single-scenario exec
 - `--strict` converts successful commands with warnings into exit code `1`.
 - Exit codes follow the documented contract: `0`, `1`, `2`, and `3`.
 - Batch mode supports expected-status manifest validation for regression workflows.
+- Batch mode supports `--output-dir <dir>` for deterministic per-scenario output files.
 - Inspect mode exposes scenarios, strategies, and policy fields.
-- Tests cover success paths, failure paths, strict mode, output files, JSON parsing, and explicit input mode.
+- Scenario stdin is supported for `run --scenario -` and `validate --scenario -`.
+- Tests cover success paths, failure paths, strict mode, output files, JSON parsing, explicit input mode, stdin scenarios, batch output directories, and deferred flags.
 
 ## Findings
 
 - No CLI-specific defects are known after the current validation pass.
 - Validation currently exercises the same deterministic engine path as recommendation generation and renders only validation status and warnings. This keeps validation aligned with actual engine behavior, but a future standalone schema/domain validator could separate validation from calculation more strictly.
-- Stdin support is intentionally deferred. The current file-only contract is simpler and sufficient for the existing fixture and regression workflows.
-- Per-scenario batch output directories are deferred. The current `--output` writes the aggregate batch result.
+- Stdin support is intentionally limited to scenario input for `run` and `validate`. Explicit input-file stdin and batch stdin remain deferred to avoid ambiguous multi-input behavior.
+- Per-scenario batch output directories are implemented through `batch --output-dir <dir>`. Existing files are not overwritten unless `--force` is supplied.
+- Config file support is deferred. The CLI continues to require explicit scenario/policy/input paths.
 - CLI strategy overrides are deferred to preserve auditability of policy/scenario files.
 
 ## Validation Commands

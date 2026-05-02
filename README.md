@@ -146,6 +146,7 @@ npm run cli -- inspect scenarios --scenarios tests/fixtures/scenarios.json
 npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id on_target
 npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
 npm run cli -- batch --scenarios tests/fixtures/scenarios.json --expectations tests/fixtures/scenario-expectations.json
+npm run cli -- batch --scenarios tests/fixtures/scenarios.json --output-dir tmp/batch-results
 ```
 
 ### Input Modes
@@ -154,6 +155,13 @@ Scenario mode accepts either a single scenario object or a manifest shaped as `{
 
 ```bash
 npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
+```
+
+Scenario mode also accepts stdin for `run` and `validate` by using `--scenario -`:
+
+```bash
+cat scenario.json | npm run cli -- validate --scenario -
+cat scenario.json | npm run cli -- run --scenario - --format json
 ```
 
 Explicit file mode assembles one scenario from separate files:
@@ -168,6 +176,10 @@ npm run cli -- run \
 
 Scenario mode and explicit file mode are mutually exclusive. Strategy selection remains in the policy or scenario file; there is no CLI `--strategy` override.
 
+Stdin is intentionally limited to complete scenario payloads. Explicit file mode does not support `--portfolio -`, `--prices -`, `--target -`, or `--policy -`, and batch mode does not support `--scenarios -`.
+
+`validate` loads inputs and runs the deterministic engine path used by recommendations, then renders validation status and warnings. It is not a separate schema-only validator.
+
 ### Output Formats
 
 The default format is `summary`. Use `--format pretty` for a more detailed human-readable report or `--format json` for deterministic machine-readable output. JSON output is written to stdout unless `--output <path>` is supplied.
@@ -178,6 +190,15 @@ npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_as
 ```
 
 Successful `run` JSON uses the existing audit record as the recommendation contract, including inputs, drift, trigger, proposed trades, warnings, post-trade simulation, explanation, and audit metadata.
+
+Batch mode can also write one deterministic output file per scenario:
+
+```bash
+npm run cli -- batch --scenarios tests/fixtures/scenarios.json --output-dir tmp/batch-results
+npm run cli -- batch --scenarios tests/fixtures/scenarios.json --output-dir tmp/batch-results --force
+```
+
+Per-scenario batch files use sanitized scenario IDs. They default to JSON when `--format` is omitted; if `--format pretty` or `--format summary` is supplied, per-scenario files use that selected format. Existing files are rejected unless `--force` is provided. The aggregate batch summary still renders to stdout unless global `--output <path>` is used.
 
 ### Exit Codes
 
@@ -194,7 +215,7 @@ Warnings are visible in human-readable output and included in JSON output. They 
 npm test -- --runInBand tests/cli.test.ts
 ```
 
-The CLI is offline and file-based only. Stdin support, config files, per-scenario batch output directories, and CLI strategy overrides are intentionally deferred.
+The CLI is offline and explicit-input oriented. Config files and CLI strategy overrides are intentionally deferred; strategy remains selected through scenario or policy input files.
 
 ## Project Structure
 

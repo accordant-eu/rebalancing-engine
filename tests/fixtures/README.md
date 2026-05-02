@@ -37,3 +37,5 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - Tax-lot support is generic lot allocation metadata only. It is not tax advice, tax optimization, or jurisdiction-specific tax handling.
 - Full transaction-cost-aware no-trade-region optimization remains out of scope.
 - `scenario-expectations.json` is an expected-status manifest for runner regression checks. It records which scenarios should succeed or error and the expected error text for invalid scenarios.
+- CLI scenario mode can read a complete scenario object or manifest from a file, or from stdin with `--scenario -` for `run` and `validate`.
+- CLI batch mode reads scenario manifests from files or directories. It can write one deterministic per-scenario output file with `--output-dir`; batch stdin is not supported.

@@ -17,6 +17,7 @@ const STRING_OPTIONS = new Set([
   'expectations',
   'format',
   'output',
+  'output-dir',
   'policy',
   'portfolio',
   'prices',
@@ -26,7 +27,7 @@ const STRING_OPTIONS = new Set([
   'target',
 ]);
 
-const BOOLEAN_OPTIONS = new Set(['help', 'quiet', 'strict', 'verbose', 'version']);
+const BOOLEAN_OPTIONS = new Set(['force', 'help', 'quiet', 'strict', 'verbose', 'version']);
 
 export function parseArgs(args: string[]): ParsedArgs {
   const positionals: string[] = [];

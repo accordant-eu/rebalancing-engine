@@ -9,11 +9,11 @@ export interface CliRunResult {
   stderr: string;
 }
 
-export function runCli(args: string[], cwd = process.cwd()): CliRunResult {
+export function runCli(args: string[], cwd = process.cwd(), stdin?: string): CliRunResult {
   let parsed;
   try {
     parsed = parseArgs(args);
-    const result = executeCommand(parsed, { cwd });
+    const result = executeCommand(parsed, { cwd, stdin });
     const outputResult = writeOutputIfRequested(result, parsed.options, cwd);
     return {
       exitCode: outputResult.exitCode,

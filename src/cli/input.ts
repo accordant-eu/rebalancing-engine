@@ -17,9 +17,30 @@ export interface ExplicitInputPaths {
   scenarioId?: string;
 }
 
-export function readJsonFile<T>(filePath: string, cwd: string): T {
+export interface JsonInputOptions {
+  stdin?: string;
+  allowStdin?: boolean;
+}
+
+export function readJsonFile<T>(filePath: string, cwd: string, options: JsonInputOptions = {}): T {
   if (filePath === '-') {
-    throw new UsageError('Reading from stdin is not supported in this CLI version.');
+    if (options.allowStdin !== true) {
+      throw new UsageError('Stdin is supported only for --scenario -.');
+    }
+
+    const content = options.stdin ?? fs.readFileSync(0, 'utf8');
+    if (content.trim() === '') {
+      throw new UsageError('Stdin scenario input is empty.');
+    }
+
+    try {
+      return JSON.parse(content) as T;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new UsageError(`Invalid JSON in stdin: ${error.message}`);
+      }
+      throw error;
+    }
   }
 
   const resolvedPath = path.resolve(cwd, filePath);
@@ -40,8 +61,12 @@ export function loadScenarioSelection(
   scenarioPath: string,
   scenarioId: string | undefined,
   cwd: string,
+  stdin?: string,
 ): ScenarioFixture[] {
-  const input = readJsonFile<ScenarioFixture | ScenarioRunnerInput>(scenarioPath, cwd);
+  const input = readJsonFile<ScenarioFixture | ScenarioRunnerInput>(scenarioPath, cwd, {
+    allowStdin: true,
+    stdin,
+  });
   const scenarios = isScenarioRunnerInput(input) ? input.scenarios : [input];
 
   if (scenarioId === undefined) {
@@ -59,8 +84,9 @@ export function loadOneScenario(
   scenarioPath: string,
   scenarioId: string | undefined,
   cwd: string,
+  stdin?: string,
 ): ScenarioFixture {
-  const scenarios = loadScenarioSelection(scenarioPath, scenarioId, cwd);
+  const scenarios = loadScenarioSelection(scenarioPath, scenarioId, cwd, stdin);
 
   if (scenarios.length !== 1) {
     throw new UsageError(
@@ -96,6 +122,10 @@ export function loadExplicitScenario(paths: ExplicitInputPaths, cwd: string): Sc
 }
 
 export function loadScenarioManifests(inputPath: string, cwd: string): ScenarioRunnerInput {
+  if (inputPath === '-') {
+    throw new UsageError('Stdin is supported only for --scenario -, not --scenarios.');
+  }
+
   const resolvedPath = path.resolve(cwd, inputPath);
   const stat = statPath(resolvedPath, inputPath);
 
@@ -133,6 +163,15 @@ export function validateInputMode(
     explicitPaths.prices !== undefined ||
     explicitPaths.target !== undefined ||
     explicitPaths.policy !== undefined;
+
+  if (
+    explicitPaths.portfolio === '-' ||
+    explicitPaths.prices === '-' ||
+    explicitPaths.target === '-' ||
+    explicitPaths.policy === '-'
+  ) {
+    throw new UsageError('Stdin is supported only for --scenario -, not explicit input files.');
+  }
 
   if (scenarioPath !== undefined && hasExplicitInput) {
     throw new UsageError('Use either --scenario or explicit input files, not both.');
