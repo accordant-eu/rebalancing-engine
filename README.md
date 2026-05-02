@@ -1,277 +1,178 @@
 # rebalancing-engine
 
-A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.js as an offline calculation core; no live integrations, no UI.
+Generic deterministic portfolio rebalancing engine in TypeScript/Node.js. The project is an offline calculation core with a CLI and synthetic fixtures; it has no live market data, no banking/custody integration, no execution integration, no API, no UI, and no persistence layer.
 
-## Overview
+## Current Status
 
-The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
+Implemented for offline synthetic scenarios:
 
-**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increments have implemented explicit decimal arithmetic, output rounding policy, relative-boundary targeting, explicit offline cash-flow foundations, scheduled/recurring cash-flow semantics, generic tax-lot allocation metadata, and documented optimizer and production-boundary deferrals. Post-MVP work remains for full transaction-cost optimization, live integrations, API, UI, database, and persistence.
+- Portfolio valuation from holdings, cash, settled cash flows, and prices.
+- Current weights and drift against target allocations.
+- Threshold, calendar due-date, and manual forced-rebalance trigger strategies.
+- Full-reset trade proposals.
+- Absolute and relative boundary proposal modes.
+- Minimum-trade warnings.
+- Decimal-backed internal calculation helpers and centralized output rounding.
+- Settled and pending cash-flow records.
+- Scheduled and recurring cash-flow schedules for offline planning.
+- Generic tax-lot allocation metadata on sell trades.
+- Post-trade simulation, residual drift, turnover, explanations, and audit records.
+- Fixture runner and `rebalance` CLI workflows.
 
-## Numeric Policy
+Explicitly out of scope today:
 
-Core financial calculations use `decimal.js` internally while the public TypeScript domain interfaces remain number-based for compatibility. Internal calculations are not rounded silently. Rounding is applied at explicit boundaries:
+- Jurisdiction-specific tax advice or tax optimization.
+- Live market data.
+- Banking, custody, payment initiation, trade execution, or OMS integration.
+- API, UI, database, persistence, auth, deployment, or operations.
+- Full optimizer or solver-backed transaction-cost optimization.
+- Business-day, holiday, time-zone, settlement-calendar, or production scheduling semantics.
 
-- Explanation text formats quantities to 6 decimals and monetary values/percentages to 2 decimals.
-- `serializeAuditRecord` preserves input snapshots and emits deterministically rounded output numbers.
-- Serialized audit output precision is centralized in `src/core/numeric.ts`: prices 6 decimals, quantities 8, money values 6, weights/drift/turnover 10.
+See the roadmap in [docs/roadmap/rebalancing-engine-roadmap.md](docs/roadmap/rebalancing-engine-roadmap.md).
 
-## Boundary Targeting
+## Quick Start
 
-Threshold policies support two execution target modes:
+Prerequisites:
 
-- `executionTargetMode: "full_reset"` restores breached portfolios to target weights.
-- `executionTargetMode: "boundary"` trades breached assets to the nearest configured tolerance boundary.
+- Node.js >= 18
+- npm >= 9
 
-Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/- absoluteDriftTolerance`. Policies can opt into `boundaryBandMode: "relative"`, using `targetWeight +/- targetWeight * relativeDriftTolerance`. Relative-boundary mode requires `relativeDriftTolerance` and rejects zero-target instruments that require a boundary trade, because relative bands are undefined around a zero target.
-
-## Cash Flows
-
-`PortfolioState.cashFlows` is optional. Existing scalar `cash` remains supported. When cash flows are supplied:
-
-- `SETTLED` `DEPOSIT` flows increase available cash before valuation and proposal generation.
-- `SETTLED` `WITHDRAWAL` flows reduce available cash before valuation and proposal generation.
-- Withdrawal-created cash deficits can be funded through sell proposals using the existing deterministic target-reset math.
-- `PENDING` flows are excluded from valuation and trade sizing, but appear in cash-flow summary metadata and proposal warnings.
-- Raw negative cash without explicit settled withdrawal context remains invalid for proposal generation.
-
-`PortfolioState.cashFlowSchedules` is also optional. Schedules are offline planning inputs only; they do not initiate banking, payment, custody, or execution activity.
-
-- `SCHEDULED` one-off events use `effectiveDate` and are evaluated against an explicit `policy.evaluationDate` or calendar evaluation date.
-- `RECURRING` schedules support `MONTHLY`, `QUARTERLY`, and `ANNUAL` recurrence.
-- Events with `effectiveDate <= evaluationDate` are expanded into schedule-derived `SETTLED` cash-flow records in an internal portfolio copy and affect valuation, triggers, and proposal sizing like settled flows.
-- Future scheduled events are excluded from valuation and proposal sizing, but appear in warnings, explanation, and audit output.
-- Generated event IDs use `schedule:<cashFlowScheduleId>:<effectiveDate>`; matching explicit `cashFlows` IDs are treated as already represented to avoid double counting.
-- Date strings are ISO date-only `YYYY-MM-DD`; time zones, business-day adjustments, holiday calendars, payment initiation, custody movement, and execution are out of scope.
-
-## Tax Lots
-
-Holdings may include optional `taxLots`. When a sell trade is proposed for a holding with tax lots, the aggregate sell quantity is unchanged and the trade includes deterministic `lotAllocations` metadata. Supported generic sell selection modes are `FIFO`, `LIFO`, `HIGHEST_COST`, and `LOWEST_COST`.
-
-This is not tax advice, tax optimization, or jurisdiction-specific tax handling. It does not implement wash-sale rules, holding-period treatment, tax-loss harvesting, or optimizer-driven tax-aware sizing.
-
-## Optimizer Boundary
-
-The active proposal engine is deterministic and rule-based. It supports full-reset and boundary-target trade sizing, cash-flow effects, minimum-trade filtering, and generic lot allocation metadata. A full optimizer remains deferred until objective functions, constraints, explainability requirements, and solver dependency policy are documented.
-
-## Production Boundary
-
-The current delivery model is an offline library/CLI-style calculation core. No API wrapper, database, UI, live market-data integration, banking/custody integration, or trade-execution integration is implemented. Production surfaces remain deferred until concrete consumers, security requirements, persistence and retention needs, provider contracts, deployment model, and operational responsibilities are defined.
-
-## Documentation
-
-- [`BUILD_JOURNEY.md`](BUILD_JOURNEY.md) — Living project journal tracking assumptions, decisions, and iteration progress.
-- [`AGENTS.md`](AGENTS.md) — AI-assisted development rules for this repository.
-- [`docs/MVP_Implementation_Plan.md`](docs/MVP_Implementation_Plan.md) — Slice-by-slice implementation plan.
-- [`docs/audits/`](docs/audits/) — Audit reports (red-team audit, test-case audit).
-- [`docs/audits/final-mvp-audit.md`](docs/audits/final-mvp-audit.md) — Final MVP status, validation, and known limitations.
-- [`docs/audits/next-iteration-mvp-audit.md`](docs/audits/next-iteration-mvp-audit.md) — Multi-strategy iteration status, validation, and known limitations.
-- [`docs/audits/deferred-capabilities-audit.md`](docs/audits/deferred-capabilities-audit.md) — Decimal/rounding and relative-boundary increment audit.
-- [`docs/audits/cash-flows-audit.md`](docs/audits/cash-flows-audit.md) — Explicit offline cash-flow increment audit.
-- [`docs/audits/scheduled-recurring-cash-flow-audit.md`](docs/audits/scheduled-recurring-cash-flow-audit.md) — Scheduled/recurring cash-flow increment audit.
-- [`docs/audits/tax-lots-audit.md`](docs/audits/tax-lots-audit.md) — Generic tax-lot allocation increment audit.
-- [`docs/audits/optimizer-feasibility-audit.md`](docs/audits/optimizer-feasibility-audit.md) — Optimizer deferral and prerequisite audit.
-- [`docs/audits/production-boundary-audit.md`](docs/audits/production-boundary-audit.md) — Live integration, API, UI, and database deferral audit.
-- [`docs/roadmap/rebalancing-engine-roadmap.md`](docs/roadmap/rebalancing-engine-roadmap.md) — Consolidated roadmap and next-increment recommendation.
-- [`docs/prd/scheduled-recurring-cash-flow-prd.md`](docs/prd/scheduled-recurring-cash-flow-prd.md) — Scheduled/recurring cash-flow PRD.
-- [`docs/plans/scheduled-recurring-cash-flow-mvp-plan.md`](docs/plans/scheduled-recurring-cash-flow-mvp-plan.md) — Scheduled/recurring cash-flow MVP implementation plan.
-- [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
-- [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
-- [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.
-- `docs/` — Background research and PRD.
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js ≥ 18
-- npm ≥ 9
-
-### Install
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Run Tests
+Run the test suite:
 
 ```bash
 npm test
 ```
 
-Runs all unit and edge-case tests via Jest. All tests are deterministic and offline — no external services required.
-
-### Run Tests (verbose)
-
-```bash
-npm test -- --verbose
-```
-
-### Type Check
-
-```bash
-npx tsc --noEmit
-```
-
-### Format
-
-```bash
-npm run format
-```
-
-### Run Fixture Scenario Runner
-
-```bash
-npm run scenario:run
-```
-
-Builds the project and runs all synthetic fixture scenarios through valuation, drift, policy-driven strategy selection, trigger evaluation, proposal generation, simulation, explanation, and audit record generation. Invalid fixtures are reported as deterministic per-scenario errors instead of aborting the batch.
-
-To validate scenario results against the expected-status manifest:
+Build:
 
 ```bash
 npm run build
-node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures/scenario-expectations.json
 ```
 
-The command exits non-zero if a scenario status or expected error message does not match the manifest.
-
-## CLI
-
-The repository includes a thin offline CLI wrapper around the existing engine.
-
-```bash
-npm run cli -- --help
-```
-
-After `npm run build`, the compiled CLI is available at `dist/cli/index.js`, and the package binary is named `rebalance`.
-
-### Common Commands
+Inspect strategies:
 
 ```bash
 npm run cli -- inspect strategies
-npm run cli -- inspect scenarios --scenarios tests/fixtures/scenarios.json
-npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id on_target
-npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id scheduled_deposit_due
-npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
-npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id recurring_monthly_contribution --format json
+```
+
+Validate fixtures:
+
+```bash
+npm run cli -- validate --scenario tests/fixtures/scenarios.json
+```
+
+Run one scenario:
+
+```bash
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band --format pretty
+```
+
+Run batch scenarios against expected statuses:
+
+```bash
 npm run cli -- batch --scenarios tests/fixtures/scenarios.json --expectations tests/fixtures/scenario-expectations.json
-npm run cli -- batch --scenarios tests/fixtures/scenarios.json --output-dir tmp/batch-results
 ```
 
-### Input Modes
-
-Scenario mode accepts either a single scenario object or a manifest shaped as `{ "scenarios": [...] }`.
+## Common Commands
 
 ```bash
-npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
+npm test
+npm test -- --runInBand tests/cli.test.ts
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run scenario:run
+node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures/scenario-expectations.json
 ```
 
-Scenario mode also accepts stdin for `run` and `validate` by using `--scenario -`:
+`npm run cli -- ...` builds first and then runs `dist/cli/index.js`.
+
+## CLI
+
+The package binary is named `rebalance` after `npm run build`.
+
+Commands:
+
+- `rebalance validate`: validate scenario or explicit input files through the engine path.
+- `rebalance run`: run one scenario.
+- `rebalance batch`: run many scenarios from a manifest file or directory.
+- `rebalance inspect`: inspect scenarios, strategies, or policy fields.
+
+Examples:
 
 ```bash
-cat scenario.json | npm run cli -- validate --scenario -
-cat scenario.json | npm run cli -- run --scenario - --format json
+npm run cli -- --help
+npm run cli -- inspect scenarios --scenarios tests/fixtures/scenarios.json
+npm run cli -- inspect policies
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id recurring_monthly_contribution --format json
+npm run cli -- batch --scenarios tests/fixtures/scenarios.json --expectations tests/fixtures/scenario-expectations.json --output-dir tmp/batch-results --force
 ```
 
-Explicit file mode assembles one scenario from separate files:
+Input modes:
 
-```bash
-npm run cli -- run \
-  --portfolio portfolio.json \
-  --prices prices.json \
-  --target target.json \
-  --policy policy.json
-```
+- Scenario mode: `--scenario <path>` reads one scenario or a `{ "scenarios": [...] }` manifest.
+- Stdin scenario mode: `--scenario -` is supported for `validate` and `run`.
+- Explicit file mode: `--portfolio`, `--prices`, `--target`, and `--policy` assemble one scenario.
 
-Scenario mode and explicit file mode are mutually exclusive. Strategy selection remains in the policy or scenario file; there is no CLI `--strategy` override.
+Strategy selection is in `policy.strategyType`; omitted strategy defaults to `threshold`. There is no CLI `--strategy` override so audited input files remain the source of truth.
 
-Stdin is intentionally limited to complete scenario payloads. Explicit file mode does not support `--portfolio -`, `--prices -`, `--target -`, or `--policy -`, and batch mode does not support `--scenarios -`.
+Output formats:
 
-`validate` loads inputs and runs the deterministic engine path used by recommendations, then renders validation status and warnings. It is not a separate schema-only validator.
+- `summary`: concise human output, default.
+- `pretty`: detailed human output for single runs.
+- `json`: deterministic machine-readable output.
 
-### Output Formats
+Exit codes:
 
-The default format is `summary`. Use `--format pretty` for a more detailed human-readable report or `--format json` for deterministic machine-readable output. JSON output is written to stdout unless `--output <path>` is supplied.
-
-```bash
-npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band --format json
-npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band --format json --output tmp/recommendation.json
-```
-
-Successful `run` JSON uses the existing audit record as the recommendation contract, including inputs, drift, trigger, proposed trades, warnings, post-trade simulation, explanation, and audit metadata.
-
-Batch mode can also write one deterministic output file per scenario:
-
-```bash
-npm run cli -- batch --scenarios tests/fixtures/scenarios.json --output-dir tmp/batch-results
-npm run cli -- batch --scenarios tests/fixtures/scenarios.json --output-dir tmp/batch-results --force
-```
-
-Per-scenario batch files use sanitized scenario IDs. They default to JSON when `--format` is omitted; if `--format pretty` or `--format summary` is supplied, per-scenario files use that selected format. Existing files are rejected unless `--force` is provided. The aggregate batch summary still renders to stdout unless global `--output <path>` is used.
-
-### Exit Codes
-
-- `0`: command completed successfully.
-- `1`: validation failed, a scenario produced blocking errors, or `--strict` converted warnings into failure.
-- `2`: CLI usage error, such as invalid flags, missing required inputs, or incompatible input modes.
+- `0`: success.
+- `1`: validation failure, scenario error, batch expectation mismatch, or strict warning failure.
+- `2`: usage error.
 - `3`: unexpected runtime/internal error.
 
-Warnings are visible in human-readable output and included in JSON output. They do not fail a successful command unless `--strict` is used.
+Full reference: [docs/cli/cli-reference.md](docs/cli/cli-reference.md).
 
-### CLI Tests
+## Documentation
 
-```bash
-npm test -- --runInBand tests/cli.test.ts
-```
+- [User guide](docs/guides/user-guide.md): how to use the engine and CLI.
+- [CLI reference](docs/cli/cli-reference.md): command syntax, options, output, and errors.
+- [Examples](docs/examples.md): copy-pasteable CLI examples.
+- [Developer guide](docs/guides/developer-guide.md): repository structure, architecture, tests, and workflows.
+- [Strategy extension guide](docs/guides/adding-rebalancing-strategies.md): how to add or extend strategies safely.
+- [Architecture overview](docs/architecture/overview.md): high-level system boundaries and flow.
+- [Fixture guide](tests/fixtures/README.md): synthetic scenarios and assumptions.
+- [Build journey](BUILD_JOURNEY.md): decision log and iteration history.
+- [AGENTS.md](AGENTS.md): repository rules for AI-assisted development.
 
-The CLI is offline and explicit-input oriented. Config files and CLI strategy overrides are intentionally deferred; strategy remains selected through scenario or policy input files.
+Planning, audit, and roadmap material lives under [docs/](docs).
 
 ## Project Structure
 
+```text
+src/
+  audit/        Audit record generation and output rounding
+  cli/          Offline CLI parser, commands, input loading, rendering, help
+  core/         Valuation, drift, cash flows, trades, simulation, orchestration
+  explanation/  Deterministic recommendation explanations
+  models/       Domain interfaces
+  runner/       Scenario runner and expectation validation
+  strategy/     Threshold, calendar, and manual trigger strategies
+tests/
+  fixtures/     Synthetic scenario and expectation manifests
+docs/
+  audits/       Audit reports
+  cli/          CLI design and reference
+  guides/       User and developer guides
+  plans/        Implementation plans
+  prd/          Product requirement docs
+  roadmap/      Roadmap
 ```
-/
-├── src/
-│   ├── models/domain.ts       # Domain interfaces (PortfolioState, DriftMeasurement, etc.)
-│   ├── core/
-│   │   ├── valuation.ts       # Market value and weight calculation
-│   │   ├── drift.ts           # Drift calculation and target validation
-│   │   ├── evaluation.ts      # Policy-driven strategy orchestration
-│   │   ├── trades.ts          # Deterministic full-reset/boundary proposal generation
-│   │   └── simulation.ts      # Post-trade holdings, weights, residual drift, turnover
-│   ├── strategy/
-│   │   ├── threshold.ts       # Threshold-band trigger strategy
-│   │   ├── calendar.ts        # Calendar due-date trigger strategy
-│   │   └── manual.ts          # Manual forced-rebalance strategy
-│   ├── explanation/
-│   │   └── explanation.ts     # Deterministic recommendation explanations
-│   ├── audit/
-│   │   └── audit.ts           # Replayable audit record generation and serialization
-│   ├── cli/                   # Offline command-line wrapper
-│   └── runner/
-│       └── scenario-runner.ts # Offline fixture batch runner
-├── tests/
-│   ├── fixtures/
-│   │   ├── README.md          # Fixture scenario documentation
-│   │   ├── scenarios.json     # Synthetic JSON test scenarios
-│   │   └── scenario-expectations.json # Expected runner success/error statuses
-│   ├── smoke.test.ts          # Structural import smoke tests
-│   ├── fixtures.test.ts       # Fixture schema validation
-│   ├── valuation.test.ts      # Valuation and weight tests
-│   ├── drift.test.ts          # Drift calculation tests
-│   ├── threshold.test.ts      # Threshold strategy tests
-│   ├── calendar-strategy.test.ts # Calendar strategy tests
-│   ├── manual-strategy.test.ts # Manual strategy tests
-│   ├── trades.test.ts         # Trade proposal generation tests
-│   ├── simulation.test.ts     # Post-trade simulation tests
-│   ├── explanation.test.ts    # Explanation output tests
-│   ├── audit.test.ts          # Audit record and replay tests
-│   ├── cli.test.ts            # CLI behavior tests
-│   ├── scenario-runner.test.ts # Batch scenario runner tests
-│   └── edge-cases.test.ts     # Edge-case and integration tests
-└── docs/
-    ├── MVP_Implementation_Plan.md
-    └── audits/
-        ├── red-team-audit-current.md
-        └── test-case-audit.md
-```
+
+## Development Discipline
+
+Keep changes small and testable. For meaningful domain, architecture, API, CLI, fixture, audit, explanation, or documentation decisions, record the decision and options considered in `BUILD_JOURNEY.md`. New engine behavior should be exposed through the CLI or explicitly documented as not exposed.
