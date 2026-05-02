@@ -27,7 +27,7 @@ export function generateExplanation(
       : `Proposed ${describeExecutionTarget(proposal)} trades: ${proposal.trades
           .map(
             (trade) =>
-              `${trade.direction} ${formatFixed(trade.quantity, 6)} ${trade.instrumentId} for approximately ${formatFixed(trade.estimatedValue, 2)}`,
+              `${trade.direction} ${formatFixed(trade.quantity, 6)} ${trade.instrumentId} for approximately ${formatFixed(trade.estimatedValue, 2)}${describeLotAllocations(trade)}`,
           )
           .join('; ')}.`;
 
@@ -43,6 +43,16 @@ export function generateExplanation(
     warningExplanation,
     residualDriftExplanation: buildResidualDriftExplanation(simulation),
   };
+}
+
+function describeLotAllocations(trade: TradeProposal['trades'][number]): string {
+  if (trade.lotAllocations === undefined || trade.lotAllocations.length === 0) {
+    return '';
+  }
+
+  return ` using lots ${trade.lotAllocations
+    .map((allocation) => `${allocation.lotId}: ${formatFixed(allocation.quantity, 6)}`)
+    .join(', ')}`;
 }
 
 function describeExecutionTarget(proposal: TradeProposal): string {

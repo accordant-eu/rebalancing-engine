@@ -21,6 +21,7 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - `settled_deposit_cash_flow`: Settled deposit increases available cash before valuation. Expected result: buy proposals deploy the deposit.
 - `settled_withdrawal_cash_flow`: Settled withdrawal reduces available cash before valuation. Expected result: sell proposals fund the withdrawal-created cash deficit.
 - `pending_cash_flow`: Pending deposit is excluded from valuation and proposal sizing. Expected result: no cash deployment, with a structured warning and audit cash-flow summary.
+- `tax_lot_fifo_sell`: A sell trade has optional tax lots on the sold holding. Expected result: aggregate sell sizing is unchanged and the sell trade includes deterministic FIFO lot allocation metadata.
 
 ## Fixture Assumptions
 
@@ -33,5 +34,6 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - `strategyType` defaults to `threshold` when omitted for backward compatibility.
 - Calendar strategy uses caller-supplied date strings in policy configuration. It does not read system time and does not model holidays or business-day calendars.
 - Boundary-target execution supports absolute bands by default and relative bands when `boundaryBandMode: "relative"` and `relativeDriftTolerance` are supplied. Relative-boundary mode rejects zero-target instruments that require a boundary trade.
+- Tax-lot support is generic lot allocation metadata only. It is not tax advice, tax optimization, or jurisdiction-specific tax handling.
 - Full transaction-cost-aware no-trade-region optimization remains out of scope.
 - `scenario-expectations.json` is an expected-status manifest for runner regression checks. It records which scenarios should succeed or error and the expected error text for invalid scenarios.

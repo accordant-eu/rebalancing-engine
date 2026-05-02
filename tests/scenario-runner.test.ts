@@ -32,6 +32,7 @@ describe('Scenario Runner', () => {
       'settled_deposit_cash_flow',
       'settled_withdrawal_cash_flow',
       'target_allocation_sum_error',
+      'tax_lot_fifo_sell',
       'threshold_boundary_target',
       'threshold_relative_boundary_target',
     ]);
@@ -42,7 +43,7 @@ describe('Scenario Runner', () => {
     const successes = results.filter((result) => result.status === 'success');
     const errors = results.filter((result) => result.status === 'error');
 
-    expect(successes).toHaveLength(13);
+    expect(successes).toHaveLength(14);
     expect(errors).toHaveLength(4);
 
     const success = successes.find((result) => result.scenarioId === 'one_asset_out_of_band');
@@ -104,6 +105,18 @@ describe('Scenario Runner', () => {
         'PENDING_CASH_FLOW_EXCLUDED',
       );
     }
+
+    const taxLotSell = successes.find((result) => result.scenarioId === 'tax_lot_fifo_sell');
+    expect(taxLotSell?.status).toBe('success');
+    if (taxLotSell?.status === 'success') {
+      const aaplSell = taxLotSell.auditRecord.outputs.tradeProposal.trades.find(
+        (trade) => trade.instrumentId === 'AAPL',
+      );
+      expect(aaplSell?.lotAllocations?.[0].lotId).toBe('aapl-older-lot');
+      expect(taxLotSell.auditRecord.outputs.explanation.tradeExplanation).toContain(
+        'aapl-older-lot',
+      );
+    }
   });
 
   it('validates results against an expected-status manifest', () => {
@@ -114,7 +127,7 @@ describe('Scenario Runner', () => {
 
     expect(validation).toEqual({
       isValid: true,
-      checkedScenarioCount: 17,
+      checkedScenarioCount: 18,
       mismatches: [],
     });
   });
@@ -148,6 +161,7 @@ describe('Scenario Runner', () => {
       'settled_deposit_cash_flow',
       'settled_withdrawal_cash_flow',
       'target_allocation_sum_error',
+      'tax_lot_fifo_sell',
       'threshold_boundary_target',
       'threshold_relative_boundary_target',
     ]);

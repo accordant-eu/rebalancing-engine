@@ -2,6 +2,8 @@
 
 Date: 2026-05-02
 
+Implementation status: Complete for the selected generic tax-lot foundations scope.
+
 ## 1. Background
 
 The engine now supports deterministic valuation, strategy selection, boundary targeting, numeric policy, and explicit offline cash flows. Sell trades are still aggregate instrument-level recommendations. Tax lots remain deferred, and the engine does not provide tax advice or jurisdiction-specific optimization.

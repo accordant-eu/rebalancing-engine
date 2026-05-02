@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: Planned.
+Implementation status: Complete for the selected generic tax-lot foundations scope.
 
 ## 1. Baseline
 
@@ -44,6 +44,9 @@ Confirm merged main is clean and validated.
 Goal:
 Add optional tax-lot data and validate aggregation.
 
+Status:
+Complete.
+
 Scope:
 
 - Add `TaxLot` model.
@@ -55,6 +58,9 @@ Scope:
 
 Goal:
 Allocate sell trade quantities across lots when lot data is available.
+
+Status:
+Complete.
 
 Scope:
 
@@ -68,6 +74,9 @@ Scope:
 
 Goal:
 Expose lot-aware sell allocation in executable scenarios.
+
+Status:
+Complete.
 
 Scope:
 
