@@ -8,7 +8,7 @@ This file is the living project journal. It captures the journey from initializa
 - **Development Approach:** This project, including its documentation, scaffolding, and future implementations, is built heavily relying on LLM tools and AI-assisted editors.
 - **What is Known:** The MVP is a TypeScript/Node.js offline calculation core using deterministic synthetic fixtures.
 - **What is Not Yet Known:** Production integration model, deployment model, live data interfaces, execution routing, and post-MVP policy breadth remain undecided.
-- **Next Steps:** Treat the next-iteration multi-strategy MVP as complete for offline deterministic fixtures, then proceed with documented post-MVP hardening decisions.
+- **Next Steps:** Treat the decimal/rounding and relative-boundary increment as complete, then reassess richer cash-flow workflows as the next likely post-MVP increment.
 
 ## 2. Current Repository Snapshot
 
@@ -19,7 +19,7 @@ This file is the living project journal. It captures the journey from initializa
 - **Tests detected:** Unit, fixture, edge-case, scenario runner, explanation, audit, and strategy tests.
 - **Documentation detected:** README, build journey, MVP plan, PRD/architecture document, fixture README, and audit reports.
 - **CI/CD detected:** None.
-- **Notable gaps:** No CI workflow, no live integrations, no production decimal/rounding policy.
+- **Notable gaps:** No CI workflow, no richer cash-flow workflow, no tax lots, no full optimizer, and no live integrations/API/UI/database.
 
 ## 3. Working Assumptions
 
@@ -31,31 +31,34 @@ This file is the living project journal. It captures the journey from initializa
 
 ## 4. Decisions Log
 
-| Date       | Decision                                                | Status                      | Rationale                                                                                                                                                                                               | Evidence                      | Reversibility | Follow-up                                                               |
-| :--------- | :------------------------------------------------------ | :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------- | :------------ | :---------------------------------------------------------------------- |
-| 2026-04-29 | Initialize `BUILD_JOURNEY.md` & `AGENTS.md`             | Accepted                    | Establish project hygiene and agent guidelines before coding.                                                                                                                                           | N/A                           | High          | Wait for PRD                                                            |
-| 2026-04-29 | Tech Stack Selection                                    | Deferred                    | PRD / Architecture vision not yet provided.                                                                                                                                                             | N/A                           | High          | Await PRD ingestion                                                     |
-| 2026-04-29 | Define MVP Scope                                        | Accepted                    | PRD dictates an offline, deterministic, cash-aware threshold strategy as MVP.                                                                                                                           | MVP Plan                      | Medium        | Await Tech Stack choice                                                 |
-| 2026-04-30 | Defer `decimal.js` adoption                             | Deferred                    | Float arithmetic is safe for Slices 1–4 (no monetary output). Reconsider at Slice 5 when trade values (monetary) are introduced.                                                                        | Test-case audit (T-13)        | Medium        | Evaluate before Slice 5                                                 |
-| 2026-05-02 | Continue with standard `number` arithmetic for Slice 5  | Provisional                 | Basic trade proposal generation only computes deterministic fixture-scale estimated values and quantities; no rounding, settlement, or execution precision is introduced yet.                           | Slice 5 implementation tests  | Medium        | Revisit before Slice 6/7 constraint filtering and post-trade simulation |
-| 2026-05-02 | Adopt standing decision discipline in agent rules       | Accepted                    | Future MVP work needs explicit decision identification, alternatives, trade-offs, documentation, implementation consistency, and validation to prevent hidden assumptions.                              | User instruction              | High          | Apply continuously to future work                                       |
-| 2026-05-02 | Push validated commits at reasonable checkpoints        | Accepted                    | Completed, validated slices and process updates should be shared remotely without requiring a separate push request each time, while avoiding partial or failing pushes.                                | User instruction              | High          | Apply after future validated commits                                    |
-| 2026-05-02 | Suppress below-minimum trades with structured warnings  | Accepted                    | Minimum trade-size constraints are non-fatal proposal adjustments; users need visibility into suppressed trades and residual drift will be quantified in Slice 7 simulation.                            | Slice 6 implementation        | High          | Include warnings in explanation and audit output                        |
-| 2026-05-02 | Reject negative cash in trade proposal generation       | Accepted                    | Negative cash makes cash-aware proposal funding ambiguous in the MVP and should not be silently converted into sells or ignored.                                                                        | Slice 6 implementation        | Medium        | Revisit if withdrawal/deficit funding becomes in scope                  |
-| 2026-05-02 | Simulate exact proposed trades with sell-side turnover  | Accepted                    | MVP simulation should replay proposal quantities exactly, reconcile cash, expose residual drift, and use sell-side turnover per prior audit expectation.                                                | Slice 7 implementation        | Medium        | Revisit turnover definition if reporting requirements differ            |
-| 2026-05-02 | Generate deterministic explanations from outputs        | Accepted                    | Explanation text must stay faithful to trigger, proposal, warning, and simulation outputs rather than duplicating calculation logic.                                                                    | Slice 8 implementation        | High          | Include explanations in audit records                                   |
-| 2026-05-02 | Use caller-supplied audit metadata                      | Accepted                    | Audit record IDs and timestamps must be deterministic in tests and should come from orchestration, not pure calculation helpers.                                                                        | Slice 9 implementation        | High          | CLI/runner should supply stable metadata                                |
-| 2026-05-02 | Report batch scenario errors per scenario               | Accepted                    | The offline runner should process all fixtures and report expected invalid scenarios without aborting the whole batch.                                                                                  | Slice 10 implementation       | High          | Use same pattern for future batch workflows                             |
-| 2026-05-02 | Use manual forced rebalance as second strategy          | Accepted                    | A manual strategy proves Strategy extensibility without introducing calendar/date policy semantics before they are required.                                                                            | Slice 11 implementation       | High          | Revisit calendar strategy after MVP if needed                           |
-| 2026-05-02 | Mark offline fixture MVP complete                       | Accepted                    | Slices 0-12 are implemented, tested, documented, and audited for the offline deterministic fixture scope.                                                                                               | Final MVP audit               | Medium        | Continue with post-MVP hardening and production-readiness decisions     |
-| 2026-05-02 | Use hybrid multi-strategy architecture next             | Accepted for next iteration | Preserve the common calculation core, add explicit strategy identifiers, use pluggable modules, and add a light orchestration layer instead of separate endpoints or a single broad policy interpreter. | Strategy traceability review  | High          | Start with policy schema and strategy orchestration                     |
-| 2026-05-02 | Prioritize calendar and boundary-target strategy slices | Provisional                 | Calendar is the clearest missing PRD/Meta Paper carry-forward; boundary targeting is the smallest transaction-cost-aware proof point without full optimization.                                         | Next-iteration PRD/plan       | Medium        | Validate calendar semantics and boundary math before implementation     |
-| 2026-05-02 | Default omitted strategy policy to threshold            | Accepted                    | Existing fixtures and callers must remain backward compatible while new policies can opt into calendar or manual strategies.                                                                            | Multi-strategy implementation | High          | Keep threshold default documented in fixture docs                       |
-| 2026-05-02 | Use explicit calendar dates only                        | Accepted for MVP            | Calendar strategy should be deterministic and avoid system time, scheduler, holiday, or business-day assumptions in the first implementation.                                                           | Calendar strategy tests       | High          | Revisit frequency-derived dates later                                   |
-| 2026-05-02 | Limit boundary targeting to absolute bands first        | Accepted for MVP            | Absolute-band boundary targeting proves transaction-cost-aware execution without adding relative-boundary ambiguity or full optimization.                                                               | Boundary fixture/tests        | Medium        | Revisit relative-boundary support if needed                             |
-| 2026-05-02 | Use separate expected-status runner manifest            | Accepted                    | Expected scenario outcomes should be validated without embedding runner assertions in the scenario input data itself.                                                                                   | Runner manifest tests         | High          | Keep manifest aligned when fixtures change                              |
-| 2026-05-02 | Mark active MVP slice sets complete                     | Accepted                    | Original MVP slices 0-12 and next-iteration slices 0-8 are implemented and validated for offline deterministic fixtures; remaining items are post-MVP backlog, not unfinished slices.                   | Slice reconciliation          | Medium        | Revisit if scope is expanded by a new PRD/plan                          |
-| 2026-05-02 | Use a strategy registry for selection                   | Accepted                    | A registry makes supported strategies explicit and discoverable while avoiding a premature broader strategy execution abstraction.                                                                      | Refactoring assessment        | High          | Add proposal hooks only when a second strategy needs distinct sizing    |
+| Date       | Decision                                                                           | Status                      | Rationale                                                                                                                                                                                                                | Evidence                       | Reversibility | Follow-up                                                               |
+| :--------- | :--------------------------------------------------------------------------------- | :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------- | :------------ | :---------------------------------------------------------------------- |
+| 2026-04-29 | Initialize `BUILD_JOURNEY.md` & `AGENTS.md`                                        | Accepted                    | Establish project hygiene and agent guidelines before coding.                                                                                                                                                            | N/A                            | High          | Wait for PRD                                                            |
+| 2026-04-29 | Tech Stack Selection                                                               | Deferred                    | PRD / Architecture vision not yet provided.                                                                                                                                                                              | N/A                            | High          | Await PRD ingestion                                                     |
+| 2026-04-29 | Define MVP Scope                                                                   | Accepted                    | PRD dictates an offline, deterministic, cash-aware threshold strategy as MVP.                                                                                                                                            | MVP Plan                       | Medium        | Await Tech Stack choice                                                 |
+| 2026-04-30 | Defer `decimal.js` adoption                                                        | Deferred                    | Float arithmetic is safe for Slices 1–4 (no monetary output). Reconsider at Slice 5 when trade values (monetary) are introduced.                                                                                         | Test-case audit (T-13)         | Medium        | Evaluate before Slice 5                                                 |
+| 2026-05-02 | Continue with standard `number` arithmetic for Slice 5                             | Provisional                 | Basic trade proposal generation only computes deterministic fixture-scale estimated values and quantities; no rounding, settlement, or execution precision is introduced yet.                                            | Slice 5 implementation tests   | Medium        | Revisit before Slice 6/7 constraint filtering and post-trade simulation |
+| 2026-05-02 | Adopt standing decision discipline in agent rules                                  | Accepted                    | Future MVP work needs explicit decision identification, alternatives, trade-offs, documentation, implementation consistency, and validation to prevent hidden assumptions.                                               | User instruction               | High          | Apply continuously to future work                                       |
+| 2026-05-02 | Push validated commits at reasonable checkpoints                                   | Accepted                    | Completed, validated slices and process updates should be shared remotely without requiring a separate push request each time, while avoiding partial or failing pushes.                                                 | User instruction               | High          | Apply after future validated commits                                    |
+| 2026-05-02 | Suppress below-minimum trades with structured warnings                             | Accepted                    | Minimum trade-size constraints are non-fatal proposal adjustments; users need visibility into suppressed trades and residual drift will be quantified in Slice 7 simulation.                                             | Slice 6 implementation         | High          | Include warnings in explanation and audit output                        |
+| 2026-05-02 | Reject negative cash in trade proposal generation                                  | Accepted                    | Negative cash makes cash-aware proposal funding ambiguous in the MVP and should not be silently converted into sells or ignored.                                                                                         | Slice 6 implementation         | Medium        | Revisit if withdrawal/deficit funding becomes in scope                  |
+| 2026-05-02 | Simulate exact proposed trades with sell-side turnover                             | Accepted                    | MVP simulation should replay proposal quantities exactly, reconcile cash, expose residual drift, and use sell-side turnover per prior audit expectation.                                                                 | Slice 7 implementation         | Medium        | Revisit turnover definition if reporting requirements differ            |
+| 2026-05-02 | Generate deterministic explanations from outputs                                   | Accepted                    | Explanation text must stay faithful to trigger, proposal, warning, and simulation outputs rather than duplicating calculation logic.                                                                                     | Slice 8 implementation         | High          | Include explanations in audit records                                   |
+| 2026-05-02 | Use caller-supplied audit metadata                                                 | Accepted                    | Audit record IDs and timestamps must be deterministic in tests and should come from orchestration, not pure calculation helpers.                                                                                         | Slice 9 implementation         | High          | CLI/runner should supply stable metadata                                |
+| 2026-05-02 | Report batch scenario errors per scenario                                          | Accepted                    | The offline runner should process all fixtures and report expected invalid scenarios without aborting the whole batch.                                                                                                   | Slice 10 implementation        | High          | Use same pattern for future batch workflows                             |
+| 2026-05-02 | Use manual forced rebalance as second strategy                                     | Accepted                    | A manual strategy proves Strategy extensibility without introducing calendar/date policy semantics before they are required.                                                                                             | Slice 11 implementation        | High          | Revisit calendar strategy after MVP if needed                           |
+| 2026-05-02 | Mark offline fixture MVP complete                                                  | Accepted                    | Slices 0-12 are implemented, tested, documented, and audited for the offline deterministic fixture scope.                                                                                                                | Final MVP audit                | Medium        | Continue with post-MVP hardening and production-readiness decisions     |
+| 2026-05-02 | Use hybrid multi-strategy architecture next                                        | Accepted for next iteration | Preserve the common calculation core, add explicit strategy identifiers, use pluggable modules, and add a light orchestration layer instead of separate endpoints or a single broad policy interpreter.                  | Strategy traceability review   | High          | Start with policy schema and strategy orchestration                     |
+| 2026-05-02 | Prioritize calendar and boundary-target strategy slices                            | Provisional                 | Calendar is the clearest missing PRD/Meta Paper carry-forward; boundary targeting is the smallest transaction-cost-aware proof point without full optimization.                                                          | Next-iteration PRD/plan        | Medium        | Validate calendar semantics and boundary math before implementation     |
+| 2026-05-02 | Default omitted strategy policy to threshold                                       | Accepted                    | Existing fixtures and callers must remain backward compatible while new policies can opt into calendar or manual strategies.                                                                                             | Multi-strategy implementation  | High          | Keep threshold default documented in fixture docs                       |
+| 2026-05-02 | Use explicit calendar dates only                                                   | Accepted for MVP            | Calendar strategy should be deterministic and avoid system time, scheduler, holiday, or business-day assumptions in the first implementation.                                                                            | Calendar strategy tests        | High          | Revisit frequency-derived dates later                                   |
+| 2026-05-02 | Limit boundary targeting to absolute bands first                                   | Accepted for MVP            | Absolute-band boundary targeting proves transaction-cost-aware execution without adding relative-boundary ambiguity or full optimization.                                                                                | Boundary fixture/tests         | Medium        | Revisit relative-boundary support if needed                             |
+| 2026-05-02 | Use separate expected-status runner manifest                                       | Accepted                    | Expected scenario outcomes should be validated without embedding runner assertions in the scenario input data itself.                                                                                                    | Runner manifest tests          | High          | Keep manifest aligned when fixtures change                              |
+| 2026-05-02 | Mark active MVP slice sets complete                                                | Accepted                    | Original MVP slices 0-12 and next-iteration slices 0-8 are implemented and validated for offline deterministic fixtures; remaining items are post-MVP backlog, not unfinished slices.                                    | Slice reconciliation           | Medium        | Revisit if scope is expanded by a new PRD/plan                          |
+| 2026-05-02 | Use a strategy registry for selection                                              | Accepted                    | A registry makes supported strategies explicit and discoverable while avoiding a premature broader strategy execution abstraction.                                                                                       | Refactoring assessment         | High          | Add proposal hooks only when a second strategy needs distinct sizing    |
+| 2026-05-02 | Scope next deferred-capability increment to numeric policy and relative boundaries | Accepted for next increment | Numeric precision affects trust and all financial output; relative-boundary targeting extends existing boundary mode coherently, while cash flows, tax lots, optimizer, and production surfaces need separate decisions. | Deferred capabilities PRD/plan | High          | Implement in small validated slices                                     |
+| 2026-05-02 | Use `decimal.js` internally with explicit output rounding                          | Accepted                    | Decimal arithmetic removes avoidable binary float artifacts while preserving number-based public interfaces; rounding is centralized and applied only at explanation/audit boundaries.                                   | Numeric policy slice           | Medium        | Revisit decimal string APIs before production integrations              |
+| 2026-05-02 | Add policy-selected relative boundary targeting                                    | Accepted                    | Relative-boundary mode extends existing relative drift and boundary execution support without changing absolute-boundary defaults or adding optimizer complexity.                                                        | Relative-boundary slice        | High          | Revisit richer cash flows next                                          |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -925,6 +928,153 @@ Implementation impact:
 
 Validation:
 Focused evaluation tests, full Jest suite, TypeScript, ESLint, build, scenario runner, expected-status manifest validation, formatting, and diff whitespace checks should pass before commit.
+
+Decision: Scope next deferred-capability increment to numeric policy and relative boundaries
+
+Status: Accepted for next increment
+Date: 2026-05-02
+
+Context:
+The original offline deterministic MVP and next-iteration multi-strategy MVP are implemented, tested, documented, committed, and pushed. Remaining work is post-MVP: decimal / rounding policy, relative-boundary targeting, richer cash flows, tax lots, full optimizer, and live integrations / API / UI / database. The next increment needs to improve correctness and usefulness without blindly expanding into incoherent or production-heavy scope.
+
+Options considered:
+
+1. Correctness and policy semantics increment: decimal / rounding policy plus relative-boundary targeting.
+   - Benefits: Addresses financial correctness and extends existing boundary mode using already available relative drift concepts.
+   - Costs: Requires numeric helper and serialization decisions before adding user-facing workflows.
+   - Risks: Decimal migration can cause small output changes if rounding boundaries are unclear.
+   - Reversibility: High if public interfaces remain number-based for now.
+
+2. Practical portfolio workflow increment: decimal / rounding policy plus richer cash flows.
+   - Benefits: Directly improves real portfolio workflow usefulness.
+   - Costs: Cash-flow semantics affect valuation, trigger logic, proposal funding, warnings, explanations, and audit records at once.
+   - Risks: Could silently encode withdrawal or pending-flow assumptions too early.
+   - Reversibility: Medium.
+
+3. Tax-aware foundations increment: decimal / rounding policy plus basic tax-lot primitives.
+   - Benefits: Opens taxable-account workflows.
+   - Costs: Requires lot data structures and sell-selection policy decisions.
+   - Risks: Easy to imply jurisdiction-specific tax advice or optimizer behavior.
+   - Reversibility: Medium.
+
+4. Multi-capability expansion increment: decimal policy, relative boundaries, richer cash flows, and limited tax lots.
+   - Benefits: Broad post-MVP progress.
+   - Costs: Too many domain surfaces change at once.
+   - Risks: High architecture and testing risk.
+   - Reversibility: Low-medium.
+
+5. Productionization increment: API wrapper, persistence layer, and integration boundaries.
+   - Benefits: Makes the engine easier to expose externally.
+   - Costs: Adds infrastructure before domain behavior is stable enough.
+   - Risks: Security, operational, and testing burden without current product need.
+   - Reversibility: Medium.
+
+Preferred option:
+Option 1: Implement numeric policy and relative-boundary targeting first.
+
+Rationale:
+Numeric policy is the clearest correctness prerequisite for any later financial workflow. Relative-boundary targeting is the smallest coherent strategy-policy extension because trigger logic already calculates relative drift and execution already has boundary mode. Richer cash flows should be the next separate workflow increment after numeric and boundary semantics are stable. Tax lots, optimizer, and production surfaces remain deferred because they need clearer objectives and larger domain decisions.
+
+Implementation impact:
+
+- Code: Add explicit numeric/rounding helpers, deterministic audit serialization rounding, and relative boundary band mode.
+- Tests: Add precision-sensitive tests, deterministic serialization tests, and relative-boundary trade/fixture coverage.
+- Fixtures: Add a relative-boundary scenario and manifest entry.
+- Documentation: Add deferred-capabilities PRD and MVP plan; update README, fixture docs, audit report, and this build journey as slices complete.
+- Follow-up: Reassess richer cash flows after this increment is validated.
+
+Validation:
+Run the full test suite, TypeScript build, ESLint, scenario runner, manifest validation, and formatting before each focused commit.
+
+Decision: Use `decimal.js` internally with explicit output rounding
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The deferred-capabilities PRD selected numeric precision and rounding policy as the first implementation slice. Existing code used JavaScript `number` arithmetic directly, which produced binary floating-point artifacts in drift, valuation, simulation, scenario output, and audit records. The engine still needs backward-compatible number-based public interfaces in this increment.
+
+Options considered:
+
+1. Keep JavaScript `number` arithmetic and only round display output.
+   - Benefits: Smallest code change and no dependency.
+   - Costs: Internal calculations still carry avoidable binary artifacts.
+   - Risks: Undermines the correctness goal of the deferred slice.
+   - Reversibility: High.
+
+2. Use `decimal.js` internally while keeping public interfaces number-based.
+   - Benefits: Improves arithmetic determinism and preserves compatibility with fixtures and callers.
+   - Costs: Adds a runtime dependency and still converts outputs to numbers.
+   - Risks: A later production API may need decimal strings for exact wire contracts.
+   - Reversibility: Medium.
+
+3. Convert all public monetary, quantity, and weight fields to decimal strings.
+   - Benefits: Stronger production-grade wire precision.
+   - Costs: Broad breaking API and fixture change.
+   - Risks: Premature migration before API/integration requirements exist.
+   - Reversibility: Low-medium.
+
+Preferred option:
+Option 2: Use `decimal.js` internally with explicit output rounding boundaries.
+
+Rationale:
+This option materially improves calculation correctness without breaking the existing MVP public shape. It also creates a central numeric policy that can later support decimal-string APIs if production integrations require them.
+
+Implementation impact:
+
+- Dependency: Added `decimal.js`.
+- Code: Added `src/core/numeric.ts`; valuation, drift, trade proposal, simulation, threshold explanation formatting, and audit serialization use the central numeric helpers.
+- Tests: Added precision-sensitive valuation/trade tests and deterministic rounded audit serialization coverage.
+- Documentation: README, deferred-capabilities PRD/plan, and build journey document the policy.
+- Follow-up: Revisit decimal string inputs/outputs before live API or database work.
+
+Validation:
+Jest, TypeScript build, ESLint, scenario runner, and manifest validation pass after implementation.
+
+Decision: Add policy-selected relative boundary targeting
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The next deferred-capabilities increment selected relative-boundary targeting after numeric policy. The engine already calculated relative drift and supported threshold boundary execution, but boundary sizing only used absolute bands. The implementation needed to preserve absolute-boundary behavior while allowing policies to opt into relative boundaries.
+
+Options considered:
+
+1. Keep only absolute boundary execution.
+   - Benefits: No behavior change.
+   - Costs: Leaves selected policy semantics unimplemented.
+   - Risks: Relative drift can trigger a rebalance but cannot drive boundary-sized execution.
+   - Reversibility: High.
+
+2. Add `boundaryBandMode?: "absolute" | "relative"` as a threshold boundary execution option.
+   - Benefits: Backward-compatible default, explicit policy shape, and small implementation surface.
+   - Costs: Relative mode remains tied to threshold boundary execution rather than becoming a broader optimizer.
+   - Risks: Callers must understand that trigger tolerances and boundary sizing are related but distinct policy fields.
+   - Reversibility: High.
+
+3. Replace existing tolerance fields with a larger tolerance-band schema.
+   - Benefits: Cleaner long-term schema for combining absolute and relative tolerances.
+   - Costs: Breaking fixture/API migration for limited immediate value.
+   - Risks: Premature schema churn.
+   - Reversibility: Medium.
+
+Preferred option:
+Option 2: Add policy-selected relative boundary targeting.
+
+Rationale:
+This is the smallest coherent extension of the existing boundary mode. Absolute boundary remains the default for backward compatibility. Relative boundary mode requires an explicit `relativeDriftTolerance`, uses `targetWeight +/- targetWeight * relativeDriftTolerance`, and rejects zero-target instruments that require a boundary trade because relative bands are undefined around zero.
+
+Implementation impact:
+
+- Code: Added `BoundaryBandMode`, `RebalancingPolicy.boundaryBandMode`, trade proposal/audit metadata, and relative boundary sizing validation.
+- Tests: Added unit coverage for relative boundary trades, missing tolerance, zero-target invalid behavior, simulation, explanation, audit metadata, fixtures, and runner manifest.
+- Fixtures: Added `threshold_relative_boundary_target`.
+- Documentation: README, fixture docs, deferred-capabilities PRD/plan, and build journey now describe relative-boundary behavior.
+- Follow-up: Richer cash flows remain the next likely practical workflow increment.
+
+Validation:
+Jest, TypeScript build, ESLint, scenario runner, and 13-entry manifest validation pass after implementation.
 
 ## 5. Iteration Log
 

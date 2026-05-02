@@ -5,6 +5,7 @@ import {
   StrategyInterface,
   TriggerResult,
 } from '../models/domain';
+import { formatFixed } from '../core/numeric';
 
 export class ThresholdStrategy implements StrategyInterface {
   evaluateTrigger(
@@ -22,13 +23,21 @@ export class ThresholdStrategy implements StrategyInterface {
       };
     }
 
-    const breachDescriptions = breaches.map(
-      (b) => `${b.instrumentId} (abs drift: ${(b.absoluteDrift * 100).toFixed(2)}%)`,
-    );
+    const breachDescriptions = breaches.map((b) => {
+      const relativeDescription =
+        policy.relativeDriftTolerance !== undefined && b.targetWeight > 0
+          ? `, rel drift: ${formatFixed(b.relativeDrift * 100, 2)}%`
+          : '';
+      return `${b.instrumentId} (abs drift: ${formatFixed(b.absoluteDrift * 100, 2)}%${relativeDescription})`;
+    });
+    const relativeToleranceDescription =
+      policy.relativeDriftTolerance === undefined
+        ? ''
+        : ` Relative tolerance: ${formatFixed(policy.relativeDriftTolerance * 100, 2)}%.`;
 
     return {
       isTriggered: true,
-      reason: `Breached tolerance bands for: ${breachDescriptions.join(', ')}. Policy absolute tolerance: ${(policy.absoluteDriftTolerance * 100).toFixed(2)}%.`,
+      reason: `Breached tolerance bands for: ${breachDescriptions.join(', ')}. Policy absolute tolerance: ${formatFixed(policy.absoluteDriftTolerance * 100, 2)}%.${relativeToleranceDescription}`,
       strategyType: 'threshold',
       metadata: {
         breachCount: breaches.length,

@@ -16,6 +16,7 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - `calendar_due`: Calendar strategy with an evaluation date on or after the next rebalance date. Expected result: calendar trigger, full-reset proposal, and calendar strategy metadata in audit output.
 - `calendar_not_due`: Calendar strategy with an evaluation date before the next rebalance date. Expected result: no trigger, no trades, and calendar strategy metadata in audit output.
 - `threshold_boundary_target`: Threshold strategy with `executionTargetMode: "boundary"`. Expected result: trade to the nearest absolute tolerance boundary instead of fully resetting to target.
+- `threshold_relative_boundary_target`: Threshold strategy with `executionTargetMode: "boundary"` and `boundaryBandMode: "relative"`. Expected result: relative drift triggers a rebalance and the breached asset trades to the nearest relative tolerance boundary.
 
 ## Fixture Assumptions
 
@@ -26,5 +27,6 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - Negative cash is not represented as a reusable fixture because Slice 6 treats it as invalid for trade proposal generation and tests it inline.
 - `strategyType` defaults to `threshold` when omitted for backward compatibility.
 - Calendar strategy uses caller-supplied date strings in policy configuration. It does not read system time and does not model holidays or business-day calendars.
-- Boundary-target execution currently uses absolute tolerance bands only. Full transaction-cost-aware no-trade-region optimization remains out of scope.
+- Boundary-target execution supports absolute bands by default and relative bands when `boundaryBandMode: "relative"` and `relativeDriftTolerance` are supplied. Relative-boundary mode rejects zero-target instruments that require a boundary trade.
+- Full transaction-cost-aware no-trade-region optimization remains out of scope.
 - `scenario-expectations.json` is an expected-status manifest for runner regression checks. It records which scenarios should succeed or error and the expected error text for invalid scenarios.

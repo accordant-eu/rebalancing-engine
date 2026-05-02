@@ -8,6 +8,14 @@ import {
   TriggerResult,
 } from '../models/domain';
 import { PostTradeSimulation } from '../core/simulation';
+import {
+  roundDrift,
+  roundMoney,
+  roundPrice,
+  roundQuantity,
+  roundTurnover,
+  roundWeight,
+} from '../core/numeric';
 import { RecommendationExplanation } from '../explanation';
 
 export interface AuditRecordInput {
@@ -37,6 +45,7 @@ export interface AuditRecord {
   outputs: {
     strategyType: TriggerResult['strategyType'];
     executionTargetMode: TradeProposal['executionTargetMode'];
+    boundaryBandMode?: TradeProposal['boundaryBandMode'];
     driftMeasurements: DriftMeasurement[];
     trigger: TriggerResult;
     tradeProposal: TradeProposal;
@@ -59,6 +68,7 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
     outputs: {
       strategyType: input.trigger.strategyType,
       executionTargetMode: input.tradeProposal.executionTargetMode,
+      boundaryBandMode: input.tradeProposal.boundaryBandMode,
       driftMeasurements: input.driftMeasurements,
       trigger: input.trigger,
       tradeProposal: input.tradeProposal,
@@ -69,5 +79,63 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
 }
 
 export function serializeAuditRecord(record: AuditRecord): string {
-  return JSON.stringify(record, null, 2);
+  return JSON.stringify(roundAuditRecordOutputs(record), null, 2);
+}
+
+export function roundAuditRecordOutputs(record: AuditRecord): AuditRecord {
+  return {
+    ...record,
+    inputs: record.inputs,
+    outputs: roundSerializableValue(record.outputs) as AuditRecord['outputs'],
+  };
+}
+
+function roundSerializableValue(value: unknown, key?: string): unknown {
+  if (typeof value === 'number') {
+    return roundAuditNumber(value, key);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => roundSerializableValue(item));
+  }
+
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([entryKey, entryValue]) => [
+        entryKey,
+        roundSerializableValue(entryValue, entryKey),
+      ]),
+    );
+  }
+
+  return value;
+}
+
+function roundAuditNumber(value: number, key?: string): number {
+  switch (key) {
+    case 'quantity':
+      return roundQuantity(value);
+    case 'price':
+    case 'estimatedPrice':
+      return roundPrice(value);
+    case 'weight':
+    case 'currentWeight':
+    case 'targetWeight':
+      return roundWeight(value);
+    case 'absoluteDrift':
+    case 'relativeDrift':
+      return roundDrift(value);
+    case 'turnover':
+      return roundTurnover(value);
+    case 'cash':
+    case 'estimatedValue':
+    case 'marketValue':
+    case 'minimumTradeSize':
+    case 'estimatedPostTradeCash':
+    case 'totalHoldingsValue':
+    case 'totalPortfolioValue':
+      return roundMoney(value);
+    default:
+      return value;
+  }
 }

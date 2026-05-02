@@ -38,6 +38,7 @@ describe('Domain Fixtures', () => {
       'calendar_due',
       'calendar_not_due',
       'threshold_boundary_target',
+      'threshold_relative_boundary_target',
     ];
 
     const actualIds = scenarios.map((s) => s.id);

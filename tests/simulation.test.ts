@@ -185,4 +185,32 @@ describe('Post-Trade Simulation', () => {
     expect(msft?.isOutOfBand).toBe(false);
     expect(simulation.turnover).toBeCloseTo(0.05, 8);
   });
+
+  it('simulates relative-boundary trades with residual relative drift inside tolerance', () => {
+    const scenario = scenarioById('threshold_relative_boundary_target');
+    const valuation = calculateValuation(scenario.portfolioState, scenario.priceSnapshot);
+    const proposal = generateTradeProposal(
+      valuation,
+      scenario.targetAllocation,
+      scenario.priceSnapshot,
+      scenario.policy,
+    );
+
+    const simulation = simulatePostTrade(
+      scenario.portfolioState,
+      scenario.priceSnapshot,
+      scenario.targetAllocation,
+      scenario.policy,
+      proposal,
+    );
+
+    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'AAPL');
+
+    expect(proposal.boundaryBandMode).toBe('relative');
+    expect(aapl?.currentWeight).toBeCloseTo(0.12, 8);
+    expect(aapl?.relativeDrift).toBeCloseTo(0.2, 8);
+    expect(aapl?.isOutOfBand).toBe(false);
+    expect(simulation.postTradeState.cash).toBeCloseTo(300, 8);
+    expect(simulation.turnover).toBeCloseTo(0.03, 8);
+  });
 });

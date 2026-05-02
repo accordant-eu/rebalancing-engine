@@ -1,4 +1,5 @@
 import { DriftMeasurement, TargetAllocation, RebalancingPolicy } from '../models/domain';
+import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
 import { WeightResult } from './valuation';
 
 /**
@@ -6,9 +7,11 @@ import { WeightResult } from './valuation';
  * Uses a small epsilon to account for minor floating point imprecision.
  */
 export function validateTargetAllocation(target: TargetAllocation): void {
-  const sum = target.targets.reduce((acc, t) => acc + t.weight, 0);
-  if (Math.abs(sum - 1.0) > 0.0001) {
-    throw new Error(`Target allocation does not sum to 100%. Total: ${(sum * 100).toFixed(2)}%`);
+  const sum = target.targets.reduce((acc, t) => acc.plus(t.weight), toDecimal(0));
+  if (sum.minus(1.0).abs().gt(0.0001)) {
+    throw new Error(
+      `Target allocation does not sum to 100%. Total: ${formatFixed(sum.mul(100).toNumber(), 2)}%`,
+    );
   }
 }
 
@@ -37,21 +40,23 @@ export function calculateDrift(
     processedInstruments.add(instrumentId);
 
     const targetWeight = targetMap.get(instrumentId) || 0;
-    const absoluteDrift = cw.weight - targetWeight;
+    const absoluteDrift = toDecimal(cw.weight).minus(targetWeight).toNumber();
     let relativeDrift = 0;
     if (targetWeight > 0) {
-      relativeDrift = absoluteDrift / targetWeight;
+      relativeDrift = toDecimal(absoluteDrift).div(targetWeight).toNumber();
     } else if (cw.weight > 0) {
       // If target is 0 but we hold it, relative drift is undefined or functionally infinite.
       // We set it to 1 (100%) as a fallback indicator of total drift away from target.
       relativeDrift = 1;
     }
 
-    const EPSILON = 1e-6;
-    const isAbsoluteBreach = Math.abs(absoluteDrift) - policy.absoluteDriftTolerance > EPSILON;
+    const isAbsoluteBreach = toDecimal(absoluteDrift)
+      .abs()
+      .minus(policy.absoluteDriftTolerance)
+      .gt(CALCULATION_EPSILON);
     const isRelativeBreach =
       policy.relativeDriftTolerance !== undefined &&
-      Math.abs(relativeDrift) - policy.relativeDriftTolerance > EPSILON;
+      toDecimal(relativeDrift).abs().minus(policy.relativeDriftTolerance).gt(CALCULATION_EPSILON);
 
     measurements.push({
       instrumentId,
@@ -71,11 +76,13 @@ export function calculateDrift(
       const absoluteDrift = currentWeight - targetWeight;
       const relativeDrift = -1; // -100% since we hold 0
 
-      const EPSILON = 1e-6;
-      const isAbsoluteBreach = Math.abs(absoluteDrift) - policy.absoluteDriftTolerance > EPSILON;
+      const isAbsoluteBreach = toDecimal(absoluteDrift)
+        .abs()
+        .minus(policy.absoluteDriftTolerance)
+        .gt(CALCULATION_EPSILON);
       const isRelativeBreach =
         policy.relativeDriftTolerance !== undefined &&
-        Math.abs(relativeDrift) - policy.relativeDriftTolerance > EPSILON;
+        toDecimal(relativeDrift).abs().minus(policy.relativeDriftTolerance).gt(CALCULATION_EPSILON);
 
       measurements.push({
         instrumentId: t.instrumentId,

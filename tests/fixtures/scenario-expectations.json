@@ -20,6 +20,7 @@
       "status": "error",
       "errorIncludes": "Target allocation does not sum to 100%"
     },
-    "threshold_boundary_target": { "status": "success" }
+    "threshold_boundary_target": { "status": "success" },
+    "threshold_relative_boundary_target": { "status": "success" }
   }
 }

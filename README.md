@@ -6,7 +6,24 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` and `boundary` execution target modes, and the scenario runner supports expected-status manifest validation. Post-MVP work remains for production precision, rounding, live integrations, full transaction-cost optimization, tax-lot logic, and richer cash-flow workflows.
+**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increment has implemented explicit decimal arithmetic, output rounding policy, and relative-boundary targeting. Post-MVP work remains for richer cash-flow workflows, tax-lot logic, full transaction-cost optimization, live integrations, API, UI, and persistence.
+
+## Numeric Policy
+
+Core financial calculations use `decimal.js` internally while the public TypeScript domain interfaces remain number-based for compatibility. Internal calculations are not rounded silently. Rounding is applied at explicit boundaries:
+
+- Explanation text formats quantities to 6 decimals and monetary values/percentages to 2 decimals.
+- `serializeAuditRecord` preserves input snapshots and emits deterministically rounded output numbers.
+- Serialized audit output precision is centralized in `src/core/numeric.ts`: prices 6 decimals, quantities 8, money values 6, weights/drift/turnover 10.
+
+## Boundary Targeting
+
+Threshold policies support two execution target modes:
+
+- `executionTargetMode: "full_reset"` restores breached portfolios to target weights.
+- `executionTargetMode: "boundary"` trades breached assets to the nearest configured tolerance boundary.
+
+Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/- absoluteDriftTolerance`. Policies can opt into `boundaryBandMode: "relative"`, using `targetWeight +/- targetWeight * relativeDriftTolerance`. Relative-boundary mode requires `relativeDriftTolerance` and rejects zero-target instruments that require a boundary trade, because relative bands are undefined around a zero target.
 
 ## Documentation
 
@@ -16,6 +33,7 @@ The engine evaluates portfolio drift against a target allocation, selects a conf
 - [`docs/audits/`](docs/audits/) — Audit reports (red-team audit, test-case audit).
 - [`docs/audits/final-mvp-audit.md`](docs/audits/final-mvp-audit.md) — Final MVP status, validation, and known limitations.
 - [`docs/audits/next-iteration-mvp-audit.md`](docs/audits/next-iteration-mvp-audit.md) — Multi-strategy iteration status, validation, and known limitations.
+- [`docs/audits/deferred-capabilities-audit.md`](docs/audits/deferred-capabilities-audit.md) — Decimal/rounding and relative-boundary increment audit.
 - [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
 - [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
 - [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.

@@ -1,5 +1,6 @@
 import { TradeProposal, TriggerResult } from '../models/domain';
 import { PostTradeSimulation } from '../core/simulation';
+import { formatFixed } from '../core/numeric';
 
 export interface RecommendationExplanation {
   summary: string;
@@ -23,10 +24,10 @@ export function generateExplanation(
   const tradeExplanation =
     proposal.trades.length === 0
       ? 'No trades are proposed.'
-      : `Proposed ${proposal.executionTargetMode} trades: ${proposal.trades
+      : `Proposed ${describeExecutionTarget(proposal)} trades: ${proposal.trades
           .map(
             (trade) =>
-              `${trade.direction} ${trade.quantity.toFixed(6)} ${trade.instrumentId} for approximately ${trade.estimatedValue.toFixed(2)}`,
+              `${trade.direction} ${formatFixed(trade.quantity, 6)} ${trade.instrumentId} for approximately ${formatFixed(trade.estimatedValue, 2)}`,
           )
           .join('; ')}.`;
 
@@ -42,6 +43,14 @@ export function generateExplanation(
     warningExplanation,
     residualDriftExplanation: buildResidualDriftExplanation(simulation),
   };
+}
+
+function describeExecutionTarget(proposal: TradeProposal): string {
+  if (proposal.executionTargetMode !== 'boundary') {
+    return proposal.executionTargetMode;
+  }
+
+  return `${proposal.executionTargetMode} (${proposal.boundaryBandMode ?? 'absolute'} bands)`;
 }
 
 function buildSummary(
@@ -70,10 +79,10 @@ function buildResidualDriftExplanation(simulation?: PostTradeSimulation): string
 
   const outOfBand = simulation.residualDrift.filter((drift) => drift.isOutOfBand);
   if (outOfBand.length === 0) {
-    return `Post-trade simulation leaves all assets within tolerance. Estimated sell-side turnover is ${(simulation.turnover * 100).toFixed(2)}%.`;
+    return `Post-trade simulation leaves all assets within tolerance. Estimated sell-side turnover is ${formatFixed(simulation.turnover * 100, 2)}%.`;
   }
 
   return `Post-trade simulation leaves residual out-of-band drift for: ${outOfBand
-    .map((drift) => `${drift.instrumentId} (${(drift.absoluteDrift * 100).toFixed(2)}%)`)
-    .join(', ')}. Estimated sell-side turnover is ${(simulation.turnover * 100).toFixed(2)}%.`;
+    .map((drift) => `${drift.instrumentId} (${formatFixed(drift.absoluteDrift * 100, 2)}%)`)
+    .join(', ')}. Estimated sell-side turnover is ${formatFixed(simulation.turnover * 100, 2)}%.`;
 }

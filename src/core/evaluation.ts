@@ -61,6 +61,10 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
         estimatedPostTradeCash: valuation.cash,
         warnings: [],
         executionTargetMode: input.policy.executionTargetMode ?? 'full_reset',
+        boundaryBandMode:
+          input.policy.executionTargetMode === 'boundary'
+            ? (input.policy.boundaryBandMode ?? 'absolute')
+            : undefined,
       };
   const postTradeSimulation = simulatePostTrade(
     input.portfolioState,
