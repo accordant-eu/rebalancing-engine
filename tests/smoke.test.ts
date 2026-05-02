@@ -9,7 +9,11 @@ import { ThresholdStrategy } from '../src/strategy/threshold';
  */
 describe('Smoke Test — Core Module Imports', () => {
   it('calculateValuation is importable and returns a ValuationResult', () => {
-    const state = { accountId: 'smoke-1', cash: 0, holdings: [{ instrumentId: 'A', quantity: 10 }] };
+    const state = {
+      accountId: 'smoke-1',
+      cash: 0,
+      holdings: [{ instrumentId: 'A', quantity: 10 }],
+    };
     const prices = { prices: { A: 100 } };
     const result = calculateValuation(state, prices);
     expect(typeof result.totalPortfolioValue).toBe('number');
@@ -18,7 +22,11 @@ describe('Smoke Test — Core Module Imports', () => {
   });
 
   it('calculateCurrentWeights is importable and returns WeightResult[]', () => {
-    const state = { accountId: 'smoke-2', cash: 0, holdings: [{ instrumentId: 'A', quantity: 10 }] };
+    const state = {
+      accountId: 'smoke-2',
+      cash: 0,
+      holdings: [{ instrumentId: 'A', quantity: 10 }],
+    };
     const prices = { prices: { A: 100 } };
     const valuation = calculateValuation(state, prices);
     const weights = calculateCurrentWeights(valuation);
@@ -34,7 +42,12 @@ describe('Smoke Test — Core Module Imports', () => {
   });
 
   it('validateTargetAllocation is importable and validates correctly', () => {
-    const valid = { targets: [{ instrumentId: 'A', weight: 0.6 }, { instrumentId: 'B', weight: 0.4 }] };
+    const valid = {
+      targets: [
+        { instrumentId: 'A', weight: 0.6 },
+        { instrumentId: 'B', weight: 0.4 },
+      ],
+    };
     expect(() => validateTargetAllocation(valid)).not.toThrow();
   });
 

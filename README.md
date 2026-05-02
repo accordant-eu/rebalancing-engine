@@ -4,9 +4,9 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 ## Overview
 
-The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, and produces deterministic trade proposals and audit records. It is designed for auditability and reproducibility (MiFID II alignment).
+The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, and produces deterministic full-reset trade proposals. It is designed for auditability and reproducibility (MiFID II alignment), with audit records still deferred to a later MVP slice.
 
-**Current status:** Slices 1–4 implemented and audited (Fixtures, Valuation, Drift, Threshold Trigger). Slices 5+ (Trade Proposals, Cash Routing, Simulation, Audit Records) in progress.
+**Current status:** Slices 1–5 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals). Slices 6+ (Cash Routing, Minimum Trade Rules, Simulation, Explanation, Audit Records) remain in progress.
 
 ## Documentation
 
@@ -63,7 +63,8 @@ npm run format
 │   ├── models/domain.ts       # Domain interfaces (PortfolioState, DriftMeasurement, etc.)
 │   ├── core/
 │   │   ├── valuation.ts       # Market value and weight calculation
-│   │   └── drift.ts           # Drift calculation and target validation
+│   │   ├── drift.ts           # Drift calculation and target validation
+│   │   └── trades.ts          # Deterministic full-reset trade proposal generation
 │   └── strategy/
 │       └── threshold.ts       # Threshold-band trigger strategy
 ├── tests/
@@ -74,6 +75,7 @@ npm run format
 │   ├── valuation.test.ts      # Valuation and weight tests
 │   ├── drift.test.ts          # Drift calculation tests
 │   ├── threshold.test.ts      # Threshold strategy tests
+│   ├── trades.test.ts         # Trade proposal generation tests
 │   └── edge-cases.test.ts     # Edge-case and integration tests
 └── docs/
     ├── MVP_Implementation_Plan.md

@@ -143,7 +143,9 @@ describe('Drift Calculation', () => {
     // AAPL current weight: 15000/25000 = 0.60, target 0.40 → drift +0.20 (out of band).
     // MSFT current weight:  5000/25000 = 0.20, target 0.40 → drift −0.20 (out of band).
     // GOOG current weight:  5000/25000 = 0.20, target 0.20 → drift  0.00 (in band).
-    const scenario = scenariosData.scenarios.find((s: any) => s.id === 'multiple_assets_out_of_band');
+    const scenario = scenariosData.scenarios.find(
+      (s: any) => s.id === 'multiple_assets_out_of_band',
+    );
     const state: PortfolioState = scenario.portfolioState;
     const prices: PriceSnapshot = scenario.priceSnapshot;
     const target: TargetAllocation = scenario.targetAllocation;
