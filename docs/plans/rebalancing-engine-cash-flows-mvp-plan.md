@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: Planned.
+Implementation status: Complete for the selected offline cash-flow foundations scope.
 
 ## 1. Baseline
 
@@ -47,6 +47,9 @@ Use existing test/build/lint/scenario commands.
 Goal:
 Add explicit cash-flow records and deterministic valuation semantics.
 
+Status:
+Complete.
+
 Scope:
 
 - Add `CashFlow` domain model.
@@ -61,6 +64,9 @@ Scope:
 Goal:
 Make settled withdrawals fundable and pending flows visible.
 
+Status:
+Complete.
+
 Scope:
 
 - Allow negative valuation cash when cash-flow summary indicates an explicit settled withdrawal deficit.
@@ -73,6 +79,9 @@ Scope:
 
 Goal:
 Expose cash flows in executable scenarios and documentation.
+
+Status:
+Complete.
 
 Scope:
 

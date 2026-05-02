@@ -37,7 +37,7 @@ export function simulatePostTrade(
   const quantities = new Map(
     state.holdings.map((holding) => [holding.instrumentId, holding.quantity]),
   );
-  let postTradeCash = toDecimal(state.cash);
+  let postTradeCash = toDecimal(startingValuation.cash);
   let sellValue = toDecimal(0);
 
   for (const trade of proposal.trades) {

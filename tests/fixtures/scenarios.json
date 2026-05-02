@@ -204,6 +204,33 @@
       }
     },
     {
+      "id": "invalid_cash_flow_amount",
+      "description": "Cash flow with invalid zero amount",
+      "portfolioState": {
+        "accountId": "acc-17",
+        "cash": 0,
+        "holdings": [],
+        "cashFlows": [
+          {
+            "cashFlowId": "invalid-cash-flow-1",
+            "direction": "DEPOSIT",
+            "status": "SETTLED",
+            "amount": 0
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [{ "instrumentId": "AAPL", "weight": 1.0 }]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100 }
+      },
+      "policy": {
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0
+      }
+    },
+    {
       "id": "holding_outside_universe",
       "description": "Holding outside model universe scenario",
       "portfolioState": {
@@ -219,6 +246,105 @@
       },
       "priceSnapshot": {
         "prices": { "AAPL": 150, "TSLA": 200 }
+      },
+      "policy": {
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "settled_deposit_cash_flow",
+      "description": "Settled deposit increases available cash and is deployed by the proposal",
+      "portfolioState": {
+        "accountId": "acc-14",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 50 },
+          { "instrumentId": "MSFT", "quantity": 50 }
+        ],
+        "cashFlows": [
+          {
+            "cashFlowId": "deposit-1",
+            "direction": "DEPOSIT",
+            "status": "SETTLED",
+            "amount": 1000
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "settled_withdrawal_cash_flow",
+      "description": "Settled withdrawal creates a cash deficit funded with sell trades",
+      "portfolioState": {
+        "accountId": "acc-15",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 50 },
+          { "instrumentId": "MSFT", "quantity": 50 }
+        ],
+        "cashFlows": [
+          {
+            "cashFlowId": "withdrawal-1",
+            "direction": "WITHDRAWAL",
+            "status": "SETTLED",
+            "amount": 1000
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "pending_cash_flow",
+      "description": "Pending cash flow is visible but excluded from valuation and proposal sizing",
+      "portfolioState": {
+        "accountId": "acc-16",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlows": [
+          {
+            "cashFlowId": "pending-deposit-1",
+            "direction": "DEPOSIT",
+            "status": "PENDING",
+            "amount": 1000
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 150, "MSFT": 150 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,

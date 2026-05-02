@@ -20,13 +20,17 @@ describe('Scenario Runner', () => {
       'calendar_due',
       'calendar_not_due',
       'holding_outside_universe',
+      'invalid_cash_flow_amount',
       'invalid_strategy',
       'min_trade_size_issue',
       'missing_price',
       'multiple_assets_out_of_band',
       'on_target',
       'one_asset_out_of_band',
+      'pending_cash_flow',
       'positive_cash',
+      'settled_deposit_cash_flow',
+      'settled_withdrawal_cash_flow',
       'target_allocation_sum_error',
       'threshold_boundary_target',
       'threshold_relative_boundary_target',
@@ -38,8 +42,8 @@ describe('Scenario Runner', () => {
     const successes = results.filter((result) => result.status === 'success');
     const errors = results.filter((result) => result.status === 'error');
 
-    expect(successes).toHaveLength(10);
-    expect(errors).toHaveLength(3);
+    expect(successes).toHaveLength(13);
+    expect(errors).toHaveLength(4);
 
     const success = successes.find((result) => result.scenarioId === 'one_asset_out_of_band');
     expect(success?.status).toBe('success');
@@ -69,6 +73,14 @@ describe('Scenario Runner', () => {
       expect(targetError.error).toContain('Target allocation does not sum to 100%');
     }
 
+    const invalidCashFlow = errors.find(
+      (result) => result.scenarioId === 'invalid_cash_flow_amount',
+    );
+    expect(invalidCashFlow?.status).toBe('error');
+    if (invalidCashFlow?.status === 'error') {
+      expect(invalidCashFlow.error).toContain('Cash flow amount must be positive');
+    }
+
     const calendarDue = successes.find((result) => result.scenarioId === 'calendar_due');
     expect(calendarDue?.status).toBe('success');
     if (calendarDue?.status === 'success') {
@@ -83,6 +95,15 @@ describe('Scenario Runner', () => {
       expect(calendarNotDue.auditRecord.outputs.trigger.isTriggered).toBe(false);
       expect(calendarNotDue.auditRecord.outputs.tradeProposal.trades).toEqual([]);
     }
+
+    const pendingCashFlow = successes.find((result) => result.scenarioId === 'pending_cash_flow');
+    expect(pendingCashFlow?.status).toBe('success');
+    if (pendingCashFlow?.status === 'success') {
+      expect(pendingCashFlow.auditRecord.outputs.cashFlowSummary?.pendingDeposits).toBe(1000);
+      expect(pendingCashFlow.auditRecord.outputs.tradeProposal.warnings[0].code).toBe(
+        'PENDING_CASH_FLOW_EXCLUDED',
+      );
+    }
   });
 
   it('validates results against an expected-status manifest', () => {
@@ -93,7 +114,7 @@ describe('Scenario Runner', () => {
 
     expect(validation).toEqual({
       isValid: true,
-      checkedScenarioCount: 13,
+      checkedScenarioCount: 17,
       mismatches: [],
     });
   });
@@ -117,11 +138,15 @@ describe('Scenario Runner', () => {
       'calendar_due',
       'calendar_not_due',
       'holding_outside_universe',
+      'invalid_cash_flow_amount',
       'invalid_strategy',
       'min_trade_size_issue',
       'multiple_assets_out_of_band',
       'one_asset_out_of_band',
+      'pending_cash_flow',
       'positive_cash',
+      'settled_deposit_cash_flow',
+      'settled_withdrawal_cash_flow',
       'target_allocation_sum_error',
       'threshold_boundary_target',
       'threshold_relative_boundary_target',

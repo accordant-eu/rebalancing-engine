@@ -2,6 +2,8 @@
 
 Date: 2026-05-02
 
+Implementation status: Complete for the selected offline cash-flow foundations scope.
+
 ## 1. Background
 
 The completed MVP and deferred-capabilities increment support positive cash as part of portfolio state, but cash movement is implicit. Deposits, withdrawals, and pending flows are not modeled explicitly. Negative cash was previously rejected during proposal generation because there was no explicit withdrawal/deficit funding policy.
