@@ -4,11 +4,11 @@ Date: 2026-05-02
 
 ## 1. Executive Summary
 
-The repository is an offline deterministic TypeScript calculation core with a first-class file-based CLI. Implemented capabilities include valuation, drift, threshold/manual/calendar trigger strategies, full-reset and boundary trade sizing, explicit decimal-backed numeric policy, settled/pending offline cash-flow records, generic tax-lot allocation metadata, post-trade simulation, explanation, audit records, fixture execution, and CLI workflows.
+The repository is an offline deterministic TypeScript calculation core with a first-class file-based CLI. Implemented capabilities include valuation, drift, threshold/manual/calendar trigger strategies, full-reset and boundary trade sizing, explicit decimal-backed numeric policy, settled/pending offline cash-flow records, scheduled/recurring offline cash-flow semantics, generic tax-lot allocation metadata, post-trade simulation, explanation, audit records, fixture execution, and CLI workflows.
 
-Major remaining limitations are scheduled/recurring cash-flow semantics, a full optimizer, jurisdiction-specific tax handling or tax advice, and production surfaces: API, UI, database, persistence, live market data, banking/custody integration, and execution integration.
+Major remaining limitations are a full optimizer, jurisdiction-specific tax handling or tax advice, and production surfaces: API, UI, database, persistence, live market data, banking/custody integration, and execution integration.
 
-Recommended next increment: scheduled/recurring cash-flow semantics. This extends the already implemented explicit cash-flow model, is testable offline with synthetic fixtures, improves domain correctness before production infrastructure, and can be exposed through the existing CLI without adding external systems.
+Recommended next increment after scheduled/recurring cash-flow implementation: keep optimizer, tax, and production surfaces deferred until concrete requirements exist; near-term work can focus on CI, schema validation hardening, or an optimizer PRD refresh if a concrete multi-constraint use case appears.
 
 Productionization should remain deferred until a dedicated PRD defines concrete API contracts, persistence, security, authentication, authorization, observability, deployment, data retention, and operational responsibilities. A full optimizer and jurisdiction-specific tax features also remain deferred until their objective functions, legal boundaries, and explainability requirements are explicit.
 
@@ -91,7 +91,7 @@ Search terms used:
 | Boundary trade sizing              | Implemented                                  | `executionTargetMode: "boundary"`; absolute and relative modes                                    | Exposed through policy input and output metadata                                                            | Trade, audit, explanation, fixture tests                                                                          | Boundary mode is deterministic, not a full optimizer.                        |
 | Decimal and rounding policy        | Implemented internally                       | `src/core/numeric.ts`, audit rounding                                                             | Output surfaced through audit/CLI JSON                                                                      | Numeric and audit tests                                                                                           | Public inputs/outputs remain number-based.                                   |
 | Settled/pending cash flows         | Implemented for explicit offline records     | `PortfolioState.cashFlows`, `CashFlowSummary`, `PENDING_CASH_FLOW_EXCLUDED`                       | Scenario/explicit portfolio JSON accepted by `validate`, `run`, `batch`; output warnings and audit summary  | Valuation, trades, evaluation, runner, fixture, CLI strict warning tests                                          | `SETTLED` affects valuation/proposals; `PENDING` is excluded but audited.    |
-| Scheduled/recurring cash flows     | Not implemented                              | No schedule or recurrence model in `src/models/domain.ts`; no schedule expansion code or fixtures | Not supported                                                                                               | No tests                                                                                                          | Recommended next increment.                                                  |
+| Scheduled/recurring cash flows     | Implemented for offline planning inputs      | `PortfolioState.cashFlowSchedules`, `policy.evaluationDate`, `src/core/cash-flows.ts`             | Supported through `validate`, `run`, `batch`, JSON/pretty output, and scenario/policy inspection            | Unit, evaluation, fixture, runner, and CLI tests                                                                  | No banking/payment/custody/execution behavior.                               |
 | Tax-lot primitives                 | Implemented as generic allocation metadata   | `TaxLot`, `lotAllocations`, sell selection modes                                                  | Scenario/policy input accepted; output includes lot allocations in JSON/pretty                              | Valuation, trade, runner fixture tests                                                                            | Not tax advice and not jurisdiction-specific.                                |
 | Jurisdiction-specific tax handling | Not implemented                              | PRD and README explicitly exclude it                                                              | Not supported                                                                                               | No tests                                                                                                          | Requires legal/product input.                                                |
 | Full optimizer                     | Not implemented                              | No solver dependency/interface; optimizer PRD defers                                              | Not supported                                                                                               | No tests                                                                                                          | Current proposal engine is rule-based.                                       |
@@ -110,8 +110,8 @@ Search terms used:
 
 | Item                                                 | Source(s)                                                                                 | Category                            | Current status                        | Still valid? | Duplicate/conflict?                                                | Recommended roadmap placement                                    | CLI impact                                                               | Dependency                                            | Notes                                                               |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------- | ------------ | ------------------------------------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------- |
-| Scheduled/recurring cash flows                       | README, `BUILD_JOURNEY.md`, cash-flow PRD open questions, production audit recommendation | Scheduled/recurring cash flows      | Not implemented                       | Yes          | Extends existing cash-flow foundations                             | Now / next increment                                             | Required: validation, run, batch, inspect, output/audit docs             | Date and recurrence semantics                         | Best next offline domain increment.                                 |
-| Pending vs scheduled vs realized terminology         | Cash-flow PRD, latest feedback                                                            | Cash-flow semantics                 | Partial: `SETTLED` and `PENDING` only | Yes          | Related to scheduled flows                                         | Now / next increment                                             | Required in input schema/help/output docs                                | Product terminology decision                          | Must avoid double-counting cash already in `cash`.                  |
+| Scheduled/recurring cash flows                       | README, `BUILD_JOURNEY.md`, cash-flow PRD open questions, production audit recommendation | Scheduled/recurring cash flows      | Implemented for offline MVP           | Yes          | Extends existing cash-flow foundations                             | Complete; revisit only for new recurrence/date requirements      | Implemented in validation, run, batch, inspect, output/audit docs        | Date and recurrence semantics                         | No banking/payment/custody/execution behavior.                      |
+| Pending vs scheduled vs realized terminology         | Cash-flow PRD, latest feedback                                                            | Cash-flow semantics                 | Implemented for MVP terminology       | Yes          | Related to scheduled flows                                         | Complete for current scope                                       | Documented in input schema/help/output docs                              | Product terminology decision                          | Double-count prevention uses generated schedule event IDs.          |
 | Full transaction-cost optimizer                      | Optimizer PRD/audit, meta paper, next-iteration PRD                                       | Full optimizer                      | Not implemented                       | Yes          | Boundary mode is partial support, not conflict                     | Medium-term PRD first, implementation later                      | Required when implemented; likely new policy fields and output rationale | Objective, constraints, solver policy, explainability | Defer until deterministic rules cannot satisfy a concrete use case. |
 | Jurisdiction-specific tax handling                   | Tax-lot PRD, README, deferred docs                                                        | Tax handling                        | Not implemented                       | Yes          | Generic tax-lot allocation is not jurisdictional                   | Long-term / dedicated tax PRD                                    | Required if engine capability is added; disclaimers in CLI/docs          | Legal/regulatory/product input                        | Do not implement as small technical slice.                          |
 | Tax-lot primitives beyond metadata                   | Tax-lot PRD risks, optimizer prerequisites                                                | Tax-lot primitives                  | Partially implemented                 | Yes          | Must not become tax advice accidentally                            | Near-term only if scoped generically                             | Required for new lot fields/modes                                        | Product and tax-boundary decisions                    | Existing modes are FIFO/LIFO/HIGHEST_COST/LOWEST_COST.              |
@@ -134,7 +134,7 @@ Search terms used:
 
 | Candidate                                          | Product value                    | Complexity                              | Risk                          | Testability | CLI impact  | Architecture impact | Recommended priority                                  | Rationale                                                                                                      |
 | -------------------------------------------------- | -------------------------------- | --------------------------------------- | ----------------------------- | ----------- | ----------- | ------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Option A - Scheduled/recurring cash-flow semantics | High                             | Medium                                  | Medium                        | High        | Medium-high | Medium              | Preferred now                                         | Builds directly on implemented cash-flow records, remains offline, and addresses latest feedback.              |
+| Option A - Scheduled/recurring cash-flow semantics | High                             | Medium                                  | Medium                        | High        | Medium-high | Medium              | Complete for offline MVP                               | Builds directly on implemented cash-flow records and remains offline.                                          |
 | Option B - Dedicated productionization PRD         | Medium now, high later           | Medium for PRD, high for implementation | High if implemented too early | Medium      | Medium      | High                | Near-term PRD only when consumer requirements exist   | Necessary before API/UI/database/live work, but not the best next domain increment without concrete consumers. |
 | Option C - Optimizer PRD                           | Medium                           | Medium for PRD, high for implementation | High                          | Medium      | Medium      | High                | Medium-term PRD                                       | Needs objective, constraints, solver, and explanation model first.                                             |
 | Option D - Tax-aware PRD                           | Medium for taxable-account users | High                                    | High legal/regulatory risk    | Medium      | Medium      | High                | Long-term or limited generic primitives               | Jurisdictional tax handling requires product/legal input; generic lot metadata already exists.                 |
@@ -143,7 +143,7 @@ Search terms used:
 Decision:
 
 - Preferred option: Option A - Scheduled/Recurring Cash-Flow Semantics Increment.
-- Status: Accepted for next planning increment; implementation not started in this roadmap slice.
+- Status: Implemented for the offline deterministic MVP.
 - Alternatives considered: productionization PRD, optimizer PRD, tax-aware PRD, and roadmap-only cleanup.
 - Rationale: scheduled/recurring cash flows are a domain capability adjacent to implemented cash-flow foundations. They are reversible, deterministic, auditable, and testable offline. Production, optimizer, and tax-specific work remain blocked by higher-risk decisions.
 
@@ -151,14 +151,9 @@ Decision:
 
 ### Now / Next Increment
 
-- Scheduled and recurring cash-flow semantics:
-  - Model scheduled deposits and withdrawals.
-  - Model recurring contribution and withdrawal plans.
-  - Define realized, pending, scheduled, and recurring terminology.
-  - Define valuation-date and effective-date behavior.
-  - Expand schedules into applicable cash-flow events deterministically.
-  - Integrate with trigger evaluation, trade proposals, explanation, audit, fixtures, and CLI.
-  - Avoid banking/payment/custody/execution behavior.
+- No larger domain increment is currently selected.
+- Near-term candidates are CI workflow setup, fixture/schema validation hardening, static price timestamp semantics, or an optimizer PRD refresh if a concrete multi-constraint use case appears.
+- Continue to avoid banking/payment/custody/execution behavior unless a dedicated productionization PRD supplies concrete requirements.
 
 ### Near-Term
 
@@ -281,14 +276,13 @@ Integration risks:
 
 Open questions:
 
-- Should scheduled flows live on `PortfolioState.cashFlows`, a new `cashFlowSchedules` field, or policy-level planning configuration?
-- Should the first recurrence model be finite only, or allow open-ended rules with evaluation-window limits?
-- Should scheduled flows become `PENDING` events at evaluation time or remain a separate source category in audit output?
-- Should valuation date come from policy calendar configuration, scenario metadata, or a new explicit evaluation context?
-- Should recurrence support monthly/quarterly/annual only in MVP, or also weekly/custom intervals?
+- Should weekly/custom recurrence be added later, or are monthly/quarterly/annual sufficient?
+- Should schema-only validation be split from engine-path validation for CLI `validate`?
+- Should future scheduled flows remain warnings, or become audit-only metadata in a later output contract?
+- Should static price timestamp/freshness semantics be the next offline data-integrity increment?
 
 ## 10. Recommended Next Action
 
 Recommended next task/prompt:
 
-Implement Slice 0 and Slice 1 from `docs/plans/scheduled-recurring-cash-flow-mvp-plan.md`: run the baseline regression checks, then lock cash-flow terminology and date semantics in documentation and tests without implementing schedule expansion yet. Keep the CLI as a first-class acceptance gate before any engine behavior is added.
+Run a small hardening increment for fixture/schema validation or add CI using the existing validation commands: `npm test`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, scenario runner expectation validation, and representative CLI smoke commands. Keep optimizer, tax, API, UI, database, live data, banking/custody, and execution work deferred until dedicated requirements exist.

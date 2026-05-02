@@ -11,6 +11,7 @@ Date: 2026-05-02
 - Scenario runner: `src/runner/scenario-runner.ts` loads a fixture file shaped as `{ "scenarios": [...] }`, sorts scenarios by ID, runs each scenario independently, and reports deterministic success/error results.
 - Fixture loading: existing fixture loading reads JSON files from disk and trusts the fixture shape at the TypeScript boundary.
 - Output structures: successful scenario runs return audit records. Audit records contain inputs, strategy, trigger, drift, proposal warnings, proposed trades, post-trade simulation, explanation, and cash-flow summary when present.
+- Scheduled/recurring cash-flow support: scenario and portfolio files may include `PortfolioState.cashFlowSchedules`; policies may include `evaluationDate`. The CLI does not provide schedule-creation flags.
 - Scripts: `npm run scenario:run` builds the project and runs the existing fixture batch runner. There is no packaged end-user CLI yet.
 - Gaps: users must know source paths and runner argument order, root help is absent, single-scenario execution is awkward, explicit input files are unsupported, output formats are limited to raw JSON, and exit-code semantics are not documented for CLI use.
 
@@ -34,6 +35,18 @@ Date: 2026-05-02
 - Helpful user errors without stack traces by default.
 - Strict mode that can make warnings fail automation.
 - Thin orchestration layer that does not duplicate rebalancing logic.
+
+### Scheduled/Recurring Cash-Flow CLI Behavior
+
+- `validate` runs scheduled-flow scenarios through the same deterministic engine path as recommendations and reports invalid dates, unsupported recurrence frequencies, non-positive amounts, missing evaluation dates, duplicate schedule IDs, and related errors.
+- `run` applies due scheduled events from scenario/portfolio input files and renders schedule-derived metadata in JSON and pretty output.
+- `batch` executes scheduled-flow fixtures and expectation manifests like other scenarios.
+- `inspect scenarios` shows a scheduled cash-flow count for schedule-bearing fixtures.
+- `inspect policies` lists top-level `evaluationDate`.
+- JSON output includes `outputs.cashFlowScheduleSummary` when schedules are present.
+- Summary output remains concise; pretty output includes applied, future, and already represented schedule counts.
+- Future scheduled flows are warnings and are converted to failures by `--strict`.
+- No CLI flags create schedule amounts, dates, or recurrence rules; audited input files remain the source of truth.
 
 ## Decisions
 

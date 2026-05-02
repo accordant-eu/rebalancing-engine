@@ -1527,6 +1527,190 @@ CLI tests and documented command examples become required gates for engine behav
 
 **Recommended next step:** Implement Slice 0 and Slice 1 from `docs/plans/scheduled-recurring-cash-flow-mvp-plan.md`: run the baseline regression gate, then lock cash-flow terminology, date source, schedule model location, generated-event status, recurrence subset, and CLI acceptance rules before code changes.
 
+### Iteration 24 Detail — 2026-05-02
+
+**Goal:** Implement scheduled/recurring cash-flow semantics as the next offline deterministic domain increment.
+
+**Baseline verification before changes:** On branch `main`, with a clean working tree, `npm test` passed with 123 tests across 16 suites; `npx tsc --noEmit` passed; `npm run lint` passed; `npm run build` passed; `npm run scenario:run` passed; `node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures/scenario-expectations.json` passed with 18 expected scenarios; `npm run cli -- inspect strategies` passed; `npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id on_target` passed.
+
+**Branch:** Created `feature/scheduled-recurring-cash-flows` from `main` before implementation.
+
+**Decision: Place scheduled flows on `PortfolioState.cashFlowSchedules`**
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Existing explicit cash-flow records live on `PortfolioState.cashFlows`, and scenario/portfolio files are the first-class offline input surface.
+
+Options considered:
+
+1. Add schedules to `PortfolioState`.
+   - Benefits: Keeps all account-level cash-flow inputs in one file shape; works with scenario and explicit portfolio CLI inputs.
+   - Costs: Mixes current account state with planning assumptions.
+
+2. Add schedules to `RebalancingPolicy`.
+   - Benefits: Treats schedules as planning policy.
+   - Costs: Less intuitive for account-level deposits/withdrawals and harder to avoid strategy-specific interpretation.
+
+3. Add a separate cash-flow plan/evaluation context object.
+   - Benefits: Cleaner future API boundary.
+   - Costs: More structural complexity and CLI input-mode churn for the MVP.
+
+Preferred option:
+Option 1: optional `PortfolioState.cashFlowSchedules`.
+
+Rationale:
+The first implementation stays additive, file-friendly, auditable, and reversible. It preserves existing `cashFlows` behavior and avoids a larger context model before production API/persistence requirements exist.
+
+Implementation impact:
+Added `CashFlowSchedule`, `CashFlowRecurrence`, and recurrence frequency types to `src/models/domain.ts`; fixtures use portfolio-level schedules.
+
+Validation:
+Unit, evaluation, fixture, runner, and CLI tests cover schedule input.
+
+**Decision: Use explicit ISO date-only evaluation semantics**
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Scheduled events require a deterministic date bound. The engine must not read wall-clock time or infer time zones.
+
+Options considered:
+
+1. Use top-level `RebalancingPolicy.evaluationDate`, with evaluation input and calendar policy fallback.
+   - Benefits: Works for threshold/manual/calendar strategies and explicit file mode.
+   - Costs: Adds a policy field that is not strictly a trigger policy.
+
+2. Use only `policy.calendar.evaluationDate`.
+   - Benefits: Reuses existing date field.
+   - Costs: Couples scheduled flows to calendar strategy.
+
+3. Add a separate mandatory evaluation context file.
+   - Benefits: Cleaner conceptual separation.
+   - Costs: Larger CLI and fixture change.
+
+Preferred option:
+Option 1.
+
+Rationale:
+It is the smallest deterministic interface that works through existing scenario and explicit-file CLI modes. `RebalanceEvaluationInput.evaluationDate` remains available for callers that have an explicit orchestration context.
+
+Implementation impact:
+Date-only validation requires `YYYY-MM-DD`. Due events include `effectiveDate <= evaluationDate`; future events are excluded and warned. Time zones, business-day calendars, and holidays are unsupported.
+
+Validation:
+Tests cover before/on/after dates and invalid date-time strings.
+
+**Decision: Apply due schedules as schedule-derived settled cash-flow events in an internal copy**
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Due scheduled flows should affect valuation and proposals consistently with settled cash-flow behavior without mutating the caller's original portfolio state.
+
+Options considered:
+
+1. Append generated `SETTLED` cash flows to an internal portfolio copy.
+   - Benefits: Reuses existing cash-flow valuation/proposal behavior and preserves original inputs.
+   - Costs: Requires source metadata and double-count prevention.
+
+2. Add a third `CashFlowStatus` such as `SCHEDULED` to `cashFlows`.
+   - Benefits: Single array.
+   - Costs: Blurs pending/scheduled/applicable status and risks accidental valuation inclusion.
+
+3. Recalculate available cash separately from `cashFlows`.
+   - Benefits: Avoids generated records.
+   - Costs: Duplicates cash-flow math and weakens audit traceability.
+
+Preferred option:
+Option 1.
+
+Rationale:
+It is deterministic, traceable, and consistent with existing settled withdrawal/deposit proposal behavior. Generated IDs use `schedule:<cashFlowScheduleId>:<effectiveDate>`; matching explicit cash-flow IDs are treated as already represented to avoid double counting.
+
+Implementation impact:
+Added `src/core/cash-flows.ts`, integrated expansion in `evaluateRebalance`, and included `cashFlowScheduleSummary` in audit/explanation/CLI output.
+
+Validation:
+Tests cover due deposits, due withdrawals, future schedules, recurring expansion, and already-settled/double-count behavior.
+
+**Decision: Support monthly, quarterly, and annual recurrence only**
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The MVP needs recurring contribution and withdrawal semantics without a broad scheduling engine.
+
+Options considered:
+
+1. One-off schedules only.
+   - Benefits: Smallest implementation.
+   - Costs: Does not satisfy recurring-flow objective.
+
+2. Monthly, quarterly, and annual recurrence.
+   - Benefits: Covers common contribution/withdrawal planning while remaining deterministic.
+   - Costs: Requires month-end rules and recurrence validation.
+
+3. Weekly/custom intervals and business-day adjustment.
+   - Benefits: Broader scheduling expressiveness.
+   - Costs: Adds calendar semantics outside current MVP scope.
+
+Preferred option:
+Option 2.
+
+Rationale:
+Monthly/quarterly/annual are enough for the current offline planning increment. Weekly/custom recurrence, holidays, and business-day rules remain deferred.
+
+Implementation impact:
+`recurrence.frequency` supports `MONTHLY`, `QUARTERLY`, and `ANNUAL`; optional `endDate` and `occurrenceCount` can bound expansion further, while evaluation date bounds open-ended recurrence.
+
+Validation:
+Unit tests cover monthly month-end clamping, quarterly expansion, annual leap-day clamping, end-date behavior, and unsupported frequency rejection.
+
+**Decision: Keep scheduled-flow CLI inputs file-based**
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The CLI is the first-class offline interface, but financial inputs should remain auditable.
+
+Options considered:
+
+1. Add schedule creation flags.
+   - Benefits: Convenient ad hoc demos.
+   - Costs: Hidden overrides can diverge from audited input files.
+
+2. Keep schedules in scenario/portfolio/policy files and expose validation/output/inspection only.
+   - Benefits: Preserves auditability and works with batch fixtures.
+   - Costs: Users must edit JSON files.
+
+Preferred option:
+Option 2.
+
+Rationale:
+This matches existing strategy and cash-flow CLI discipline. `validate`, `run`, `batch`, `inspect scenarios`, and `inspect policies` expose the behavior without creating unaudited overrides.
+
+Implementation impact:
+Updated CLI help, scenario inspection, policy field inspection, summary/pretty/JSON rendering, and CLI tests.
+
+Validation:
+CLI tests cover valid scheduled run JSON, invalid recurrence validation, strict future-schedule warning behavior, batch expectation count, and scenario inspection.
+
+**Implemented scope:** Domain model, validation, schedule expansion, engine integration, warnings, explanation, audit output, synthetic fixtures, runner expectations, CLI behavior, README, CLI docs, PRD, plan, roadmap, fixture docs, and scheduled-flow audit.
+
+**Out of scope preserved:** Banking/payment initiation, custody cash movement, execution integration, API, UI, database, persistence, live market data, tax advice, jurisdiction-specific tax handling, full optimizer, business-day calendars, holiday calendars, weekly/custom recurrence, and contribution/withdrawal amount recommendations.
+
+**Validation during implementation:** Focused tests passed with `npm test -- --runInBand tests/cash-flows.test.ts tests/evaluation.test.ts`; expanded focused suite passed with `npm test -- --runInBand tests/cash-flows.test.ts tests/evaluation.test.ts tests/scenario-runner.test.ts tests/fixtures.test.ts tests/cli.test.ts`.
+
+**Final validation:** `npm test` passed with 138 tests across 17 suites; `npx tsc --noEmit` passed; `npm run lint` passed; `npm run build` passed; `npm run scenario:run` passed; expected-status validation passed with 26 checked scenarios; CLI smoke commands passed for scheduled validation, recurring-withdrawal JSON run, batch expectations, and scenario inspection.
+
+**Recommended next step:** Run final full validation, commit focused changes, and push the feature branch if all gates pass.
+
 ## 6. Scope of Work
 
 ### In Scope for This Initialization

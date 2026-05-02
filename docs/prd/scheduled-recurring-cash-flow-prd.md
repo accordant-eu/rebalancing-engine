@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: Planned. No scheduled or recurring cash-flow engine behavior is implemented yet.
+Implementation status: Implemented for the offline deterministic MVP. No banking, payment, custody, execution, API, UI, database, persistence, live market data, tax advice, jurisdiction-specific tax handling, or full optimizer behavior is implemented.
 
 ## 1. Title
 
@@ -20,7 +20,7 @@ This PRD is the recommended next roadmap increment because it extends implemente
 
 ## 3. Product Objective
 
-Add deterministic, auditable scheduled and recurring cash-flow semantics that can be evaluated for a supplied valuation date or analysis window, integrated into trigger and proposal behavior, exposed through the CLI, and documented without adding production infrastructure or external services.
+Add deterministic, auditable scheduled and recurring cash-flow semantics that can be evaluated for a supplied evaluation date, integrated into trigger and proposal behavior, exposed through the CLI, and documented without adding production infrastructure or external services.
 
 ## 4. Scope
 
@@ -39,12 +39,24 @@ Included:
 - Explanation and audit records showing how scheduled/recurring flows affected the recommendation.
 - CLI validation, run, batch, inspect, output, tests, and documentation.
 
-Provisional terminology:
+Implemented terminology:
 
-- Realized flow: a cash movement already reflected as settled cash or represented by a `SETTLED` cash-flow record.
-- Pending flow: a known cash movement not yet available for valuation or proposal sizing.
-- Scheduled flow: a one-time dated future cash-flow intent.
-- Recurring flow: a rule that produces dated scheduled flow instances.
+- `SETTLED` cash flow: explicit `cashFlows` record that affects valuation and proposals now.
+- `PENDING` cash flow: explicit `cashFlows` record that is excluded from valuation and proposal sizing but audited/warned.
+- `SCHEDULED` cash flow: one-time `cashFlowSchedules` source event with an `effectiveDate`.
+- `RECURRING` cash-flow schedule: `cashFlowSchedules` rule that generates dated scheduled events.
+- `effectiveDate`: date on which a scheduled event becomes applicable.
+- `evaluationDate`: caller-supplied ISO date-only string used to decide applicable scheduled events.
+
+Implemented domain decisions:
+
+- Schedule location: optional `PortfolioState.cashFlowSchedules`.
+- Evaluation date source: `RebalanceEvaluationInput.evaluationDate`, then top-level `RebalancingPolicy.evaluationDate`, then `policy.calendar.evaluationDate` as fallback.
+- Date format: ISO date-only `YYYY-MM-DD`; time zones and wall-clock time are unsupported.
+- Applicability: scheduled events with `effectiveDate <= evaluationDate` are applied; future events are excluded.
+- Recurrence: `MONTHLY`, `QUARTERLY`, and `ANNUAL`; open-ended recurrence is bounded by the evaluation date, with optional `endDate` or `occurrenceCount`.
+- Application: due scheduled events become schedule-derived `SETTLED` cash-flow records in an internal portfolio copy. The original portfolio state is not mutated.
+- Double-count prevention: generated IDs use `schedule:<cashFlowScheduleId>:<effectiveDate>` and are skipped as already represented if an explicit cash flow has the same ID.
 
 ## 5. Out of Scope
 
@@ -74,12 +86,12 @@ Provisional terminology:
 Cash-flow data model:
 
 - Existing `CashFlow` records remain backward compatible.
-- Scheduled and recurring inputs must be optional.
-- Each scheduled or recurring cash-flow source must have a stable ID.
-- Direction must be explicit: `DEPOSIT` or `WITHDRAWAL`.
+- Scheduled and recurring inputs are optional on `PortfolioState.cashFlowSchedules`.
+- Each scheduled or recurring cash-flow source has `cashFlowScheduleId`.
+- Direction is explicit: `DEPOSIT` or `WITHDRAWAL`.
 - Amount must be positive.
-- Effective dates must be explicit ISO date strings.
-- Invalid dates must fail explicitly.
+- Effective dates are explicit ISO date-only strings.
+- Invalid dates fail explicitly.
 
 Schedule model:
 
@@ -90,8 +102,8 @@ Schedule model:
 Recurrence model:
 
 - Recurring flows must define start date, frequency, amount, direction, and ID.
-- MVP recurrence should prefer a small explicit set such as monthly, quarterly, and annually.
-- Infinite recurrence must be bounded by valuation date or an explicit analysis window to avoid unbounded expansion.
+- MVP recurrence supports `MONTHLY`, `QUARTERLY`, and `ANNUAL`.
+- Open-ended recurrence is bounded by evaluation date; `endDate` and `occurrenceCount` can further bound expansion.
 - Generated events must have deterministic IDs derived from the source schedule ID and occurrence date.
 
 Effective date and valuation-date behavior:
@@ -99,7 +111,7 @@ Effective date and valuation-date behavior:
 - The engine must not read system time.
 - The valuation/evaluation date must be supplied explicitly.
 - Applicable generated events must be deterministic for identical inputs.
-- The PRD implementation plan must decide whether applicable scheduled flows become `SETTLED`, `PENDING`, or a separate schedule-derived category.
+- Applicable scheduled flows become schedule-derived `SETTLED` records in the evaluation copy and remain traceable through schedule summary metadata.
 
 Validation rules:
 
@@ -127,7 +139,7 @@ Explanation behavior:
 
 Audit behavior:
 
-- Audit records must include input schedules, generated applicable flow events, excluded future events or counts, and cash-flow summary metadata.
+- Audit records include input schedules, generated applicable flow events, excluded future events, already represented events, and cash-flow summary metadata.
 - Audit output must be deterministic and rounded according to the existing numeric policy.
 
 CLI command/option behavior:
@@ -136,7 +148,8 @@ CLI command/option behavior:
 - `rebalance run` must apply scheduled/recurring semantics when included in input files.
 - `rebalance batch` must run scheduled cash-flow fixtures and expectation manifests.
 - `rebalance inspect scenarios` should identify scenarios that include scheduled/recurring cash-flow inputs.
-- `rebalance inspect policies` should list schedule-related policy fields if policy fields are introduced.
+- `rebalance inspect policies` lists `evaluationDate`.
+- `rebalance inspect scenarios` marks schedule-bearing scenarios.
 
 Fixture/scenario behavior:
 
@@ -265,11 +278,10 @@ Audit/explanation output:
 
 ## 12. Open Questions
 
-| Question                                                                             | Default assumption                                                                                      | Blocking status                        |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Where should schedules live: portfolio, policy, or scenario metadata?                | Prefer the smallest additive model aligned with existing `PortfolioState.cashFlows`; decide in Slice 1. | Blocks implementation.                 |
-| What supplies valuation date?                                                        | Use explicit scenario/evaluation input, not system time.                                                | Blocks implementation.                 |
-| Should due scheduled flows become `SETTLED` events or a separate generated category? | Keep generated metadata separate while applying settled-like effects only when due.                     | Blocks implementation detail.          |
-| Which recurrence frequencies are MVP?                                                | Monthly, quarterly, annually.                                                                           | Not blocking PRD, blocks model design. |
-| Should future scheduled flows produce warnings or informational audit metadata?      | Prefer audit/explanation metadata; warnings only when exclusion affects user expectations.              | Blocks output design.                  |
-| Should business-day adjustment be supported?                                         | No for MVP.                                                                                             | Not blocking.                          |
+| Question                                        | Current answer                                                                 | Blocking status |
+| ----------------------------------------------- | ------------------------------------------------------------------------------ | --------------- |
+| Should business-day adjustment be supported?    | No for MVP.                                                                    | Not blocking.   |
+| Should weekly/custom recurrence be supported?   | Deferred until concrete need exists.                                           | Not blocking.   |
+| Should schema-only validation be separated?     | Deferred; CLI `validate` continues to run the deterministic engine path.       | Not blocking.   |
+| Should future schedules be warnings forever?    | Provisional; current CLI strict mode treats them as warnings.                  | Not blocking.   |
+| Should API/persistence wire formats differ?     | Deferred to productionization PRD; current public TypeScript inputs are files. | Not blocking.   |

@@ -24,6 +24,12 @@ Audited the implemented offline CLI wrapper for validation, single-scenario exec
 - Batch mode supports `--output-dir <dir>` for deterministic per-scenario output files.
 - Inspect mode exposes scenarios, strategies, and policy fields.
 - Scenario stdin is supported for `run --scenario -` and `validate --scenario -`.
+- Scheduled/recurring cash-flow scenarios are accepted from scenario/portfolio files.
+- `validate` fails invalid schedule and recurrence input through the deterministic engine path.
+- `run --format json` includes deterministic `cashFlowScheduleSummary` metadata when schedules are present.
+- `inspect scenarios` identifies schedule-bearing scenarios, and `inspect policies` lists `evaluationDate`.
+- Future scheduled flows are warnings and respect `--strict`.
+- No CLI schedule override flags are present; schedule data remains in auditable input files.
 - Tests cover success paths, failure paths, strict mode, output files, JSON parsing, explicit input mode, stdin scenarios, batch output directories, and deferred flags.
 
 ## Findings
@@ -34,6 +40,7 @@ Audited the implemented offline CLI wrapper for validation, single-scenario exec
 - Per-scenario batch output directories are implemented through `batch --output-dir <dir>`. Existing files are not overwritten unless `--force` is supplied.
 - Config file support is deferred. The CLI continues to require explicit scenario/policy/input paths.
 - CLI strategy overrides are deferred to preserve auditability of policy/scenario files.
+- CLI schedule-creation flags are intentionally absent for the same reason. Users should edit scenario, portfolio, or policy files so scheduled financial inputs are part of the audit record.
 
 ## Validation Commands
 

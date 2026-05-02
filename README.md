@@ -6,9 +6,7 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increments have implemented explicit decimal arithmetic, output rounding policy, relative-boundary targeting, explicit offline cash-flow foundations, generic tax-lot allocation metadata, and documented optimizer and production-boundary deferrals. Post-MVP work remains for scheduled/recurring cash flows, full transaction-cost optimization, live integrations, API, UI, database, and persistence.
-
-**Recommended next increment:** Scheduled/recurring cash-flow semantics. See the roadmap, PRD, and MVP plan linked below.
+**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increments have implemented explicit decimal arithmetic, output rounding policy, relative-boundary targeting, explicit offline cash-flow foundations, scheduled/recurring cash-flow semantics, generic tax-lot allocation metadata, and documented optimizer and production-boundary deferrals. Post-MVP work remains for full transaction-cost optimization, live integrations, API, UI, database, and persistence.
 
 ## Numeric Policy
 
@@ -37,6 +35,15 @@ Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/
 - `PENDING` flows are excluded from valuation and trade sizing, but appear in cash-flow summary metadata and proposal warnings.
 - Raw negative cash without explicit settled withdrawal context remains invalid for proposal generation.
 
+`PortfolioState.cashFlowSchedules` is also optional. Schedules are offline planning inputs only; they do not initiate banking, payment, custody, or execution activity.
+
+- `SCHEDULED` one-off events use `effectiveDate` and are evaluated against an explicit `policy.evaluationDate` or calendar evaluation date.
+- `RECURRING` schedules support `MONTHLY`, `QUARTERLY`, and `ANNUAL` recurrence.
+- Events with `effectiveDate <= evaluationDate` are expanded into schedule-derived `SETTLED` cash-flow records in an internal portfolio copy and affect valuation, triggers, and proposal sizing like settled flows.
+- Future scheduled events are excluded from valuation and proposal sizing, but appear in warnings, explanation, and audit output.
+- Generated event IDs use `schedule:<cashFlowScheduleId>:<effectiveDate>`; matching explicit `cashFlows` IDs are treated as already represented to avoid double counting.
+- Date strings are ISO date-only `YYYY-MM-DD`; time zones, business-day adjustments, holiday calendars, payment initiation, custody movement, and execution are out of scope.
+
 ## Tax Lots
 
 Holdings may include optional `taxLots`. When a sell trade is proposed for a holding with tax lots, the aggregate sell quantity is unchanged and the trade includes deterministic `lotAllocations` metadata. Supported generic sell selection modes are `FIFO`, `LIFO`, `HIGHEST_COST`, and `LOWEST_COST`.
@@ -61,6 +68,7 @@ The current delivery model is an offline library/CLI-style calculation core. No 
 - [`docs/audits/next-iteration-mvp-audit.md`](docs/audits/next-iteration-mvp-audit.md) — Multi-strategy iteration status, validation, and known limitations.
 - [`docs/audits/deferred-capabilities-audit.md`](docs/audits/deferred-capabilities-audit.md) — Decimal/rounding and relative-boundary increment audit.
 - [`docs/audits/cash-flows-audit.md`](docs/audits/cash-flows-audit.md) — Explicit offline cash-flow increment audit.
+- [`docs/audits/scheduled-recurring-cash-flow-audit.md`](docs/audits/scheduled-recurring-cash-flow-audit.md) — Scheduled/recurring cash-flow increment audit.
 - [`docs/audits/tax-lots-audit.md`](docs/audits/tax-lots-audit.md) — Generic tax-lot allocation increment audit.
 - [`docs/audits/optimizer-feasibility-audit.md`](docs/audits/optimizer-feasibility-audit.md) — Optimizer deferral and prerequisite audit.
 - [`docs/audits/production-boundary-audit.md`](docs/audits/production-boundary-audit.md) — Live integration, API, UI, and database deferral audit.
@@ -144,7 +152,9 @@ After `npm run build`, the compiled CLI is available at `dist/cli/index.js`, and
 npm run cli -- inspect strategies
 npm run cli -- inspect scenarios --scenarios tests/fixtures/scenarios.json
 npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id on_target
+npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id scheduled_deposit_due
 npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id recurring_monthly_contribution --format json
 npm run cli -- batch --scenarios tests/fixtures/scenarios.json --expectations tests/fixtures/scenario-expectations.json
 npm run cli -- batch --scenarios tests/fixtures/scenarios.json --output-dir tmp/batch-results
 ```

@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: Planned. This plan does not implement engine behavior.
+Implementation status: Implemented for the offline deterministic MVP.
 
 ## 1. Executive Summary
 
@@ -33,14 +33,15 @@ Implemented CLI behavior:
 - `--strict` converts warnings into exit code `1`.
 - `--output` writes command output to file.
 
-Not implemented:
+Implemented by this increment:
 
-- Scheduled cash-flow model.
-- Recurrence model.
-- Schedule expansion.
-- Valuation-date semantics for schedules.
-- Scheduled/recurring fixtures.
-- CLI help/output for schedules.
+- Optional `PortfolioState.cashFlowSchedules`.
+- Top-level `RebalancingPolicy.evaluationDate` plus evaluation input/calendar fallback.
+- ISO date-only validation.
+- Deterministic one-off and `MONTHLY`/`QUARTERLY`/`ANNUAL` recurrence expansion.
+- Schedule-derived settled cash-flow events in an internal evaluation copy.
+- Future-schedule warnings and audit/explanation metadata.
+- Scheduled/recurring fixtures, CLI help/output/tests, and documentation.
 
 ## 3. Scope
 
@@ -72,6 +73,9 @@ Remain deferred:
 
 Objective:
 Confirm current behavior before changing the model.
+
+Status:
+Complete. Baseline `npm test`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, scenario runner, expectation validation, and CLI smoke commands passed before implementation.
 
 Scope:
 
@@ -138,6 +142,9 @@ Commit recommendation:
 
 Objective:
 Define realized, pending, scheduled, and recurring semantics before implementation.
+
+Status:
+Complete. Terminology, schedule location, evaluation date source, date semantics, recurrence scope, application semantics, CLI exposure, and non-scope are documented in the PRD and `BUILD_JOURNEY.md`.
 
 Scope:
 
@@ -207,6 +214,9 @@ Commit recommendation:
 Objective:
 Add optional model/schema support for scheduled and recurring flows.
 
+Status:
+Complete. Domain types and validation for scheduled/recurring inputs were added.
+
 Scope:
 
 - Add TypeScript interfaces/types.
@@ -273,6 +283,9 @@ Commit recommendation:
 Objective:
 Convert schedules into applicable cash-flow events for a valuation date or analysis window.
 
+Status:
+Complete. Pure expansion logic classifies applied, future, and already represented generated events deterministically.
+
 Scope:
 
 - Implement deterministic expansion.
@@ -338,6 +351,9 @@ Commit recommendation:
 
 Objective:
 Apply scheduled/recurring cash-flow events to valuation, rebalance trigger, and trade proposal behavior.
+
+Status:
+Complete. Due scheduled deposits/withdrawals flow through valuation, drift, trigger evaluation, proposal generation, and simulation via an internal portfolio copy.
 
 Scope:
 
@@ -407,6 +423,9 @@ Commit recommendation:
 Objective:
 Make schedule effects explainable and replayable.
 
+Status:
+Complete. Audit outputs include `cashFlowScheduleSummary`, and explanation output includes scheduled-flow impact text.
+
 Scope:
 
 - Add explanation text for applied/excluded schedules.
@@ -471,6 +490,9 @@ Commit recommendation:
 
 Objective:
 Complete CLI-first exposure for scheduled/recurring cash flows.
+
+Status:
+Complete. `validate`, `run`, `batch`, and `inspect scenarios|policies` understand scheduled-flow input through files; no schedule-creation flags were added.
 
 Scope:
 
@@ -541,6 +563,9 @@ Commit recommendation:
 Objective:
 Make scheduled/recurring behavior executable through synthetic scenarios.
 
+Status:
+Complete. Fixture coverage includes due-before, due-on-date, future, withdrawal, monthly recurring, quarterly recurring, invalid recurrence, and already-settled/double-count scenarios.
+
 Scope:
 
 - Add and document fixtures:
@@ -610,6 +635,9 @@ Commit recommendation:
 
 Objective:
 Finalize documentation and validation for the increment.
+
+Status:
+Complete pending final full validation in the implementation branch.
 
 Scope:
 
@@ -742,11 +770,9 @@ npm run build
 npm run scenario:run
 node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures/scenario-expectations.json
 npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id scheduled_deposit_due
-npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id recurring_withdrawal_due --format json
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id recurring_quarterly_withdrawal --format json
 npm run cli -- batch --scenarios tests/fixtures/scenarios.json --expectations tests/fixtures/scenario-expectations.json
 ```
-
-The last three CLI examples become valid only after the fixture slice adds those scenarios.
 
 ## 9. Documentation Plan
 
