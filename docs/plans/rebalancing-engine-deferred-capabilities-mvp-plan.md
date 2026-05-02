@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: In progress. Selected scope is Option A: correctness and policy semantics. Slice 1 decimal / rounding policy is implemented and validated.
+Implementation status: In progress. Selected scope is Option A: correctness and policy semantics. Slice 1 decimal / rounding policy and Slice 2 relative-boundary targeting are implemented and validated.
 
 ## 1. Current Baseline
 
@@ -134,19 +134,22 @@ Commit:
 Goal:
 Support relative tolerance bands alongside existing absolute tolerance bands for threshold boundary execution.
 
+Status:
+Complete.
+
 Decisions required:
 
 - Policy field name and default.
 - Whether absolute and relative bands combine or are selected.
 - Behavior for zero and very small target weights.
 
-Planned approach:
+Implemented approach:
 
-- Add `boundaryBandMode?: "absolute" | "relative"` to `RebalancingPolicy`.
-- Default to `absolute` for backward compatibility.
-- Use `relative` only for `executionTargetMode: "boundary"`.
-- In relative mode, calculate lower/upper boundaries as `targetWeight +/- targetWeight * relativeDriftTolerance`, clamped to `[0, 1]`.
-- Reject relative boundary mode when `relativeDriftTolerance` is missing or when a boundary trade is required for a zero-target instrument.
+- Added `boundaryBandMode?: "absolute" | "relative"` to `RebalancingPolicy`.
+- Defaulted to `absolute` for backward compatibility.
+- Used `relative` only for `executionTargetMode: "boundary"`.
+- In relative mode, lower/upper boundaries are `targetWeight +/- targetWeight * relativeDriftTolerance`, clamped to `[0, 1]`.
+- Relative boundary mode rejects missing/negative `relativeDriftTolerance` and zero-target instruments that require a boundary trade.
 
 Files likely affected:
 
@@ -157,10 +160,10 @@ Files likely affected:
 
 Validation:
 
-- Absolute-boundary fixture remains unchanged.
-- New relative-boundary fixture passes.
-- Zero-target relative-boundary invalid case is tested.
-- Scenario runner expected-status manifest includes new scenario.
+- Absolute-boundary fixture remains backward compatible.
+- New `threshold_relative_boundary_target` fixture passes.
+- Missing tolerance and zero-target invalid cases are tested.
+- Scenario runner expected-status manifest includes the new scenario.
 
 Commit:
 `feat: support relative boundary targeting`

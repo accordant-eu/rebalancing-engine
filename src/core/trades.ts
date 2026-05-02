@@ -1,4 +1,5 @@
 import {
+  BoundaryBandMode,
   ExecutionTargetMode,
   PriceSnapshot,
   ProposedTrade,
@@ -17,8 +18,8 @@ const TRADE_EPSILON = CALCULATION_EPSILON;
  * Generates a deterministic trade proposal.
  *
  * The default execution mode restores the portfolio to target weights.
- * Boundary mode trades breached positions back to the configured absolute
- * tolerance boundary. Minimum trade constraints are applied before returning.
+ * Boundary mode trades breached positions back to the configured absolute or
+ * relative tolerance boundary. Minimum trade constraints are applied before returning.
  */
 export function generateTradeProposal(
   valuation: ValuationResult,
@@ -32,6 +33,7 @@ export function generateTradeProposal(
   }
 
   const executionTargetMode = policy?.executionTargetMode ?? 'full_reset';
+  const boundaryBandMode = resolveBoundaryBandMode(executionTargetMode, policy);
   const targetWeights = new Map(target.targets.map((t) => [t.instrumentId, t.weight]));
   const currentValues = new Map(valuation.holdings.map((h) => [h.instrumentId, h.marketValue]));
 
@@ -50,6 +52,7 @@ export function generateTradeProposal(
       valuation.totalPortfolioValue,
       policy,
       executionTargetMode,
+      boundaryBandMode,
     );
     const valueDelta = targetValue.minus(currentValue);
 
@@ -86,6 +89,7 @@ export function generateTradeProposal(
       estimatedPostTradeCash: toDecimal(valuation.cash).plus(netCashDelta).toNumber(),
       warnings: [],
       executionTargetMode,
+      boundaryBandMode,
     },
     valuation.cash,
     policy?.minimumTradeSize ?? 0,
@@ -136,7 +140,19 @@ export function applyMinimumTradeSize(
     estimatedPostTradeCash,
     warnings,
     executionTargetMode: proposal.executionTargetMode,
+    boundaryBandMode: proposal.boundaryBandMode,
   };
+}
+
+function resolveBoundaryBandMode(
+  executionTargetMode: ExecutionTargetMode,
+  policy: RebalancingPolicy | undefined,
+): BoundaryBandMode | undefined {
+  if (executionTargetMode !== 'boundary') {
+    return undefined;
+  }
+
+  return policy?.boundaryBandMode ?? 'absolute';
 }
 
 function calculateTargetValue(
@@ -145,6 +161,7 @@ function calculateTargetValue(
   totalPortfolioValue: number,
   policy: RebalancingPolicy | undefined,
   executionTargetMode: ExecutionTargetMode,
+  boundaryBandMode: BoundaryBandMode | undefined,
 ): ReturnType<typeof toDecimal> {
   if (executionTargetMode === 'full_reset') {
     return toDecimal(targetWeight).mul(totalPortfolioValue);
@@ -156,8 +173,12 @@ function calculateTargetValue(
 
   const currentWeight =
     totalPortfolioValue === 0 ? toDecimal(0) : toDecimal(currentValue).div(totalPortfolioValue);
-  const lowerBoundary = decimalMax(0, toDecimal(targetWeight).minus(policy.absoluteDriftTolerance));
-  const upperBoundary = decimalMin(1, toDecimal(targetWeight).plus(policy.absoluteDriftTolerance));
+  const { lowerBoundary, upperBoundary } = calculateBoundaryWeights(
+    currentWeight.toNumber(),
+    targetWeight,
+    policy,
+    boundaryBandMode ?? 'absolute',
+  );
 
   if (currentWeight.gt(upperBoundary)) {
     return upperBoundary.mul(totalPortfolioValue);
@@ -167,6 +188,46 @@ function calculateTargetValue(
   }
 
   return toDecimal(currentValue);
+}
+
+function calculateBoundaryWeights(
+  currentWeight: number,
+  targetWeight: number,
+  policy: RebalancingPolicy,
+  boundaryBandMode: BoundaryBandMode,
+): {
+  lowerBoundary: ReturnType<typeof toDecimal>;
+  upperBoundary: ReturnType<typeof toDecimal>;
+} {
+  if (boundaryBandMode === 'absolute') {
+    return {
+      lowerBoundary: decimalMax(0, toDecimal(targetWeight).minus(policy.absoluteDriftTolerance)),
+      upperBoundary: decimalMin(1, toDecimal(targetWeight).plus(policy.absoluteDriftTolerance)),
+    };
+  }
+
+  if (policy.relativeDriftTolerance === undefined) {
+    throw new Error('Relative boundary mode requires relativeDriftTolerance');
+  }
+  if (policy.relativeDriftTolerance < 0) {
+    throw new Error('Relative boundary mode requires non-negative relativeDriftTolerance');
+  }
+  if (targetWeight <= 0) {
+    if (toDecimal(currentWeight).abs().lte(TRADE_EPSILON)) {
+      return {
+        lowerBoundary: toDecimal(0),
+        upperBoundary: toDecimal(0),
+      };
+    }
+    throw new Error('Relative boundary mode cannot target instruments with zero target weight');
+  }
+
+  const relativeWidth = toDecimal(targetWeight).mul(policy.relativeDriftTolerance);
+
+  return {
+    lowerBoundary: decimalMax(0, toDecimal(targetWeight).minus(relativeWidth)),
+    upperBoundary: decimalMin(1, toDecimal(targetWeight).plus(relativeWidth)),
+  };
 }
 
 function decimalMax(

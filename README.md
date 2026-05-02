@@ -6,7 +6,7 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` and `boundary` execution target modes, and the scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increment has started with explicit decimal arithmetic and output rounding policy. Post-MVP work remains for relative-boundary targeting, richer cash-flow workflows, tax-lot logic, full transaction-cost optimization, live integrations, API, UI, and persistence.
+**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increment has implemented explicit decimal arithmetic, output rounding policy, and relative-boundary targeting. Post-MVP work remains for richer cash-flow workflows, tax-lot logic, full transaction-cost optimization, live integrations, API, UI, and persistence.
 
 ## Numeric Policy
 
@@ -15,6 +15,15 @@ Core financial calculations use `decimal.js` internally while the public TypeScr
 - Explanation text formats quantities to 6 decimals and monetary values/percentages to 2 decimals.
 - `serializeAuditRecord` preserves input snapshots and emits deterministically rounded output numbers.
 - Serialized audit output precision is centralized in `src/core/numeric.ts`: prices 6 decimals, quantities 8, money values 6, weights/drift/turnover 10.
+
+## Boundary Targeting
+
+Threshold policies support two execution target modes:
+
+- `executionTargetMode: "full_reset"` restores breached portfolios to target weights.
+- `executionTargetMode: "boundary"` trades breached assets to the nearest configured tolerance boundary.
+
+Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/- absoluteDriftTolerance`. Policies can opt into `boundaryBandMode: "relative"`, using `targetWeight +/- targetWeight * relativeDriftTolerance`. Relative-boundary mode requires `relativeDriftTolerance` and rejects zero-target instruments that require a boundary trade, because relative bands are undefined around a zero target.
 
 ## Documentation
 

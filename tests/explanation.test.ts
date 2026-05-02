@@ -80,4 +80,17 @@ describe('Recommendation Explanation', () => {
     expect(explanation.residualDriftExplanation).toContain('AAPL (2.50%)');
     expect(explanation.residualDriftExplanation).toContain('MSFT (-2.50%)');
   });
+
+  it('explains relative boundary trade sizing', () => {
+    const { trigger, proposal, simulation } = evaluateScenario(
+      'threshold_relative_boundary_target',
+    );
+
+    const explanation = generateExplanation(trigger, proposal, simulation);
+
+    expect(explanation.triggerExplanation).toContain('Relative tolerance: 20.00%');
+    expect(explanation.tradeExplanation).toContain('Proposed boundary (relative bands) trades');
+    expect(explanation.tradeExplanation).toContain('SELL 30.000000 AAPL');
+    expect(explanation.residualDriftExplanation).toContain('all assets within tolerance');
+  });
 });

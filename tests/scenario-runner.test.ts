@@ -29,6 +29,7 @@ describe('Scenario Runner', () => {
       'positive_cash',
       'target_allocation_sum_error',
       'threshold_boundary_target',
+      'threshold_relative_boundary_target',
     ]);
   });
 
@@ -37,7 +38,7 @@ describe('Scenario Runner', () => {
     const successes = results.filter((result) => result.status === 'success');
     const errors = results.filter((result) => result.status === 'error');
 
-    expect(successes).toHaveLength(9);
+    expect(successes).toHaveLength(10);
     expect(errors).toHaveLength(3);
 
     const success = successes.find((result) => result.scenarioId === 'one_asset_out_of_band');
@@ -92,7 +93,7 @@ describe('Scenario Runner', () => {
 
     expect(validation).toEqual({
       isValid: true,
-      checkedScenarioCount: 12,
+      checkedScenarioCount: 13,
       mismatches: [],
     });
   });
@@ -123,6 +124,7 @@ describe('Scenario Runner', () => {
       'positive_cash',
       'target_allocation_sum_error',
       'threshold_boundary_target',
+      'threshold_relative_boundary_target',
     ]);
   });
 });

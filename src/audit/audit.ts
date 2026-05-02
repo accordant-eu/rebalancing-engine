@@ -45,6 +45,7 @@ export interface AuditRecord {
   outputs: {
     strategyType: TriggerResult['strategyType'];
     executionTargetMode: TradeProposal['executionTargetMode'];
+    boundaryBandMode?: TradeProposal['boundaryBandMode'];
     driftMeasurements: DriftMeasurement[];
     trigger: TriggerResult;
     tradeProposal: TradeProposal;
@@ -67,6 +68,7 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
     outputs: {
       strategyType: input.trigger.strategyType,
       executionTargetMode: input.tradeProposal.executionTargetMode,
+      boundaryBandMode: input.tradeProposal.boundaryBandMode,
       driftMeasurements: input.driftMeasurements,
       trigger: input.trigger,
       tradeProposal: input.tradeProposal,

@@ -313,6 +313,35 @@
         "absoluteDriftTolerance": 0.05,
         "minimumTradeSize": 0
       }
+    },
+    {
+      "id": "threshold_relative_boundary_target",
+      "description": "Threshold strategy using relative boundary execution target instead of absolute boundary",
+      "portfolioState": {
+        "accountId": "acc-13",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 150 },
+          { "instrumentId": "MSFT", "quantity": 850 }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.1 },
+          { "instrumentId": "MSFT", "weight": 0.9 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 10, "MSFT": 10 }
+      },
+      "policy": {
+        "strategyType": "threshold",
+        "executionTargetMode": "boundary",
+        "boundaryBandMode": "relative",
+        "absoluteDriftTolerance": 0.5,
+        "relativeDriftTolerance": 0.2,
+        "minimumTradeSize": 0
+      }
     }
   ]
 }

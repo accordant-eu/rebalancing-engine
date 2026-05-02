@@ -24,7 +24,7 @@ export function generateExplanation(
   const tradeExplanation =
     proposal.trades.length === 0
       ? 'No trades are proposed.'
-      : `Proposed ${proposal.executionTargetMode} trades: ${proposal.trades
+      : `Proposed ${describeExecutionTarget(proposal)} trades: ${proposal.trades
           .map(
             (trade) =>
               `${trade.direction} ${formatFixed(trade.quantity, 6)} ${trade.instrumentId} for approximately ${formatFixed(trade.estimatedValue, 2)}`,
@@ -43,6 +43,14 @@ export function generateExplanation(
     warningExplanation,
     residualDriftExplanation: buildResidualDriftExplanation(simulation),
   };
+}
+
+function describeExecutionTarget(proposal: TradeProposal): string {
+  if (proposal.executionTargetMode !== 'boundary') {
+    return proposal.executionTargetMode;
+  }
+
+  return `${proposal.executionTargetMode} (${proposal.boundaryBandMode ?? 'absolute'} bands)`;
 }
 
 function buildSummary(

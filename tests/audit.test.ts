@@ -127,4 +127,26 @@ describe('Audit Record', () => {
     expect(first).toContain('"eventId": "audit-min-trade"');
     expect(first).toContain('"MINIMUM_TRADE_SIZE"');
   });
+
+  it('captures relative boundary metadata in audit records', () => {
+    const evaluation = evaluateScenario('threshold_relative_boundary_target');
+    const record = generateAuditRecord({
+      eventId: 'audit-relative-boundary',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: evaluation.scenario.portfolioState,
+      targetAllocation: evaluation.scenario.targetAllocation,
+      priceSnapshot: evaluation.scenario.priceSnapshot,
+      policy: evaluation.scenario.policy,
+      driftMeasurements: evaluation.driftMeasurements,
+      trigger: evaluation.trigger,
+      tradeProposal: evaluation.tradeProposal,
+      postTradeSimulation: evaluation.postTradeSimulation,
+      explanation: evaluation.explanation,
+    });
+
+    expect(record.outputs.executionTargetMode).toBe('boundary');
+    expect(record.outputs.boundaryBandMode).toBe('relative');
+    expect(record.outputs.tradeProposal.boundaryBandMode).toBe('relative');
+    expect(record.outputs.explanation.tradeExplanation).toContain('relative bands');
+  });
 });

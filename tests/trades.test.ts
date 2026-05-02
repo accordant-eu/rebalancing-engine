@@ -219,6 +219,7 @@ describe('Trade Proposal Generation', () => {
     );
 
     expect(proposal.executionTargetMode).toBe('boundary');
+    expect(proposal.boundaryBandMode).toBe('absolute');
     expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'MSFT']);
 
     const aapl = findTrade(proposal.trades, 'AAPL');
@@ -233,5 +234,74 @@ describe('Trade Proposal Generation', () => {
 
     expect(proposal.estimatedPostTradeCash).toBeCloseTo(0, 8);
     expect(proposal.warnings).toEqual([]);
+  });
+
+  it('generates relative-boundary trades when configured with relative bands', () => {
+    const state: PortfolioState = {
+      accountId: 'relative-boundary-1',
+      cash: 0,
+      holdings: [
+        { instrumentId: 'AAPL', quantity: 150 },
+        { instrumentId: 'MSFT', quantity: 850 },
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'AAPL', weight: 0.1 },
+        { instrumentId: 'MSFT', weight: 0.9 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 10, MSFT: 10 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      strategyType: 'threshold',
+      executionTargetMode: 'boundary',
+      boundaryBandMode: 'relative',
+      absoluteDriftTolerance: 0.5,
+      relativeDriftTolerance: 0.2,
+      minimumTradeSize: 0,
+    });
+
+    expect(proposal.executionTargetMode).toBe('boundary');
+    expect(proposal.boundaryBandMode).toBe('relative');
+    expect(proposal.trades).toHaveLength(1);
+
+    const aapl = findTrade(proposal.trades, 'AAPL');
+    expect(aapl.direction).toBe('SELL');
+    expect(aapl.estimatedValue).toBeCloseTo(300, 8);
+    expect(aapl.quantity).toBeCloseTo(30, 8);
+    expect(proposal.estimatedPostTradeCash).toBeCloseTo(300, 8);
+  });
+
+  it('rejects relative boundary mode for zero-target instruments that need a trade', () => {
+    const scenario = scenarioById('holding_outside_universe');
+    const valuation = calculateValuation(scenario.portfolioState, scenario.priceSnapshot);
+
+    expect(() =>
+      generateTradeProposal(valuation, scenario.targetAllocation, scenario.priceSnapshot, {
+        strategyType: 'threshold',
+        executionTargetMode: 'boundary',
+        boundaryBandMode: 'relative',
+        absoluteDriftTolerance: 0.5,
+        relativeDriftTolerance: 0.2,
+        minimumTradeSize: 0,
+      }),
+    ).toThrow('Relative boundary mode cannot target instruments with zero target weight');
+  });
+
+  it('requires relativeDriftTolerance for relative boundary mode', () => {
+    const scenario = scenarioById('threshold_boundary_target');
+    const valuation = calculateValuation(scenario.portfolioState, scenario.priceSnapshot);
+
+    expect(() =>
+      generateTradeProposal(valuation, scenario.targetAllocation, scenario.priceSnapshot, {
+        strategyType: 'threshold',
+        executionTargetMode: 'boundary',
+        boundaryBandMode: 'relative',
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 0,
+      }),
+    ).toThrow('Relative boundary mode requires relativeDriftTolerance');
   });
 });

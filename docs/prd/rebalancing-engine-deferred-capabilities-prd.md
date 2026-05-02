@@ -108,6 +108,7 @@ Expected changes:
 - Absolute-boundary behavior remains backward compatible.
 - Relative-boundary scenario triggers and trades to the nearest relative boundary.
 - Zero-target relative-boundary policy fails explicitly.
+- Relative-boundary metadata appears in trade proposal, explanation, and audit output.
 - README, fixture docs, implementation plan, and build journey reflect implemented and deferred scope.
 
 ## 12. Risks
