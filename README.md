@@ -123,6 +123,74 @@ node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures
 
 The command exits non-zero if a scenario status or expected error message does not match the manifest.
 
+## CLI
+
+The repository includes a thin offline CLI wrapper around the existing engine.
+
+```bash
+npm run cli -- --help
+```
+
+After `npm run build`, the compiled CLI is available at `dist/cli/index.js`, and the package binary is named `rebalance`.
+
+### Common Commands
+
+```bash
+npm run cli -- inspect strategies
+npm run cli -- inspect scenarios --scenarios tests/fixtures/scenarios.json
+npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id on_target
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
+npm run cli -- batch --scenarios tests/fixtures/scenarios.json --expectations tests/fixtures/scenario-expectations.json
+```
+
+### Input Modes
+
+Scenario mode accepts either a single scenario object or a manifest shaped as `{ "scenarios": [...] }`.
+
+```bash
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
+```
+
+Explicit file mode assembles one scenario from separate files:
+
+```bash
+npm run cli -- run \
+  --portfolio portfolio.json \
+  --prices prices.json \
+  --target target.json \
+  --policy policy.json
+```
+
+Scenario mode and explicit file mode are mutually exclusive. Strategy selection remains in the policy or scenario file; there is no CLI `--strategy` override.
+
+### Output Formats
+
+The default format is `summary`. Use `--format pretty` for a more detailed human-readable report or `--format json` for deterministic machine-readable output. JSON output is written to stdout unless `--output <path>` is supplied.
+
+```bash
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band --format json
+npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band --format json --output tmp/recommendation.json
+```
+
+Successful `run` JSON uses the existing audit record as the recommendation contract, including inputs, drift, trigger, proposed trades, warnings, post-trade simulation, explanation, and audit metadata.
+
+### Exit Codes
+
+- `0`: command completed successfully.
+- `1`: validation failed, a scenario produced blocking errors, or `--strict` converted warnings into failure.
+- `2`: CLI usage error, such as invalid flags, missing required inputs, or incompatible input modes.
+- `3`: unexpected runtime/internal error.
+
+Warnings are visible in human-readable output and included in JSON output. They do not fail a successful command unless `--strict` is used.
+
+### CLI Tests
+
+```bash
+npm test -- --runInBand tests/cli.test.ts
+```
+
+The CLI is offline and file-based only. Stdin support, config files, per-scenario batch output directories, and CLI strategy overrides are intentionally deferred.
+
 ## Project Structure
 
 ```
@@ -143,6 +211,7 @@ The command exits non-zero if a scenario status or expected error message does n
 │   │   └── explanation.ts     # Deterministic recommendation explanations
 │   ├── audit/
 │   │   └── audit.ts           # Replayable audit record generation and serialization
+│   ├── cli/                   # Offline command-line wrapper
 │   └── runner/
 │       └── scenario-runner.ts # Offline fixture batch runner
 ├── tests/
@@ -161,6 +230,7 @@ The command exits non-zero if a scenario status or expected error message does n
 │   ├── simulation.test.ts     # Post-trade simulation tests
 │   ├── explanation.test.ts    # Explanation output tests
 │   ├── audit.test.ts          # Audit record and replay tests
+│   ├── cli.test.ts            # CLI behavior tests
 │   ├── scenario-runner.test.ts # Batch scenario runner tests
 │   └── edge-cases.test.ts     # Edge-case and integration tests
 └── docs/

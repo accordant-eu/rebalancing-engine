@@ -63,6 +63,52 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Add generic tax-lot allocation metadata without tax optimization                   | Accepted for next increment | Optional lots and deterministic sell allocation improve traceability while avoiding jurisdiction-specific tax advice, tax optimization, or optimizer scope.                                                              | Tax lots PRD/plan              | High          | Implement validation and sell allocation modes                          |
 | 2026-05-02 | Defer full optimizer until objectives and constraints are explicit                 | Accepted                    | The current deterministic proposal engine is auditable and useful; a solver-backed optimizer needs documented objectives, constraints, explainability requirements, and dependency policy first.                         | Optimizer feasibility audit    | High          | Revisit when deterministic rules cannot satisfy a concrete use case     |
 | 2026-05-02 | Defer production surfaces until concrete consumers and operations are defined      | Accepted                    | API, UI, database, and live integrations introduce security, persistence, provider-contract, deployment, and regulatory decisions that are premature for the offline calculation core.                                   | Production boundary audit      | High          | Revisit with a dedicated productionization PRD                          |
+| 2026-05-02 | Add thin offline CLI around existing engine and fixture runner                     | Accepted                    | A documented `rebalance` CLI makes validation, single-scenario runs, batch regression checks, and inspection discoverable without changing the underlying deterministic engine.                                          | CLI design and tests           | High          | Revisit stdin/config/strategy overrides only with concrete user need    |
+
+Decision: Add thin offline CLI around existing engine and fixture runner
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The engine is usable through TypeScript modules and an existing fixture runner, but users need a documented command-line interface for local development, demos, regression checks, and future automation. The CLI must not reimplement financial logic or introduce live integrations.
+
+Options considered:
+
+1. Extend only the existing `scenario-runner` script.
+   - Benefits: Minimal new code and preserves the current batch workflow.
+   - Costs: Keeps single-scenario execution, validation, help text, explicit input files, and output formats awkward.
+   - Risks: Users continue depending on source-level knowledge and raw argument order.
+   - Reversibility: High.
+
+2. Add a thin `rebalance` CLI with verb subcommands and local parsing.
+   - Benefits: Clear user surface for `validate`, `run`, `batch`, and `inspect`; no new runtime dependency; preserves existing engine and runner behavior.
+   - Costs: Adds parser, renderer, and CLI tests that must be maintained.
+   - Risks: Parser scope may outgrow the lightweight implementation if future needs become complex.
+   - Reversibility: High; a CLI framework can replace the parser later without changing engine logic.
+
+3. Add a production API or broader integration wrapper.
+   - Benefits: Moves closer to future integration use.
+   - Costs: Violates the current production-boundary deferral and introduces security, persistence, and operations decisions too early.
+   - Risks: Premature architecture and expanded maintenance surface.
+   - Reversibility: Medium.
+
+Preferred option:
+Option 2: Add a thin offline `rebalance` CLI with verb subcommands and local parsing.
+
+Rationale:
+This is the best MVP-compatible trade-off. It improves discoverability and automation while keeping all financial behavior in the existing engine modules. It avoids a new dependency and remains compatible with existing fixture manifests and expected-status regression checks.
+
+Implementation impact:
+
+- Code: Added `src/cli` modules for parsing, input loading, command execution, deterministic JSON rendering, human summaries, and the executable entry point.
+- Tests: Added CLI behavior coverage for help, usage errors, validation, run output, batch expectations, inspection, strict warning behavior, output-to-file behavior, and explicit input mode.
+- Fixtures: Existing synthetic fixtures remain unchanged and are used by the CLI tests.
+- Documentation: Added `docs/cli/cli-design.md` and a README CLI section covering setup, commands, input modes, output formats, exit codes, warnings, limitations, and tests.
+- Follow-up: Stdin, config files, per-scenario batch output directories, and CLI strategy overrides remain deferred until a concrete need exists.
+
+Validation:
+Run CLI tests, the full Jest suite, TypeScript checks, linting, formatting, and build before committing.
 
 Decision: Adopt standing decision discipline in repository rules
 
