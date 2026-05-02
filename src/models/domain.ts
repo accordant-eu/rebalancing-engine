@@ -10,10 +10,24 @@ export interface Holding {
   quantity: number;
 }
 
+export type CashFlowDirection = 'DEPOSIT' | 'WITHDRAWAL';
+
+export type CashFlowStatus = 'SETTLED' | 'PENDING';
+
+export interface CashFlow {
+  cashFlowId: string;
+  direction: CashFlowDirection;
+  status: CashFlowStatus;
+  amount: number;
+  effectiveDate?: string;
+  description?: string;
+}
+
 export interface PortfolioState {
   accountId: string;
   cash: number;
   holdings: Holding[];
+  cashFlows?: CashFlow[];
 }
 
 export interface TargetWeight {
@@ -78,7 +92,7 @@ export interface ProposedTrade {
   estimatedValue: number;
 }
 
-export type ProposalWarningCode = 'MINIMUM_TRADE_SIZE';
+export type ProposalWarningCode = 'MINIMUM_TRADE_SIZE' | 'PENDING_CASH_FLOW_EXCLUDED';
 
 export interface ProposalWarning {
   code: ProposalWarningCode;
@@ -86,6 +100,8 @@ export interface ProposalWarning {
   instrumentId?: string;
   estimatedValue?: number;
   minimumTradeSize?: number;
+  pendingCashFlowCount?: number;
+  pendingNetAmount?: number;
 }
 
 export interface TradeProposal {
