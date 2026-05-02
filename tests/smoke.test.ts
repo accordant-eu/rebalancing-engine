@@ -1,5 +1,6 @@
 import { calculateValuation, calculateCurrentWeights } from '../src/core/valuation';
 import { calculateDrift, validateTargetAllocation } from '../src/core/drift';
+import { simulatePostTrade } from '../src/core/simulation';
 import { ThresholdStrategy } from '../src/strategy/threshold';
 
 /**
@@ -54,5 +55,9 @@ describe('Smoke Test — Core Module Imports', () => {
   it('ThresholdStrategy is importable and implements evaluateTrigger', () => {
     const strategy = new ThresholdStrategy();
     expect(typeof strategy.evaluateTrigger).toBe('function');
+  });
+
+  it('simulatePostTrade is importable', () => {
+    expect(typeof simulatePostTrade).toBe('function');
   });
 });

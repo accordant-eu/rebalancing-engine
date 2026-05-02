@@ -41,6 +41,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Push validated commits at reasonable checkpoints       | Accepted    | Completed, validated slices and process updates should be shared remotely without requiring a separate push request each time, while avoiding partial or failing pushes.      | User instruction             | High          | Apply after future validated commits                                    |
 | 2026-05-02 | Suppress below-minimum trades with structured warnings | Accepted    | Minimum trade-size constraints are non-fatal proposal adjustments; users need visibility into suppressed trades and residual drift will be quantified in Slice 7 simulation.  | Slice 6 implementation       | High          | Include warnings in explanation and audit output                        |
 | 2026-05-02 | Reject negative cash in trade proposal generation      | Accepted    | Negative cash makes cash-aware proposal funding ambiguous in the MVP and should not be silently converted into sells or ignored.                                              | Slice 6 implementation       | Medium        | Revisit if withdrawal/deficit funding becomes in scope                  |
+| 2026-05-02 | Simulate exact proposed trades with sell-side turnover | Accepted    | MVP simulation should replay proposal quantities exactly, reconcile cash, expose residual drift, and use sell-side turnover per prior audit expectation.                      | Slice 7 implementation       | Medium        | Revisit turnover definition if reporting requirements differ            |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -222,6 +223,96 @@ Implementation impact:
 Validation:
 Run tests, type-check, lint, build, and format after implementation.
 
+Decision: Simulate exact proposed trades with sell-side turnover
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Slice 7 requires post-trade holdings, weights, residual drift, turnover, and reconciliation checks. The engine needs explicit semantics for how simulation applies trades and how turnover is calculated.
+
+Options considered:
+
+1. Apply proposed quantities exactly and validate reconciliation.
+   - Benefits: Deterministic, replayable, and directly tied to proposal output.
+   - Costs: Does not model execution slippage, rounding, or partial fills.
+   - Risks: Fractional quantities remain a simplification until rounding policy exists.
+   - Reversibility: High; execution-aware simulation can be layered later.
+
+2. Recompute ideal post-trade state from targets instead of applying trades.
+   - Benefits: Simple for full-reset cases.
+   - Costs: Hides proposal mistakes and constraint impacts.
+   - Risks: Would miss residual drift from suppressed minimum-size trades.
+   - Reversibility: Medium; tests would need to be rewritten around replay semantics.
+
+3. Add execution-style rounding and fill simulation now.
+   - Benefits: Closer to real trading.
+   - Costs: Requires lot-size, fractional-share, order-type, and execution assumptions outside MVP scope.
+   - Risks: Premature complexity and misleading precision.
+   - Reversibility: Medium; hard to unwind once consumers depend on rounded behavior.
+
+Preferred option:
+Option 1: Apply proposed quantities exactly and validate reconciliation.
+
+Rationale:
+Exact replay is the best MVP trade-off. It proves proposals can be simulated, preserves residual drift from constraints, and avoids premature execution assumptions.
+
+Implementation impact:
+
+- Code: Added `simulatePostTrade` with post-trade state, valuation, weights, residual drift, and turnover.
+- Tests: Added full-reset, cash deployment, suppressed-trade residual drift, oversell rejection, and cash reconciliation tests.
+- Fixtures: Existing fixtures are sufficient.
+- Documentation: README and build journey now describe Slice 7 simulation.
+- Follow-up: Add rounding and execution-fill assumptions only when a later requirement demands them.
+
+Validation:
+Run tests, type-check, lint, build, and format after implementation.
+
+Decision: Use sell-side turnover for MVP simulation
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The MVP needs a turnover estimate. Prior test-audit notes proposed `turnover = sum of sell values / total portfolio value`, while other definitions such as gross traded value are also reasonable.
+
+Options considered:
+
+1. Sell-side turnover: sum of SELL estimated values divided by starting total portfolio value.
+   - Benefits: Aligns with prior audit note and highlights secondary-market liquidation volume.
+   - Costs: Buy-only cash deployment has zero turnover even though trades occur.
+   - Risks: Consumers may confuse turnover with gross trade volume.
+   - Reversibility: Medium; a future field can add gross traded value if needed.
+
+2. Gross turnover: sum of all BUY and SELL estimated values divided by starting total portfolio value.
+   - Benefits: Captures all operational trading activity.
+   - Costs: Counts cash deployment as turnover, which weakens cash-aware comparison.
+   - Risks: Could overstate rebalancing friction.
+   - Reversibility: Medium; changing semantics later would affect reports.
+
+3. Lower-of-buys-or-sells turnover.
+   - Benefits: Common in fund reporting contexts.
+   - Costs: Less intuitive for proposal simulation and cash-flow scenarios.
+   - Risks: Harder to explain in MVP output.
+   - Reversibility: Medium.
+
+Preferred option:
+Option 1: Sell-side turnover.
+
+Rationale:
+This aligns with the existing audit recommendation and the MVP focus on minimizing unnecessary sales when cash can be deployed.
+
+Implementation impact:
+
+- Code: `simulatePostTrade` reports `turnover` as sell value over starting total portfolio value.
+- Tests: Full-reset turnover and buy-only cash deployment turnover are explicitly tested.
+- Fixtures: No fixture changes required.
+- Documentation: Build journey records the semantic choice.
+- Follow-up: Add a separate `grossTradeValue` or `grossTradeRatio` later if reporting requires it.
+
+Validation:
+Run tests, type-check, lint, build, and format after implementation.
+
 ## 5. Iteration Log
 
 | Iteration | Date       | Goal                            | Scope                     | Actions taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Files changed                                                                                                                                                                            | Learnings                                                                                                                                                                                                    | Open questions                                                               | Next step                                                          |
@@ -237,6 +328,7 @@ Run tests, type-check, lint, build, and format after implementation.
 | 9         | 2026-04-30 | Test-Case Audit                 | Phase 2: Audit            | Performed focused test-case audit of Slices 1–4. Found 12 findings (1 High, 4 Medium, 5 Low, 2 Info). Fixed all High/Medium items: replaced tautological smoke test; added AAPL assertion to `holding_outside_universe`; added `multiple_assets_out_of_band` drift test; corrected fixture description; added `edge-cases.test.ts` covering `min_trade_size_issue`, `positive_cash` drift+trigger, cash-only portfolio, `validateTargetAllocation` edge cases, determinism ordering. Updated README with actual setup and test instructions. No product code changed. | `tests/smoke.test.ts`, `tests/drift.test.ts`, `tests/edge-cases.test.ts` (new), `tests/fixtures/scenarios.json`, `docs/audits/test-case-audit.md` (new), `README.md`, `BUILD_JOURNEY.md` | Smoke tests must exercise real imports to have value. Fixture descriptions must accurately reflect the math — GOOG was on-target in `multiple_assets_out_of_band`. Deferred gaps documented for Slices 5–10. | Should we adopt `decimal.js` before Slice 5?                                 | Proceed to Slice 5: Basic Trade Proposal Generation.               |
 | 10        | 2026-05-02 | Basic Trade Proposal Generation | Slice 5                   | Verified repository reality against docs, implemented deterministic full-reset proposal generation, added trade proposal tests, exported core modules, and updated README status.                                                                                                                                                                                                                                                                                                                                                                                     | `src/core/trades.ts`, `src/core/index.ts`, `tests/trades.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                                                                       | Slice 5 can be implemented as pure math over existing valuation results; cash-aware routing and minimum trade suppression must remain separate Slice 6 concerns.                                             | Should `decimal.js` be introduced before constraint filtering or simulation? | Proceed to Slice 6: Cash-Aware Adjustment and Minimum Trade Rules. |
 | 11        | 2026-05-02 | Cash-Aware Constraints          | Slice 6                   | Added structured proposal warnings, applied global minimum trade-size suppression, rejected negative cash during proposal generation, documented fixtures, and updated README status.                                                                                                                                                                                                                                                                                                                                                                                 | `src/models/domain.ts`, `src/core/trades.ts`, `tests/trades.test.ts`, `tests/fixtures/README.md`, `README.md`, `BUILD_JOURNEY.md`                                                        | Minimum trade constraints should not abort otherwise useful proposals; warnings provide the bridge to later simulation, explanation, and audit slices.                                                       | Should future policies support per-instrument minimum trade sizes?           | Proceed to Slice 7: Post-Trade Simulation.                         |
+| 12        | 2026-05-02 | Post-Trade Simulation           | Slice 7                   | Added exact trade replay simulation with post-trade holdings, valuation, weights, residual drift, sell-side turnover, oversell checks, and cash reconciliation checks.                                                                                                                                                                                                                                                                                                                                                                                                | `src/core/simulation.ts`, `src/core/index.ts`, `tests/simulation.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                                        | Simulation exposes residual drift from suppressed trades, which keeps Slice 6 constraint decisions visible instead of hiding them in proposal generation.                                                    | Should future output include gross trade value separately from turnover?     | Proceed to Slice 8: Explanation Output.                            |
 
 ### Iteration 10 Detail — 2026-05-02
 
