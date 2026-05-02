@@ -10,6 +10,9 @@ These rules govern AI-assisted development in this repository. The project is in
 - Preserve existing conventions unless there is a clear reason to change them.
 - Document assumptions and trade-offs.
 - Keep generated or temporary files out of source control unless intentionally needed.
+- Push committed changes at reasonable checkpoints after relevant validation passes, especially at the end of a completed slice or documentation/process update.
+- Do not push partial, failing, exploratory, or user-ambiguous work unless explicitly instructed.
+- Before pushing, confirm the working tree state and summarize what commits will be pushed.
 
 ## 2. Decision Discipline
 
