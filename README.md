@@ -6,7 +6,7 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, produces deterministic full-reset trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Slices 1–10 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules, Post-Trade Simulation, Explanation Output, Audit Records, Batch Scenario Runner). Slices 11+ (Second Strategy, Final Hardening) remain in progress.
+**Current status:** Slices 1–11 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules, Post-Trade Simulation, Explanation Output, Audit Records, Batch Scenario Runner, Second Strategy Proof Point). Slice 12 (Final Hardening) remains in progress.
 
 ## Documentation
 
@@ -75,7 +75,8 @@ Builds the project and runs all synthetic fixture scenarios through valuation, d
 │   │   ├── trades.ts          # Deterministic full-reset trade proposal generation
 │   │   └── simulation.ts      # Post-trade holdings, weights, residual drift, turnover
 │   ├── strategy/
-│   │   └── threshold.ts       # Threshold-band trigger strategy
+│   │   ├── threshold.ts       # Threshold-band trigger strategy
+│   │   └── manual.ts          # Manual forced-rebalance strategy
 │   ├── explanation/
 │   │   └── explanation.ts     # Deterministic recommendation explanations
 │   ├── audit/
@@ -91,6 +92,7 @@ Builds the project and runs all synthetic fixture scenarios through valuation, d
 │   ├── valuation.test.ts      # Valuation and weight tests
 │   ├── drift.test.ts          # Drift calculation tests
 │   ├── threshold.test.ts      # Threshold strategy tests
+│   ├── manual-strategy.test.ts # Manual strategy tests
 │   ├── trades.test.ts         # Trade proposal generation tests
 │   ├── simulation.test.ts     # Post-trade simulation tests
 │   ├── explanation.test.ts    # Explanation output tests

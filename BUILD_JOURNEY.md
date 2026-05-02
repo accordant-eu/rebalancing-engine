@@ -45,6 +45,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Generate deterministic explanations from outputs       | Accepted    | Explanation text must stay faithful to trigger, proposal, warning, and simulation outputs rather than duplicating calculation logic.                                          | Slice 8 implementation       | High          | Include explanations in audit records                                   |
 | 2026-05-02 | Use caller-supplied audit metadata                     | Accepted    | Audit record IDs and timestamps must be deterministic in tests and should come from orchestration, not pure calculation helpers.                                              | Slice 9 implementation       | High          | CLI/runner should supply stable metadata                                |
 | 2026-05-02 | Report batch scenario errors per scenario              | Accepted    | The offline runner should process all fixtures and report expected invalid scenarios without aborting the whole batch.                                                        | Slice 10 implementation      | High          | Use same pattern for future batch workflows                             |
+| 2026-05-02 | Use manual forced rebalance as second strategy         | Accepted    | A manual strategy proves Strategy extensibility without introducing calendar/date policy semantics before they are required.                                                  | Slice 11 implementation      | High          | Revisit calendar strategy after MVP if needed                           |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -451,6 +452,51 @@ Implementation impact:
 Validation:
 Run tests, type-check, lint, build, format, and `npm run scenario:run`.
 
+Decision: Use manual forced rebalance as second strategy
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Slice 11 needs a second strategy proof point to validate architecture extensibility. The plan suggested a calendar strategy, but any simple second trigger mode can prove shared core reuse if it remains isolated from valuation, drift, proposal, simulation, explanation, and audit logic.
+
+Options considered:
+
+1. Calendar strategy.
+   - Benefits: Mentioned in the MVP plan and common in rebalancing workflows.
+   - Costs: Requires date/time inputs, schedule policy semantics, and deterministic clock handling.
+   - Risks: Introduces premature temporal policy decisions.
+   - Reversibility: Medium; date fields would become part of public strategy inputs.
+
+2. Manual forced-rebalance strategy.
+   - Benefits: Proves Strategy extensibility with minimal new domain assumptions.
+   - Costs: Less sophisticated than calendar scheduling.
+   - Risks: Does not validate date/time handling.
+   - Reversibility: High; calendar can still be added later.
+
+3. Cash-flow trigger strategy.
+   - Benefits: Closely related to cash-aware MVP behavior.
+   - Costs: Requires cash-flow event modeling not currently present.
+   - Risks: Premature expansion of input schema.
+   - Reversibility: Medium.
+
+Preferred option:
+Option 2: Manual forced-rebalance strategy.
+
+Rationale:
+Manual forced rebalance is the smallest useful proof point. It validates that strategies can differ only in trigger logic while reusing shared core workflow functions.
+
+Implementation impact:
+
+- Code: Added `ManualRebalanceStrategy` and strategy barrel exports.
+- Tests: Added manual strategy tests proving trigger behavior and reuse of shared proposal, simulation, and explanation logic.
+- Fixtures: Existing fixtures are sufficient.
+- Documentation: README and build journey now list the second strategy.
+- Follow-up: Calendar strategy can be added post-MVP once date/time policy is specified.
+
+Validation:
+Run tests, type-check, lint, build, format, and `npm run scenario:run`.
+
 ## 5. Iteration Log
 
 | Iteration | Date       | Goal                             | Scope                     | Actions taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Files changed                                                                                                                                                                            | Learnings                                                                                                                                                                                                    | Open questions                                                               | Next step                                                          |
@@ -470,6 +516,7 @@ Run tests, type-check, lint, build, format, and `npm run scenario:run`.
 | 13        | 2026-05-02 | Explanation Output               | Slice 8                   | Added deterministic explanation generation from trigger, proposal, warning, and simulation outputs, with tests for no-op, rebalance, and suppressed-trade residual drift cases.                                                                                                                                                                                                                                                                                                                                                                                       | `src/explanation/explanation.ts`, `src/explanation/index.ts`, `tests/explanation.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                        | Explanation output should be assembled from already-computed facts to avoid contradictory financial rationale.                                                                                               | Should explanations later support localization or audience-specific wording? | Proceed to Slice 9: Audit and Reproducibility Record.              |
 | 14        | 2026-05-02 | Audit and Reproducibility Record | Slice 9                   | Added audit record generation and stable JSON serialization capturing inputs, drift, trigger, proposal, simulation, and explanation outputs. Added replay tests.                                                                                                                                                                                                                                                                                                                                                                                                      | `src/audit/audit.ts`, `src/audit/index.ts`, `src/models/domain.ts`, `tests/audit.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                        | Audit records should receive metadata from orchestration to preserve deterministic pure helpers and fixture replay.                                                                                          | Should event IDs later be content-addressed hashes?                          | Proceed to Slice 10: Batch Scenario Runner / Test Harness.         |
 | 15        | 2026-05-02 | Batch Scenario Runner            | Slice 10                  | Added an offline fixture runner and `npm run scenario:run` command that evaluates all scenarios into success/error JSON results with audit records for successful scenarios.                                                                                                                                                                                                                                                                                                                                                                                          | `src/runner/scenario-runner.ts`, `src/runner/index.ts`, `tests/scenario-runner.test.ts`, `tests/smoke.test.ts`, `package.json`, `README.md`, `BUILD_JOURNEY.md`                          | Batch output makes existing invalid fixtures useful as deterministic error-path checks instead of special cases that must be excluded.                                                                       | Should the runner later support expected-status manifests and output files?  | Proceed to Slice 11: Second Strategy Proof Point.                  |
+| 16        | 2026-05-02 | Second Strategy Proof Point      | Slice 11                  | Added manual forced-rebalance strategy isolated to trigger logic and tests proving shared valuation, proposal, simulation, and explanation functions work unchanged.                                                                                                                                                                                                                                                                                                                                                                                                  | `src/strategy/manual.ts`, `src/strategy/index.ts`, `tests/manual-strategy.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                               | Strategy extensibility can be proven without adding calendar/date policy decisions before the MVP requires them.                                                                                             | Should calendar scheduling be post-MVP or part of a later MVP extension?     | Proceed to Slice 12: MVP Hardening and Final Audit.                |
 
 ### Iteration 10 Detail — 2026-05-02
 
