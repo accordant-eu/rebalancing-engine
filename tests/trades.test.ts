@@ -37,6 +37,7 @@ describe('Trade Proposal Generation', () => {
 
     expect(proposal.trades).toEqual([]);
     expect(proposal.estimatedPostTradeCash).toBe(0);
+    expect(proposal.warnings).toEqual([]);
   });
 
   it('generates deterministic full-reset trades for an out-of-band portfolio', () => {
@@ -64,6 +65,7 @@ describe('Trade Proposal Generation', () => {
     expect(msft.estimatedPrice).toBe(150);
 
     expect(proposal.estimatedPostTradeCash).toBeCloseTo(0, 8);
+    expect(proposal.warnings).toEqual([]);
   });
 
   it('uses available cash when a full reset only requires buys', () => {
@@ -84,6 +86,7 @@ describe('Trade Proposal Generation', () => {
       expect(trade.estimatedPrice).toBe(100);
     }
     expect(proposal.estimatedPostTradeCash).toBeCloseTo(0, 8);
+    expect(proposal.warnings).toEqual([]);
   });
 
   it('sells holdings outside the target universe and buys underweight target assets', () => {
@@ -109,6 +112,7 @@ describe('Trade Proposal Generation', () => {
     expect(tsla.quantity).toBeCloseTo(50, 8);
 
     expect(proposal.estimatedPostTradeCash).toBeCloseTo(0, 8);
+    expect(proposal.warnings).toEqual([]);
   });
 
   it('generates trades in stable instrument order independent of fixture order', () => {
@@ -134,6 +138,7 @@ describe('Trade Proposal Generation', () => {
     const proposal = generateTradeProposal(valuation, target, prices);
 
     expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.warnings).toEqual([]);
   });
 
   it('throws when a target-only instrument needs a trade but has no price', () => {
@@ -160,5 +165,45 @@ describe('Trade Proposal Generation', () => {
     expect(() =>
       generateTradeProposal(valuation, scenario.targetAllocation, scenario.priceSnapshot),
     ).toThrow('Target allocation does not sum to 100%');
+  });
+
+  it('rejects negative cash balances when generating proposals', () => {
+    const state: PortfolioState = {
+      accountId: 'negative-cash-1',
+      cash: -100,
+      holdings: [{ instrumentId: 'AAPL', quantity: 101 }],
+    };
+    const target: TargetAllocation = {
+      targets: [{ instrumentId: 'AAPL', weight: 1.0 }],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+    const valuation = calculateValuation(state, prices);
+
+    expect(() => generateTradeProposal(valuation, target, prices)).toThrow(
+      'Cannot generate trade proposal for negative cash balance',
+    );
+  });
+
+  it('suppresses trades below the global minimum trade size and emits warnings', () => {
+    const scenario = scenarioById('min_trade_size_issue');
+    const valuation = calculateValuation(scenario.portfolioState, scenario.priceSnapshot);
+
+    const proposal = generateTradeProposal(
+      valuation,
+      scenario.targetAllocation,
+      scenario.priceSnapshot,
+      scenario.policy,
+    );
+
+    expect(proposal.trades).toEqual([]);
+    expect(proposal.estimatedPostTradeCash).toBe(0);
+    expect(proposal.warnings).toHaveLength(2);
+    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    for (const warning of proposal.warnings) {
+      expect(warning.code).toBe('MINIMUM_TRADE_SIZE');
+      expect(warning.estimatedValue).toBeCloseTo(50, 8);
+      expect(warning.minimumTradeSize).toBe(1000);
+      expect(warning.message).toContain('below minimum trade size');
+    }
   });
 });

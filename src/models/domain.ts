@@ -57,9 +57,20 @@ export interface ProposedTrade {
   estimatedValue: number;
 }
 
+export type ProposalWarningCode = 'MINIMUM_TRADE_SIZE';
+
+export interface ProposalWarning {
+  code: ProposalWarningCode;
+  message: string;
+  instrumentId?: string;
+  estimatedValue?: number;
+  minimumTradeSize?: number;
+}
+
 export interface TradeProposal {
   trades: ProposedTrade[];
   estimatedPostTradeCash: number;
+  warnings: ProposalWarning[];
 }
 
 export interface AuditRecord {

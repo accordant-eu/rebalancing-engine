@@ -39,6 +39,8 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Continue with standard `number` arithmetic for Slice 5 | Provisional | Basic trade proposal generation only computes deterministic fixture-scale estimated values and quantities; no rounding, settlement, or execution precision is introduced yet. | Slice 5 implementation tests | Medium        | Revisit before Slice 6/7 constraint filtering and post-trade simulation |
 | 2026-05-02 | Adopt standing decision discipline in agent rules      | Accepted    | Future MVP work needs explicit decision identification, alternatives, trade-offs, documentation, implementation consistency, and validation to prevent hidden assumptions.    | User instruction             | High          | Apply continuously to future work                                       |
 | 2026-05-02 | Push validated commits at reasonable checkpoints       | Accepted    | Completed, validated slices and process updates should be shared remotely without requiring a separate push request each time, while avoiding partial or failing pushes.      | User instruction             | High          | Apply after future validated commits                                    |
+| 2026-05-02 | Suppress below-minimum trades with structured warnings | Accepted    | Minimum trade-size constraints are non-fatal proposal adjustments; users need visibility into suppressed trades and residual drift will be quantified in Slice 7 simulation.  | Slice 6 implementation       | High          | Include warnings in explanation and audit output                        |
+| 2026-05-02 | Reject negative cash in trade proposal generation      | Accepted    | Negative cash makes cash-aware proposal funding ambiguous in the MVP and should not be silently converted into sells or ignored.                                              | Slice 6 implementation       | Medium        | Revisit if withdrawal/deficit funding becomes in scope                  |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -130,6 +132,96 @@ Implementation impact:
 Validation:
 Run formatting and repository checks before committing the rule, then push the branch.
 
+Decision: Suppress below-minimum trades with structured warnings
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Slice 6 introduces minimum trade-size constraints. The engine needs to decide whether below-minimum trades should be errors, silently removed, or visible non-blocking adjustments.
+
+Options considered:
+
+1. Throw an error when a proposed trade is below `minimumTradeSize`.
+   - Benefits: Prevents uneconomic proposals from being missed.
+   - Costs: Blocks otherwise useful recommendations.
+   - Risks: A small residual trade could prevent a portfolio review entirely.
+   - Reversibility: Medium; callers would need to change error handling later.
+
+2. Suppress below-minimum trades and emit structured warnings.
+   - Benefits: Keeps the proposal usable while preserving auditability and explainability.
+   - Costs: Residual drift remains and must be surfaced later.
+   - Risks: Consumers must read warnings, not only trades.
+   - Reversibility: High; warning schema can be extended without breaking core calculations.
+
+3. Silently drop below-minimum trades.
+   - Benefits: Simplest output.
+   - Costs: Hides financial decision-making.
+   - Risks: Violates auditability and explainability expectations.
+   - Reversibility: Low; hidden behavior is hard to diagnose later.
+
+Preferred option:
+Option 2: Suppress below-minimum trades and emit structured warnings.
+
+Rationale:
+This is deterministic, MVP-compatible, and auditable. It avoids blocking the proposal while making the constraint impact explicit for future simulation, explanation, and audit records.
+
+Implementation impact:
+
+- Code: `TradeProposal` now includes `warnings`; `generateTradeProposal` applies the global `minimumTradeSize` when a policy is supplied.
+- Tests: Added coverage for the `min_trade_size_issue` fixture suppressing two small trades and emitting warnings.
+- Fixtures: Existing fixture remains valid and is documented in `tests/fixtures/README.md`.
+- Documentation: README and build journey now describe Slice 6 behavior.
+- Follow-up: Slice 7 should quantify residual drift after suppressed trades; Slice 8/9 should include warnings in explanations and audit records.
+
+Validation:
+Run tests, type-check, lint, build, and format after implementation.
+
+Decision: Reject negative cash in trade proposal generation
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Negative cash becomes meaningful once cash-aware trade proposal logic exists. The MVP has no withdrawal workflow, margin model, or deficit-funding policy, so negative cash cannot be reliably interpreted.
+
+Options considered:
+
+1. Treat negative cash as a hard error during trade proposal generation.
+   - Benefits: Prevents ambiguous funding behavior and forces upstream reconciliation.
+   - Costs: Cannot generate proposals for cash-deficit accounts yet.
+   - Risks: Some real-world accounts with pending sweeps would require preprocessing.
+   - Reversibility: High; a later withdrawal/deficit policy can add explicit behavior.
+
+2. Ignore negative cash and continue.
+   - Benefits: Simple and permissive.
+   - Costs: Produces unreliable proposals because funding is understated.
+   - Risks: Silent bad recommendations.
+   - Reversibility: Low; consumers may rely on unsafe behavior.
+
+3. Automatically sell overweight assets to cover negative cash.
+   - Benefits: Moves toward a cash-deficit workflow.
+   - Costs: Adds withdrawal/deficit funding semantics not in the current slice.
+   - Risks: Premature execution policy and possible tax/cost implications.
+   - Reversibility: Medium; would likely need redesign when withdrawal requirements are known.
+
+Preferred option:
+Option 1: Treat negative cash as a hard error during trade proposal generation.
+
+Rationale:
+This follows the project bias toward explicit validation over silent fallback behavior. It avoids inventing withdrawal or margin semantics before they are in scope.
+
+Implementation impact:
+
+- Code: `generateTradeProposal` throws on negative cash.
+- Tests: Added negative-cash proposal test.
+- Fixtures: No persistent negative-cash fixture added; the behavior is tested inline because negative cash is invalid for Slice 6 proposals.
+- Documentation: Fixture README documents the negative-cash assumption.
+- Follow-up: Revisit if withdrawal handling or deficit funding becomes an MVP or post-MVP requirement.
+
+Validation:
+Run tests, type-check, lint, build, and format after implementation.
+
 ## 5. Iteration Log
 
 | Iteration | Date       | Goal                            | Scope                     | Actions taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Files changed                                                                                                                                                                            | Learnings                                                                                                                                                                                                    | Open questions                                                               | Next step                                                          |
@@ -144,6 +236,7 @@ Run formatting and repository checks before committing the rule, then push the b
 | 8         | 2026-04-29 | Red-Team Audit                  | Phase 2: Audit            | Performed red-team audit of Slices 1-4. Fixed TSConfig `rootDir` issue, added `EPSILON` to handle float precision in drift thresholding, added lint/format scripts. Created formal audit report.                                                                                                                                                                                                                                                                                                                                                                      | `tsconfig.json`, `package.json`, `src/core/drift.ts`, `docs/audits/red-team-audit-current.md`, `BUILD_JOURNEY.md`                                                                        | Float arithmetic needs constant vigilance in JS/TS. Core logic holds up well to edge cases.                                                                                                                  | None.                                                                        | Proceed to Slice 5: Basic Trade Proposal Generation.               |
 | 9         | 2026-04-30 | Test-Case Audit                 | Phase 2: Audit            | Performed focused test-case audit of Slices 1–4. Found 12 findings (1 High, 4 Medium, 5 Low, 2 Info). Fixed all High/Medium items: replaced tautological smoke test; added AAPL assertion to `holding_outside_universe`; added `multiple_assets_out_of_band` drift test; corrected fixture description; added `edge-cases.test.ts` covering `min_trade_size_issue`, `positive_cash` drift+trigger, cash-only portfolio, `validateTargetAllocation` edge cases, determinism ordering. Updated README with actual setup and test instructions. No product code changed. | `tests/smoke.test.ts`, `tests/drift.test.ts`, `tests/edge-cases.test.ts` (new), `tests/fixtures/scenarios.json`, `docs/audits/test-case-audit.md` (new), `README.md`, `BUILD_JOURNEY.md` | Smoke tests must exercise real imports to have value. Fixture descriptions must accurately reflect the math — GOOG was on-target in `multiple_assets_out_of_band`. Deferred gaps documented for Slices 5–10. | Should we adopt `decimal.js` before Slice 5?                                 | Proceed to Slice 5: Basic Trade Proposal Generation.               |
 | 10        | 2026-05-02 | Basic Trade Proposal Generation | Slice 5                   | Verified repository reality against docs, implemented deterministic full-reset proposal generation, added trade proposal tests, exported core modules, and updated README status.                                                                                                                                                                                                                                                                                                                                                                                     | `src/core/trades.ts`, `src/core/index.ts`, `tests/trades.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                                                                       | Slice 5 can be implemented as pure math over existing valuation results; cash-aware routing and minimum trade suppression must remain separate Slice 6 concerns.                                             | Should `decimal.js` be introduced before constraint filtering or simulation? | Proceed to Slice 6: Cash-Aware Adjustment and Minimum Trade Rules. |
+| 11        | 2026-05-02 | Cash-Aware Constraints          | Slice 6                   | Added structured proposal warnings, applied global minimum trade-size suppression, rejected negative cash during proposal generation, documented fixtures, and updated README status.                                                                                                                                                                                                                                                                                                                                                                                 | `src/models/domain.ts`, `src/core/trades.ts`, `tests/trades.test.ts`, `tests/fixtures/README.md`, `README.md`, `BUILD_JOURNEY.md`                                                        | Minimum trade constraints should not abort otherwise useful proposals; warnings provide the bridge to later simulation, explanation, and audit slices.                                                       | Should future policies support per-instrument minimum trade sizes?           | Proceed to Slice 7: Post-Trade Simulation.                         |
 
 ### Iteration 10 Detail — 2026-05-02
 

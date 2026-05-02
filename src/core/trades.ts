@@ -1,4 +1,11 @@
-import { PriceSnapshot, ProposedTrade, TargetAllocation, TradeProposal } from '../models/domain';
+import {
+  PriceSnapshot,
+  ProposedTrade,
+  ProposalWarning,
+  RebalancingPolicy,
+  TargetAllocation,
+  TradeProposal,
+} from '../models/domain';
 import { validateTargetAllocation } from './drift';
 import { ValuationResult } from './valuation';
 
@@ -15,8 +22,12 @@ export function generateTradeProposal(
   valuation: ValuationResult,
   target: TargetAllocation,
   priceSnapshot: PriceSnapshot,
+  policy?: RebalancingPolicy,
 ): TradeProposal {
   validateTargetAllocation(target);
+  if (valuation.cash < 0) {
+    throw new Error('Cannot generate trade proposal for negative cash balance');
+  }
 
   const targetWeights = new Map(target.targets.map((t) => [t.instrumentId, t.weight]));
   const currentValues = new Map(valuation.holdings.map((h) => [h.instrumentId, h.marketValue]));
@@ -59,8 +70,55 @@ export function generateTradeProposal(
     netCashDelta += direction === 'BUY' ? -estimatedValue : estimatedValue;
   }
 
+  const proposal = applyMinimumTradeSize(
+    {
+      trades,
+      estimatedPostTradeCash: valuation.cash + netCashDelta,
+      warnings: [],
+    },
+    valuation.cash,
+    policy?.minimumTradeSize ?? 0,
+  );
+
+  return proposal;
+}
+
+export function applyMinimumTradeSize(
+  proposal: TradeProposal,
+  startingCash: number,
+  minimumTradeSize: number,
+): TradeProposal {
+  if (minimumTradeSize <= 0) {
+    return {
+      ...proposal,
+      warnings: [...proposal.warnings],
+    };
+  }
+
+  const warnings: ProposalWarning[] = [...proposal.warnings];
+  const trades = proposal.trades.filter((trade) => {
+    if (trade.estimatedValue >= minimumTradeSize) {
+      return true;
+    }
+
+    warnings.push({
+      code: 'MINIMUM_TRADE_SIZE',
+      instrumentId: trade.instrumentId,
+      estimatedValue: trade.estimatedValue,
+      minimumTradeSize,
+      message: `Suppressed ${trade.direction} for ${trade.instrumentId}: estimated value ${trade.estimatedValue.toFixed(2)} is below minimum trade size ${minimumTradeSize.toFixed(2)}.`,
+    });
+
+    return false;
+  });
+
+  const estimatedPostTradeCash = trades.reduce((cash, trade) => {
+    return trade.direction === 'BUY' ? cash - trade.estimatedValue : cash + trade.estimatedValue;
+  }, startingCash);
+
   return {
     trades,
-    estimatedPostTradeCash: valuation.cash + netCashDelta,
+    estimatedPostTradeCash,
+    warnings,
   };
 }

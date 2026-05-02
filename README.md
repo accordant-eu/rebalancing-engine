@@ -4,9 +4,9 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 ## Overview
 
-The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, and produces deterministic full-reset trade proposals. It is designed for auditability and reproducibility (MiFID II alignment), with audit records still deferred to a later MVP slice.
+The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, and produces deterministic full-reset trade proposals with minimum-trade warnings. It is designed for auditability and reproducibility (MiFID II alignment), with audit records still deferred to a later MVP slice.
 
-**Current status:** Slices 1–5 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals). Slices 6+ (Cash Routing, Minimum Trade Rules, Simulation, Explanation, Audit Records) remain in progress.
+**Current status:** Slices 1–6 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules). Slices 7+ (Simulation, Explanation, Audit Records, Batch Runner, Second Strategy) remain in progress.
 
 ## Documentation
 
@@ -69,6 +69,7 @@ npm run format
 │       └── threshold.ts       # Threshold-band trigger strategy
 ├── tests/
 │   ├── fixtures/
+│   │   ├── README.md          # Fixture scenario documentation
 │   │   └── scenarios.json     # Synthetic JSON test scenarios
 │   ├── smoke.test.ts          # Structural import smoke tests
 │   ├── fixtures.test.ts       # Fixture schema validation
