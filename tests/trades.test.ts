@@ -386,4 +386,155 @@ describe('Trade Proposal Generation', () => {
       }),
     ).toThrow('Relative boundary mode requires relativeDriftTolerance');
   });
+
+  it('allocates sell trades to tax lots using FIFO by default', () => {
+    const state: PortfolioState = {
+      accountId: 'tax-lot-fifo-1',
+      cash: 0,
+      holdings: [
+        {
+          instrumentId: 'AAPL',
+          quantity: 120,
+          taxLots: [
+            { lotId: 'older-lot', quantity: 70, acquisitionDate: '2024-01-01', unitCost: 90 },
+            { lotId: 'newer-lot', quantity: 50, acquisitionDate: '2025-01-01', unitCost: 110 },
+          ],
+        },
+        { instrumentId: 'MSFT', quantity: 80 },
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'AAPL', weight: 0.5 },
+        { instrumentId: 'MSFT', weight: 0.5 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+    });
+
+    const aapl = findTrade(proposal.trades, 'AAPL');
+    expect(aapl.quantity).toBeCloseTo(20, 8);
+    expect(aapl.lotAllocations).toEqual([
+      {
+        lotId: 'older-lot',
+        quantity: 20,
+        estimatedValue: 3000,
+        unitCost: 90,
+        acquisitionDate: '2024-01-01',
+      },
+    ]);
+  });
+
+  it('allocates sell trades to tax lots using LIFO', () => {
+    const state: PortfolioState = {
+      accountId: 'tax-lot-lifo-1',
+      cash: 0,
+      holdings: [
+        {
+          instrumentId: 'AAPL',
+          quantity: 120,
+          taxLots: [
+            { lotId: 'older-lot', quantity: 70, acquisitionDate: '2024-01-01' },
+            { lotId: 'newer-lot', quantity: 50, acquisitionDate: '2025-01-01' },
+          ],
+        },
+        { instrumentId: 'MSFT', quantity: 80 },
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'AAPL', weight: 0.5 },
+        { instrumentId: 'MSFT', weight: 0.5 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+      sellSelectionMode: 'LIFO',
+    });
+
+    const aapl = findTrade(proposal.trades, 'AAPL');
+    expect(aapl.lotAllocations?.map((allocation) => allocation.lotId)).toEqual(['newer-lot']);
+  });
+
+  it('allocates sell trades by highest and lowest cost modes', () => {
+    const state: PortfolioState = {
+      accountId: 'tax-lot-cost-1',
+      cash: 0,
+      holdings: [
+        {
+          instrumentId: 'AAPL',
+          quantity: 120,
+          taxLots: [
+            { lotId: 'low-cost', quantity: 70, acquisitionDate: '2024-01-01', unitCost: 80 },
+            { lotId: 'high-cost', quantity: 50, acquisitionDate: '2025-01-01', unitCost: 120 },
+          ],
+        },
+        { instrumentId: 'MSFT', quantity: 80 },
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'AAPL', weight: 0.5 },
+        { instrumentId: 'MSFT', weight: 0.5 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const valuation = calculateValuation(state, prices);
+
+    const highestCostProposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+      sellSelectionMode: 'HIGHEST_COST',
+    });
+    const lowestCostProposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+      sellSelectionMode: 'LOWEST_COST',
+    });
+
+    expect(findTrade(highestCostProposal.trades, 'AAPL').lotAllocations?.[0].lotId).toBe(
+      'high-cost',
+    );
+    expect(findTrade(lowestCostProposal.trades, 'AAPL').lotAllocations?.[0].lotId).toBe('low-cost');
+  });
+
+  it('requires unit costs for cost-based sell selection modes', () => {
+    const state: PortfolioState = {
+      accountId: 'tax-lot-missing-cost-1',
+      cash: 0,
+      holdings: [
+        {
+          instrumentId: 'AAPL',
+          quantity: 120,
+          taxLots: [{ lotId: 'missing-cost', quantity: 120, acquisitionDate: '2024-01-01' }],
+        },
+        { instrumentId: 'MSFT', quantity: 80 },
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'AAPL', weight: 0.5 },
+        { instrumentId: 'MSFT', weight: 0.5 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const valuation = calculateValuation(state, prices);
+
+    expect(() =>
+      generateTradeProposal(valuation, target, prices, {
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 0,
+        sellSelectionMode: 'HIGHEST_COST',
+      }),
+    ).toThrow('Sell selection mode HIGHEST_COST requires unitCost for tax lot: missing-cost');
+  });
 });

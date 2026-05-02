@@ -13,6 +13,7 @@ export interface HoldingValue {
   quantity: number;
   price: number;
   marketValue: number;
+  taxLots?: Holding['taxLots'];
 }
 
 export interface ValuationResult {
@@ -71,6 +72,7 @@ export function calculateValuation(
       quantity: holding.quantity,
       price,
       marketValue,
+      taxLots: holding.taxLots,
     });
   }
 
