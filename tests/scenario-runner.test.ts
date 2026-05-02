@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   loadScenarioExpectations,
+  runScenario,
   runScenarios,
   validateScenarioExpectations,
 } from '../src/runner';
@@ -10,10 +11,12 @@ const scenariosPath = path.join(__dirname, 'fixtures', 'scenarios.json');
 const expectationsPath = path.join(__dirname, 'fixtures', 'scenario-expectations.json');
 const scenariosData = JSON.parse(fs.readFileSync(scenariosPath, 'utf8'));
 
+const TEST_CREATED_AT = '2026-05-02T00:00:00.000Z';
+
 describe('Scenario Runner', () => {
   it('runs every fixture and reports deterministic per-scenario results', () => {
-    const first = runScenarios(scenariosData);
-    const second = runScenarios(scenariosData);
+    const first = runScenarios(scenariosData, TEST_CREATED_AT);
+    const second = runScenarios(scenariosData, TEST_CREATED_AT);
 
     expect(first).toEqual(second);
     expect(first.map((result) => result.scenarioId)).toEqual([
@@ -47,7 +50,7 @@ describe('Scenario Runner', () => {
   });
 
   it('returns audit records for successful scenarios and errors for invalid scenarios', () => {
-    const results = runScenarios(scenariosData);
+    const results = runScenarios(scenariosData, TEST_CREATED_AT);
     const successes = results.filter((result) => result.status === 'success');
     const errors = results.filter((result) => result.status === 'error');
 
@@ -58,7 +61,7 @@ describe('Scenario Runner', () => {
     expect(success?.status).toBe('success');
     if (success?.status === 'success') {
       expect(success.auditRecord.eventId).toBe('scenario:one_asset_out_of_band');
-      expect(success.auditRecord.createdAt).toBe('2026-05-02T00:00:00.000Z');
+      expect(success.auditRecord.createdAt).toBe(TEST_CREATED_AT);
       expect(success.auditRecord.outputs.explanation.summary).toContain('2 proposed trades');
     }
 
@@ -148,8 +151,30 @@ describe('Scenario Runner', () => {
     }
   });
 
+  it('uses live timestamps by default (not the frozen constant)', () => {
+    const scenario = scenariosData.scenarios.find((s: { id: string }) => s.id === 'on_target');
+    const result = runScenario(scenario);
+
+    expect(result.status).toBe('success');
+    if (result.status === 'success') {
+      expect(result.auditRecord.createdAt).not.toBe('2026-05-02T00:00:00.000Z');
+      expect(new Date(result.auditRecord.createdAt).toISOString()).toBe(result.auditRecord.createdAt);
+    }
+  });
+
+  it('uses injected timestamp when provided', () => {
+    const scenario = scenariosData.scenarios.find((s: { id: string }) => s.id === 'on_target');
+    const injected = '2030-01-15T10:30:00.000Z';
+    const result = runScenario(scenario, injected);
+
+    expect(result.status).toBe('success');
+    if (result.status === 'success') {
+      expect(result.auditRecord.createdAt).toBe(injected);
+    }
+  });
+
   it('validates results against an expected-status manifest', () => {
-    const results = runScenarios(scenariosData);
+    const results = runScenarios(scenariosData, TEST_CREATED_AT);
     const expectations = loadScenarioExpectations(expectationsPath);
 
     const validation = validateScenarioExpectations(results, expectations);
@@ -162,7 +187,7 @@ describe('Scenario Runner', () => {
   });
 
   it('reports expected-status manifest mismatches', () => {
-    const results = runScenarios(scenariosData);
+    const results = runScenarios(scenariosData, TEST_CREATED_AT);
 
     const validation = validateScenarioExpectations(results, {
       scenarios: {

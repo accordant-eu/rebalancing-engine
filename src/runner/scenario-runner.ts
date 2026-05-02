@@ -9,8 +9,6 @@ import {
   TargetAllocation,
 } from '../models/domain';
 
-const RUNNER_CREATED_AT = '2026-05-02T00:00:00.000Z';
-
 export interface ScenarioFixture {
   id: string;
   description: string;
@@ -60,17 +58,17 @@ export interface ScenarioExpectationValidation {
   mismatches: ScenarioExpectationMismatch[];
 }
 
-export function runScenarios(input: ScenarioRunnerInput): ScenarioRunResult[] {
+export function runScenarios(input: ScenarioRunnerInput, createdAt?: string): ScenarioRunResult[] {
   return [...input.scenarios]
     .sort((a, b) => a.id.localeCompare(b.id))
-    .map((scenario) => runScenario(scenario));
+    .map((scenario) => runScenario(scenario, createdAt));
 }
 
-export function runScenario(scenario: ScenarioFixture): ScenarioRunResult {
+export function runScenario(scenario: ScenarioFixture, createdAt?: string): ScenarioRunResult {
   try {
     const evaluation = evaluateRebalance({
       eventId: `scenario:${scenario.id}`,
-      createdAt: RUNNER_CREATED_AT,
+      createdAt: createdAt ?? new Date().toISOString(),
       portfolioState: scenario.portfolioState,
       targetAllocation: scenario.targetAllocation,
       priceSnapshot: scenario.priceSnapshot,

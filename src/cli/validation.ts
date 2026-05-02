@@ -3,8 +3,6 @@ import { evaluateRebalance } from '../core/evaluation';
 import { ProposalWarning } from '../models/domain';
 import { ScenarioFixture } from '../runner';
 
-export const CLI_CREATED_AT = '2026-05-02T00:00:00.000Z';
-
 export interface ValidationSuccess {
   scenarioId: string;
   status: 'valid';
@@ -20,11 +18,11 @@ export interface ValidationFailure {
 
 export type ValidationResult = ValidationSuccess | ValidationFailure;
 
-export function validateScenarioFixture(scenario: ScenarioFixture): ValidationResult {
+export function validateScenarioFixture(scenario: ScenarioFixture, createdAt?: string): ValidationResult {
   try {
     const evaluation = evaluateRebalance({
       eventId: `scenario:${scenario.id}`,
-      createdAt: CLI_CREATED_AT,
+      createdAt: createdAt ?? new Date().toISOString(),
       portfolioState: scenario.portfolioState,
       targetAllocation: scenario.targetAllocation,
       priceSnapshot: scenario.priceSnapshot,
