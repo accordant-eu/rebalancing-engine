@@ -1,3 +1,4 @@
+import { validateIsoDateOnly } from '../core/cash-flows';
 import {
   DriftMeasurement,
   PortfolioState,
@@ -8,19 +9,16 @@ import {
 
 export class CalendarRebalanceStrategy implements StrategyInterface {
   evaluateTrigger(
-    state: PortfolioState,
-    drift: DriftMeasurement[],
+    _state: PortfolioState,
+    _drift: DriftMeasurement[],
     policy: RebalancingPolicy,
   ): TriggerResult {
-    void state;
-    void drift;
-
     if (policy.calendar === undefined) {
       throw new Error('Calendar strategy requires calendar policy configuration');
     }
 
-    const evaluationTime = parseIsoDate(policy.calendar.evaluationDate, 'evaluationDate');
-    const nextRebalanceTime = parseIsoDate(policy.calendar.nextRebalanceDate, 'nextRebalanceDate');
+    const evaluationTime = parseIsoDateOnly(policy.calendar.evaluationDate, 'evaluationDate');
+    const nextRebalanceTime = parseIsoDateOnly(policy.calendar.nextRebalanceDate, 'nextRebalanceDate');
     const isDue = evaluationTime >= nextRebalanceTime;
 
     return {
@@ -36,7 +34,10 @@ export class CalendarRebalanceStrategy implements StrategyInterface {
   }
 }
 
-function parseIsoDate(value: string, fieldName: string): number {
+// Validates YYYY-MM-DD format before parsing to prevent timezone-local ambiguity
+// from datetime strings without a Z suffix.
+function parseIsoDateOnly(value: string, fieldName: string): number {
+  validateIsoDateOnly(value, `calendar ${fieldName}`);
   const time = Date.parse(value);
   if (Number.isNaN(time)) {
     throw new Error(`Invalid calendar ${fieldName}: ${value}`);

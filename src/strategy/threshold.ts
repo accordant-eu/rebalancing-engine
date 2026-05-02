@@ -9,7 +9,7 @@ import { formatFixed } from '../core/numeric';
 
 export class ThresholdStrategy implements StrategyInterface {
   evaluateTrigger(
-    _state: PortfolioState, // Threshold strategy doesn't strictly need state if drift is already calculated, but it's part of the interface
+    _state: PortfolioState,
     drift: DriftMeasurement[],
     policy: RebalancingPolicy,
   ): TriggerResult {

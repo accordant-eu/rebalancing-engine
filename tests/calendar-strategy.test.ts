@@ -111,4 +111,46 @@ describe('Calendar Rebalance Strategy', () => {
       }),
     ).toThrow('Calendar strategy requires calendar policy configuration');
   });
+
+  it('rejects datetime strings for evaluationDate (timezone-local ambiguity guard)', () => {
+    expect(() =>
+      new CalendarRebalanceStrategy().evaluateTrigger({} as any, [], {
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 0,
+        strategyType: 'calendar',
+        calendar: {
+          evaluationDate: '2026-05-02T00:00:00',
+          nextRebalanceDate: '2026-05-01',
+        },
+      }),
+    ).toThrow('YYYY-MM-DD');
+  });
+
+  it('rejects datetime strings for nextRebalanceDate (timezone-local ambiguity guard)', () => {
+    expect(() =>
+      new CalendarRebalanceStrategy().evaluateTrigger({} as any, [], {
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 0,
+        strategyType: 'calendar',
+        calendar: {
+          evaluationDate: '2026-05-02',
+          nextRebalanceDate: '2026-05-01T00:00:00Z',
+        },
+      }),
+    ).toThrow('YYYY-MM-DD');
+  });
+
+  it('rejects non-date strings for calendar dates', () => {
+    expect(() =>
+      new CalendarRebalanceStrategy().evaluateTrigger({} as any, [], {
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 0,
+        strategyType: 'calendar',
+        calendar: {
+          evaluationDate: 'not-a-date',
+          nextRebalanceDate: '2026-05-01',
+        },
+      }),
+    ).toThrow('YYYY-MM-DD');
+  });
 });

@@ -8,14 +8,10 @@ import {
 
 export class ManualRebalanceStrategy implements StrategyInterface {
   evaluateTrigger(
-    state: PortfolioState,
-    drift: DriftMeasurement[],
-    policy: RebalancingPolicy,
+    _state: PortfolioState,
+    _drift: DriftMeasurement[],
+    _policy: RebalancingPolicy,
   ): TriggerResult {
-    void state;
-    void drift;
-    void policy;
-
     return {
       isTriggered: true,
       reason: 'Manual rebalance requested.',
