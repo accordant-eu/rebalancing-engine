@@ -44,6 +44,14 @@ describe('Domain Fixtures', () => {
       'settled_withdrawal_cash_flow',
       'pending_cash_flow',
       'tax_lot_fifo_sell',
+      'scheduled_deposit_due',
+      'scheduled_deposit_on_evaluation_date',
+      'scheduled_deposit_future',
+      'scheduled_withdrawal_due',
+      'recurring_monthly_contribution',
+      'recurring_quarterly_withdrawal',
+      'invalid_recurring_cash_flow',
+      'scheduled_cash_flow_already_settled',
     ];
 
     const actualIds = scenarios.map((s) => s.id);
@@ -64,6 +72,9 @@ describe('Domain Fixtures', () => {
         expect(scenario.policy.calendar).toBeDefined();
         expect(typeof scenario.policy.calendar?.evaluationDate).toBe('string');
         expect(typeof scenario.policy.calendar?.nextRebalanceDate).toBe('string');
+      }
+      if (scenario.portfolioState.cashFlowSchedules !== undefined) {
+        expect(typeof scenario.policy.evaluationDate).toBe('string');
       }
     });
   });

@@ -1,6 +1,8 @@
 export const ROOT_HELP = `rebalance
 
 Offline CLI for the generic portfolio rebalancing engine.
+Supports offline scheduled and recurring cash-flow inputs from scenario or
+portfolio files; it does not initiate payments or custody movements.
 
 Usage:
   rebalance <command> [options]
@@ -57,6 +59,7 @@ Options:
 Examples:
   rebalance validate --scenario tests/fixtures/scenarios.json
   cat scenario.json | rebalance validate --scenario -
+  rebalance validate --scenario tests/fixtures/scenarios.json --scenario-id scheduled_deposit_due
   rebalance validate --scenario tests/fixtures/scenarios.json --scenario-id pending_cash_flow --strict
 `;
 
@@ -82,6 +85,7 @@ Options:
 
 Examples:
   rebalance run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band
+  rebalance run --scenario tests/fixtures/scenarios.json --scenario-id recurring_monthly_contribution
   cat scenario.json | rebalance run --scenario -
   rebalance run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band --format json
 `;

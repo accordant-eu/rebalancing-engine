@@ -3,6 +3,10 @@
     "calendar_due": { "status": "success" },
     "calendar_not_due": { "status": "success" },
     "holding_outside_universe": { "status": "success" },
+    "invalid_recurring_cash_flow": {
+      "status": "error",
+      "errorIncludes": "Unsupported cash flow recurrence frequency"
+    },
     "invalid_cash_flow_amount": {
       "status": "error",
       "errorIncludes": "Cash flow amount must be positive"
@@ -21,6 +25,13 @@
     "one_asset_out_of_band": { "status": "success" },
     "pending_cash_flow": { "status": "success" },
     "positive_cash": { "status": "success" },
+    "recurring_monthly_contribution": { "status": "success" },
+    "recurring_quarterly_withdrawal": { "status": "success" },
+    "scheduled_cash_flow_already_settled": { "status": "success" },
+    "scheduled_deposit_due": { "status": "success" },
+    "scheduled_deposit_future": { "status": "success" },
+    "scheduled_deposit_on_evaluation_date": { "status": "success" },
+    "scheduled_withdrawal_due": { "status": "success" },
     "settled_deposit_cash_flow": { "status": "success" },
     "settled_withdrawal_cash_flow": { "status": "success" },
     "tax_lot_fifo_sell": { "status": "success" },

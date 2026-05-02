@@ -511,6 +511,284 @@
         "minimumTradeSize": 0,
         "sellSelectionMode": "FIFO"
       }
+    },
+    {
+      "id": "scheduled_deposit_due",
+      "description": "Scheduled deposit due before the evaluation date is applied as schedule-derived cash",
+      "portfolioState": {
+        "accountId": "acc-19",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "scheduled-deposit-before",
+            "direction": "DEPOSIT",
+            "amount": 1000,
+            "effectiveDate": "2026-05-01"
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "scheduled_deposit_on_evaluation_date",
+      "description": "Scheduled deposit on the evaluation date is included",
+      "portfolioState": {
+        "accountId": "acc-20",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "scheduled-deposit-on-date",
+            "direction": "DEPOSIT",
+            "amount": 1000,
+            "effectiveDate": "2026-05-02"
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "scheduled_deposit_future",
+      "description": "Future scheduled deposit is excluded from valuation but reported as a warning",
+      "portfolioState": {
+        "accountId": "acc-21",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "scheduled-deposit-future",
+            "direction": "DEPOSIT",
+            "amount": 1000,
+            "effectiveDate": "2026-05-03"
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "scheduled_withdrawal_due",
+      "description": "Scheduled withdrawal due by evaluation date is funded by sell proposals",
+      "portfolioState": {
+        "accountId": "acc-22",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "scheduled-withdrawal",
+            "direction": "WITHDRAWAL",
+            "amount": 1000,
+            "effectiveDate": "2026-05-01"
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "recurring_monthly_contribution",
+      "description": "Monthly recurring contribution expands deterministically through the evaluation date",
+      "portfolioState": {
+        "accountId": "acc-23",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "monthly-contribution",
+            "direction": "DEPOSIT",
+            "amount": 250,
+            "effectiveDate": "2026-02-02",
+            "recurrence": { "frequency": "MONTHLY" }
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "recurring_quarterly_withdrawal",
+      "description": "Quarterly recurring withdrawal expands and is funded by sell proposals",
+      "portfolioState": {
+        "accountId": "acc-24",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "quarterly-withdrawal",
+            "direction": "WITHDRAWAL",
+            "amount": 400,
+            "effectiveDate": "2026-01-02",
+            "recurrence": { "frequency": "QUARTERLY" }
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "invalid_recurring_cash_flow",
+      "description": "Recurring cash-flow schedule with unsupported frequency fails validation",
+      "portfolioState": {
+        "accountId": "acc-25",
+        "cash": 0,
+        "holdings": [],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "unsupported-weekly",
+            "direction": "DEPOSIT",
+            "amount": 100,
+            "effectiveDate": "2026-05-02",
+            "recurrence": { "frequency": "WEEKLY" }
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [{ "instrumentId": "AAPL", "weight": 1.0 }]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0
+      }
+    },
+    {
+      "id": "scheduled_cash_flow_already_settled",
+      "description": "Generated schedule event matching an existing settled cash flow is not double counted",
+      "portfolioState": {
+        "accountId": "acc-26",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ],
+        "cashFlows": [
+          {
+            "cashFlowId": "schedule:already-settled:2026-05-02",
+            "direction": "DEPOSIT",
+            "status": "SETTLED",
+            "amount": 1000,
+            "effectiveDate": "2026-05-02"
+          }
+        ],
+        "cashFlowSchedules": [
+          {
+            "cashFlowScheduleId": "already-settled",
+            "direction": "DEPOSIT",
+            "amount": 1000,
+            "effectiveDate": "2026-05-02"
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 100, "MSFT": 100 }
+      },
+      "policy": {
+        "evaluationDate": "2026-05-02",
+        "absoluteDriftTolerance": 0.01,
+        "minimumTradeSize": 0
+      }
     }
   ]
 }

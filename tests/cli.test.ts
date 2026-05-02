@@ -120,6 +120,39 @@ describe('CLI', () => {
     expect(parsed.result.auditRecord.outputs.tradeProposal.trades).toHaveLength(2);
   });
 
+  it('runs a scheduled cash-flow scenario and includes deterministic schedule metadata', () => {
+    const result = runCli(
+      [
+        'run',
+        '--scenario',
+        scenariosPath,
+        '--scenario-id',
+        'scheduled_deposit_due',
+        '--format',
+        'json',
+      ],
+      cwd,
+    );
+
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    const outputs = parsed.result.auditRecord.outputs;
+    expect(outputs.cashFlowScheduleSummary.appliedEventCount).toBe(1);
+    expect(outputs.cashFlowScheduleSummary.netAppliedCashFlow).toBe(1000);
+    expect(outputs.tradeProposal.trades).toHaveLength(2);
+  });
+
+  it('validates an invalid recurring cash-flow scenario with a clear error', () => {
+    const result = runCli(
+      ['validate', '--scenario', scenariosPath, '--scenario-id', 'invalid_recurring_cash_flow'],
+      cwd,
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain('Validation: invalid');
+    expect(result.stdout).toContain('Unsupported cash flow recurrence frequency');
+  });
+
   it('runs scenario input from stdin with clean JSON stdout', () => {
     const scenario = scenarios.scenarios.find(
       (candidate) => candidate.id === 'one_asset_out_of_band',
@@ -187,6 +220,16 @@ describe('CLI', () => {
     expect(result.stdout).toContain('Warnings: 1');
   });
 
+  it('returns non-zero in strict mode when a future scheduled cash flow is excluded', () => {
+    const result = runCli(
+      ['run', '--scenario', scenariosPath, '--scenario-id', 'scheduled_deposit_future', '--strict'],
+      cwd,
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain('Warnings: 1');
+  });
+
   it('runs a batch with an expected-status manifest', () => {
     const result = runCli(
       ['batch', '--scenarios', scenariosPath, '--expectations', expectationsPath],
@@ -195,7 +238,7 @@ describe('CLI', () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Batch: success');
-    expect(result.stdout).toContain('Expectations: valid checked: 18');
+    expect(result.stdout).toContain('Expectations: valid checked: 26');
   });
 
   it('writes deterministic per-scenario batch outputs without changing stdout summary', () => {
@@ -285,7 +328,7 @@ describe('CLI', () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('Batch: error');
-    expect(result.stdout).toContain('errors: 4');
+    expect(result.stdout).toContain('errors: 5');
   });
 
   it('inspects supported strategies', () => {
@@ -295,6 +338,13 @@ describe('CLI', () => {
     expect(result.stdout).toContain('threshold (default)');
     expect(result.stdout).toContain('calendar');
     expect(result.stdout).toContain('manual');
+  });
+
+  it('inspects scheduled cash-flow scenarios', () => {
+    const result = runCli(['inspect', 'scenarios', '--scenarios', scenariosPath], cwd);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('scheduled_deposit_due [scheduled cash flows: 1]');
   });
 
   it('keeps config files and strategy overrides unsupported', () => {

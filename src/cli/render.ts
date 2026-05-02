@@ -151,6 +151,11 @@ function renderRunSummary(result: ScenarioRunResult): string {
     `Reason: ${outputs.trigger.reason ?? 'none'}`,
     `Trades: ${outputs.tradeProposal.trades.length}`,
     `Warnings: ${outputs.tradeProposal.warnings.length}`,
+    ...(outputs.cashFlowScheduleSummary === undefined
+      ? []
+      : [
+          `Scheduled cash flows: applied ${outputs.cashFlowScheduleSummary.appliedEventCount} future ${outputs.cashFlowScheduleSummary.futureEventCount}`,
+        ]),
     `Turnover: ${outputs.postTradeSimulation.turnover}`,
   ]
     .join('\n')
@@ -179,9 +184,13 @@ function renderRunPretty(result: ScenarioRunResult): string {
     'Warnings:',
     ...formatWarnings(outputs.tradeProposal.warnings),
     '',
+    'Scheduled cash flows:',
+    ...formatCashFlowScheduleSummary(outputs.cashFlowScheduleSummary),
+    '',
     'Explanation:',
     outputs.explanation.summary,
     outputs.explanation.triggerExplanation,
+    outputs.explanation.cashFlowScheduleExplanation ?? 'No scheduled cash flows were evaluated.',
     outputs.explanation.tradeExplanation,
     outputs.explanation.warningExplanation ?? 'No warnings.',
     outputs.explanation.residualDriftExplanation,
@@ -190,6 +199,32 @@ function renderRunPretty(result: ScenarioRunResult): string {
   ];
 
   return `${lines.join('\n')}\n`;
+}
+
+function formatCashFlowScheduleSummary(
+  summary:
+    | {
+        evaluationDate: string;
+        sourceScheduleCount: number;
+        appliedEventCount: number;
+        futureEventCount: number;
+        alreadyRepresentedEventCount: number;
+        netAppliedCashFlow: number;
+        netFutureCashFlow: number;
+      }
+    | undefined,
+): string[] {
+  if (summary === undefined) {
+    return ['- none'];
+  }
+
+  return [
+    `- evaluation date ${summary.evaluationDate}`,
+    `- source schedules ${summary.sourceScheduleCount}`,
+    `- applied events ${summary.appliedEventCount} net ${summary.netAppliedCashFlow}`,
+    `- future events ${summary.futureEventCount} net ${summary.netFutureCashFlow}`,
+    `- already represented events ${summary.alreadyRepresentedEventCount}`,
+  ];
 }
 
 function formatTrades(
@@ -222,8 +257,16 @@ function renderInspectSummary(output: InspectOutput): string {
       return [
         `Scenarios: ${output.items.length}`,
         ...output.items.map((item) => {
-          const scenario = item as { id: string; description?: string };
-          return `- ${scenario.id}${scenario.description === undefined ? '' : `: ${scenario.description}`}`;
+          const scenario = item as {
+            id: string;
+            description?: string;
+            cashFlowScheduleCount?: number;
+          };
+          const scheduleSuffix =
+            scenario.cashFlowScheduleCount === undefined || scenario.cashFlowScheduleCount === 0
+              ? ''
+              : ` [scheduled cash flows: ${scenario.cashFlowScheduleCount}]`;
+          return `- ${scenario.id}${scheduleSuffix}${scenario.description === undefined ? '' : `: ${scenario.description}`}`;
         }),
       ]
         .join('\n')

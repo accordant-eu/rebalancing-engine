@@ -319,6 +319,9 @@ function executeInspect(
               id: scenario.id,
               description: scenario.description,
               strategyType: scenario.policy.strategyType ?? 'threshold',
+              cashFlowScheduleCount: scenario.portfolioState.cashFlowSchedules?.length ?? 0,
+              evaluationDate:
+                scenario.policy.evaluationDate ?? scenario.policy.calendar?.evaluationDate,
             }))
             .sort((left, right) => left.id.localeCompare(right.id)),
         },
@@ -423,6 +426,12 @@ function policyFieldDescriptions(): Array<{
   description: string;
 }> {
   return [
+    {
+      name: 'evaluationDate',
+      required: false,
+      description:
+        'ISO YYYY-MM-DD date used to evaluate scheduled cash flows for non-calendar workflows.',
+    },
     {
       name: 'absoluteDriftTolerance',
       required: true,

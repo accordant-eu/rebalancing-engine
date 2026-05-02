@@ -21,6 +21,7 @@ describe('Scenario Runner', () => {
       'calendar_not_due',
       'holding_outside_universe',
       'invalid_cash_flow_amount',
+      'invalid_recurring_cash_flow',
       'invalid_strategy',
       'min_trade_size_issue',
       'missing_price',
@@ -29,6 +30,13 @@ describe('Scenario Runner', () => {
       'one_asset_out_of_band',
       'pending_cash_flow',
       'positive_cash',
+      'recurring_monthly_contribution',
+      'recurring_quarterly_withdrawal',
+      'scheduled_cash_flow_already_settled',
+      'scheduled_deposit_due',
+      'scheduled_deposit_future',
+      'scheduled_deposit_on_evaluation_date',
+      'scheduled_withdrawal_due',
       'settled_deposit_cash_flow',
       'settled_withdrawal_cash_flow',
       'target_allocation_sum_error',
@@ -43,8 +51,8 @@ describe('Scenario Runner', () => {
     const successes = results.filter((result) => result.status === 'success');
     const errors = results.filter((result) => result.status === 'error');
 
-    expect(successes).toHaveLength(14);
-    expect(errors).toHaveLength(4);
+    expect(successes).toHaveLength(21);
+    expect(errors).toHaveLength(5);
 
     const success = successes.find((result) => result.scenarioId === 'one_asset_out_of_band');
     expect(success?.status).toBe('success');
@@ -82,6 +90,16 @@ describe('Scenario Runner', () => {
       expect(invalidCashFlow.error).toContain('Cash flow amount must be positive');
     }
 
+    const invalidRecurringCashFlow = errors.find(
+      (result) => result.scenarioId === 'invalid_recurring_cash_flow',
+    );
+    expect(invalidRecurringCashFlow?.status).toBe('error');
+    if (invalidRecurringCashFlow?.status === 'error') {
+      expect(invalidRecurringCashFlow.error).toContain(
+        'Unsupported cash flow recurrence frequency',
+      );
+    }
+
     const calendarDue = successes.find((result) => result.scenarioId === 'calendar_due');
     expect(calendarDue?.status).toBe('success');
     if (calendarDue?.status === 'success') {
@@ -117,6 +135,17 @@ describe('Scenario Runner', () => {
         'aapl-older-lot',
       );
     }
+
+    const scheduledDeposit = successes.find((result) => result.scenarioId === 'scheduled_deposit_due');
+    expect(scheduledDeposit?.status).toBe('success');
+    if (scheduledDeposit?.status === 'success') {
+      expect(scheduledDeposit.auditRecord.outputs.cashFlowScheduleSummary?.appliedEventCount).toBe(
+        1,
+      );
+      expect(scheduledDeposit.auditRecord.outputs.cashFlowScheduleSummary?.netAppliedCashFlow).toBe(
+        1000,
+      );
+    }
   });
 
   it('validates results against an expected-status manifest', () => {
@@ -127,7 +156,7 @@ describe('Scenario Runner', () => {
 
     expect(validation).toEqual({
       isValid: true,
-      checkedScenarioCount: 18,
+      checkedScenarioCount: 26,
       mismatches: [],
     });
   });
@@ -152,12 +181,20 @@ describe('Scenario Runner', () => {
       'calendar_not_due',
       'holding_outside_universe',
       'invalid_cash_flow_amount',
+      'invalid_recurring_cash_flow',
       'invalid_strategy',
       'min_trade_size_issue',
       'multiple_assets_out_of_band',
       'one_asset_out_of_band',
       'pending_cash_flow',
       'positive_cash',
+      'recurring_monthly_contribution',
+      'recurring_quarterly_withdrawal',
+      'scheduled_cash_flow_already_settled',
+      'scheduled_deposit_due',
+      'scheduled_deposit_future',
+      'scheduled_deposit_on_evaluation_date',
+      'scheduled_withdrawal_due',
       'settled_deposit_cash_flow',
       'settled_withdrawal_cash_flow',
       'target_allocation_sum_error',

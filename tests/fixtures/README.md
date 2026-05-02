@@ -22,6 +22,14 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - `settled_withdrawal_cash_flow`: Settled withdrawal reduces available cash before valuation. Expected result: sell proposals fund the withdrawal-created cash deficit.
 - `pending_cash_flow`: Pending deposit is excluded from valuation and proposal sizing. Expected result: no cash deployment, with a structured warning and audit cash-flow summary.
 - `tax_lot_fifo_sell`: A sell trade has optional tax lots on the sold holding. Expected result: aggregate sell sizing is unchanged and the sell trade includes deterministic FIFO lot allocation metadata.
+- `scheduled_deposit_due`: Scheduled deposit before the evaluation date is expanded into a schedule-derived settled cash-flow event. Expected result: buy proposals deploy the deposit.
+- `scheduled_deposit_on_evaluation_date`: Scheduled deposit on the evaluation date is included. Expected result: on-date inclusivity matches due scheduled flows.
+- `scheduled_deposit_future`: Future scheduled deposit is excluded from valuation and proposal sizing. Expected result: no trade impact, with a future-schedule warning and audit metadata.
+- `scheduled_withdrawal_due`: Scheduled withdrawal due by the evaluation date is expanded into a schedule-derived settled withdrawal. Expected result: sell proposals fund the cash deficit.
+- `recurring_monthly_contribution`: Monthly recurring contribution expands through the evaluation date. Expected result: four applied contribution events are reflected in cash and proposal sizing.
+- `recurring_quarterly_withdrawal`: Quarterly recurring withdrawal expands through the evaluation date. Expected result: due withdrawal events are funded through sells.
+- `invalid_recurring_cash_flow`: Recurring cash-flow schedule uses unsupported weekly frequency. Expected result: validation aborts with an explicit recurrence-frequency error.
+- `scheduled_cash_flow_already_settled`: Generated schedule event ID matches an existing settled cash flow. Expected result: the explicit settled flow is counted once and the generated event is reported as already represented.
 
 ## Fixture Assumptions
 
@@ -30,6 +38,10 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - Fractional quantities are allowed in MVP proposal output.
 - Cash is included in total portfolio value but is not represented as a target asset.
 - `cashFlows` are optional. When provided, `cash` is treated as pre-flow cash; settled flows adjust available cash before valuation and pending flows are excluded from valuation and proposal sizing.
+- `cashFlowSchedules` are optional portfolio-level planning inputs. They are evaluated against explicit `policy.evaluationDate` or calendar `evaluationDate`; the engine never reads system time.
+- Scheduled one-off and recurring events with `effectiveDate <= evaluationDate` are expanded into schedule-derived settled cash-flow records in an internal portfolio copy. Future events are excluded from valuation and proposal sizing, reported in warnings, and serialized in audit/explanation output.
+- Recurrence supports `MONTHLY`, `QUARTERLY`, and `ANNUAL`. Weekly, custom, business-day, holiday, payment, custody, and execution semantics are out of scope.
+- Generated schedule event IDs use `schedule:<cashFlowScheduleId>:<effectiveDate>`. If an existing explicit `cashFlows` record already has that ID, the generated event is not applied again.
 - Raw negative cash remains invalid for trade proposal generation. Negative available cash is allowed only when caused by an explicit settled withdrawal cash flow and is funded through sell proposals.
 - `strategyType` defaults to `threshold` when omitted for backward compatibility.
 - Calendar strategy uses caller-supplied date strings in policy configuration. It does not read system time and does not model holidays or business-day calendars.
