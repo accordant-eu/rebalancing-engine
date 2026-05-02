@@ -8,6 +8,8 @@ The engine evaluates portfolio drift against a target allocation, selects a conf
 
 **Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increments have implemented explicit decimal arithmetic, output rounding policy, relative-boundary targeting, explicit offline cash-flow foundations, generic tax-lot allocation metadata, and documented optimizer and production-boundary deferrals. Post-MVP work remains for scheduled/recurring cash flows, full transaction-cost optimization, live integrations, API, UI, database, and persistence.
 
+**Recommended next increment:** Scheduled/recurring cash-flow semantics. See the roadmap, PRD, and MVP plan linked below.
+
 ## Numeric Policy
 
 Core financial calculations use `decimal.js` internally while the public TypeScript domain interfaces remain number-based for compatibility. Internal calculations are not rounded silently. Rounding is applied at explicit boundaries:
@@ -62,6 +64,9 @@ The current delivery model is an offline library/CLI-style calculation core. No 
 - [`docs/audits/tax-lots-audit.md`](docs/audits/tax-lots-audit.md) — Generic tax-lot allocation increment audit.
 - [`docs/audits/optimizer-feasibility-audit.md`](docs/audits/optimizer-feasibility-audit.md) — Optimizer deferral and prerequisite audit.
 - [`docs/audits/production-boundary-audit.md`](docs/audits/production-boundary-audit.md) — Live integration, API, UI, and database deferral audit.
+- [`docs/roadmap/rebalancing-engine-roadmap.md`](docs/roadmap/rebalancing-engine-roadmap.md) — Consolidated roadmap and next-increment recommendation.
+- [`docs/prd/scheduled-recurring-cash-flow-prd.md`](docs/prd/scheduled-recurring-cash-flow-prd.md) — Scheduled/recurring cash-flow PRD.
+- [`docs/plans/scheduled-recurring-cash-flow-mvp-plan.md`](docs/plans/scheduled-recurring-cash-flow-mvp-plan.md) — Scheduled/recurring cash-flow MVP implementation plan.
 - [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
 - [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
 - [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.
