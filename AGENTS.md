@@ -18,6 +18,11 @@ These rules govern AI-assisted development in this repository. The project is in
 - Prefer reversible choices during early exploration.
 - Record meaningful decisions in `BUILD_JOURNEY.md`.
 - Separate facts, assumptions, inferences, and decisions.
+- Treat decision discipline as a standing instruction for all product, architecture, domain, calculation, testing, tooling, documentation, and implementation work.
+- When a meaningful decision arises, explicitly identify it, consider reasonable alternatives, assess trade-offs, choose a preferred option when enough information exists, document the decision, implement it consistently, and validate it.
+- Document meaningful decisions using this structure: Decision, Status, Date, Context, Options considered, Preferred option, Rationale, Implementation impact, Validation.
+- Defer a decision only when it is genuinely premature, blocked, post-MVP, or lacks necessary stakeholder/integration information. Document the default behavior, revisit point, risk, and whether it blocks current work.
+- Prefer deterministic, explicit, testable, MVP-compatible, reversible choices over silent fallback behavior, broad abstractions, or undocumented assumptions.
 
 ## 3. Implementation Discipline
 
