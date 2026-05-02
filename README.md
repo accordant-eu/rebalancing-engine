@@ -6,7 +6,7 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, produces deterministic full-reset trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Slices 1–11 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules, Post-Trade Simulation, Explanation Output, Audit Records, Batch Scenario Runner, Second Strategy Proof Point). Slice 12 (Final Hardening) remains in progress.
+**Current status:** MVP Slices 0–12 implemented and validated for the offline deterministic fixture scope. Post-MVP work remains for production precision, rounding, live integrations, richer policy configuration, and expected-status runner manifests.
 
 ## Documentation
 
@@ -14,6 +14,7 @@ The engine evaluates portfolio drift against a target allocation, applies tolera
 - [`AGENTS.md`](AGENTS.md) — AI-assisted development rules for this repository.
 - [`docs/MVP_Implementation_Plan.md`](docs/MVP_Implementation_Plan.md) — Slice-by-slice implementation plan.
 - [`docs/audits/`](docs/audits/) — Audit reports (red-team audit, test-case audit).
+- [`docs/audits/final-mvp-audit.md`](docs/audits/final-mvp-audit.md) — Final MVP status, validation, and known limitations.
 - `docs/` — Background research and PRD.
 
 ## Getting Started

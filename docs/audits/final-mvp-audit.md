@@ -1,0 +1,73 @@
+# Final MVP Audit
+
+## Summary
+
+Audit date: 2026-05-02
+
+Scope: MVP Slices 0-12 for the offline deterministic portfolio rebalancing engine.
+
+Conclusion: The MVP is implemented, tested, documented, and reproducible for the documented offline fixture scope. The engine has no live integrations, no UI, no tax-lot optimization, no multi-currency support, and no execution routing.
+
+## Slice Status
+
+| Slice                                            | Status                 | Evidence                                                                     |
+| ------------------------------------------------ | ---------------------- | ---------------------------------------------------------------------------- |
+| 0. Tech stack and scaffolding                    | Complete and validated | TypeScript/Jest project, scripts in `package.json`, README commands verified |
+| 1. Domain fixtures                               | Complete and validated | `tests/fixtures/scenarios.json`, `tests/fixtures/README.md`, fixture tests   |
+| 2. Portfolio valuation and weights               | Complete and validated | `src/core/valuation.ts`, valuation tests                                     |
+| 3. Target allocation and drift                   | Complete and validated | `src/core/drift.ts`, drift and edge-case tests                               |
+| 4. Threshold trigger evaluation                  | Complete and validated | `src/strategy/threshold.ts`, threshold tests                                 |
+| 5. Basic trade proposal generation               | Complete and validated | `src/core/trades.ts`, trade tests                                            |
+| 6. Cash-aware adjustment and minimum trade rules | Complete and validated | Minimum trade warnings, negative-cash rejection, trade tests                 |
+| 7. Post-trade simulation                         | Complete and validated | `src/core/simulation.ts`, simulation tests                                   |
+| 8. Explanation output                            | Complete and validated | `src/explanation/explanation.ts`, explanation tests                          |
+| 9. Audit and reproducibility record              | Complete and validated | `src/audit/audit.ts`, audit replay tests                                     |
+| 10. Batch scenario runner                        | Complete and validated | `src/runner/scenario-runner.ts`, runner tests, `npm run scenario:run`        |
+| 11. Second strategy proof point                  | Complete and validated | `src/strategy/manual.ts`, manual strategy tests                              |
+| 12. MVP hardening and final audit                | Complete and validated | This report, README and build journey updates, full checks passing           |
+
+## Final Verification
+
+Commands run:
+
+```bash
+npm test -- --runInBand
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run scenario:run
+npm run format
+```
+
+Observed results:
+
+- Jest: 58 tests passed across 12 suites.
+- TypeScript type-check: passed.
+- ESLint: passed with no warnings after manual-strategy cleanup.
+- Build: passed.
+- Scenario runner: passed and produced deterministic JSON with six successful scenario audit records and two expected per-scenario errors for invalid fixtures.
+- Format: passed.
+
+## Known Limitations
+
+- Numeric calculations use JavaScript `number`; decimal arithmetic remains deferred.
+- Fractional quantities are allowed; no share-rounding, lot-size, or order-type policy exists.
+- Turnover is defined as sell-side trade value divided by starting portfolio value.
+- Negative cash is rejected during trade proposal generation; withdrawal or deficit funding is not modeled.
+- Stale price timestamps are not modeled.
+- Policy supports only global minimum trade size, not account-specific or instrument-specific minimums.
+- Manual forced rebalance is the second strategy proof point; calendar scheduling remains deferred.
+- Runner reports invalid fixtures as per-scenario errors; it does not yet support an expected-status manifest or output files.
+- There are no live broker, custodian, market-data, OMS, database, REST API, UI, or cloud integrations.
+
+## Deferred Decisions
+
+- Decimal arithmetic adoption should be revisited before production monetary outputs or rounding-sensitive workflows.
+- Calendar strategy date/time semantics should be specified before implementation.
+- Gross trade volume may be added separately if reporting requires it.
+- Audit event IDs may become content-addressed hashes if replay infrastructure needs stable deduplication.
+- Negative cash handling requires explicit withdrawal, margin, or deficit-funding requirements.
+
+## Recommendation
+
+Treat this repository as an MVP calculation core ready for review and future extension. The next safe work should be post-MVP hardening: expected-status runner manifests, stricter fixture schema validation, decimal/rounding policy evaluation, and calendar strategy design if needed.

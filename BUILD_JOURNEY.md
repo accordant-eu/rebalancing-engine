@@ -4,29 +4,30 @@ This file is the living project journal. It captures the journey from initializa
 
 ## 1. Project Context
 
-- **Known Objective:** Prepare the repository for a future buildout of a generic portfolio rebalancing engine.
+- **Known Objective:** Maintain and extend a generic portfolio rebalancing engine MVP.
 - **Development Approach:** This project, including its documentation, scaffolding, and future implementations, is built heavily relying on LLM tools and AI-assisted editors.
-- **What is Not Yet Known:** The language, framework, database, deployment model, architecture, and exact MVP scope are not yet known.
-- **Next Steps:** A PRD / Architecture / Vision document will be provided later. No firm product or architecture decisions should be made before that input is reviewed.
+- **What is Known:** The MVP is a TypeScript/Node.js offline calculation core using deterministic synthetic fixtures.
+- **What is Not Yet Known:** Production integration model, deployment model, live data interfaces, execution routing, and post-MVP policy breadth remain undecided.
+- **Next Steps:** Treat the offline fixture MVP as complete for review, then proceed with documented post-MVP hardening decisions.
 
 ## 2. Current Repository Snapshot
 
-- **Repository state:** Nearly empty repository acting as a container.
-- **Languages detected:** None.
-- **Frameworks detected:** None.
-- **Tooling detected:** None.
-- **Tests detected:** None.
-- **Documentation detected:** Basic `README.md` and `docs/Portfolio Rebalancing Meta-Paper Synthesis.md`.
+- **Repository state:** MVP offline calculation core implemented for deterministic synthetic fixtures.
+- **Languages detected:** TypeScript on Node.js.
+- **Frameworks detected:** Jest test framework; no application framework.
+- **Tooling detected:** TypeScript compiler, Jest, ESLint, Prettier, npm scripts.
+- **Tests detected:** Unit, fixture, edge-case, scenario runner, explanation, audit, and strategy tests.
+- **Documentation detected:** README, build journey, MVP plan, PRD/architecture document, fixture README, and audit reports.
 - **CI/CD detected:** None.
-- **Notable gaps:** Lacks code, CI, testing framework, project structure, and specific configurations.
+- **Notable gaps:** No CI workflow, no live integrations, no production decimal/rounding policy, no expected-status runner manifest.
 
 ## 3. Working Assumptions
 
-- The project may become a generic portfolio rebalancing engine.
-- The final architecture is not yet known.
-- The repository’s existing stack, if any, should be respected unless the PRD suggests otherwise (currently no stack).
-- The first implementation phase should probably favor an MVP with short proof cycles.
-- The system will likely require deterministic calculations and strong auditability.
+- The project is a generic portfolio rebalancing engine MVP.
+- The current architecture is an offline TypeScript calculation core with no live integrations.
+- The repository’s existing TypeScript/Node.js stack should be respected unless a documented post-MVP decision changes it.
+- Future implementation should continue with short, validated proof cycles.
+- The system requires deterministic calculations, explicit validation, and strong auditability.
 
 ## 4. Decisions Log
 
@@ -46,6 +47,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Use caller-supplied audit metadata                     | Accepted    | Audit record IDs and timestamps must be deterministic in tests and should come from orchestration, not pure calculation helpers.                                              | Slice 9 implementation       | High          | CLI/runner should supply stable metadata                                |
 | 2026-05-02 | Report batch scenario errors per scenario              | Accepted    | The offline runner should process all fixtures and report expected invalid scenarios without aborting the whole batch.                                                        | Slice 10 implementation      | High          | Use same pattern for future batch workflows                             |
 | 2026-05-02 | Use manual forced rebalance as second strategy         | Accepted    | A manual strategy proves Strategy extensibility without introducing calendar/date policy semantics before they are required.                                                  | Slice 11 implementation      | High          | Revisit calendar strategy after MVP if needed                           |
+| 2026-05-02 | Mark offline fixture MVP complete                      | Accepted    | Slices 0-12 are implemented, tested, documented, and audited for the offline deterministic fixture scope.                                                                     | Final MVP audit              | Medium        | Continue with post-MVP hardening and production-readiness decisions     |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -497,6 +499,51 @@ Implementation impact:
 Validation:
 Run tests, type-check, lint, build, format, and `npm run scenario:run`.
 
+Decision: Mark offline fixture MVP complete
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Slice 12 requires final hardening and an audit of the implemented MVP. The repository now contains deterministic fixture loading, valuation, drift calculation, threshold and manual trigger strategies, trade proposal generation, minimum-trade warnings, post-trade simulation, explanations, audit records, and a batch scenario runner.
+
+Options considered:
+
+1. Mark the MVP complete for the offline deterministic fixture scope.
+   - Benefits: Accurately reflects the implemented and tested capability boundary.
+   - Costs: Requires clear limitation documentation so "MVP complete" is not mistaken for production readiness.
+   - Risks: Readers may overgeneralize fixture-scope validation to live integrations.
+   - Reversibility: Medium; future audit findings can reopen specific slices.
+
+2. Keep the MVP open until production hardening is complete.
+   - Benefits: Avoids any ambiguity about production readiness.
+   - Costs: Blurs the boundary between MVP calculation-core completion and post-MVP production work.
+   - Risks: Makes progress tracking less useful and may encourage scope creep.
+   - Reversibility: High.
+
+3. Mark only Slices 0-11 complete and leave Slice 12 deferred.
+   - Benefits: Conservative if final validation is not yet complete.
+   - Costs: Inaccurate once final checks and audit documentation pass.
+   - Risks: Leaves the repository in a misleading partially finished state.
+   - Reversibility: High.
+
+Preferred option:
+Option 1: Mark the MVP complete for the offline deterministic fixture scope.
+
+Rationale:
+This is the clearest boundary. The implemented system satisfies the documented MVP slices for offline deterministic scenarios, while final documentation explicitly separates that from production readiness.
+
+Implementation impact:
+
+- Code: No runtime changes.
+- Tests: Full test, type-check, lint, build, format, and scenario-runner checks remain the validation basis.
+- Fixtures: No fixture changes.
+- Documentation: Added final MVP audit, updated README status, and refreshed build journey status.
+- Follow-up: Begin post-MVP hardening with expected-status manifests, stricter fixture schema validation, decimal/rounding policy evaluation, CI, and calendar strategy design if needed.
+
+Validation:
+Run tests, type-check, lint, build, format, and `npm run scenario:run`.
+
 ## 5. Iteration Log
 
 | Iteration | Date       | Goal                             | Scope                     | Actions taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Files changed                                                                                                                                                                            | Learnings                                                                                                                                                                                                    | Open questions                                                               | Next step                                                          |
@@ -517,6 +564,7 @@ Run tests, type-check, lint, build, format, and `npm run scenario:run`.
 | 14        | 2026-05-02 | Audit and Reproducibility Record | Slice 9                   | Added audit record generation and stable JSON serialization capturing inputs, drift, trigger, proposal, simulation, and explanation outputs. Added replay tests.                                                                                                                                                                                                                                                                                                                                                                                                      | `src/audit/audit.ts`, `src/audit/index.ts`, `src/models/domain.ts`, `tests/audit.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                        | Audit records should receive metadata from orchestration to preserve deterministic pure helpers and fixture replay.                                                                                          | Should event IDs later be content-addressed hashes?                          | Proceed to Slice 10: Batch Scenario Runner / Test Harness.         |
 | 15        | 2026-05-02 | Batch Scenario Runner            | Slice 10                  | Added an offline fixture runner and `npm run scenario:run` command that evaluates all scenarios into success/error JSON results with audit records for successful scenarios.                                                                                                                                                                                                                                                                                                                                                                                          | `src/runner/scenario-runner.ts`, `src/runner/index.ts`, `tests/scenario-runner.test.ts`, `tests/smoke.test.ts`, `package.json`, `README.md`, `BUILD_JOURNEY.md`                          | Batch output makes existing invalid fixtures useful as deterministic error-path checks instead of special cases that must be excluded.                                                                       | Should the runner later support expected-status manifests and output files?  | Proceed to Slice 11: Second Strategy Proof Point.                  |
 | 16        | 2026-05-02 | Second Strategy Proof Point      | Slice 11                  | Added manual forced-rebalance strategy isolated to trigger logic and tests proving shared valuation, proposal, simulation, and explanation functions work unchanged.                                                                                                                                                                                                                                                                                                                                                                                                  | `src/strategy/manual.ts`, `src/strategy/index.ts`, `tests/manual-strategy.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                               | Strategy extensibility can be proven without adding calendar/date policy decisions before the MVP requires them.                                                                                             | Should calendar scheduling be post-MVP or part of a later MVP extension?     | Proceed to Slice 12: MVP Hardening and Final Audit.                |
+| 17        | 2026-05-02 | MVP Hardening and Final Audit    | Slice 12                  | Added final MVP audit documentation, refreshed README status, reconciled build journey project context with the implemented repository, and recorded the decision to mark the offline fixture MVP complete.                                                                                                                                                                                                                                                                                                                                                           | `docs/audits/final-mvp-audit.md`, `README.md`, `BUILD_JOURNEY.md`                                                                                                                        | The MVP is complete for offline deterministic fixtures, but production readiness still requires decimal/rounding policy, CI, richer validation, and integration decisions.                                   | Which post-MVP hardening item should be prioritized first?                   | Begin post-MVP hardening.                                          |
 
 ### Iteration 10 Detail — 2026-05-02
 
