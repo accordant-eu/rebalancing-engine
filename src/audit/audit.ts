@@ -8,6 +8,7 @@ import {
   TriggerResult,
 } from '../models/domain';
 import { PostTradeSimulation } from '../core/simulation';
+import { CashFlowScheduleSummary } from '../core/cash-flows';
 import { CashFlowSummary } from '../core/valuation';
 import {
   roundDrift,
@@ -32,6 +33,7 @@ export interface AuditRecordInput {
   postTradeSimulation: PostTradeSimulation;
   explanation: RecommendationExplanation;
   cashFlowSummary?: CashFlowSummary;
+  cashFlowScheduleSummary?: CashFlowScheduleSummary;
 }
 
 export interface AuditRecord {
@@ -50,6 +52,7 @@ export interface AuditRecord {
     boundaryBandMode?: TradeProposal['boundaryBandMode'];
     driftMeasurements: DriftMeasurement[];
     cashFlowSummary?: CashFlowSummary;
+    cashFlowScheduleSummary?: CashFlowScheduleSummary;
     trigger: TriggerResult;
     tradeProposal: TradeProposal;
     postTradeSimulation: PostTradeSimulation;
@@ -74,6 +77,7 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
       boundaryBandMode: input.tradeProposal.boundaryBandMode,
       driftMeasurements: input.driftMeasurements,
       cashFlowSummary: input.cashFlowSummary,
+      cashFlowScheduleSummary: input.cashFlowScheduleSummary,
       trigger: input.trigger,
       tradeProposal: input.tradeProposal,
       postTradeSimulation: input.postTradeSimulation,

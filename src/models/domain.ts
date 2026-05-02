@@ -22,12 +22,33 @@ export type CashFlowDirection = 'DEPOSIT' | 'WITHDRAWAL';
 
 export type CashFlowStatus = 'SETTLED' | 'PENDING';
 
+export type CashFlowSource = 'SCHEDULE';
+
 export interface CashFlow {
   cashFlowId: string;
   direction: CashFlowDirection;
   status: CashFlowStatus;
   amount: number;
   effectiveDate?: string;
+  description?: string;
+  source?: CashFlowSource;
+  sourceScheduleId?: string;
+}
+
+export type CashFlowRecurrenceFrequency = 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+
+export interface CashFlowRecurrence {
+  frequency: CashFlowRecurrenceFrequency;
+  endDate?: string;
+  occurrenceCount?: number;
+}
+
+export interface CashFlowSchedule {
+  cashFlowScheduleId: string;
+  direction: CashFlowDirection;
+  amount: number;
+  effectiveDate: string;
+  recurrence?: CashFlowRecurrence;
   description?: string;
 }
 
@@ -36,6 +57,7 @@ export interface PortfolioState {
   cash: number;
   holdings: Holding[];
   cashFlows?: CashFlow[];
+  cashFlowSchedules?: CashFlowSchedule[];
 }
 
 export interface TargetWeight {
@@ -66,6 +88,9 @@ export interface CalendarRebalancingConfig {
 }
 
 export interface RebalancingPolicy {
+  // Date used by non-calendar workflows to evaluate date-bound inputs such as scheduled cash flows.
+  // ISO date-only string; callers supply it explicitly and the engine never reads system time.
+  evaluationDate?: string;
   // Strategy defaults to threshold when omitted for backward compatibility.
   strategyType?: RebalancingStrategyType;
   // Trade sizing defaults to full reset. Boundary mode is a threshold-specific transaction-cost-aware proof point.
@@ -113,7 +138,10 @@ export interface ProposedLotAllocation {
   acquisitionDate?: string;
 }
 
-export type ProposalWarningCode = 'MINIMUM_TRADE_SIZE' | 'PENDING_CASH_FLOW_EXCLUDED';
+export type ProposalWarningCode =
+  | 'MINIMUM_TRADE_SIZE'
+  | 'PENDING_CASH_FLOW_EXCLUDED'
+  | 'FUTURE_CASH_FLOW_SCHEDULED';
 
 export interface ProposalWarning {
   code: ProposalWarningCode;
@@ -123,6 +151,8 @@ export interface ProposalWarning {
   minimumTradeSize?: number;
   pendingCashFlowCount?: number;
   pendingNetAmount?: number;
+  futureScheduledCashFlowCount?: number;
+  futureScheduledNetAmount?: number;
 }
 
 export interface TradeProposal {

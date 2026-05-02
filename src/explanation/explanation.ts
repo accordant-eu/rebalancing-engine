@@ -1,10 +1,12 @@
 import { TradeProposal, TriggerResult } from '../models/domain';
+import { CashFlowScheduleSummary } from '../core/cash-flows';
 import { PostTradeSimulation } from '../core/simulation';
 import { formatFixed } from '../core/numeric';
 
 export interface RecommendationExplanation {
   summary: string;
   triggerExplanation: string;
+  cashFlowScheduleExplanation: string | null;
   tradeExplanation: string;
   warningExplanation: string | null;
   residualDriftExplanation: string;
@@ -14,6 +16,7 @@ export function generateExplanation(
   trigger: TriggerResult,
   proposal: TradeProposal,
   simulation?: PostTradeSimulation,
+  cashFlowScheduleSummary?: CashFlowScheduleSummary,
 ): RecommendationExplanation {
   const summary = buildSummary(trigger, proposal, simulation);
   const strategyPrefix = `Strategy ${trigger.strategyType}`;
@@ -39,10 +42,21 @@ export function generateExplanation(
   return {
     summary,
     triggerExplanation,
+    cashFlowScheduleExplanation: buildCashFlowScheduleExplanation(cashFlowScheduleSummary),
     tradeExplanation,
     warningExplanation,
     residualDriftExplanation: buildResidualDriftExplanation(simulation),
   };
+}
+
+function buildCashFlowScheduleExplanation(
+  summary: CashFlowScheduleSummary | undefined,
+): string | null {
+  if (summary === undefined) {
+    return null;
+  }
+
+  return `Scheduled cash flows evaluated on ${summary.evaluationDate}: applied ${summary.appliedEventCount} event${summary.appliedEventCount === 1 ? '' : 's'} with net cash flow ${formatFixed(summary.netAppliedCashFlow, 2)}; excluded ${summary.futureEventCount} future event${summary.futureEventCount === 1 ? '' : 's'} with net future cash flow ${formatFixed(summary.netFutureCashFlow, 2)}; skipped ${summary.alreadyRepresentedEventCount} already represented event${summary.alreadyRepresentedEventCount === 1 ? '' : 's'}.`;
 }
 
 function describeLotAllocations(trade: TradeProposal['trades'][number]): string {

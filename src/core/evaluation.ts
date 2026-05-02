@@ -12,9 +12,18 @@ import {
   TriggerResult,
 } from '../models/domain';
 import { CalendarRebalanceStrategy, ManualRebalanceStrategy, ThresholdStrategy } from '../strategy';
+import {
+  applyCashFlowSchedules,
+  CashFlowScheduleSummary,
+  validateIsoDateOnly,
+} from './cash-flows';
 import { calculateDrift } from './drift';
 import { PostTradeSimulation, simulatePostTrade } from './simulation';
-import { buildCashFlowProposalWarnings, generateTradeProposal } from './trades';
+import {
+  buildCashFlowProposalWarnings,
+  buildCashFlowScheduleProposalWarnings,
+  generateTradeProposal,
+} from './trades';
 import {
   calculateCurrentWeights,
   calculateValuation,
@@ -31,6 +40,7 @@ const STRATEGY_REGISTRY: Record<RebalancingStrategyType, StrategyInterface> = {
 export interface RebalanceEvaluationInput {
   eventId: string;
   createdAt: string;
+  evaluationDate?: string;
   portfolioState: PortfolioState;
   targetAllocation: TargetAllocation;
   priceSnapshot: PriceSnapshot;
@@ -46,20 +56,34 @@ export interface RebalanceEvaluation {
   postTradeSimulation: PostTradeSimulation;
   explanation: RecommendationExplanation;
   auditRecord: AuditRecord;
+  cashFlowScheduleSummary?: CashFlowScheduleSummary;
 }
 
 export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEvaluation {
-  const valuation = calculateValuation(input.portfolioState, input.priceSnapshot);
+  const evaluationDate = resolveEvaluationDate(input);
+  const scheduledCashFlowExpansion = applyCashFlowSchedules(input.portfolioState, evaluationDate);
+  const effectivePortfolioState = scheduledCashFlowExpansion.portfolioState;
+  const cashFlowScheduleSummary = scheduledCashFlowExpansion.summary;
+  const valuation = calculateValuation(effectivePortfolioState, input.priceSnapshot);
   const weights = calculateCurrentWeights(valuation);
   const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
   const strategy = selectStrategy(input.policy.strategyType);
-  const trigger = strategy.evaluateTrigger(input.portfolioState, driftMeasurements, input.policy);
+  const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
   const tradeProposal = trigger.isTriggered
-    ? generateTradeProposal(valuation, input.targetAllocation, input.priceSnapshot, input.policy)
+    ? generateTradeProposal(
+        valuation,
+        input.targetAllocation,
+        input.priceSnapshot,
+        input.policy,
+        cashFlowScheduleSummary,
+      )
     : {
         trades: [],
         estimatedPostTradeCash: valuation.cash,
-        warnings: buildCashFlowProposalWarnings(valuation.cashFlowSummary),
+        warnings: [
+          ...buildCashFlowProposalWarnings(valuation.cashFlowSummary),
+          ...buildCashFlowScheduleProposalWarnings(cashFlowScheduleSummary),
+        ],
         executionTargetMode: input.policy.executionTargetMode ?? 'full_reset',
         boundaryBandMode:
           input.policy.executionTargetMode === 'boundary'
@@ -67,13 +91,18 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
             : undefined,
       };
   const postTradeSimulation = simulatePostTrade(
-    input.portfolioState,
+    effectivePortfolioState,
     input.priceSnapshot,
     input.targetAllocation,
     input.policy,
     tradeProposal,
   );
-  const explanation = generateExplanation(trigger, tradeProposal, postTradeSimulation);
+  const explanation = generateExplanation(
+    trigger,
+    tradeProposal,
+    postTradeSimulation,
+    cashFlowScheduleSummary,
+  );
   const auditRecord = generateAuditRecord({
     eventId: input.eventId,
     createdAt: input.createdAt,
@@ -87,6 +116,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
     postTradeSimulation,
     explanation,
     cashFlowSummary: valuation.cashFlowSummary,
+    cashFlowScheduleSummary,
   });
 
   return {
@@ -98,6 +128,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
     postTradeSimulation,
     explanation,
     auditRecord,
+    cashFlowScheduleSummary,
   };
 }
 
@@ -114,4 +145,15 @@ export function selectStrategy(strategyType: string | undefined): StrategyInterf
   }
 
   return strategy;
+}
+
+function resolveEvaluationDate(input: RebalanceEvaluationInput): string | undefined {
+  const evaluationDate =
+    input.evaluationDate ?? input.policy.evaluationDate ?? input.policy.calendar?.evaluationDate;
+
+  if (evaluationDate !== undefined) {
+    validateIsoDateOnly(evaluationDate, 'evaluationDate');
+  }
+
+  return evaluationDate;
 }

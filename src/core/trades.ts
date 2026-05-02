@@ -12,6 +12,7 @@ import {
 } from '../models/domain';
 import { validateTargetAllocation } from './drift';
 import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
+import { CashFlowScheduleSummary } from './cash-flows';
 import { CashFlowSummary, ValuationResult } from './valuation';
 
 const TRADE_EPSILON = CALCULATION_EPSILON;
@@ -28,6 +29,7 @@ export function generateTradeProposal(
   target: TargetAllocation,
   priceSnapshot: PriceSnapshot,
   policy?: RebalancingPolicy,
+  cashFlowScheduleSummary?: CashFlowScheduleSummary,
 ): TradeProposal {
   validateTargetAllocation(target);
   if (valuation.cash < 0 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
@@ -36,7 +38,10 @@ export function generateTradeProposal(
 
   const executionTargetMode = policy?.executionTargetMode ?? 'full_reset';
   const boundaryBandMode = resolveBoundaryBandMode(executionTargetMode, policy);
-  const initialWarnings = buildCashFlowProposalWarnings(valuation.cashFlowSummary);
+  const initialWarnings = [
+    ...buildCashFlowProposalWarnings(valuation.cashFlowSummary),
+    ...buildCashFlowScheduleProposalWarnings(cashFlowScheduleSummary),
+  ];
   const targetWeights = new Map(target.targets.map((t) => [t.instrumentId, t.weight]));
   const currentValues = new Map(valuation.holdings.map((h) => [h.instrumentId, h.marketValue]));
 
@@ -127,6 +132,23 @@ export function buildCashFlowProposalWarnings(
       pendingCashFlowCount: cashFlowSummary.pendingCashFlowCount,
       pendingNetAmount: cashFlowSummary.netPendingCashFlow,
       message: `Excluded ${cashFlowSummary.pendingCashFlowCount} pending cash flow${cashFlowSummary.pendingCashFlowCount === 1 ? '' : 's'} from valuation and trade sizing. Pending net amount: ${formatFixed(cashFlowSummary.netPendingCashFlow, 2)}.`,
+    },
+  ];
+}
+
+export function buildCashFlowScheduleProposalWarnings(
+  cashFlowScheduleSummary: CashFlowScheduleSummary | undefined,
+): ProposalWarning[] {
+  if (cashFlowScheduleSummary === undefined || cashFlowScheduleSummary.futureEventCount === 0) {
+    return [];
+  }
+
+  return [
+    {
+      code: 'FUTURE_CASH_FLOW_SCHEDULED',
+      futureScheduledCashFlowCount: cashFlowScheduleSummary.futureEventCount,
+      futureScheduledNetAmount: cashFlowScheduleSummary.netFutureCashFlow,
+      message: `Excluded ${cashFlowScheduleSummary.futureEventCount} future scheduled cash flow${cashFlowScheduleSummary.futureEventCount === 1 ? '' : 's'} after evaluation date ${cashFlowScheduleSummary.evaluationDate}. Future scheduled net amount: ${formatFixed(cashFlowScheduleSummary.netFutureCashFlow, 2)}.`,
     },
   ];
 }

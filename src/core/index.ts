@@ -4,3 +4,4 @@ export * from './evaluation';
 export * from './trades';
 export * from './simulation';
 export * from './numeric';
+export * from './cash-flows';

@@ -97,6 +97,126 @@ describe('Rebalance Evaluation', () => {
     expect(evaluation.auditRecord.outputs.cashFlowSummary?.pendingDeposits).toBe(1000);
   });
 
+  it('applies due scheduled deposits to valuation, proposal sizing, explanation, and audit output', () => {
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-scheduled-deposit',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: {
+        accountId: 'scheduled-deposit-account',
+        cash: 0,
+        holdings: [
+          { instrumentId: 'AAPL', quantity: 100 },
+          { instrumentId: 'MSFT', quantity: 100 },
+        ],
+        cashFlowSchedules: [
+          {
+            cashFlowScheduleId: 'deposit',
+            direction: 'DEPOSIT',
+            amount: 1000,
+            effectiveDate: '2026-05-02',
+          },
+        ],
+      },
+      targetAllocation: {
+        targets: [
+          { instrumentId: 'AAPL', weight: 0.5 },
+          { instrumentId: 'MSFT', weight: 0.5 },
+        ],
+      },
+      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
+    });
+
+    expect(evaluation.valuation.cash).toBe(1000);
+    expect(evaluation.tradeProposal.trades).toEqual([
+      expect.objectContaining({ instrumentId: 'AAPL', direction: 'BUY', estimatedValue: 500 }),
+      expect.objectContaining({ instrumentId: 'MSFT', direction: 'BUY', estimatedValue: 500 }),
+    ]);
+    expect(evaluation.cashFlowScheduleSummary?.appliedEventCount).toBe(1);
+    expect(evaluation.auditRecord.inputs.portfolioState.cashFlows).toBeUndefined();
+    expect(evaluation.auditRecord.outputs.cashFlowScheduleSummary?.netAppliedCashFlow).toBe(1000);
+    expect(evaluation.explanation.cashFlowScheduleExplanation).toContain('applied 1 event');
+  });
+
+  it('applies due scheduled withdrawals through existing sell proposal behavior', () => {
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-scheduled-withdrawal',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: {
+        accountId: 'scheduled-withdrawal-account',
+        cash: 0,
+        holdings: [
+          { instrumentId: 'AAPL', quantity: 100 },
+          { instrumentId: 'MSFT', quantity: 100 },
+        ],
+        cashFlowSchedules: [
+          {
+            cashFlowScheduleId: 'withdrawal',
+            direction: 'WITHDRAWAL',
+            amount: 1000,
+            effectiveDate: '2026-05-01',
+          },
+        ],
+      },
+      targetAllocation: {
+        targets: [
+          { instrumentId: 'AAPL', weight: 0.5 },
+          { instrumentId: 'MSFT', weight: 0.5 },
+        ],
+      },
+      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
+    });
+
+    expect(evaluation.valuation.cash).toBe(-1000);
+    expect(evaluation.tradeProposal.trades).toEqual([
+      expect.objectContaining({ instrumentId: 'AAPL', direction: 'SELL', estimatedValue: 500 }),
+      expect.objectContaining({ instrumentId: 'MSFT', direction: 'SELL', estimatedValue: 500 }),
+    ]);
+    expect(evaluation.tradeProposal.estimatedPostTradeCash).toBe(0);
+    expect(evaluation.auditRecord.outputs.cashFlowScheduleSummary?.netAppliedCashFlow).toBe(
+      -1000,
+    );
+  });
+
+  it('excludes future scheduled flows from valuation and proposal sizing while warning', () => {
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-future-scheduled-deposit',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: {
+        accountId: 'future-scheduled-account',
+        cash: 0,
+        holdings: [
+          { instrumentId: 'AAPL', quantity: 100 },
+          { instrumentId: 'MSFT', quantity: 100 },
+        ],
+        cashFlowSchedules: [
+          {
+            cashFlowScheduleId: 'future-deposit',
+            direction: 'DEPOSIT',
+            amount: 1000,
+            effectiveDate: '2026-05-03',
+          },
+        ],
+      },
+      targetAllocation: {
+        targets: [
+          { instrumentId: 'AAPL', weight: 0.5 },
+          { instrumentId: 'MSFT', weight: 0.5 },
+        ],
+      },
+      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
+    });
+
+    expect(evaluation.valuation.cash).toBe(0);
+    expect(evaluation.tradeProposal.trades).toEqual([]);
+    expect(evaluation.tradeProposal.warnings).toEqual([
+      expect.objectContaining({ code: 'FUTURE_CASH_FLOW_SCHEDULED' }),
+    ]);
+    expect(evaluation.auditRecord.outputs.cashFlowScheduleSummary?.futureEventCount).toBe(1);
+  });
+
   it('rejects unsupported strategy identifiers explicitly', () => {
     expect(() => selectStrategy('unsupported')).toThrow(
       'Unsupported rebalancing strategy: unsupported',
