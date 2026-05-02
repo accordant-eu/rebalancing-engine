@@ -14,7 +14,7 @@ import {
 import { CalendarRebalanceStrategy, ManualRebalanceStrategy, ThresholdStrategy } from '../strategy';
 import { calculateDrift } from './drift';
 import { PostTradeSimulation, simulatePostTrade } from './simulation';
-import { generateTradeProposal } from './trades';
+import { buildCashFlowProposalWarnings, generateTradeProposal } from './trades';
 import {
   calculateCurrentWeights,
   calculateValuation,
@@ -59,7 +59,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
     : {
         trades: [],
         estimatedPostTradeCash: valuation.cash,
-        warnings: [],
+        warnings: buildCashFlowProposalWarnings(valuation.cashFlowSummary),
         executionTargetMode: input.policy.executionTargetMode ?? 'full_reset',
         boundaryBandMode:
           input.policy.executionTargetMode === 'boundary'
@@ -86,6 +86,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
     tradeProposal,
     postTradeSimulation,
     explanation,
+    cashFlowSummary: valuation.cashFlowSummary,
   });
 
   return {

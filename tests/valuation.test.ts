@@ -79,4 +79,116 @@ describe('Valuation and Weight Calculation', () => {
     const weights = calculateCurrentWeights(valuation);
     expect(weights[0].weight).toBe(0);
   });
+
+  it('applies settled cash flows before valuation and excludes pending flows', () => {
+    const state: PortfolioState = {
+      accountId: 'cash-flow-valuation-1',
+      cash: 100,
+      holdings: [{ instrumentId: 'AAPL', quantity: 10 }],
+      cashFlows: [
+        {
+          cashFlowId: 'deposit-1',
+          direction: 'DEPOSIT',
+          status: 'SETTLED',
+          amount: 500,
+        },
+        {
+          cashFlowId: 'withdrawal-1',
+          direction: 'WITHDRAWAL',
+          status: 'SETTLED',
+          amount: 200,
+        },
+        {
+          cashFlowId: 'pending-deposit-1',
+          direction: 'DEPOSIT',
+          status: 'PENDING',
+          amount: 1000,
+        },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+
+    const valuation = calculateValuation(state, prices);
+
+    expect(valuation.cash).toBe(400);
+    expect(valuation.totalHoldingsValue).toBe(1000);
+    expect(valuation.totalPortfolioValue).toBe(1400);
+    expect(valuation.cashFlowSummary).toEqual({
+      startingCash: 100,
+      settledDeposits: 500,
+      settledWithdrawals: 200,
+      pendingDeposits: 1000,
+      pendingWithdrawals: 0,
+      netSettledCashFlow: 300,
+      netPendingCashFlow: 1000,
+      availableCash: 400,
+      settledCashFlowCount: 2,
+      pendingCashFlowCount: 1,
+      hasPendingCashFlows: true,
+      hasSettledWithdrawalDeficit: false,
+    });
+  });
+
+  it('allows settled withdrawals to create an explicit cash deficit', () => {
+    const state: PortfolioState = {
+      accountId: 'cash-flow-valuation-2',
+      cash: 100,
+      holdings: [{ instrumentId: 'AAPL', quantity: 10 }],
+      cashFlows: [
+        {
+          cashFlowId: 'withdrawal-1',
+          direction: 'WITHDRAWAL',
+          status: 'SETTLED',
+          amount: 300,
+        },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+
+    const valuation = calculateValuation(state, prices);
+
+    expect(valuation.cash).toBe(-200);
+    expect(valuation.totalPortfolioValue).toBe(800);
+    expect(valuation.cashFlowSummary?.hasSettledWithdrawalDeficit).toBe(true);
+  });
+
+  it('rejects invalid cash-flow amounts', () => {
+    const state: PortfolioState = {
+      accountId: 'cash-flow-invalid-1',
+      cash: 0,
+      holdings: [],
+      cashFlows: [
+        {
+          cashFlowId: 'invalid-amount',
+          direction: 'DEPOSIT',
+          status: 'SETTLED',
+          amount: 0,
+        },
+      ],
+    };
+
+    expect(() => calculateValuation(state, { prices: {} })).toThrow(
+      'Cash flow amount must be positive: invalid-amount',
+    );
+  });
+
+  it('rejects cash flows that exceed total portfolio value', () => {
+    const state: PortfolioState = {
+      accountId: 'cash-flow-invalid-2',
+      cash: 0,
+      holdings: [{ instrumentId: 'AAPL', quantity: 1 }],
+      cashFlows: [
+        {
+          cashFlowId: 'too-large-withdrawal',
+          direction: 'WITHDRAWAL',
+          status: 'SETTLED',
+          amount: 200,
+        },
+      ],
+    };
+
+    expect(() => calculateValuation(state, { prices: { AAPL: 100 } })).toThrow(
+      'Cash flows exceed total portfolio value',
+    );
+  });
 });

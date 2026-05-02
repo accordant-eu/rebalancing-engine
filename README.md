@@ -6,7 +6,7 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increment has implemented explicit decimal arithmetic, output rounding policy, and relative-boundary targeting. Post-MVP work remains for richer cash-flow workflows, tax-lot logic, full transaction-cost optimization, live integrations, API, UI, and persistence.
+**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increment has implemented explicit decimal arithmetic, output rounding policy, relative-boundary targeting, and explicit offline cash-flow foundations. Post-MVP work remains for scheduled/recurring cash flows, tax-lot logic, full transaction-cost optimization, live integrations, API, UI, and persistence.
 
 ## Numeric Policy
 
@@ -25,6 +25,16 @@ Threshold policies support two execution target modes:
 
 Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/- absoluteDriftTolerance`. Policies can opt into `boundaryBandMode: "relative"`, using `targetWeight +/- targetWeight * relativeDriftTolerance`. Relative-boundary mode requires `relativeDriftTolerance` and rejects zero-target instruments that require a boundary trade, because relative bands are undefined around a zero target.
 
+## Cash Flows
+
+`PortfolioState.cashFlows` is optional. Existing scalar `cash` remains supported. When cash flows are supplied:
+
+- `SETTLED` `DEPOSIT` flows increase available cash before valuation and proposal generation.
+- `SETTLED` `WITHDRAWAL` flows reduce available cash before valuation and proposal generation.
+- Withdrawal-created cash deficits can be funded through sell proposals using the existing deterministic target-reset math.
+- `PENDING` flows are excluded from valuation and trade sizing, but appear in cash-flow summary metadata and proposal warnings.
+- Raw negative cash without explicit settled withdrawal context remains invalid for proposal generation.
+
 ## Documentation
 
 - [`BUILD_JOURNEY.md`](BUILD_JOURNEY.md) — Living project journal tracking assumptions, decisions, and iteration progress.
@@ -34,6 +44,7 @@ Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/
 - [`docs/audits/final-mvp-audit.md`](docs/audits/final-mvp-audit.md) — Final MVP status, validation, and known limitations.
 - [`docs/audits/next-iteration-mvp-audit.md`](docs/audits/next-iteration-mvp-audit.md) — Multi-strategy iteration status, validation, and known limitations.
 - [`docs/audits/deferred-capabilities-audit.md`](docs/audits/deferred-capabilities-audit.md) — Decimal/rounding and relative-boundary increment audit.
+- [`docs/audits/cash-flows-audit.md`](docs/audits/cash-flows-audit.md) — Explicit offline cash-flow increment audit.
 - [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
 - [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
 - [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.

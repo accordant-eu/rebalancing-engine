@@ -184,6 +184,88 @@ describe('Trade Proposal Generation', () => {
     );
   });
 
+  it('funds explicit settled withdrawal deficits with sell trades', () => {
+    const state: PortfolioState = {
+      accountId: 'withdrawal-deficit-1',
+      cash: 0,
+      holdings: [
+        { instrumentId: 'AAPL', quantity: 50 },
+        { instrumentId: 'MSFT', quantity: 50 },
+      ],
+      cashFlows: [
+        {
+          cashFlowId: 'withdrawal-1',
+          direction: 'WITHDRAWAL',
+          status: 'SETTLED',
+          amount: 1000,
+        },
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'AAPL', weight: 0.5 },
+        { instrumentId: 'MSFT', weight: 0.5 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 100, MSFT: 100 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+    });
+
+    expect(valuation.cash).toBe(-1000);
+    expect(proposal.trades).toHaveLength(2);
+    for (const trade of proposal.trades) {
+      expect(trade.direction).toBe('SELL');
+      expect(trade.estimatedValue).toBeCloseTo(500, 8);
+      expect(trade.quantity).toBeCloseTo(5, 8);
+    }
+    expect(proposal.estimatedPostTradeCash).toBe(0);
+  });
+
+  it('emits warnings for pending cash flows excluded from trade sizing', () => {
+    const state: PortfolioState = {
+      accountId: 'pending-cash-flow-1',
+      cash: 500,
+      holdings: [
+        { instrumentId: 'AAPL', quantity: 50 },
+        { instrumentId: 'MSFT', quantity: 50 },
+      ],
+      cashFlows: [
+        {
+          cashFlowId: 'pending-deposit-1',
+          direction: 'DEPOSIT',
+          status: 'PENDING',
+          amount: 1000,
+        },
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'AAPL', weight: 0.5 },
+        { instrumentId: 'MSFT', weight: 0.5 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { AAPL: 100, MSFT: 100 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+    });
+
+    expect(valuation.cash).toBe(500);
+    expect(proposal.warnings).toEqual([
+      expect.objectContaining({
+        code: 'PENDING_CASH_FLOW_EXCLUDED',
+        pendingCashFlowCount: 1,
+        pendingNetAmount: 1000,
+      }),
+    ]);
+  });
+
   it('suppresses trades below the global minimum trade size and emits warnings', () => {
     const scenario = scenarioById('min_trade_size_issue');
     const valuation = calculateValuation(scenario.portfolioState, scenario.priceSnapshot);

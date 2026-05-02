@@ -34,11 +34,15 @@ describe('Domain Fixtures', () => {
       'missing_price',
       'target_allocation_sum_error',
       'invalid_strategy',
+      'invalid_cash_flow_amount',
       'holding_outside_universe',
       'calendar_due',
       'calendar_not_due',
       'threshold_boundary_target',
       'threshold_relative_boundary_target',
+      'settled_deposit_cash_flow',
+      'settled_withdrawal_cash_flow',
+      'pending_cash_flow',
     ];
 
     const actualIds = scenarios.map((s) => s.id);

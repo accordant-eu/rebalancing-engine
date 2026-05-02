@@ -65,6 +65,38 @@ describe('Rebalance Evaluation', () => {
     expect(evaluation.auditRecord.outputs.strategyType).toBe('calendar');
   });
 
+  it('surfaces pending cash-flow warnings and audit metadata without applying pending cash', () => {
+    const scenario = scenarioById('on_target');
+
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-pending-flow',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: {
+        ...scenario.portfolioState,
+        cashFlows: [
+          {
+            cashFlowId: 'pending-deposit-1',
+            direction: 'DEPOSIT',
+            status: 'PENDING',
+            amount: 1000,
+          },
+        ],
+      },
+      targetAllocation: scenario.targetAllocation,
+      priceSnapshot: scenario.priceSnapshot,
+      policy: scenario.policy,
+    });
+
+    expect(evaluation.valuation.cash).toBe(0);
+    expect(evaluation.valuation.cashFlowSummary?.pendingDeposits).toBe(1000);
+    expect(evaluation.tradeProposal.trades).toEqual([]);
+    expect(evaluation.tradeProposal.warnings).toEqual([
+      expect.objectContaining({ code: 'PENDING_CASH_FLOW_EXCLUDED' }),
+    ]);
+    expect(evaluation.explanation.warningExplanation).toContain('Excluded 1 pending cash flow');
+    expect(evaluation.auditRecord.outputs.cashFlowSummary?.pendingDeposits).toBe(1000);
+  });
+
   it('rejects unsupported strategy identifiers explicitly', () => {
     expect(() => selectStrategy('unsupported')).toThrow(
       'Unsupported rebalancing strategy: unsupported',

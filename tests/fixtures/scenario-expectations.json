@@ -3,6 +3,10 @@
     "calendar_due": { "status": "success" },
     "calendar_not_due": { "status": "success" },
     "holding_outside_universe": { "status": "success" },
+    "invalid_cash_flow_amount": {
+      "status": "error",
+      "errorIncludes": "Cash flow amount must be positive"
+    },
     "invalid_strategy": {
       "status": "error",
       "errorIncludes": "Unsupported rebalancing strategy"
@@ -15,7 +19,10 @@
     "multiple_assets_out_of_band": { "status": "success" },
     "on_target": { "status": "success" },
     "one_asset_out_of_band": { "status": "success" },
+    "pending_cash_flow": { "status": "success" },
     "positive_cash": { "status": "success" },
+    "settled_deposit_cash_flow": { "status": "success" },
+    "settled_withdrawal_cash_flow": { "status": "success" },
     "target_allocation_sum_error": {
       "status": "error",
       "errorIncludes": "Target allocation does not sum to 100%"

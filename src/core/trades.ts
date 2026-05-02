@@ -10,7 +10,7 @@ import {
 } from '../models/domain';
 import { validateTargetAllocation } from './drift';
 import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
-import { ValuationResult } from './valuation';
+import { CashFlowSummary, ValuationResult } from './valuation';
 
 const TRADE_EPSILON = CALCULATION_EPSILON;
 
@@ -28,12 +28,13 @@ export function generateTradeProposal(
   policy?: RebalancingPolicy,
 ): TradeProposal {
   validateTargetAllocation(target);
-  if (valuation.cash < 0) {
+  if (valuation.cash < 0 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
     throw new Error('Cannot generate trade proposal for negative cash balance');
   }
 
   const executionTargetMode = policy?.executionTargetMode ?? 'full_reset';
   const boundaryBandMode = resolveBoundaryBandMode(executionTargetMode, policy);
+  const initialWarnings = buildCashFlowProposalWarnings(valuation.cashFlowSummary);
   const targetWeights = new Map(target.targets.map((t) => [t.instrumentId, t.weight]));
   const currentValues = new Map(valuation.holdings.map((h) => [h.instrumentId, h.marketValue]));
 
@@ -87,7 +88,7 @@ export function generateTradeProposal(
     {
       trades,
       estimatedPostTradeCash: toDecimal(valuation.cash).plus(netCashDelta).toNumber(),
-      warnings: [],
+      warnings: initialWarnings,
       executionTargetMode,
       boundaryBandMode,
     },
@@ -96,6 +97,23 @@ export function generateTradeProposal(
   );
 
   return proposal;
+}
+
+export function buildCashFlowProposalWarnings(
+  cashFlowSummary: CashFlowSummary | undefined,
+): ProposalWarning[] {
+  if (cashFlowSummary === undefined || !cashFlowSummary.hasPendingCashFlows) {
+    return [];
+  }
+
+  return [
+    {
+      code: 'PENDING_CASH_FLOW_EXCLUDED',
+      pendingCashFlowCount: cashFlowSummary.pendingCashFlowCount,
+      pendingNetAmount: cashFlowSummary.netPendingCashFlow,
+      message: `Excluded ${cashFlowSummary.pendingCashFlowCount} pending cash flow${cashFlowSummary.pendingCashFlowCount === 1 ? '' : 's'} from valuation and trade sizing. Pending net amount: ${formatFixed(cashFlowSummary.netPendingCashFlow, 2)}.`,
+    },
+  ];
 }
 
 export function applyMinimumTradeSize(
