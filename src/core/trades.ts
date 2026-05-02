@@ -5,7 +5,9 @@ import {
   ProposedTrade,
   ProposalWarning,
   RebalancingPolicy,
+  SellSelectionMode,
   TargetAllocation,
+  TaxLot,
   TradeProposal,
 } from '../models/domain';
 import { validateTargetAllocation } from './drift';
@@ -72,13 +74,26 @@ export function generateTradeProposal(
     const direction = valueDelta.gt(0) ? 'BUY' : 'SELL';
     const estimatedValue = valueDelta.abs();
 
-    trades.push({
+    const trade: ProposedTrade = {
       instrumentId,
       direction,
       quantity: estimatedValue.div(estimatedPrice).toNumber(),
       estimatedPrice,
       estimatedValue: estimatedValue.toNumber(),
-    });
+    };
+    if (direction === 'SELL') {
+      const holding = valuation.holdings.find((h) => h.instrumentId === instrumentId);
+      if (holding?.taxLots !== undefined && holding.taxLots.length > 0) {
+        trade.lotAllocations = allocateSellLots(
+          holding.taxLots,
+          trade.quantity,
+          trade.estimatedPrice,
+          policy?.sellSelectionMode ?? 'FIFO',
+        );
+      }
+    }
+
+    trades.push(trade);
 
     netCashDelta =
       direction === 'BUY' ? netCashDelta.minus(estimatedValue) : netCashDelta.plus(estimatedValue);
@@ -260,4 +275,84 @@ function decimalMin(
   right: ReturnType<typeof toDecimal>,
 ): ReturnType<typeof toDecimal> {
   return right.gt(left) ? toDecimal(left) : right;
+}
+
+function allocateSellLots(
+  lots: TaxLot[],
+  sellQuantity: number,
+  estimatedPrice: number,
+  sellSelectionMode: SellSelectionMode,
+): ProposedTrade['lotAllocations'] {
+  const orderedLots = orderLots(lots, sellSelectionMode);
+  let remainingQuantity = toDecimal(sellQuantity);
+  const allocations: NonNullable<ProposedTrade['lotAllocations']> = [];
+
+  for (const lot of orderedLots) {
+    if (remainingQuantity.lte(TRADE_EPSILON)) {
+      break;
+    }
+
+    const allocatedQuantity = decimalMinValue(remainingQuantity, toDecimal(lot.quantity));
+    allocations.push({
+      lotId: lot.lotId,
+      quantity: allocatedQuantity.toNumber(),
+      estimatedValue: allocatedQuantity.mul(estimatedPrice).toNumber(),
+      unitCost: lot.unitCost,
+      acquisitionDate: lot.acquisitionDate,
+    });
+    remainingQuantity = remainingQuantity.minus(allocatedQuantity);
+  }
+
+  if (remainingQuantity.gt(TRADE_EPSILON)) {
+    throw new Error('Tax lot quantities are insufficient for proposed sell trade');
+  }
+
+  return allocations;
+}
+
+function orderLots(lots: TaxLot[], sellSelectionMode: SellSelectionMode): TaxLot[] {
+  const lotsWithIndex = lots.map((lot, index) => ({ lot, index }));
+
+  switch (sellSelectionMode) {
+    case 'FIFO':
+      return lotsWithIndex
+        .sort((a, b) => compareLotDates(a.lot, b.lot) || a.index - b.index)
+        .map(({ lot }) => lot);
+    case 'LIFO':
+      return lotsWithIndex
+        .sort((a, b) => compareLotDates(b.lot, a.lot) || b.index - a.index)
+        .map(({ lot }) => lot);
+    case 'HIGHEST_COST':
+      validateLotCosts(lots, sellSelectionMode);
+      return lotsWithIndex
+        .sort((a, b) => (b.lot.unitCost ?? 0) - (a.lot.unitCost ?? 0) || a.index - b.index)
+        .map(({ lot }) => lot);
+    case 'LOWEST_COST':
+      validateLotCosts(lots, sellSelectionMode);
+      return lotsWithIndex
+        .sort((a, b) => (a.lot.unitCost ?? 0) - (b.lot.unitCost ?? 0) || a.index - b.index)
+        .map(({ lot }) => lot);
+  }
+}
+
+function compareLotDates(left: TaxLot, right: TaxLot): number {
+  const leftDate = left.acquisitionDate ?? '';
+  const rightDate = right.acquisitionDate ?? '';
+  return leftDate.localeCompare(rightDate);
+}
+
+function validateLotCosts(lots: TaxLot[], sellSelectionMode: SellSelectionMode): void {
+  const missingCost = lots.find((lot) => lot.unitCost === undefined);
+  if (missingCost !== undefined) {
+    throw new Error(
+      `Sell selection mode ${sellSelectionMode} requires unitCost for tax lot: ${missingCost.lotId}`,
+    );
+  }
+}
+
+function decimalMinValue(
+  left: ReturnType<typeof toDecimal>,
+  right: ReturnType<typeof toDecimal>,
+): ReturnType<typeof toDecimal> {
+  return left.lte(right) ? left : right;
 }

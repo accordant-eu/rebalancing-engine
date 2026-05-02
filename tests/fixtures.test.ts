@@ -43,6 +43,7 @@ describe('Domain Fixtures', () => {
       'settled_deposit_cash_flow',
       'settled_withdrawal_cash_flow',
       'pending_cash_flow',
+      'tax_lot_fifo_sell',
     ];
 
     const actualIds = scenarios.map((s) => s.id);

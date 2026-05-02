@@ -8,7 +8,7 @@ This file is the living project journal. It captures the journey from initializa
 - **Development Approach:** This project, including its documentation, scaffolding, and future implementations, is built heavily relying on LLM tools and AI-assisted editors.
 - **What is Known:** The MVP is a TypeScript/Node.js offline calculation core using deterministic synthetic fixtures.
 - **What is Not Yet Known:** Production integration model, deployment model, live data interfaces, execution routing, and post-MVP policy breadth remain undecided.
-- **Next Steps:** Treat explicit offline cash-flow foundations as complete, then reassess tax-lot primitives, scheduled cash flows, or optimizer feasibility as future post-MVP increments.
+- **Next Steps:** Treat generic tax-lot allocation foundations as complete, then reassess scheduled cash flows, optimizer feasibility, or production boundary work as future post-MVP increments.
 
 ## 2. Current Repository Snapshot
 
@@ -19,7 +19,7 @@ This file is the living project journal. It captures the journey from initializa
 - **Tests detected:** Unit, fixture, edge-case, scenario runner, explanation, audit, and strategy tests.
 - **Documentation detected:** README, build journey, MVP plan, PRD/architecture document, fixture README, and audit reports.
 - **CI/CD detected:** None.
-- **Notable gaps:** No CI workflow, no scheduled/recurring cash-flow workflow, no tax lots, no full optimizer, and no live integrations/API/UI/database.
+- **Notable gaps:** No CI workflow, no scheduled/recurring cash-flow workflow, no full optimizer, no jurisdiction-specific tax logic, and no live integrations/API/UI/database.
 
 ## 3. Working Assumptions
 
@@ -60,6 +60,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Use `decimal.js` internally with explicit output rounding                          | Accepted                    | Decimal arithmetic removes avoidable binary float artifacts while preserving number-based public interfaces; rounding is centralized and applied only at explanation/audit boundaries.                                   | Numeric policy slice           | Medium        | Revisit decimal string APIs before production integrations              |
 | 2026-05-02 | Add policy-selected relative boundary targeting                                    | Accepted                    | Relative-boundary mode extends existing relative drift and boundary execution support without changing absolute-boundary defaults or adding optimizer complexity.                                                        | Relative-boundary slice        | High          | Revisit richer cash flows next                                          |
 | 2026-05-02 | Model explicit offline cash flows as portfolio-state adjustments                   | Accepted for next increment | Optional cash-flow records make deposits, withdrawals, and pending flows traceable while preserving the offline deterministic engine and avoiding live banking or optimizer scope.                                       | Cash flows PRD/plan            | High          | Implement settled and pending flow semantics                            |
+| 2026-05-02 | Add generic tax-lot allocation metadata without tax optimization                   | Accepted for next increment | Optional lots and deterministic sell allocation improve traceability while avoiding jurisdiction-specific tax advice, tax optimization, or optimizer scope.                                                              | Tax lots PRD/plan              | High          | Implement validation and sell allocation modes                          |
 
 Decision: Adopt standing decision discipline in repository rules
 

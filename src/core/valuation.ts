@@ -2,16 +2,18 @@ import {
   CashFlow,
   CashFlowDirection,
   CashFlowStatus,
+  Holding,
   PortfolioState,
   PriceSnapshot,
 } from '../models/domain';
-import { toDecimal } from './numeric';
+import { CALCULATION_EPSILON, toDecimal } from './numeric';
 
 export interface HoldingValue {
   instrumentId: string;
   quantity: number;
   price: number;
   marketValue: number;
+  taxLots?: Holding['taxLots'];
 }
 
 export interface ValuationResult {
@@ -54,6 +56,8 @@ export function calculateValuation(
   const holdingsValues: HoldingValue[] = [];
 
   for (const holding of state.holdings) {
+    validateHoldingTaxLots(holding);
+
     const price = priceSnapshot.prices[holding.instrumentId];
     if (price === undefined || price === null) {
       throw new Error(`Missing price for instrument: ${holding.instrumentId}`);
@@ -68,6 +72,7 @@ export function calculateValuation(
       quantity: holding.quantity,
       price,
       marketValue,
+      taxLots: holding.taxLots,
     });
   }
 
@@ -86,6 +91,39 @@ export function calculateValuation(
     totalPortfolioValue: totalPortfolioValue.toNumber(),
     cashFlowSummary,
   };
+}
+
+function validateHoldingTaxLots(holding: Holding): void {
+  if (holding.taxLots === undefined || holding.taxLots.length === 0) {
+    return;
+  }
+
+  let lotQuantityTotal = toDecimal(0);
+  const seenLotIds = new Set<string>();
+
+  for (const lot of holding.taxLots) {
+    if (lot.lotId.trim() === '') {
+      throw new Error(`Tax lot ID is required for instrument: ${holding.instrumentId}`);
+    }
+    if (seenLotIds.has(lot.lotId)) {
+      throw new Error(`Duplicate tax lot ID for instrument ${holding.instrumentId}: ${lot.lotId}`);
+    }
+    seenLotIds.add(lot.lotId);
+    if (lot.quantity <= 0) {
+      throw new Error(`Tax lot quantity must be positive: ${lot.lotId}`);
+    }
+    if (lot.unitCost !== undefined && lot.unitCost < 0) {
+      throw new Error(`Tax lot unit cost cannot be negative: ${lot.lotId}`);
+    }
+
+    lotQuantityTotal = lotQuantityTotal.plus(lot.quantity);
+  }
+
+  if (lotQuantityTotal.minus(holding.quantity).abs().gt(CALCULATION_EPSILON)) {
+    throw new Error(
+      `Tax lot quantities do not sum to holding quantity for instrument: ${holding.instrumentId}`,
+    );
+  }
 }
 
 /**

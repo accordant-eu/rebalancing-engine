@@ -35,6 +35,12 @@ Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/
 - `PENDING` flows are excluded from valuation and trade sizing, but appear in cash-flow summary metadata and proposal warnings.
 - Raw negative cash without explicit settled withdrawal context remains invalid for proposal generation.
 
+## Tax Lots
+
+Holdings may include optional `taxLots`. When a sell trade is proposed for a holding with tax lots, the aggregate sell quantity is unchanged and the trade includes deterministic `lotAllocations` metadata. Supported generic sell selection modes are `FIFO`, `LIFO`, `HIGHEST_COST`, and `LOWEST_COST`.
+
+This is not tax advice, tax optimization, or jurisdiction-specific tax handling. It does not implement wash-sale rules, holding-period treatment, tax-loss harvesting, or optimizer-driven tax-aware sizing.
+
 ## Documentation
 
 - [`BUILD_JOURNEY.md`](BUILD_JOURNEY.md) — Living project journal tracking assumptions, decisions, and iteration progress.
@@ -45,6 +51,7 @@ Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/
 - [`docs/audits/next-iteration-mvp-audit.md`](docs/audits/next-iteration-mvp-audit.md) — Multi-strategy iteration status, validation, and known limitations.
 - [`docs/audits/deferred-capabilities-audit.md`](docs/audits/deferred-capabilities-audit.md) — Decimal/rounding and relative-boundary increment audit.
 - [`docs/audits/cash-flows-audit.md`](docs/audits/cash-flows-audit.md) — Explicit offline cash-flow increment audit.
+- [`docs/audits/tax-lots-audit.md`](docs/audits/tax-lots-audit.md) — Generic tax-lot allocation increment audit.
 - [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
 - [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
 - [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.

@@ -468,6 +468,49 @@
         "relativeDriftTolerance": 0.2,
         "minimumTradeSize": 0
       }
+    },
+    {
+      "id": "tax_lot_fifo_sell",
+      "description": "Sell trade includes deterministic FIFO tax-lot allocation metadata",
+      "portfolioState": {
+        "accountId": "acc-18",
+        "cash": 0,
+        "holdings": [
+          {
+            "instrumentId": "AAPL",
+            "quantity": 120,
+            "taxLots": [
+              {
+                "lotId": "aapl-older-lot",
+                "quantity": 70,
+                "acquisitionDate": "2024-01-01",
+                "unitCost": 90
+              },
+              {
+                "lotId": "aapl-newer-lot",
+                "quantity": 50,
+                "acquisitionDate": "2025-01-01",
+                "unitCost": 110
+              }
+            ]
+          },
+          { "instrumentId": "MSFT", "quantity": 80 }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 150, "MSFT": 150 }
+      },
+      "policy": {
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0,
+        "sellSelectionMode": "FIFO"
+      }
     }
   ]
 }
