@@ -41,6 +41,10 @@ Holdings may include optional `taxLots`. When a sell trade is proposed for a hol
 
 This is not tax advice, tax optimization, or jurisdiction-specific tax handling. It does not implement wash-sale rules, holding-period treatment, tax-loss harvesting, or optimizer-driven tax-aware sizing.
 
+## Optimizer Boundary
+
+The active proposal engine is deterministic and rule-based. It supports full-reset and boundary-target trade sizing, cash-flow effects, minimum-trade filtering, and generic lot allocation metadata. A full optimizer remains deferred until objective functions, constraints, explainability requirements, and solver dependency policy are documented.
+
 ## Documentation
 
 - [`BUILD_JOURNEY.md`](BUILD_JOURNEY.md) — Living project journal tracking assumptions, decisions, and iteration progress.
@@ -52,6 +56,7 @@ This is not tax advice, tax optimization, or jurisdiction-specific tax handling.
 - [`docs/audits/deferred-capabilities-audit.md`](docs/audits/deferred-capabilities-audit.md) — Decimal/rounding and relative-boundary increment audit.
 - [`docs/audits/cash-flows-audit.md`](docs/audits/cash-flows-audit.md) — Explicit offline cash-flow increment audit.
 - [`docs/audits/tax-lots-audit.md`](docs/audits/tax-lots-audit.md) — Generic tax-lot allocation increment audit.
+- [`docs/audits/optimizer-feasibility-audit.md`](docs/audits/optimizer-feasibility-audit.md) — Optimizer deferral and prerequisite audit.
 - [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
 - [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
 - [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.
