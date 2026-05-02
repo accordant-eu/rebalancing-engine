@@ -2,6 +2,22 @@
 
 Date: 2026-05-02
 
+Implementation status: Complete for the documented offline deterministic fixture scope. Slices 0-8 are implemented, validated, documented, and audited. The optional expected-status runner manifest from Slice 6 was also implemented as final hardening.
+
+Completion evidence:
+
+| Slice                 | Completion evidence                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 0 - Baseline lock     | Existing threshold/regression suite remains passing.                                                                  |
+| 1 - Policy schema     | `RebalancingPolicy.strategyType`, `executionTargetMode`, and calendar config are implemented with threshold defaults. |
+| 2 - Orchestration     | `src/core/evaluation.ts` selects strategies from policy and the runner uses the shared evaluation path.               |
+| 3 - Calendar strategy | `src/strategy/calendar.ts`, calendar unit tests, and `calendar_due` / `calendar_not_due` fixtures are implemented.    |
+| 4 - Boundary target   | Threshold `boundary` execution mode is implemented and covered by trade, simulation, and fixture tests.               |
+| 5 - Explanation/audit | Strategy and execution target metadata appear in explanation and audit outputs.                                       |
+| 6 - Runner support    | Mixed strategy fixtures, invalid strategy isolation, and expected-status manifest validation are implemented.         |
+| 7 - Docs/DX           | README, fixture docs, traceability docs, audit docs, and build journey reflect implemented strategy support.          |
+| 8 - Audit/hardening   | `docs/audits/next-iteration-mvp-audit.md` marks the next-iteration MVP complete with validation evidence.             |
+
 ## 1. Executive Summary
 
 The next iteration should evolve the offline deterministic MVP into a policy-selectable multi-strategy engine without adding live integrations or advanced optimizers. The first proof point is explicit strategy selection that preserves current threshold behavior. The next proof points are calendar rebalancing and threshold boundary-target execution.
@@ -769,7 +785,6 @@ Must-have next-iteration MVP:
 
 Should-have:
 
-- Expected-status runner manifest.
 - Per-instrument tolerance groundwork.
 - Gross trade value metric.
 

@@ -1,15 +1,15 @@
 /**
  * Edge-case tests for MVP-scope behavior not covered elsewhere.
  *
- * Scope: Slices 1–4 (fixtures, valuation, drift, threshold trigger).
- * Trade proposal generation (Slices 5–6) is not yet implemented;
- * where relevant, comments note what should be validated once those slices land.
+ * Scope: Fixture-driven regression checks across valuation, drift, threshold
+ * trigger, and the later MVP trade-proposal slices.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { calculateValuation, calculateCurrentWeights } from '../src/core/valuation';
 import { calculateDrift, validateTargetAllocation } from '../src/core/drift';
+import { generateTradeProposal } from '../src/core/trades';
 import { ThresholdStrategy } from '../src/strategy/threshold';
 import {
   PortfolioState,
@@ -27,7 +27,7 @@ const scenariosData = JSON.parse(fs.readFileSync(scenariosPath, 'utf8'));
 // AAPL weight: 1050/2000 = 0.525 → drift +0.025 → out of band (>0.01).
 // MSFT weight:  950/2000 = 0.475 → drift −0.025 → out of band (>0.01).
 // Required rebalance trade: ~5 shares of AAPL ($50 value) < $1000 min.
-// ─ Expected at Slice 6: trade should be suppressed by minimumTradeSize. ─────
+// Trade proposal should suppress below-minimum trades and emit warnings.
 describe('Edge Cases — min_trade_size_issue fixture', () => {
   const strategy = new ThresholdStrategy();
 
@@ -60,7 +60,7 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
 
   it('triggers rebalance despite small portfolio', () => {
     // The threshold strategy fires on drift alone; minimum trade size suppression
-    // belongs to Slice 6 (cash-aware adjustment and minimum trade rules).
+    // is handled when proposal generation applies the policy constraints.
     const scenario = scenariosData.scenarios.find((s: any) => s.id === 'min_trade_size_issue');
     const state: PortfolioState = scenario.portfolioState;
     const prices: PriceSnapshot = scenario.priceSnapshot;
@@ -75,8 +75,27 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
     expect(triggerResult.isTriggered).toBe(true);
     expect(triggerResult.reason).toContain('AAPL');
     expect(triggerResult.reason).toContain('MSFT');
-    // TODO (Slice 6): Add a test that the resulting trade proposal has zero trades
-    // because the required ~$50 rebalance trade is below the $1000 minimumTradeSize.
+  });
+
+  it('suppresses below-minimum proposal trades with explicit warnings', () => {
+    const scenario = scenariosData.scenarios.find((s: any) => s.id === 'min_trade_size_issue');
+    const state: PortfolioState = scenario.portfolioState;
+    const prices: PriceSnapshot = scenario.priceSnapshot;
+    const target: TargetAllocation = scenario.targetAllocation;
+    const policy: RebalancingPolicy = scenario.policy;
+
+    const valuation = calculateValuation(state, prices);
+    const proposal = generateTradeProposal(valuation, target, prices, policy);
+
+    expect(proposal.trades).toEqual([]);
+    expect(proposal.estimatedPostTradeCash).toBe(0);
+    expect(proposal.warnings).toHaveLength(2);
+    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    for (const warning of proposal.warnings) {
+      expect(warning.code).toBe('MINIMUM_TRADE_SIZE');
+      expect(warning.estimatedValue).toBeCloseTo(50, 8);
+      expect(warning.minimumTradeSize).toBe(1000);
+    }
   });
 });
 
@@ -128,8 +147,21 @@ describe('Edge Cases — positive_cash drift and trigger', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(true);
-    // TODO (Slice 6): Add a test that cash is preferentially deployed (buy-only) before
-    // any sell orders are generated — verifying the cash-routing priority rule.
+  });
+
+  it('deploys available cash through buy-only proposal trades', () => {
+    const scenario = scenariosData.scenarios.find((s: any) => s.id === 'positive_cash');
+    const state: PortfolioState = scenario.portfolioState;
+    const prices: PriceSnapshot = scenario.priceSnapshot;
+    const target: TargetAllocation = scenario.targetAllocation;
+
+    const valuation = calculateValuation(state, prices);
+    const proposal = generateTradeProposal(valuation, target, prices);
+
+    expect(proposal.trades).toHaveLength(2);
+    expect(proposal.trades.map((trade) => trade.direction)).toEqual(['BUY', 'BUY']);
+    expect(proposal.trades.map((trade) => trade.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.estimatedPostTradeCash).toBeCloseTo(0, 8);
   });
 });
 
@@ -156,8 +188,20 @@ describe('Edge Cases — no-op rebalance for on_target portfolio', () => {
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(false);
     expect(triggerResult.reason).toBeNull();
-    // TODO (Slice 5): Add a test that the trade proposal for an on-target portfolio
-    // contains zero trades.
+  });
+
+  it('generates no proposal trades for an on-target portfolio', () => {
+    const scenario = scenariosData.scenarios.find((s: any) => s.id === 'on_target');
+    const state: PortfolioState = scenario.portfolioState;
+    const prices: PriceSnapshot = scenario.priceSnapshot;
+    const target: TargetAllocation = scenario.targetAllocation;
+
+    const valuation = calculateValuation(state, prices);
+    const proposal = generateTradeProposal(valuation, target, prices);
+
+    expect(proposal.trades).toEqual([]);
+    expect(proposal.estimatedPostTradeCash).toBe(0);
+    expect(proposal.warnings).toEqual([]);
   });
 });
 

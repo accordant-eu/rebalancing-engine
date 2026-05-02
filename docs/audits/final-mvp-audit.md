@@ -8,6 +8,8 @@ Scope: MVP Slices 0-12 for the offline deterministic portfolio rebalancing engin
 
 Conclusion: The MVP is implemented, tested, documented, and reproducible for the documented offline fixture scope. The engine has no live integrations, no UI, no tax-lot optimization, no multi-currency support, and no execution routing.
 
+Note: This audit records the first offline MVP completion point. The later multi-strategy iteration adds calendar strategy support, threshold boundary-target execution, strategy metadata, and expected-status runner manifest validation; see `docs/audits/next-iteration-mvp-audit.md` for the current slice-completion status.
+
 ## Slice Status
 
 | Slice                                            | Status                 | Evidence                                                                     |
@@ -56,8 +58,8 @@ Observed results:
 - Negative cash is rejected during trade proposal generation; withdrawal or deficit funding is not modeled.
 - Stale price timestamps are not modeled.
 - Policy supports only global minimum trade size, not account-specific or instrument-specific minimums.
-- Manual forced rebalance is the second strategy proof point; calendar scheduling remains deferred.
-- Runner reports invalid fixtures as per-scenario errors; it does not yet support an expected-status manifest or output files.
+- Manual forced rebalance is the second strategy proof point for the original MVP. Calendar strategy support is covered by the next-iteration MVP audit.
+- Runner reports invalid fixtures as per-scenario errors. Expected-status manifest validation is covered by the next-iteration MVP audit; output-file support remains deferred.
 - There are no live broker, custodian, market-data, OMS, database, REST API, UI, or cloud integrations.
 
 ## Deferred Decisions
@@ -70,4 +72,4 @@ Observed results:
 
 ## Recommendation
 
-Treat this repository as an MVP calculation core ready for review and future extension. The next safe work should be post-MVP hardening: expected-status runner manifests, stricter fixture schema validation, decimal/rounding policy evaluation, and calendar strategy design if needed.
+Treat this repository as an MVP calculation core ready for review and future extension. For current multi-strategy completion status, use the next-iteration MVP audit. The next safe work should be post-MVP hardening: stricter fixture schema validation, decimal/rounding policy evaluation, and live-integration design when needed.

@@ -2,9 +2,11 @@
 
 Date: 2026-05-02
 
+Post-implementation update: The next-iteration MVP plan derived from this review has now been implemented for the offline deterministic fixture scope. Calendar strategy support, threshold boundary-target execution, policy-driven strategy selection, strategy metadata, mixed-strategy runner fixtures, and expected-status runner manifest validation are complete. Remaining gaps in this document should be read as post-MVP backlog unless a later PRD expands the active slice scope.
+
 ## 1. Executive Summary
 
-The current engine is an offline, deterministic TypeScript MVP that implements threshold/tolerance-band rebalancing with cash-aware full-reset trade proposals, minimum-trade warnings, post-trade simulation, deterministic explanations, audit records, fixtures, and a batch scenario runner. It also implements manual forced rebalancing as a second trigger strategy proof point.
+The current engine is an offline, deterministic TypeScript MVP that implements threshold/tolerance-band rebalancing, manual forced rebalancing, calendar due-date rebalancing, no-trigger monitoring behavior, and threshold boundary-target execution. It includes cash-aware trade proposals, minimum-trade warnings, post-trade simulation, deterministic explanations, audit records, fixtures, a batch scenario runner, and expected-status runner manifest validation.
 
 The Portfolio Rebalancing Meta Paper identifies five primary strategy clusters: calendar-based rebalancing, threshold/hybrid rebalancing, transaction-cost-aware optimal control, tax-aware/direct-indexing rebalancing, and dynamic/regime-switching/machine-learning rebalancing. It also identifies cash-flow routing and target-versus-boundary execution as practical design implications that cut across strategies.
 
@@ -12,6 +14,8 @@ Implemented and tested:
 
 - Threshold/tolerance-band trigger logic.
 - Cash-aware full-reset trade proposals.
+- Threshold boundary-target execution.
+- Calendar due-date strategy.
 - Minimum trade-size suppression with structured warnings.
 - Manual forced rebalance trigger.
 - No-rebalance/monitoring-only behavior when threshold drift is in band.
@@ -20,12 +24,11 @@ Partially implemented or structurally supported:
 
 - Hybrid threshold monitoring is structurally represented by threshold evaluation plus batch scenario runner, but no schedule/monitoring cadence is modeled.
 - Cash-flow-aware routing is implemented for positive cash in full-reset proposals, but withdrawals, pending flows, negative cash funding, and flow-specific policies are not modeled.
-- Strategy modules are structurally supported by `StrategyInterface`, but strategy selection is not represented in `RebalancingPolicy` and the scenario runner is hard-coded to `ThresholdStrategy`.
+- Strategy modules are supported by `StrategyInterface` and policy-driven orchestration. Strategy-specific proposal hooks beyond boundary execution remain deferred.
 
 Missing:
 
-- Calendar strategy.
-- Transaction-cost-aware boundary targeting and no-trade-region optimization.
+- Full transaction-cost-aware no-trade-region optimization.
 - Tax-aware and direct-indexing/tax-lot logic.
 - Dynamic/regime-aware/ML strategies.
 - Factor/style calendar reconstitution semantics.
@@ -535,7 +538,6 @@ Validation approach:
 
 - Pending cash-flow model with deposits and withdrawals.
 - Per-instrument/per-account tolerances and minimum trade sizes.
-- Expected-status runner manifest.
 - Decimal/rounding policy decision.
 - Gross trade value reporting in addition to sell-side turnover.
 

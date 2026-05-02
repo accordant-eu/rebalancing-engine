@@ -13,11 +13,11 @@ import { ValuationResult } from './valuation';
 const TRADE_EPSILON = 1e-8;
 
 /**
- * Generates a deterministic, full-reset trade proposal.
+ * Generates a deterministic trade proposal.
  *
- * Slice 5 intentionally ignores minimum trade constraints and cash-routing
- * preferences; those are applied in Slice 6. This function only answers:
- * "what trades would restore the portfolio to target weights?"
+ * The default execution mode restores the portfolio to target weights.
+ * Boundary mode trades breached positions back to the configured absolute
+ * tolerance boundary. Minimum trade constraints are applied before returning.
  */
 export function generateTradeProposal(
   valuation: ValuationResult,

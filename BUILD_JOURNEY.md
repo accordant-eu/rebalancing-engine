@@ -54,6 +54,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Use explicit calendar dates only                        | Accepted for MVP            | Calendar strategy should be deterministic and avoid system time, scheduler, holiday, or business-day assumptions in the first implementation.                                                           | Calendar strategy tests       | High          | Revisit frequency-derived dates later                                   |
 | 2026-05-02 | Limit boundary targeting to absolute bands first        | Accepted for MVP            | Absolute-band boundary targeting proves transaction-cost-aware execution without adding relative-boundary ambiguity or full optimization.                                                               | Boundary fixture/tests        | Medium        | Revisit relative-boundary support if needed                             |
 | 2026-05-02 | Use separate expected-status runner manifest            | Accepted                    | Expected scenario outcomes should be validated without embedding runner assertions in the scenario input data itself.                                                                                   | Runner manifest tests         | High          | Keep manifest aligned when fixtures change                              |
+| 2026-05-02 | Mark active MVP slice sets complete                     | Accepted                    | Original MVP slices 0-12 and next-iteration slices 0-8 are implemented and validated for offline deterministic fixtures; remaining items are post-MVP backlog, not unfinished slices.                   | Slice reconciliation          | Medium        | Revisit if scope is expanded by a new PRD/plan                          |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -834,6 +835,51 @@ Implementation impact:
 Validation:
 Jest runner tests pass, the scenario runner validates 12 manifest entries with zero mismatches, and invalid strategy scenarios remain isolated per scenario.
 
+Decision: Mark active MVP slice sets complete
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+After implementing the original MVP and the next-iteration multi-strategy MVP, the user requested continuing until the full set of slices defined in the MVP approach had been implemented. Repository inspection showed that the remaining items were documented post-MVP deferrals, while some historical docs and TODO comments still described completed capabilities as future work.
+
+Options considered:
+
+1. Treat deferred post-MVP items as additional implicit MVP slices.
+   - Benefits: Pushes more capability into the engine immediately.
+   - Costs: Expands scope beyond the accepted PRD and MVP plans.
+   - Risks: Adds production assumptions for decimal arithmetic, optimization, tax lots, cash-flow workflows, live integrations, and APIs without fresh requirements.
+   - Reversibility: Medium.
+
+2. Treat the active slice sets as complete and reconcile stale documentation/tests.
+   - Benefits: Preserves the documented scope boundary, removes ambiguity, and keeps deferred work behind explicit future decisions.
+   - Costs: Does not add new strategy breadth beyond the current MVP slice set.
+   - Risks: Future readers may still consult historical audits without reading the current completion note.
+   - Reversibility: High.
+
+3. Create a new MVP expansion plan immediately for all deferred strategies.
+   - Benefits: Gives a path for broader post-MVP work.
+   - Costs: Planning work without a current implementation ask or product decision.
+   - Risks: Prematurely prioritizes large features that were intentionally deferred.
+   - Reversibility: High.
+
+Preferred option:
+Option 2: Treat the active original MVP and next-iteration MVP slice sets as complete for offline deterministic fixtures, then reconcile stale documentation and old TODO comments.
+
+Rationale:
+The implemented behavior satisfies the slice plans as written. Production precision, tax lots, optimizers, richer cash flows, APIs, UI, persistence, and live integrations are meaningful future products, but they are not unfinished slices in the accepted MVP approach.
+
+Implementation impact:
+
+- Code: No new strategy behavior; updated trade proposal comments to match current behavior.
+- Tests: Converted stale edge-case TODO comments into executable assertions for already implemented proposal behavior.
+- Fixtures: No fixture schema change.
+- Documentation: Added explicit completion evidence and removed stale future-scope references for completed manifest/calendar/minimum-trade work.
+- Follow-up: Start a new scoped plan before implementing deferred post-MVP capabilities.
+
+Validation:
+The final validation gate should rerun format, Jest, type-check, lint, build, scenario runner, manifest validation, and diff whitespace checks.
+
 ## 5. Iteration Log
 
 | Iteration | Date       | Goal                             | Scope                      | Actions taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Files changed                                                                                                                                                                                                                                                   | Learnings                                                                                                                                                                                                                                     | Open questions                                                                                                                     | Next step                                                                                                |
@@ -858,6 +904,7 @@ Jest runner tests pass, the scenario runner validates 12 manifest entries with z
 | 18        | 2026-05-02 | Full-Chain Strategy Traceability | Planning and architecture  | Reviewed the Meta Paper, PRD, MVP plan, build journey, audits, README, fixtures, source, tests, runner, package config, git status, and recent commits. Classified strategy carry-forward from research to implementation. Created a full-chain traceability report, next-iteration PRD, and next-iteration MVP implementation plan. Recorded hybrid multi-strategy architecture and next-scope decisions.                                                                                                                                                            | `docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`, `docs/prd/rebalancing-engine-next-iteration-prd.md`, `docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`, `BUILD_JOURNEY.md`                                                     | The Meta Paper taxonomy is five primary clusters, with cash-flow routing and boundary execution as cross-cutting design implications. Threshold and manual are implemented; calendar and boundary-target are the safest next strategy slices. | Calendar schedule semantics and boundary relative-band support need decisions before implementation.                               | Implement Slice 0/1 of the next-iteration plan: baseline lock and explicit strategy policy identifiers.  |
 | 19        | 2026-05-02 | Multi-Strategy Next Iteration    | Next-iteration MVP         | Implemented policy-driven strategy selection, calendar due-date strategy, threshold boundary-target execution, mixed-strategy runner fixtures, strategy/execution metadata in audit output, documentation updates, and a next-iteration audit.                                                                                                                                                                                                                                                                                                                        | `src/models/domain.ts`, `src/core/evaluation.ts`, `src/core/trades.ts`, `src/strategy/calendar.ts`, `src/runner/scenario-runner.ts`, tests, fixtures, README, fixture README, `docs/audits/next-iteration-mvp-audit.md`, `BUILD_JOURNEY.md`                     | Explicit strategy selection is now implemented; calendar is deterministic from input dates; boundary mode proves reduced-turnover execution without full optimal control.                                                                     | Should relative-boundary targeting, expected-status manifests, or decimal/rounding policy be next?                                 | Harden runner manifests and decide decimal/rounding policy before broader strategy work.                 |
 | 20        | 2026-05-02 | Complete Next-Iteration Slices   | Slice completion hardening | Added expected-status manifest validation to the scenario runner, added an invalid-strategy fixture, covered manifest success and mismatch behavior in tests, updated runner usage docs, refreshed the next-iteration audit, and recorded the final runner-manifest decision.                                                                                                                                                                                                                                                                                         | `src/runner/scenario-runner.ts`, `tests/fixtures/scenario-expectations.json`, `tests/fixtures/scenarios.json`, `tests/scenario-runner.test.ts`, `tests/fixtures.test.ts`, README, fixture README, `docs/audits/next-iteration-mvp-audit.md`, `BUILD_JOURNEY.md` | Separate expected-status manifests keep scenario inputs reusable while making CLI validation explicit. Unsupported strategy policies now have fixture-level and runner-level regression coverage.                                             | Decimal/rounding policy, relative-boundary targeting, richer cash-flow workflows, and live integrations remain post-MVP decisions. | Decide decimal/rounding policy before adding relative-boundary targeting or broader cash-flow workflows. |
+| 21        | 2026-05-02 | Reconcile Slice Completion       | Documentation and tests    | Verified the original MVP and next-iteration MVP slice lists against implementation, removed stale future-scope references for already completed manifest/calendar coverage, added explicit next-plan completion evidence, and converted old edge-case TODO comments into executable assertions.                                                                                                                                                                                                                                                                      | `tests/edge-cases.test.ts`, `src/core/trades.ts`, README, final MVP audit, traceability report, next-iteration MVP plan, test-case audit, `BUILD_JOURNEY.md`                                                                                                    | The active slice set is complete; remaining items are explicitly deferred post-MVP capabilities rather than unimplemented slices.                                                                                                             | Decimal/rounding policy, relative-boundary targeting, richer cash-flow workflows, and live integrations remain post-MVP decisions. | Decide decimal/rounding policy before adding new strategy breadth.                                       |
 
 ### Iteration 10 Detail — 2026-05-02
 
@@ -964,6 +1011,30 @@ Jest runner tests pass, the scenario runner validates 12 manifest entries with z
 **Learnings:** Keeping expected statuses outside the scenario input file preserves fixture readability and makes the runner more useful as a CLI regression tool. The unsupported-strategy path is now covered as an executable fixture instead of only a unit-level behavior.
 
 **Recommended next step:** Decide decimal/rounding policy, then choose whether the next implementation slice should be relative-boundary targeting or richer cash-flow workflows.
+
+### Iteration 21 Detail — 2026-05-02
+
+**Goal:** Proceed until the full set of slices defined in the MVP approach is implemented, then verify that repository documentation and tests no longer describe completed slice work as future work.
+
+**Scope:** Slice-completion reconciliation across the original MVP plan and the next-iteration MVP plan. This included documentation cleanup and additional assertions for previously documented edge-case TODOs. No deferred post-MVP strategies or production integrations were added.
+
+**Actions taken:** Confirmed the original MVP slices 0-12 and next-iteration slices 0-8 are implemented for the offline deterministic fixture scope. Added explicit completion evidence to the next-iteration MVP plan. Updated README, final MVP audit, traceability report, and test-case audit language that still referred to expected-status manifests, calendar strategy support, or minimum-trade enforcement as future work. Converted old edge-case TODO comments into executable assertions for minimum-trade suppression, cash-funded buy-only proposals, and on-target no-trade proposals. Updated the trade proposal comment to describe current full-reset, boundary, and minimum-trade behavior.
+
+**Files changed:** `tests/edge-cases.test.ts`, `src/core/trades.ts`, `README.md`, `docs/audits/final-mvp-audit.md`, `docs/audits/test-case-audit.md`, `docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`, `docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`, and `BUILD_JOURNEY.md`.
+
+**Strategies implemented:** No new strategy behavior was added in this iteration. The implemented slice set remains threshold/tolerance-band, manual forced rebalance, calendar due-date, no-trigger monitoring, and threshold boundary-target execution.
+
+**Strategies still missing or partial:** Full transaction-cost-aware no-trade-region optimization, tax-aware/direct-indexing, dynamic/regime/ML, factor-specific reconstitution, private-market denominator-effect handling, digital-asset policy, pending cash-flow routing, withdrawals, negative-cash funding, and relative-boundary targeting remain outside the implemented MVP slice set.
+
+**Decisions made:** Treat the original MVP and next-iteration MVP slice sets as complete for offline deterministic fixtures. Treat the remaining strategy breadth and production-readiness items as post-MVP work requiring separate scope and decisions.
+
+**Decisions deferred:** Decimal arithmetic, trade rounding, relative-boundary targeting, frequency-derived calendar dates, business-day/holiday calendars, richer cash-flow semantics, full optimizer design, tax-lot/direct-indexing design, dynamic/ML strategy design, live integration architecture, API design, UI, database persistence, and CI workflow design.
+
+**Tests/checks run:** `npm run format` passed. `npm test -- --runInBand` passed with 72 tests across 13 suites. `npx tsc --noEmit` passed. `npm run lint` passed. `npm run build` passed. `npm run scenario:run` passed with nine successful scenario audit records and three expected per-scenario errors. `node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures/scenario-expectations.json` passed with 12 checked scenarios and zero mismatches. `git diff --check` passed.
+
+**Learnings:** The implementation had already completed the active slices, but historical docs and TODO comments created ambiguity. Keeping the plan as an implementation artifact with explicit completion evidence makes the boundary between MVP slices and post-MVP backlog clearer.
+
+**Recommended next step:** Decide decimal/rounding policy before adding new strategy breadth such as relative-boundary targeting or richer cash-flow workflows.
 
 ## 6. Scope of Work
 
