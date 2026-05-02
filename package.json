@@ -2,7 +2,10 @@
   "name": "rebalancing-engine",
   "version": "1.0.0",
   "description": "This repository contains the exploration and future implementation of a generic portfolio rebalancing engine.",
-  "main": "index.js",
+  "main": "dist/core/index.js",
+  "bin": {
+    "rebalance": "./dist/cli/index.js"
+  },
   "directories": {
     "doc": "docs"
   },
@@ -12,7 +15,8 @@
     "build": "tsc",
     "lint": "eslint \"{src,tests}/**/*.ts\"",
     "format": "prettier --write .",
-    "scenario:run": "npm run build && node dist/runner/scenario-runner.js"
+    "scenario:run": "npm run build && node dist/runner/scenario-runner.js",
+    "cli": "npm run build && node dist/cli/index.js"
   },
   "repository": {
     "type": "git",
