@@ -44,6 +44,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Simulate exact proposed trades with sell-side turnover | Accepted    | MVP simulation should replay proposal quantities exactly, reconcile cash, expose residual drift, and use sell-side turnover per prior audit expectation.                      | Slice 7 implementation       | Medium        | Revisit turnover definition if reporting requirements differ            |
 | 2026-05-02 | Generate deterministic explanations from outputs       | Accepted    | Explanation text must stay faithful to trigger, proposal, warning, and simulation outputs rather than duplicating calculation logic.                                          | Slice 8 implementation       | High          | Include explanations in audit records                                   |
 | 2026-05-02 | Use caller-supplied audit metadata                     | Accepted    | Audit record IDs and timestamps must be deterministic in tests and should come from orchestration, not pure calculation helpers.                                              | Slice 9 implementation       | High          | CLI/runner should supply stable metadata                                |
+| 2026-05-02 | Report batch scenario errors per scenario              | Accepted    | The offline runner should process all fixtures and report expected invalid scenarios without aborting the whole batch.                                                        | Slice 10 implementation      | High          | Use same pattern for future batch workflows                             |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -405,6 +406,51 @@ Implementation impact:
 Validation:
 Run tests, type-check, lint, build, and format after implementation.
 
+Decision: Report batch scenario errors per scenario
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+Slice 10 adds a batch scenario runner. Existing fixtures intentionally include invalid cases such as missing prices and invalid target allocations, so the runner needs clear batch failure semantics.
+
+Options considered:
+
+1. Abort the entire batch on the first scenario error.
+   - Benefits: Simple control flow.
+   - Costs: Hides later scenario results.
+   - Risks: Less useful for fixture audit and regression review.
+   - Reversibility: High.
+
+2. Return per-scenario success/error results.
+   - Benefits: Runs all fixtures, preserves expected invalid-case coverage, and produces complete reviewable output.
+   - Costs: Consumers must inspect statuses.
+   - Risks: A CI wrapper must decide whether expected errors are acceptable.
+   - Reversibility: High; stricter modes can be added later.
+
+3. Skip invalid scenarios.
+   - Benefits: Keeps output success-only.
+   - Costs: Hides important failure-mode fixtures.
+   - Risks: Weakens validation of error behavior.
+   - Reversibility: Medium.
+
+Preferred option:
+Option 2: Return per-scenario success/error results.
+
+Rationale:
+This best fits the MVP fixture harness because invalid scenarios are intentional and should remain visible without blocking other scenarios from being evaluated.
+
+Implementation impact:
+
+- Code: Added `runScenarios`, `runScenario`, fixture loading, and CLI output under `src/runner`.
+- Tests: Added runner determinism and success/error classification tests.
+- Fixtures: Existing invalid fixtures are now part of batch output.
+- Documentation: README documents `npm run scenario:run`.
+- Follow-up: Final hardening can add an expected-status manifest if batch output becomes a CI gate.
+
+Validation:
+Run tests, type-check, lint, build, format, and `npm run scenario:run`.
+
 ## 5. Iteration Log
 
 | Iteration | Date       | Goal                             | Scope                     | Actions taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Files changed                                                                                                                                                                            | Learnings                                                                                                                                                                                                    | Open questions                                                               | Next step                                                          |
@@ -423,6 +469,7 @@ Run tests, type-check, lint, build, and format after implementation.
 | 12        | 2026-05-02 | Post-Trade Simulation            | Slice 7                   | Added exact trade replay simulation with post-trade holdings, valuation, weights, residual drift, sell-side turnover, oversell checks, and cash reconciliation checks.                                                                                                                                                                                                                                                                                                                                                                                                | `src/core/simulation.ts`, `src/core/index.ts`, `tests/simulation.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                                        | Simulation exposes residual drift from suppressed trades, which keeps Slice 6 constraint decisions visible instead of hiding them in proposal generation.                                                    | Should future output include gross trade value separately from turnover?     | Proceed to Slice 8: Explanation Output.                            |
 | 13        | 2026-05-02 | Explanation Output               | Slice 8                   | Added deterministic explanation generation from trigger, proposal, warning, and simulation outputs, with tests for no-op, rebalance, and suppressed-trade residual drift cases.                                                                                                                                                                                                                                                                                                                                                                                       | `src/explanation/explanation.ts`, `src/explanation/index.ts`, `tests/explanation.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                        | Explanation output should be assembled from already-computed facts to avoid contradictory financial rationale.                                                                                               | Should explanations later support localization or audience-specific wording? | Proceed to Slice 9: Audit and Reproducibility Record.              |
 | 14        | 2026-05-02 | Audit and Reproducibility Record | Slice 9                   | Added audit record generation and stable JSON serialization capturing inputs, drift, trigger, proposal, simulation, and explanation outputs. Added replay tests.                                                                                                                                                                                                                                                                                                                                                                                                      | `src/audit/audit.ts`, `src/audit/index.ts`, `src/models/domain.ts`, `tests/audit.test.ts`, `tests/smoke.test.ts`, `README.md`, `BUILD_JOURNEY.md`                                        | Audit records should receive metadata from orchestration to preserve deterministic pure helpers and fixture replay.                                                                                          | Should event IDs later be content-addressed hashes?                          | Proceed to Slice 10: Batch Scenario Runner / Test Harness.         |
+| 15        | 2026-05-02 | Batch Scenario Runner            | Slice 10                  | Added an offline fixture runner and `npm run scenario:run` command that evaluates all scenarios into success/error JSON results with audit records for successful scenarios.                                                                                                                                                                                                                                                                                                                                                                                          | `src/runner/scenario-runner.ts`, `src/runner/index.ts`, `tests/scenario-runner.test.ts`, `tests/smoke.test.ts`, `package.json`, `README.md`, `BUILD_JOURNEY.md`                          | Batch output makes existing invalid fixtures useful as deterministic error-path checks instead of special cases that must be excluded.                                                                       | Should the runner later support expected-status manifests and output files?  | Proceed to Slice 11: Second Strategy Proof Point.                  |
 
 ### Iteration 10 Detail — 2026-05-02
 

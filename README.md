@@ -6,7 +6,7 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, produces deterministic full-reset trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Slices 1–9 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules, Post-Trade Simulation, Explanation Output, Audit Records). Slices 10+ (Batch Runner, Second Strategy, Final Hardening) remain in progress.
+**Current status:** Slices 1–10 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules, Post-Trade Simulation, Explanation Output, Audit Records, Batch Scenario Runner). Slices 11+ (Second Strategy, Final Hardening) remain in progress.
 
 ## Documentation
 
@@ -55,6 +55,14 @@ npx tsc --noEmit
 npm run format
 ```
 
+### Run Fixture Scenario Runner
+
+```bash
+npm run scenario:run
+```
+
+Builds the project and runs all synthetic fixture scenarios through valuation, drift, trigger evaluation, proposal generation, simulation, explanation, and audit record generation. Invalid fixtures are reported as deterministic per-scenario errors instead of aborting the batch.
+
 ## Project Structure
 
 ```
@@ -70,8 +78,10 @@ npm run format
 │   │   └── threshold.ts       # Threshold-band trigger strategy
 │   ├── explanation/
 │   │   └── explanation.ts     # Deterministic recommendation explanations
-│   └── audit/
-│       └── audit.ts           # Replayable audit record generation and serialization
+│   ├── audit/
+│   │   └── audit.ts           # Replayable audit record generation and serialization
+│   └── runner/
+│       └── scenario-runner.ts # Offline fixture batch runner
 ├── tests/
 │   ├── fixtures/
 │   │   ├── README.md          # Fixture scenario documentation
@@ -85,6 +95,7 @@ npm run format
 │   ├── simulation.test.ts     # Post-trade simulation tests
 │   ├── explanation.test.ts    # Explanation output tests
 │   ├── audit.test.ts          # Audit record and replay tests
+│   ├── scenario-runner.test.ts # Batch scenario runner tests
 │   └── edge-cases.test.ts     # Edge-case and integration tests
 └── docs/
     ├── MVP_Implementation_Plan.md

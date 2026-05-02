@@ -16,7 +16,7 @@ export function generateExplanation(
 ): RecommendationExplanation {
   const summary = buildSummary(trigger, proposal);
   const triggerExplanation = trigger.isTriggered
-    ? `Rebalance was triggered because ${trigger.reason ?? 'one or more policy thresholds were breached'}.`
+    ? `Rebalance was triggered: ${trigger.reason ?? 'one or more policy thresholds were breached.'}`
     : 'No rebalance was triggered because all measured drift is within policy tolerance.';
 
   const tradeExplanation =

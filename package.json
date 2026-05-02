@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "build": "tsc",
     "lint": "eslint \"{src,tests}/**/*.ts\"",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "scenario:run": "npm run build && node dist/runner/scenario-runner.js"
   },
   "repository": {
     "type": "git",

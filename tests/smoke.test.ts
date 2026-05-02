@@ -3,6 +3,7 @@ import { calculateValuation, calculateCurrentWeights } from '../src/core/valuati
 import { calculateDrift, validateTargetAllocation } from '../src/core/drift';
 import { simulatePostTrade } from '../src/core/simulation';
 import { generateExplanation } from '../src/explanation';
+import { runScenarios } from '../src/runner';
 import { ThresholdStrategy } from '../src/strategy/threshold';
 
 /**
@@ -69,5 +70,9 @@ describe('Smoke Test — Core Module Imports', () => {
 
   it('generateAuditRecord is importable', () => {
     expect(typeof generateAuditRecord).toBe('function');
+  });
+
+  it('runScenarios is importable', () => {
+    expect(typeof runScenarios).toBe('function');
   });
 });
