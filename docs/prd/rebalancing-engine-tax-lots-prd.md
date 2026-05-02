@@ -6,7 +6,7 @@ Implementation status: Complete for the selected generic tax-lot foundations sco
 
 ## 1. Background
 
-The engine now supports deterministic valuation, strategy selection, boundary targeting, numeric policy, and explicit offline cash flows. Sell trades are still aggregate instrument-level recommendations. Tax lots remain deferred, and the engine does not provide tax advice or jurisdiction-specific optimization.
+The engine now supports deterministic valuation, strategy selection, boundary targeting, numeric policy, and explicit offline cash flows. Sell trades are still aggregate instrument-level recommendations. This increment adds generic tax-lot allocation metadata, and the engine does not provide tax advice or jurisdiction-specific optimization.
 
 ## 2. Selected Scope
 

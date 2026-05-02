@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: Complete for the selected Option A increment. Decimal / rounding policy and relative-boundary targeting are implemented; richer cash flows, tax lots, full optimizer, and live integrations / API / UI / database remain deferred.
+Implementation status: Complete for the selected Option A increment. Decimal / rounding policy and relative-boundary targeting are implemented. Later post-MVP increments implemented explicit offline cash-flow foundations and generic tax-lot allocation metadata, then documented optimizer and production-boundary deferrals.
 
 ## 1. Background and Current MVP Status
 
@@ -26,6 +26,9 @@ Baseline verification on 2026-05-02:
 | Tax lots                                | No tax-lot model or lot-aware sell selection.                                                                         | None.                                                                                                        | Medium for taxable accounts, low for generic MVP users.     | High due to data structures, sell selection, and jurisdiction sensitivity.                             | High if trade sizing becomes lot-aware.                                   | Medium: primitives testable, optimization less so.                    | Medium-high.                                                 | Defer; later limit to generic lot-selection primitives, not tax advice. |
 | Full optimizer                          | Rule-based proposal generation only.                                                                                  | Boundary targeting is a deterministic transaction-cost-aware proof point.                                    | Medium later for complex constraints.                       | High: objective definition, solver choice, explainability, dependencies.                               | High.                                                                     | Medium-low until objectives are clear.                                | High.                                                        | Defer. No solver dependency now.                                        |
 | Live integrations / API / UI / database | Offline library/CLI-style engine only.                                                                                | Scenario runner provides executable batch boundary.                                                          | Low now until domain behavior stabilizes.                   | High operational, security, and testing cost.                                                          | High.                                                                     | Medium with adapter tests, but live behavior would be brittle.        | High.                                                        | Defer. Keep core decoupled from IO.                                     |
+
+Status note:
+This inventory captures the initial Option A scope decision. Subsequent increments implemented the cash-flow and tax-lot foundations described above as separate scoped plans. Full optimizer and production surfaces remain deferred.
 
 ## 3. Selected Scope
 

@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: Complete for the selected Option A increment. Slice 1 decimal / rounding policy, Slice 2 relative-boundary targeting, and Slice 3 integrated documentation/hardening are implemented and validated.
+Implementation status: Complete for the selected Option A increment. Slice 1 decimal / rounding policy, Slice 2 relative-boundary targeting, and Slice 3 integrated documentation/hardening are implemented and validated. Later post-MVP plans implemented offline cash-flow foundations and generic tax-lot allocation metadata, then documented optimizer and production-boundary deferrals.
 
 ## 1. Current Baseline
 
@@ -29,6 +29,9 @@ Deferred:
 - Tax lots.
 - Full optimizer.
 - Live integrations / API / UI / database.
+
+Status note:
+This deferred list reflects the Option A scope boundary at the time of this plan. Richer cash-flow foundations and generic tax-lot allocation metadata were later addressed through separate scoped plans. Full optimizer and live integrations / API / UI / database remain deferred.
 
 ## 3. Scope Decision
 

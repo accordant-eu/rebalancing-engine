@@ -1,12 +1,12 @@
 # rebalancing-engine
 
-A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.js as an offline calculation core — no live integrations, no UI.
+A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.js as an offline calculation core; no live integrations, no UI.
 
 ## Overview
 
 The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increment has implemented explicit decimal arithmetic, output rounding policy, relative-boundary targeting, and explicit offline cash-flow foundations. Post-MVP work remains for scheduled/recurring cash flows, tax-lot logic, full transaction-cost optimization, live integrations, API, UI, and persistence.
+**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` execution, absolute-boundary execution, and relative-boundary execution. The scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increments have implemented explicit decimal arithmetic, output rounding policy, relative-boundary targeting, explicit offline cash-flow foundations, generic tax-lot allocation metadata, and documented optimizer and production-boundary deferrals. Post-MVP work remains for scheduled/recurring cash flows, full transaction-cost optimization, live integrations, API, UI, database, and persistence.
 
 ## Numeric Policy
 
@@ -45,6 +45,10 @@ This is not tax advice, tax optimization, or jurisdiction-specific tax handling.
 
 The active proposal engine is deterministic and rule-based. It supports full-reset and boundary-target trade sizing, cash-flow effects, minimum-trade filtering, and generic lot allocation metadata. A full optimizer remains deferred until objective functions, constraints, explainability requirements, and solver dependency policy are documented.
 
+## Production Boundary
+
+The current delivery model is an offline library/CLI-style calculation core. No API wrapper, database, UI, live market-data integration, banking/custody integration, or trade-execution integration is implemented. Production surfaces remain deferred until concrete consumers, security requirements, persistence and retention needs, provider contracts, deployment model, and operational responsibilities are defined.
+
 ## Documentation
 
 - [`BUILD_JOURNEY.md`](BUILD_JOURNEY.md) — Living project journal tracking assumptions, decisions, and iteration progress.
@@ -57,6 +61,7 @@ The active proposal engine is deterministic and rule-based. It supports full-res
 - [`docs/audits/cash-flows-audit.md`](docs/audits/cash-flows-audit.md) — Explicit offline cash-flow increment audit.
 - [`docs/audits/tax-lots-audit.md`](docs/audits/tax-lots-audit.md) — Generic tax-lot allocation increment audit.
 - [`docs/audits/optimizer-feasibility-audit.md`](docs/audits/optimizer-feasibility-audit.md) — Optimizer deferral and prerequisite audit.
+- [`docs/audits/production-boundary-audit.md`](docs/audits/production-boundary-audit.md) — Live integration, API, UI, and database deferral audit.
 - [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
 - [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
 - [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.
