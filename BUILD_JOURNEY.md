@@ -8,7 +8,7 @@ This file is the living project journal. It captures the journey from initializa
 - **Development Approach:** This project, including its documentation, scaffolding, and future implementations, is built heavily relying on LLM tools and AI-assisted editors.
 - **What is Known:** The MVP is a TypeScript/Node.js offline calculation core using deterministic synthetic fixtures.
 - **What is Not Yet Known:** Production integration model, deployment model, live data interfaces, execution routing, and post-MVP policy breadth remain undecided.
-- **Next Steps:** Treat the next-iteration multi-strategy MVP as complete for offline deterministic fixtures, then proceed with documented post-MVP hardening decisions.
+- **Next Steps:** Treat the decimal/rounding and relative-boundary increment as complete, then reassess richer cash-flow workflows as the next likely post-MVP increment.
 
 ## 2. Current Repository Snapshot
 
@@ -19,7 +19,7 @@ This file is the living project journal. It captures the journey from initializa
 - **Tests detected:** Unit, fixture, edge-case, scenario runner, explanation, audit, and strategy tests.
 - **Documentation detected:** README, build journey, MVP plan, PRD/architecture document, fixture README, and audit reports.
 - **CI/CD detected:** None.
-- **Notable gaps:** No CI workflow, no live integrations, no production decimal/rounding policy.
+- **Notable gaps:** No CI workflow, no richer cash-flow workflow, no tax lots, no full optimizer, and no live integrations/API/UI/database.
 
 ## 3. Working Assumptions
 

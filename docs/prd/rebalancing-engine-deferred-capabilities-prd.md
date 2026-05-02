@@ -2,6 +2,8 @@
 
 Date: 2026-05-02
 
+Implementation status: Complete for the selected Option A increment. Decimal / rounding policy and relative-boundary targeting are implemented; richer cash flows, tax lots, full optimizer, and live integrations / API / UI / database remain deferred.
+
 ## 1. Background and Current MVP Status
 
 The repository contains a completed offline deterministic MVP and completed next-iteration multi-strategy MVP. The current engine supports valuation, current weights, drift calculation, threshold/manual/calendar trigger strategies, full-reset and absolute-boundary trade sizing, minimum trade warnings, post-trade simulation, explanations, audit records, fixture tests, and a scenario runner.

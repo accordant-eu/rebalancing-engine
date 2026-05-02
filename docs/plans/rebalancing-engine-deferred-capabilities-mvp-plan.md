@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: In progress. Selected scope is Option A: correctness and policy semantics. Slice 1 decimal / rounding policy and Slice 2 relative-boundary targeting are implemented and validated.
+Implementation status: Complete for the selected Option A increment. Slice 1 decimal / rounding policy, Slice 2 relative-boundary targeting, and Slice 3 integrated documentation/hardening are implemented and validated.
 
 ## 1. Current Baseline
 
@@ -173,13 +173,16 @@ Commit:
 Goal:
 Ensure implementation, examples, and docs agree.
 
+Status:
+Complete.
+
 Scope:
 
 - README updated.
 - Fixture docs updated.
 - PRD and plan implementation status updated.
 - `BUILD_JOURNEY.md` updated.
-- Audit report for this increment created or updated.
+- Audit report for this increment created at `docs/audits/deferred-capabilities-audit.md`.
 
 Validation:
 

@@ -33,6 +33,7 @@ Boundary mode defaults to `boundaryBandMode: "absolute"`, using `targetWeight +/
 - [`docs/audits/`](docs/audits/) — Audit reports (red-team audit, test-case audit).
 - [`docs/audits/final-mvp-audit.md`](docs/audits/final-mvp-audit.md) — Final MVP status, validation, and known limitations.
 - [`docs/audits/next-iteration-mvp-audit.md`](docs/audits/next-iteration-mvp-audit.md) — Multi-strategy iteration status, validation, and known limitations.
+- [`docs/audits/deferred-capabilities-audit.md`](docs/audits/deferred-capabilities-audit.md) — Decimal/rounding and relative-boundary increment audit.
 - [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
 - [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
 - [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.
