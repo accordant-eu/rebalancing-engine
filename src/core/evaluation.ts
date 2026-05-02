@@ -6,6 +6,7 @@ import {
   PriceSnapshot,
   RebalancingPolicy,
   RebalancingStrategyType,
+  StrategyInterface,
   TargetAllocation,
   TradeProposal,
   TriggerResult,
@@ -20,6 +21,12 @@ import {
   ValuationResult,
   WeightResult,
 } from './valuation';
+
+const STRATEGY_REGISTRY: Record<RebalancingStrategyType, StrategyInterface> = {
+  threshold: new ThresholdStrategy(),
+  manual: new ManualRebalanceStrategy(),
+  calendar: new CalendarRebalanceStrategy(),
+};
 
 export interface RebalanceEvaluationInput {
   eventId: string;
@@ -89,19 +96,17 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
   };
 }
 
-export function selectStrategy(strategyType: RebalancingStrategyType | undefined) {
-  const resolvedStrategyType = strategyType ?? 'threshold';
+export function supportedStrategyTypes(): RebalancingStrategyType[] {
+  return Object.keys(STRATEGY_REGISTRY).sort() as RebalancingStrategyType[];
+}
 
-  switch (resolvedStrategyType) {
-    case 'threshold':
-      return new ThresholdStrategy();
-    case 'manual':
-      return new ManualRebalanceStrategy();
-    case 'calendar':
-      return new CalendarRebalanceStrategy();
-    default: {
-      const exhaustiveCheck: never = resolvedStrategyType;
-      throw new Error(`Unsupported rebalancing strategy: ${String(exhaustiveCheck)}`);
-    }
+export function selectStrategy(strategyType: string | undefined): StrategyInterface {
+  const resolvedStrategyType = strategyType ?? 'threshold';
+  const strategy = STRATEGY_REGISTRY[resolvedStrategyType as RebalancingStrategyType];
+
+  if (strategy === undefined) {
+    throw new Error(`Unsupported rebalancing strategy: ${resolvedStrategyType}`);
   }
+
+  return strategy;
 }

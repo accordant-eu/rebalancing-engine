@@ -55,6 +55,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Limit boundary targeting to absolute bands first        | Accepted for MVP            | Absolute-band boundary targeting proves transaction-cost-aware execution without adding relative-boundary ambiguity or full optimization.                                                               | Boundary fixture/tests        | Medium        | Revisit relative-boundary support if needed                             |
 | 2026-05-02 | Use separate expected-status runner manifest            | Accepted                    | Expected scenario outcomes should be validated without embedding runner assertions in the scenario input data itself.                                                                                   | Runner manifest tests         | High          | Keep manifest aligned when fixtures change                              |
 | 2026-05-02 | Mark active MVP slice sets complete                     | Accepted                    | Original MVP slices 0-12 and next-iteration slices 0-8 are implemented and validated for offline deterministic fixtures; remaining items are post-MVP backlog, not unfinished slices.                   | Slice reconciliation          | Medium        | Revisit if scope is expanded by a new PRD/plan                          |
+| 2026-05-02 | Use a strategy registry for selection                   | Accepted                    | A registry makes supported strategies explicit and discoverable while avoiding a premature broader strategy execution abstraction.                                                                      | Refactoring assessment        | High          | Add proposal hooks only when a second strategy needs distinct sizing    |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -880,6 +881,51 @@ Implementation impact:
 Validation:
 The final validation gate should rerun format, Jest, type-check, lint, build, scenario runner, manifest validation, and diff whitespace checks.
 
+Decision: Use a strategy registry for selection
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The refactoring assessment found that `evaluateRebalance` is the main public orchestration API, but strategy selection was hidden in a switch and supported strategies were not directly discoverable. The next refactor should improve extension clarity without adding new strategy behavior or changing financial outputs.
+
+Options considered:
+
+1. Keep the switch-based selector.
+   - Benefits: Minimal code and already working.
+   - Costs: Supported strategies are not exposed as data.
+   - Risks: Future additions may keep spreading strategy-selection knowledge through code paths.
+   - Reversibility: High.
+
+2. Use a registry of stateless strategy instances.
+   - Benefits: Makes supported strategies explicit and easy to inspect; keeps the existing `StrategyInterface`; avoids changing strategy behavior.
+   - Costs: Future strategies still require registry updates.
+   - Risks: Registry instances must remain stateless or be replaced with factories.
+   - Reversibility: High.
+
+3. Introduce a broader strategy execution abstraction with proposal hooks now.
+   - Benefits: Prepares for future strategies with custom proposal generation.
+   - Costs: Premature abstraction because only threshold boundary mode currently needs special proposal sizing.
+   - Risks: Adds interface surface before requirements justify it.
+   - Reversibility: Medium.
+
+Preferred option:
+Option 2: Use a registry of stateless strategy instances and expose supported strategy identifiers.
+
+Rationale:
+This is the smallest behavior-preserving improvement to strategy-selection clarity. It supports the existing hybrid architecture while deferring proposal hooks until a second strategy needs materially different sizing behavior.
+
+Implementation impact:
+
+- Code: `src/core/evaluation.ts` now resolves strategies through `STRATEGY_REGISTRY`, exposes `supportedStrategyTypes`, and keeps `selectStrategy` explicit for unsupported identifiers.
+- Tests: Added direct `evaluateRebalance` characterization coverage for threshold default behavior, calendar no-trigger metadata, supported strategy listing, and unsupported strategy errors.
+- Fixtures: No fixture changes.
+- Documentation: Refactoring assessment and build journey record the decision and completed slice.
+- Follow-up: Revisit strategy proposal hooks only when another strategy needs proposal behavior that cannot remain cleanly shared.
+
+Validation:
+Focused evaluation tests, full Jest suite, TypeScript, ESLint, build, scenario runner, expected-status manifest validation, formatting, and diff whitespace checks should pass before commit.
+
 ## 5. Iteration Log
 
 | Iteration | Date       | Goal                             | Scope                      | Actions taken                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Files changed                                                                                                                                                                                                                                                   | Learnings                                                                                                                                                                                                                                     | Open questions                                                                                                                     | Next step                                                                                                |
@@ -905,6 +951,7 @@ The final validation gate should rerun format, Jest, type-check, lint, build, sc
 | 19        | 2026-05-02 | Multi-Strategy Next Iteration    | Next-iteration MVP         | Implemented policy-driven strategy selection, calendar due-date strategy, threshold boundary-target execution, mixed-strategy runner fixtures, strategy/execution metadata in audit output, documentation updates, and a next-iteration audit.                                                                                                                                                                                                                                                                                                                        | `src/models/domain.ts`, `src/core/evaluation.ts`, `src/core/trades.ts`, `src/strategy/calendar.ts`, `src/runner/scenario-runner.ts`, tests, fixtures, README, fixture README, `docs/audits/next-iteration-mvp-audit.md`, `BUILD_JOURNEY.md`                     | Explicit strategy selection is now implemented; calendar is deterministic from input dates; boundary mode proves reduced-turnover execution without full optimal control.                                                                     | Should relative-boundary targeting, expected-status manifests, or decimal/rounding policy be next?                                 | Harden runner manifests and decide decimal/rounding policy before broader strategy work.                 |
 | 20        | 2026-05-02 | Complete Next-Iteration Slices   | Slice completion hardening | Added expected-status manifest validation to the scenario runner, added an invalid-strategy fixture, covered manifest success and mismatch behavior in tests, updated runner usage docs, refreshed the next-iteration audit, and recorded the final runner-manifest decision.                                                                                                                                                                                                                                                                                         | `src/runner/scenario-runner.ts`, `tests/fixtures/scenario-expectations.json`, `tests/fixtures/scenarios.json`, `tests/scenario-runner.test.ts`, `tests/fixtures.test.ts`, README, fixture README, `docs/audits/next-iteration-mvp-audit.md`, `BUILD_JOURNEY.md` | Separate expected-status manifests keep scenario inputs reusable while making CLI validation explicit. Unsupported strategy policies now have fixture-level and runner-level regression coverage.                                             | Decimal/rounding policy, relative-boundary targeting, richer cash-flow workflows, and live integrations remain post-MVP decisions. | Decide decimal/rounding policy before adding relative-boundary targeting or broader cash-flow workflows. |
 | 21        | 2026-05-02 | Reconcile Slice Completion       | Documentation and tests    | Verified the original MVP and next-iteration MVP slice lists against implementation, removed stale future-scope references for already completed manifest/calendar coverage, added explicit next-plan completion evidence, and converted old edge-case TODO comments into executable assertions.                                                                                                                                                                                                                                                                      | `tests/edge-cases.test.ts`, `src/core/trades.ts`, README, final MVP audit, traceability report, next-iteration MVP plan, test-case audit, `BUILD_JOURNEY.md`                                                                                                    | The active slice set is complete; remaining items are explicitly deferred post-MVP capabilities rather than unimplemented slices.                                                                                                             | Decimal/rounding policy, relative-boundary targeting, richer cash-flow workflows, and live integrations remain post-MVP decisions. | Decide decimal/rounding policy before adding new strategy breadth.                                       |
+| 22        | 2026-05-02 | Refactoring Assessment           | Refactoring hardening      | Created a repository-aware refactoring assessment, added direct high-level evaluation characterization tests, and replaced switch-based strategy selection with an explicit registry of stateless strategies.                                                                                                                                                                                                                                                                                                                                                         | `docs/refactoring/refactoring-assessment.md`, `src/core/evaluation.ts`, `tests/evaluation.test.ts`, `BUILD_JOURNEY.md`                                                                                                                                          | The best near-term refactor is API/extension clarity, not financial semantics or new strategy breadth. Direct orchestration tests protect the public evaluation path.                                                                         | Decimal/rounding policy, strategy proposal hooks, schema validation, and CI remain deferred.                                       | Decide decimal/rounding policy before adding broader monetary behavior.                                  |
 
 ### Iteration 10 Detail — 2026-05-02
 
@@ -1035,6 +1082,34 @@ The final validation gate should rerun format, Jest, type-check, lint, build, sc
 **Learnings:** The implementation had already completed the active slices, but historical docs and TODO comments created ambiguity. Keeping the plan as an implementation artifact with explicit completion evidence makes the boundary between MVP slices and post-MVP backlog clearer.
 
 **Recommended next step:** Decide decimal/rounding policy before adding new strategy breadth such as relative-boundary targeting or richer cash-flow workflows.
+
+### Iteration 22 Detail — 2026-05-02
+
+**Goal:** Perform a repository-aware refactoring review and implement only safe, high-value behavior-preserving refactoring.
+
+**Scope:** Refactoring assessment, public orchestration characterization, and strategy selection clarity. No new rebalancing strategies, financial semantics, live integrations, UI, database persistence, or production execution flows were added.
+
+**Materials reviewed:** `AGENTS.md`, `BUILD_JOURNEY.md`, README, PRD/architecture docs, MVP and next-iteration plans, strategy traceability report, audit reports, fixture docs, source modules, tests, fixtures, package/config files, git status, and recent commits.
+
+**Refactoring findings:** The repository is healthy for offline deterministic fixtures. Highest-priority friction was that the happy-path `evaluateRebalance` API lacked direct characterization tests. Medium-priority friction was that strategy selection was switch-based and supported identifiers were not directly discoverable. Larger financial, schema, and strategy-extension changes remain deferred because they would change semantics or add feature scope.
+
+**Decisions made:** Use a registry of stateless strategy instances for selection, expose supported strategy identifiers, and keep this pass behavior-preserving. Defer decimal/rounding migration and strategy proposal hooks.
+
+**Refactors implemented:** Added `supportedStrategyTypes`, moved strategy selection to an explicit registry, kept unsupported strategy errors explicit, and added high-level evaluation tests covering threshold default behavior, calendar no-trigger metadata, supported strategy listing, and unsupported strategy rejection.
+
+**Files changed:** `docs/refactoring/refactoring-assessment.md`, `src/core/evaluation.ts`, `tests/evaluation.test.ts`, `BUILD_JOURNEY.md`.
+
+**Tests/checks run:** Baseline before code changes: `npm test -- --runInBand` passed with 72 tests across 13 suites; `npx tsc --noEmit` passed; `npm run lint` passed. Focused after code changes: `npm test -- --runInBand tests/evaluation.test.ts` passed with 4 tests; `npx tsc --noEmit` passed; `npm run lint` passed. Final validation should rerun the full gate before commit.
+
+**Results:** Public orchestration behavior is now directly protected, and supported strategy identifiers are discoverable without changing financial outputs.
+
+**Learnings:** The current architecture does not need broader abstraction yet. A registry improves extension clarity while keeping strategy proposal hooks deferred until a concrete non-threshold proposal behavior appears.
+
+**Decisions deferred:** Decimal arithmetic, trade rounding, strategy proposal hooks, relative-boundary targeting, richer cash-flow semantics, fixture schema validation, price timestamp/staleness policy, CI workflow, API design, UI, database persistence, live integrations, and production execution routing.
+
+**Open questions:** Should the next hardening slice decide decimal/rounding policy, add result-contract documentation, or introduce CI?
+
+**Recommended next step:** Decide decimal/rounding policy before adding broader monetary behavior or additional strategy breadth.
 
 ## 6. Scope of Work
 

@@ -125,8 +125,8 @@ Public or semi-public interfaces:
 
 | ID   | Priority | Category                      | Finding                                                                                                                    | Evidence                                                                                                                 | Impact                                                                                                                             | Recommended action                                                                                                          | Status        |
 | ---- | -------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| R-01 | High     | API/interface                 | The intended happy-path API is `evaluateRebalance`, but most tests still assemble the pipeline manually.                   | `tests/audit.test.ts` and `tests/explanation.test.ts` duplicate valuation, drift, strategy, proposal, simulation wiring. | Public orchestration regressions could be missed or harder to diagnose.                                                            | Add direct characterization tests for `evaluateRebalance`; gradually use it in tests where end-to-end behavior is intended. | Open          |
-| R-02 | Medium   | SOLID/separation of concerns  | Strategy selection is embedded in a switch that hides supported strategies from callers.                                   | `selectStrategy` in `src/core/evaluation.ts`.                                                                            | Adding strategies remains easy but discoverability and validation are weaker than they need to be.                                 | Move supported strategies to an explicit registry and expose supported strategy identifiers.                                | Open          |
+| R-01 | High     | API/interface                 | The intended happy-path API is `evaluateRebalance`, but most tests still assemble the pipeline manually.                   | `tests/audit.test.ts` and `tests/explanation.test.ts` duplicate valuation, drift, strategy, proposal, simulation wiring. | Public orchestration regressions could be missed or harder to diagnose.                                                            | Add direct characterization tests for `evaluateRebalance`; gradually use it in tests where end-to-end behavior is intended. | Fixed         |
+| R-02 | Medium   | SOLID/separation of concerns  | Strategy selection is embedded in a switch that hides supported strategies from callers.                                   | `selectStrategy` in `src/core/evaluation.ts`.                                                                            | Adding strategies remains easy but discoverability and validation are weaker than they need to be.                                 | Move supported strategies to an explicit registry and expose supported strategy identifiers.                                | Fixed         |
 | R-03 | Medium   | Strategy extensibility        | Strategy modules own trigger evaluation only; proposal differences are currently policy-driven in shared trade generation. | `boundary` logic lives in `src/core/trades.ts`, not a strategy proposal hook.                                            | This is acceptable for one threshold-specific execution mode but could grow conditionals if future strategies need proposal logic. | Defer strategy proposal hooks until a second non-threshold proposal behavior exists; document the boundary.                 | Deferred      |
 | R-04 | Medium   | Financial calculation clarity | Monetary values use JavaScript `number` and fractional quantities.                                                         | Domain model header, audits, README, tests.                                                                              | Acceptable for fixtures; risky for production precision and rounding.                                                              | Decide decimal and rounding policy before adding more monetary semantics.                                                   | Deferred      |
 | R-05 | Medium   | Data structures               | `PriceSnapshot` has no timestamp and fixture schema validation is mostly structural.                                       | `PriceSnapshot` is `Record<string, number>`; `fixtures.test.ts` checks only basic fields.                                | Stale price behavior and malformed JSON remain outside current guarantees.                                                         | Defer richer schema validation until timestamp/staleness policy is in scope.                                                | Deferred      |
@@ -182,7 +182,7 @@ Implementation impact: `src/core/evaluation.ts` and direct tests for strategy se
 
 Validation approach: Existing tests plus added high-level API tests.
 
-Status: Accepted for implementation.
+Status: Implemented.
 
 ### Decision: Defer decimal arithmetic and rounding
 
@@ -244,6 +244,8 @@ Validation proof point: Full local validation suite passes.
 Risk: Low.
 
 Commit recommendation: `refactor: clarify strategy selection contract`.
+
+Status: Implemented.
 
 ### Slice 3: Result and Warning Shape Documentation
 
