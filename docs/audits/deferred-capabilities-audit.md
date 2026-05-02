@@ -11,12 +11,14 @@ Implemented:
 - Decimal / rounding policy.
 - Relative-boundary targeting for threshold boundary execution.
 
-Still deferred:
+Deferred after this specific Option A increment:
 
 - Richer cash flows.
 - Tax lots.
 - Full optimizer.
 - Live integrations / API / UI / database.
+
+Later post-MVP increments implemented explicit offline cash-flow foundations and generic tax-lot allocation metadata. Full optimizer and production surfaces remain deferred.
 
 ## Baseline Verification
 
@@ -93,8 +95,8 @@ Final validation commands should pass before this audit is committed:
 - Public interfaces still use numbers. A future production API may need decimal strings for exact wire contracts.
 - Relative boundary mode is a threshold boundary-sizing policy, not a full optimizer.
 - Relative boundary mode rejects zero-target instruments rather than inventing fallback absolute behavior.
-- Richer cash flows remain shallow: positive cash is supported, but deposits, withdrawals, pending flows, and cash-only rebalancing are deferred.
-- Tax lots remain unsupported and no tax advice or jurisdiction-specific optimization is implemented.
+- Richer cash-flow foundations were implemented in a later scoped increment; scheduled/recurring cash-flow workflows remain deferred.
+- Generic tax-lot allocation metadata was implemented in a later scoped increment; tax advice and jurisdiction-specific optimization remain out of scope.
 - No live integrations, API, UI, database, or persistence were added.
 
 ## Result

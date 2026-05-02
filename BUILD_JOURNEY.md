@@ -7,8 +7,8 @@ This file is the living project journal. It captures the journey from initializa
 - **Known Objective:** Maintain and extend a generic portfolio rebalancing engine MVP.
 - **Development Approach:** This project, including its documentation, scaffolding, and future implementations, is built heavily relying on LLM tools and AI-assisted editors.
 - **What is Known:** The MVP is a TypeScript/Node.js offline calculation core using deterministic synthetic fixtures.
-- **What is Not Yet Known:** Production integration model, deployment model, live data interfaces, execution routing, and post-MVP policy breadth remain undecided.
-- **Next Steps:** Treat generic tax-lot allocation foundations as complete, then reassess scheduled cash flows, optimizer feasibility, or production boundary work as future post-MVP increments.
+- **What is Not Yet Known:** Production integration model, deployment model, live data interfaces, execution routing, and remaining post-MVP workflow breadth remain undecided.
+- **Next Steps:** Treat generic tax-lot allocation foundations, optimizer feasibility, and production-boundary deferral as complete; reassess scheduled cash flows or a concrete productionization PRD as future post-MVP increments.
 
 ## 2. Current Repository Snapshot
 
@@ -62,6 +62,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Model explicit offline cash flows as portfolio-state adjustments                   | Accepted for next increment | Optional cash-flow records make deposits, withdrawals, and pending flows traceable while preserving the offline deterministic engine and avoiding live banking or optimizer scope.                                       | Cash flows PRD/plan            | High          | Implement settled and pending flow semantics                            |
 | 2026-05-02 | Add generic tax-lot allocation metadata without tax optimization                   | Accepted for next increment | Optional lots and deterministic sell allocation improve traceability while avoiding jurisdiction-specific tax advice, tax optimization, or optimizer scope.                                                              | Tax lots PRD/plan              | High          | Implement validation and sell allocation modes                          |
 | 2026-05-02 | Defer full optimizer until objectives and constraints are explicit                 | Accepted                    | The current deterministic proposal engine is auditable and useful; a solver-backed optimizer needs documented objectives, constraints, explainability requirements, and dependency policy first.                         | Optimizer feasibility audit    | High          | Revisit when deterministic rules cannot satisfy a concrete use case     |
+| 2026-05-02 | Defer production surfaces until concrete consumers and operations are defined      | Accepted                    | API, UI, database, and live integrations introduce security, persistence, provider-contract, deployment, and regulatory decisions that are premature for the offline calculation core.                                   | Production boundary audit      | High          | Revisit with a dedicated productionization PRD                          |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -1078,6 +1079,57 @@ Implementation impact:
 
 Validation:
 Jest, TypeScript build, ESLint, scenario runner, and 13-entry manifest validation pass after implementation.
+
+Decision: Defer production surfaces until concrete consumers and operations are defined
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The engine now has deterministic strategy selection, decimal-backed calculations, boundary targeting, offline cash-flow handling, generic tax-lot allocation metadata, explanations, audit records, scenario fixtures, and documented optimizer deferral. The remaining live integrations / API / UI / database capability would move the project from a calculation core into production delivery and operations.
+
+Options considered:
+
+1. Implement an API wrapper now.
+   - Benefits: Gives external callers an immediate service boundary.
+   - Costs: Requires wire contracts, versioning, authentication assumptions, deployment choices, and error-shape decisions.
+   - Risks: Premature contracts may conflict with future decimal-string, persistence, or consumer requirements.
+   - Reversibility: Medium; published API contracts are harder to change than internal TypeScript interfaces.
+
+2. Add database-backed persistence now.
+   - Benefits: Starts an audit-retention path.
+   - Costs: Requires schema, migration, retention, privacy, and operational decisions.
+   - Risks: Persistence shape could harden before audit consumers, retention rules, and deletion requirements are known.
+   - Reversibility: Medium; data migrations and compatibility concerns accumulate quickly.
+
+3. Add adapter scaffolding for future providers.
+   - Benefits: Names future integration boundaries.
+   - Costs: Creates unused abstractions around unknown broker, custodian, banking, market-data, and execution contracts.
+   - Risks: Interfaces are likely to be wrong without a real provider and consumer.
+   - Reversibility: High-medium; removing unused abstractions is possible but creates churn.
+
+4. Keep the engine offline/library/CLI oriented and document production prerequisites.
+   - Benefits: Preserves deterministic, testable domain behavior and avoids infrastructure/security risk.
+   - Costs: No hosted or persistent product surface is available yet.
+   - Risks: Future productionization still needs a dedicated PRD and plan.
+   - Reversibility: High; production surfaces can be added once concrete requirements exist.
+
+Preferred option:
+Option 4. Keep live integrations, API, UI, and database deferred while documenting the production boundary and revisit criteria.
+
+Rationale:
+The calculation core has enough domain breadth to remain useful without production infrastructure. API, UI, database, and live integrations require concrete consumer, security, provider-contract, deployment, monitoring, and regulatory decisions that are not yet specified. Documenting the boundary now prevents overclaiming production readiness while avoiding speculative architecture.
+
+Implementation impact:
+
+- Code: No runtime behavior or dependencies change.
+- Tests: Existing tests and scenario fixtures remain the regression gate.
+- Fixtures: No fixture shape changes.
+- Documentation: Add production-boundary PRD, plan, and audit; update README and this build journey.
+- Developer workflow: Continue validating through local tests, build, lint, scenario runner, and manifest validation.
+
+Validation:
+Run format, full Jest suite, TypeScript build, ESLint, scenario runner, and expected-status manifest validation. Confirm no application framework, database dependency, live-integration dependency, or production runtime surface was added.
 
 ## 5. Iteration Log
 
