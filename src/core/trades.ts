@@ -8,9 +8,10 @@ import {
   TradeProposal,
 } from '../models/domain';
 import { validateTargetAllocation } from './drift';
+import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
 import { ValuationResult } from './valuation';
 
-const TRADE_EPSILON = 1e-8;
+const TRADE_EPSILON = CALCULATION_EPSILON;
 
 /**
  * Generates a deterministic trade proposal.
@@ -39,7 +40,7 @@ export function generateTradeProposal(
   ).sort((a, b) => a.localeCompare(b));
 
   const trades: ProposedTrade[] = [];
-  let netCashDelta = 0;
+  let netCashDelta = toDecimal(0);
 
   for (const instrumentId of instrumentIds) {
     const currentValue = currentValues.get(instrumentId) ?? 0;
@@ -50,9 +51,9 @@ export function generateTradeProposal(
       policy,
       executionTargetMode,
     );
-    const valueDelta = targetValue - currentValue;
+    const valueDelta = targetValue.minus(currentValue);
 
-    if (Math.abs(valueDelta) <= TRADE_EPSILON) {
+    if (valueDelta.abs().lte(TRADE_EPSILON)) {
       continue;
     }
 
@@ -64,24 +65,25 @@ export function generateTradeProposal(
       throw new Error(`Invalid non-positive price for trade proposal instrument: ${instrumentId}`);
     }
 
-    const direction = valueDelta > 0 ? 'BUY' : 'SELL';
-    const estimatedValue = Math.abs(valueDelta);
+    const direction = valueDelta.gt(0) ? 'BUY' : 'SELL';
+    const estimatedValue = valueDelta.abs();
 
     trades.push({
       instrumentId,
       direction,
-      quantity: estimatedValue / estimatedPrice,
+      quantity: estimatedValue.div(estimatedPrice).toNumber(),
       estimatedPrice,
-      estimatedValue,
+      estimatedValue: estimatedValue.toNumber(),
     });
 
-    netCashDelta += direction === 'BUY' ? -estimatedValue : estimatedValue;
+    netCashDelta =
+      direction === 'BUY' ? netCashDelta.minus(estimatedValue) : netCashDelta.plus(estimatedValue);
   }
 
   const proposal = applyMinimumTradeSize(
     {
       trades,
-      estimatedPostTradeCash: valuation.cash + netCashDelta,
+      estimatedPostTradeCash: toDecimal(valuation.cash).plus(netCashDelta).toNumber(),
       warnings: [],
       executionTargetMode,
     },
@@ -115,15 +117,19 @@ export function applyMinimumTradeSize(
       instrumentId: trade.instrumentId,
       estimatedValue: trade.estimatedValue,
       minimumTradeSize,
-      message: `Suppressed ${trade.direction} for ${trade.instrumentId}: estimated value ${trade.estimatedValue.toFixed(2)} is below minimum trade size ${minimumTradeSize.toFixed(2)}.`,
+      message: `Suppressed ${trade.direction} for ${trade.instrumentId}: estimated value ${formatFixed(trade.estimatedValue, 2)} is below minimum trade size ${formatFixed(minimumTradeSize, 2)}.`,
     });
 
     return false;
   });
 
-  const estimatedPostTradeCash = trades.reduce((cash, trade) => {
-    return trade.direction === 'BUY' ? cash - trade.estimatedValue : cash + trade.estimatedValue;
-  }, startingCash);
+  const estimatedPostTradeCash = trades
+    .reduce((cash, trade) => {
+      return trade.direction === 'BUY'
+        ? cash.minus(trade.estimatedValue)
+        : cash.plus(trade.estimatedValue);
+    }, toDecimal(startingCash))
+    .toNumber();
 
   return {
     trades,
@@ -139,25 +145,40 @@ function calculateTargetValue(
   totalPortfolioValue: number,
   policy: RebalancingPolicy | undefined,
   executionTargetMode: ExecutionTargetMode,
-): number {
+): ReturnType<typeof toDecimal> {
   if (executionTargetMode === 'full_reset') {
-    return targetWeight * totalPortfolioValue;
+    return toDecimal(targetWeight).mul(totalPortfolioValue);
   }
 
   if (policy === undefined) {
     throw new Error('Boundary execution target mode requires a rebalancing policy');
   }
 
-  const currentWeight = totalPortfolioValue === 0 ? 0 : currentValue / totalPortfolioValue;
-  const lowerBoundary = Math.max(0, targetWeight - policy.absoluteDriftTolerance);
-  const upperBoundary = Math.min(1, targetWeight + policy.absoluteDriftTolerance);
+  const currentWeight =
+    totalPortfolioValue === 0 ? toDecimal(0) : toDecimal(currentValue).div(totalPortfolioValue);
+  const lowerBoundary = decimalMax(0, toDecimal(targetWeight).minus(policy.absoluteDriftTolerance));
+  const upperBoundary = decimalMin(1, toDecimal(targetWeight).plus(policy.absoluteDriftTolerance));
 
-  if (currentWeight > upperBoundary) {
-    return upperBoundary * totalPortfolioValue;
+  if (currentWeight.gt(upperBoundary)) {
+    return upperBoundary.mul(totalPortfolioValue);
   }
-  if (currentWeight < lowerBoundary) {
-    return lowerBoundary * totalPortfolioValue;
+  if (currentWeight.lt(lowerBoundary)) {
+    return lowerBoundary.mul(totalPortfolioValue);
   }
 
-  return currentValue;
+  return toDecimal(currentValue);
+}
+
+function decimalMax(
+  left: number,
+  right: ReturnType<typeof toDecimal>,
+): ReturnType<typeof toDecimal> {
+  return right.lt(left) ? toDecimal(left) : right;
+}
+
+function decimalMin(
+  left: number,
+  right: ReturnType<typeof toDecimal>,
+): ReturnType<typeof toDecimal> {
+  return right.gt(left) ? toDecimal(left) : right;
 }

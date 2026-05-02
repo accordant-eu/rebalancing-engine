@@ -1,7 +1,8 @@
 /**
  * Domain Models for the Portfolio Rebalancing Engine.
- * Note: MVP uses standard JavaScript `number` for values.
- * In a production financial system, a strict Decimal library (e.g., decimal.js) would be used to avoid float precision errors.
+ * Public inputs and outputs remain number-based for compatibility.
+ * Core financial calculations use the explicit decimal and rounding policy
+ * in `src/core/numeric.ts`, with rounding applied at output boundaries.
  */
 
 export interface Holding {

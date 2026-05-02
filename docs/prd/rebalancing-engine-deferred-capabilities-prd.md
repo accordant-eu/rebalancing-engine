@@ -104,7 +104,7 @@ Expected changes:
 - Full existing test suite passes.
 - Existing scenario runner fixtures pass.
 - New precision tests cover values such as `0.1 + 0.2`-style decimal-sensitive calculations.
-- Audit serialization is deterministic and uses documented output precision.
+- Audit serialization is deterministic, preserves input snapshots, and uses documented output precision for outputs.
 - Absolute-boundary behavior remains backward compatible.
 - Relative-boundary scenario triggers and trades to the nearest relative boundary.
 - Zero-target relative-boundary policy fails explicitly.

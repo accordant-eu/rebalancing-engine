@@ -1,5 +1,6 @@
 import { TradeProposal, TriggerResult } from '../models/domain';
 import { PostTradeSimulation } from '../core/simulation';
+import { formatFixed } from '../core/numeric';
 
 export interface RecommendationExplanation {
   summary: string;
@@ -26,7 +27,7 @@ export function generateExplanation(
       : `Proposed ${proposal.executionTargetMode} trades: ${proposal.trades
           .map(
             (trade) =>
-              `${trade.direction} ${trade.quantity.toFixed(6)} ${trade.instrumentId} for approximately ${trade.estimatedValue.toFixed(2)}`,
+              `${trade.direction} ${formatFixed(trade.quantity, 6)} ${trade.instrumentId} for approximately ${formatFixed(trade.estimatedValue, 2)}`,
           )
           .join('; ')}.`;
 
@@ -70,10 +71,10 @@ function buildResidualDriftExplanation(simulation?: PostTradeSimulation): string
 
   const outOfBand = simulation.residualDrift.filter((drift) => drift.isOutOfBand);
   if (outOfBand.length === 0) {
-    return `Post-trade simulation leaves all assets within tolerance. Estimated sell-side turnover is ${(simulation.turnover * 100).toFixed(2)}%.`;
+    return `Post-trade simulation leaves all assets within tolerance. Estimated sell-side turnover is ${formatFixed(simulation.turnover * 100, 2)}%.`;
   }
 
   return `Post-trade simulation leaves residual out-of-band drift for: ${outOfBand
-    .map((drift) => `${drift.instrumentId} (${(drift.absoluteDrift * 100).toFixed(2)}%)`)
-    .join(', ')}. Estimated sell-side turnover is ${(simulation.turnover * 100).toFixed(2)}%.`;
+    .map((drift) => `${drift.instrumentId} (${formatFixed(drift.absoluteDrift * 100, 2)}%)`)
+    .join(', ')}. Estimated sell-side turnover is ${formatFixed(simulation.turnover * 100, 2)}%.`;
 }

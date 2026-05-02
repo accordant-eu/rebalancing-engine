@@ -6,7 +6,15 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` and `boundary` execution target modes, and the scenario runner supports expected-status manifest validation. Post-MVP work remains for production precision, rounding, live integrations, full transaction-cost optimization, tax-lot logic, and richer cash-flow workflows.
+**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` and `boundary` execution target modes, and the scenario runner supports expected-status manifest validation. The post-MVP deferred-capabilities increment has started with explicit decimal arithmetic and output rounding policy. Post-MVP work remains for relative-boundary targeting, richer cash-flow workflows, tax-lot logic, full transaction-cost optimization, live integrations, API, UI, and persistence.
+
+## Numeric Policy
+
+Core financial calculations use `decimal.js` internally while the public TypeScript domain interfaces remain number-based for compatibility. Internal calculations are not rounded silently. Rounding is applied at explicit boundaries:
+
+- Explanation text formats quantities to 6 decimals and monetary values/percentages to 2 decimals.
+- `serializeAuditRecord` preserves input snapshots and emits deterministically rounded output numbers.
+- Serialized audit output precision is centralized in `src/core/numeric.ts`: prices 6 decimals, quantities 8, money values 6, weights/drift/turnover 10.
 
 ## Documentation
 

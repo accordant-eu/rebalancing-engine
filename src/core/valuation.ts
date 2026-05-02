@@ -1,4 +1,5 @@
 import { PortfolioState, PriceSnapshot } from '../models/domain';
+import { toDecimal } from './numeric';
 
 export interface HoldingValue {
   instrumentId: string;
@@ -27,7 +28,7 @@ export function calculateValuation(
   state: PortfolioState,
   priceSnapshot: PriceSnapshot,
 ): ValuationResult {
-  let totalHoldingsValue = 0;
+  let totalHoldingsValue = toDecimal(0);
   const holdingsValues: HoldingValue[] = [];
 
   for (const holding of state.holdings) {
@@ -36,8 +37,9 @@ export function calculateValuation(
       throw new Error(`Missing price for instrument: ${holding.instrumentId}`);
     }
 
-    const marketValue = holding.quantity * price;
-    totalHoldingsValue += marketValue;
+    const marketValueDecimal = toDecimal(holding.quantity).mul(price);
+    const marketValue = marketValueDecimal.toNumber();
+    totalHoldingsValue = totalHoldingsValue.plus(marketValueDecimal);
 
     holdingsValues.push({
       instrumentId: holding.instrumentId,
@@ -49,9 +51,9 @@ export function calculateValuation(
 
   return {
     holdings: holdingsValues,
-    totalHoldingsValue,
+    totalHoldingsValue: totalHoldingsValue.toNumber(),
     cash: state.cash,
-    totalPortfolioValue: totalHoldingsValue + state.cash,
+    totalPortfolioValue: totalHoldingsValue.plus(state.cash).toNumber(),
   };
 }
 
@@ -69,6 +71,6 @@ export function calculateCurrentWeights(valuation: ValuationResult): WeightResul
 
   return valuation.holdings.map((h) => ({
     instrumentId: h.instrumentId,
-    weight: h.marketValue / valuation.totalPortfolioValue,
+    weight: toDecimal(h.marketValue).div(valuation.totalPortfolioValue).toNumber(),
   }));
 }

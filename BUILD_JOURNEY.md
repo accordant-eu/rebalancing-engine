@@ -57,6 +57,7 @@ This file is the living project journal. It captures the journey from initializa
 | 2026-05-02 | Mark active MVP slice sets complete                                                | Accepted                    | Original MVP slices 0-12 and next-iteration slices 0-8 are implemented and validated for offline deterministic fixtures; remaining items are post-MVP backlog, not unfinished slices.                                    | Slice reconciliation           | Medium        | Revisit if scope is expanded by a new PRD/plan                          |
 | 2026-05-02 | Use a strategy registry for selection                                              | Accepted                    | A registry makes supported strategies explicit and discoverable while avoiding a premature broader strategy execution abstraction.                                                                                       | Refactoring assessment         | High          | Add proposal hooks only when a second strategy needs distinct sizing    |
 | 2026-05-02 | Scope next deferred-capability increment to numeric policy and relative boundaries | Accepted for next increment | Numeric precision affects trust and all financial output; relative-boundary targeting extends existing boundary mode coherently, while cash flows, tax lots, optimizer, and production surfaces need separate decisions. | Deferred capabilities PRD/plan | High          | Implement in small validated slices                                     |
+| 2026-05-02 | Use `decimal.js` internally with explicit output rounding                          | Accepted                    | Decimal arithmetic removes avoidable binary float artifacts while preserving number-based public interfaces; rounding is centralized and applied only at explanation/audit boundaries.                                   | Numeric policy slice           | Medium        | Revisit decimal string APIs before production integrations              |
 
 Decision: Adopt standing decision discipline in repository rules
 
@@ -983,6 +984,51 @@ Implementation impact:
 
 Validation:
 Run the full test suite, TypeScript build, ESLint, scenario runner, manifest validation, and formatting before each focused commit.
+
+Decision: Use `decimal.js` internally with explicit output rounding
+
+Status: Accepted
+Date: 2026-05-02
+
+Context:
+The deferred-capabilities PRD selected numeric precision and rounding policy as the first implementation slice. Existing code used JavaScript `number` arithmetic directly, which produced binary floating-point artifacts in drift, valuation, simulation, scenario output, and audit records. The engine still needs backward-compatible number-based public interfaces in this increment.
+
+Options considered:
+
+1. Keep JavaScript `number` arithmetic and only round display output.
+   - Benefits: Smallest code change and no dependency.
+   - Costs: Internal calculations still carry avoidable binary artifacts.
+   - Risks: Undermines the correctness goal of the deferred slice.
+   - Reversibility: High.
+
+2. Use `decimal.js` internally while keeping public interfaces number-based.
+   - Benefits: Improves arithmetic determinism and preserves compatibility with fixtures and callers.
+   - Costs: Adds a runtime dependency and still converts outputs to numbers.
+   - Risks: A later production API may need decimal strings for exact wire contracts.
+   - Reversibility: Medium.
+
+3. Convert all public monetary, quantity, and weight fields to decimal strings.
+   - Benefits: Stronger production-grade wire precision.
+   - Costs: Broad breaking API and fixture change.
+   - Risks: Premature migration before API/integration requirements exist.
+   - Reversibility: Low-medium.
+
+Preferred option:
+Option 2: Use `decimal.js` internally with explicit output rounding boundaries.
+
+Rationale:
+This option materially improves calculation correctness without breaking the existing MVP public shape. It also creates a central numeric policy that can later support decimal-string APIs if production integrations require them.
+
+Implementation impact:
+
+- Dependency: Added `decimal.js`.
+- Code: Added `src/core/numeric.ts`; valuation, drift, trade proposal, simulation, threshold explanation formatting, and audit serialization use the central numeric helpers.
+- Tests: Added precision-sensitive valuation/trade tests and deterministic rounded audit serialization coverage.
+- Documentation: README, deferred-capabilities PRD/plan, and build journey document the policy.
+- Follow-up: Revisit decimal string inputs/outputs before live API or database work.
+
+Validation:
+Jest, TypeScript build, ESLint, scenario runner, and manifest validation pass after implementation.
 
 ## 5. Iteration Log
 

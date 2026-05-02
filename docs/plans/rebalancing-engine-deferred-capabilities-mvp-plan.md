@@ -2,7 +2,7 @@
 
 Date: 2026-05-02
 
-Implementation status: Planned. Selected scope is Option A: correctness and policy semantics.
+Implementation status: In progress. Selected scope is Option A: correctness and policy semantics. Slice 1 decimal / rounding policy is implemented and validated.
 
 ## 1. Current Baseline
 
@@ -89,6 +89,9 @@ No code commit required unless docs are updated.
 Goal:
 Introduce explicit numeric precision and rounding policy without breaking public number-based interfaces.
 
+Status:
+Complete.
+
 Decisions required:
 
 - Numeric representation.
@@ -97,9 +100,9 @@ Decisions required:
 - Test tolerance policy.
 - Deterministic serialization behavior.
 
-Planned approach:
+Implemented approach:
 
-- Use a decimal arithmetic helper internally where financial multiplication, division, addition, and subtraction are performed.
+- Use `decimal.js` through a central `src/core/numeric.ts` helper where financial multiplication, division, addition, and subtraction are performed.
 - Keep domain model inputs and outputs as numbers in this increment for backward compatibility.
 - Add a central rounding policy for prices, quantities, money values, weights, drift, and turnover.
 - Round serialized audit outputs and explanation display text at explicit boundaries.
@@ -118,9 +121,9 @@ Files likely affected:
 
 Validation:
 
-- Existing tests still pass.
-- Precision-sensitive tests pass.
-- Audit serialization is deterministic.
+- Existing tests pass.
+- Precision-sensitive tests pass in `tests/numeric.test.ts`.
+- Audit serialization is deterministic and preserves input snapshots.
 - Scenario runner output remains deterministic.
 
 Commit:
