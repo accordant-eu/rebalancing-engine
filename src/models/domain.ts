@@ -73,18 +73,6 @@ export interface TradeProposal {
   warnings: ProposalWarning[];
 }
 
-export interface AuditRecord {
-  timestamp: string;
-  accountId: string;
-  portfolioState: PortfolioState;
-  targetAllocation: TargetAllocation;
-  priceSnapshot: PriceSnapshot;
-  policy: RebalancingPolicy;
-  driftMeasurements: DriftMeasurement[];
-  tradeProposal: TradeProposal;
-  triggerReason: string | null;
-}
-
 export interface TriggerResult {
   isTriggered: boolean;
   reason: string | null;

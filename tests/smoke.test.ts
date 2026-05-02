@@ -1,3 +1,4 @@
+import { generateAuditRecord } from '../src/audit';
 import { calculateValuation, calculateCurrentWeights } from '../src/core/valuation';
 import { calculateDrift, validateTargetAllocation } from '../src/core/drift';
 import { simulatePostTrade } from '../src/core/simulation';
@@ -64,5 +65,9 @@ describe('Smoke Test — Core Module Imports', () => {
 
   it('generateExplanation is importable', () => {
     expect(typeof generateExplanation).toBe('function');
+  });
+
+  it('generateAuditRecord is importable', () => {
+    expect(typeof generateAuditRecord).toBe('function');
   });
 });
