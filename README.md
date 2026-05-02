@@ -4,9 +4,9 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 ## Overview
 
-The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, produces deterministic full-reset trade proposals with minimum-trade warnings, and simulates post-trade portfolio state. It is designed for auditability and reproducibility (MiFID II alignment), with audit records still deferred to a later MVP slice.
+The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, produces deterministic full-reset trade proposals with minimum-trade warnings, simulates post-trade portfolio state, and generates deterministic explanations from those outputs. It is designed for auditability and reproducibility (MiFID II alignment), with audit records still deferred to a later MVP slice.
 
-**Current status:** Slices 1–7 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules, Post-Trade Simulation). Slices 8+ (Explanation, Audit Records, Batch Runner, Second Strategy) remain in progress.
+**Current status:** Slices 1–8 implemented and validated (Fixtures, Valuation, Drift, Threshold Trigger, Basic Trade Proposals, Minimum Trade Rules, Post-Trade Simulation, Explanation Output). Slices 9+ (Audit Records, Batch Runner, Second Strategy) remain in progress.
 
 ## Documentation
 
@@ -66,8 +66,10 @@ npm run format
 │   │   ├── drift.ts           # Drift calculation and target validation
 │   │   ├── trades.ts          # Deterministic full-reset trade proposal generation
 │   │   └── simulation.ts      # Post-trade holdings, weights, residual drift, turnover
-│   └── strategy/
+│   ├── strategy/
 │       └── threshold.ts       # Threshold-band trigger strategy
+│   └── explanation/
+│       └── explanation.ts     # Deterministic recommendation explanations
 ├── tests/
 │   ├── fixtures/
 │   │   ├── README.md          # Fixture scenario documentation
@@ -79,6 +81,7 @@ npm run format
 │   ├── threshold.test.ts      # Threshold strategy tests
 │   ├── trades.test.ts         # Trade proposal generation tests
 │   ├── simulation.test.ts     # Post-trade simulation tests
+│   ├── explanation.test.ts    # Explanation output tests
 │   └── edge-cases.test.ts     # Edge-case and integration tests
 └── docs/
     ├── MVP_Implementation_Plan.md

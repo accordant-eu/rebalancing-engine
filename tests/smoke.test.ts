@@ -1,6 +1,7 @@
 import { calculateValuation, calculateCurrentWeights } from '../src/core/valuation';
 import { calculateDrift, validateTargetAllocation } from '../src/core/drift';
 import { simulatePostTrade } from '../src/core/simulation';
+import { generateExplanation } from '../src/explanation';
 import { ThresholdStrategy } from '../src/strategy/threshold';
 
 /**
@@ -59,5 +60,9 @@ describe('Smoke Test — Core Module Imports', () => {
 
   it('simulatePostTrade is importable', () => {
     expect(typeof simulatePostTrade).toBe('function');
+  });
+
+  it('generateExplanation is importable', () => {
+    expect(typeof generateExplanation).toBe('function');
   });
 });
