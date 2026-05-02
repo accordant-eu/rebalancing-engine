@@ -1,8 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { runScenarios } from '../src/runner';
+import {
+  loadScenarioExpectations,
+  runScenarios,
+  validateScenarioExpectations,
+} from '../src/runner';
 
 const scenariosPath = path.join(__dirname, 'fixtures', 'scenarios.json');
+const expectationsPath = path.join(__dirname, 'fixtures', 'scenario-expectations.json');
 const scenariosData = JSON.parse(fs.readFileSync(scenariosPath, 'utf8'));
 
 describe('Scenario Runner', () => {
@@ -15,6 +20,7 @@ describe('Scenario Runner', () => {
       'calendar_due',
       'calendar_not_due',
       'holding_outside_universe',
+      'invalid_strategy',
       'min_trade_size_issue',
       'missing_price',
       'multiple_assets_out_of_band',
@@ -32,7 +38,7 @@ describe('Scenario Runner', () => {
     const errors = results.filter((result) => result.status === 'error');
 
     expect(successes).toHaveLength(9);
-    expect(errors).toHaveLength(2);
+    expect(errors).toHaveLength(3);
 
     const success = successes.find((result) => result.scenarioId === 'one_asset_out_of_band');
     expect(success?.status).toBe('success');
@@ -46,6 +52,12 @@ describe('Scenario Runner', () => {
     expect(missingPrice?.status).toBe('error');
     if (missingPrice?.status === 'error') {
       expect(missingPrice.error).toBe('Missing price for instrument: MSFT');
+    }
+
+    const invalidStrategy = errors.find((result) => result.scenarioId === 'invalid_strategy');
+    expect(invalidStrategy?.status).toBe('error');
+    if (invalidStrategy?.status === 'error') {
+      expect(invalidStrategy.error).toContain('Unsupported rebalancing strategy');
     }
 
     const targetError = errors.find(
@@ -70,5 +82,47 @@ describe('Scenario Runner', () => {
       expect(calendarNotDue.auditRecord.outputs.trigger.isTriggered).toBe(false);
       expect(calendarNotDue.auditRecord.outputs.tradeProposal.trades).toEqual([]);
     }
+  });
+
+  it('validates results against an expected-status manifest', () => {
+    const results = runScenarios(scenariosData);
+    const expectations = loadScenarioExpectations(expectationsPath);
+
+    const validation = validateScenarioExpectations(results, expectations);
+
+    expect(validation).toEqual({
+      isValid: true,
+      checkedScenarioCount: 12,
+      mismatches: [],
+    });
+  });
+
+  it('reports expected-status manifest mismatches', () => {
+    const results = runScenarios(scenariosData);
+
+    const validation = validateScenarioExpectations(results, {
+      scenarios: {
+        on_target: { status: 'error' },
+        missing_price: { status: 'error', errorIncludes: 'different error text' },
+        not_in_fixture: { status: 'success' },
+      },
+    });
+
+    expect(validation.isValid).toBe(false);
+    expect(validation.mismatches.map((mismatch) => mismatch.scenarioId)).toEqual([
+      'missing_price',
+      'not_in_fixture',
+      'on_target',
+      'calendar_due',
+      'calendar_not_due',
+      'holding_outside_universe',
+      'invalid_strategy',
+      'min_trade_size_issue',
+      'multiple_assets_out_of_band',
+      'one_asset_out_of_band',
+      'positive_cash',
+      'target_allocation_sum_error',
+      'threshold_boundary_target',
+    ]);
   });
 });

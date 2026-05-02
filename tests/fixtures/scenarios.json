@@ -178,6 +178,32 @@
       }
     },
     {
+      "id": "invalid_strategy",
+      "description": "Policy with unsupported strategy type",
+      "portfolioState": {
+        "accountId": "acc-12",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 100 },
+          { "instrumentId": "MSFT", "quantity": 100 }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 150, "MSFT": 150 }
+      },
+      "policy": {
+        "strategyType": "unsupported_strategy",
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0
+      }
+    },
+    {
       "id": "holding_outside_universe",
       "description": "Holding outside model universe scenario",
       "portfolioState": {

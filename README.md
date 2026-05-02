@@ -68,6 +68,15 @@ npm run scenario:run
 
 Builds the project and runs all synthetic fixture scenarios through valuation, drift, policy-driven strategy selection, trigger evaluation, proposal generation, simulation, explanation, and audit record generation. Invalid fixtures are reported as deterministic per-scenario errors instead of aborting the batch.
 
+To validate scenario results against the expected-status manifest:
+
+```bash
+npm run build
+node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures/scenario-expectations.json
+```
+
+The command exits non-zero if a scenario status or expected error message does not match the manifest.
+
 ## Project Structure
 
 ```

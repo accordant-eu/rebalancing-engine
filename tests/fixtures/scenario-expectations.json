@@ -1,0 +1,25 @@
+{
+  "scenarios": {
+    "calendar_due": { "status": "success" },
+    "calendar_not_due": { "status": "success" },
+    "holding_outside_universe": { "status": "success" },
+    "invalid_strategy": {
+      "status": "error",
+      "errorIncludes": "Unsupported rebalancing strategy"
+    },
+    "min_trade_size_issue": { "status": "success" },
+    "missing_price": {
+      "status": "error",
+      "errorIncludes": "Missing price for instrument: MSFT"
+    },
+    "multiple_assets_out_of_band": { "status": "success" },
+    "on_target": { "status": "success" },
+    "one_asset_out_of_band": { "status": "success" },
+    "positive_cash": { "status": "success" },
+    "target_allocation_sum_error": {
+      "status": "error",
+      "errorIncludes": "Target allocation does not sum to 100%"
+    },
+    "threshold_boundary_target": { "status": "success" }
+  }
+}

@@ -33,6 +33,7 @@ describe('Domain Fixtures', () => {
       'min_trade_size_issue',
       'missing_price',
       'target_allocation_sum_error',
+      'invalid_strategy',
       'holding_outside_universe',
       'calendar_due',
       'calendar_not_due',

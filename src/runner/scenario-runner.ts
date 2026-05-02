@@ -24,6 +24,15 @@ export interface ScenarioRunnerInput {
   scenarios: ScenarioFixture[];
 }
 
+export interface ScenarioExpectedStatus {
+  status: 'success' | 'error';
+  errorIncludes?: string;
+}
+
+export interface ScenarioExpectations {
+  scenarios: Record<string, ScenarioExpectedStatus>;
+}
+
 export interface ScenarioRunSuccess {
   scenarioId: string;
   status: 'success';
@@ -37,6 +46,19 @@ export interface ScenarioRunError {
 }
 
 export type ScenarioRunResult = ScenarioRunSuccess | ScenarioRunError;
+
+export interface ScenarioExpectationMismatch {
+  scenarioId: string;
+  expected: ScenarioExpectedStatus | null;
+  actualStatus: ScenarioRunResult['status'] | null;
+  message: string;
+}
+
+export interface ScenarioExpectationValidation {
+  isValid: boolean;
+  checkedScenarioCount: number;
+  mismatches: ScenarioExpectationMismatch[];
+}
 
 export function runScenarios(input: ScenarioRunnerInput): ScenarioRunResult[] {
   return [...input.scenarios]
@@ -72,9 +94,86 @@ export function loadScenarioFixture(filePath: string): ScenarioRunnerInput {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as ScenarioRunnerInput;
 }
 
+export function loadScenarioExpectations(filePath: string): ScenarioExpectations {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as ScenarioExpectations;
+}
+
+export function validateScenarioExpectations(
+  results: ScenarioRunResult[],
+  expectations: ScenarioExpectations,
+): ScenarioExpectationValidation {
+  const resultsById = new Map(results.map((result) => [result.scenarioId, result]));
+  const mismatches: ScenarioExpectationMismatch[] = [];
+
+  for (const [scenarioId, expected] of Object.entries(expectations.scenarios).sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    const actual = resultsById.get(scenarioId);
+
+    if (actual === undefined) {
+      mismatches.push({
+        scenarioId,
+        expected,
+        actualStatus: null,
+        message: `Expected scenario ${scenarioId} was not run.`,
+      });
+      continue;
+    }
+
+    if (actual.status !== expected.status) {
+      mismatches.push({
+        scenarioId,
+        expected,
+        actualStatus: actual.status,
+        message: `Scenario ${scenarioId} expected ${expected.status} but got ${actual.status}.`,
+      });
+      continue;
+    }
+
+    if (
+      expected.status === 'error' &&
+      expected.errorIncludes !== undefined &&
+      actual.status === 'error' &&
+      !actual.error.includes(expected.errorIncludes)
+    ) {
+      mismatches.push({
+        scenarioId,
+        expected,
+        actualStatus: actual.status,
+        message: `Scenario ${scenarioId} error did not include expected text: ${expected.errorIncludes}.`,
+      });
+    }
+  }
+
+  for (const result of results) {
+    if (expectations.scenarios[result.scenarioId] === undefined) {
+      mismatches.push({
+        scenarioId: result.scenarioId,
+        expected: null,
+        actualStatus: result.status,
+        message: `Scenario ${result.scenarioId} ran without an expected status entry.`,
+      });
+    }
+  }
+
+  return {
+    isValid: mismatches.length === 0,
+    checkedScenarioCount: Object.keys(expectations.scenarios).length,
+    mismatches,
+  };
+}
+
 if (require.main === module) {
   const fixturePath =
     process.argv[2] ?? path.join(process.cwd(), 'tests', 'fixtures', 'scenarios.json');
   const results = runScenarios(loadScenarioFixture(fixturePath));
-  process.stdout.write(`${JSON.stringify({ results }, null, 2)}\n`);
+  const expectationsPath = process.argv[3];
+  const expectationValidation =
+    expectationsPath === undefined
+      ? undefined
+      : validateScenarioExpectations(results, loadScenarioExpectations(expectationsPath));
+  if (expectationValidation !== undefined && !expectationValidation.isValid) {
+    process.exitCode = 1;
+  }
+  process.stdout.write(`${JSON.stringify({ results, expectationValidation }, null, 2)}\n`);
 }
