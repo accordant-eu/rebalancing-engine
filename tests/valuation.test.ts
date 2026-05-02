@@ -191,4 +191,46 @@ describe('Valuation and Weight Calculation', () => {
       'Cash flows exceed total portfolio value',
     );
   });
+
+  it('accepts holdings with tax lots that aggregate to holding quantity', () => {
+    const state: PortfolioState = {
+      accountId: 'tax-lot-valid-1',
+      cash: 0,
+      holdings: [
+        {
+          instrumentId: 'AAPL',
+          quantity: 10,
+          taxLots: [
+            { lotId: 'lot-1', quantity: 4, acquisitionDate: '2024-01-01', unitCost: 90 },
+            { lotId: 'lot-2', quantity: 6, acquisitionDate: '2025-01-01', unitCost: 110 },
+          ],
+        },
+      ],
+    };
+
+    const valuation = calculateValuation(state, { prices: { AAPL: 100 } });
+
+    expect(valuation.totalHoldingsValue).toBe(1000);
+  });
+
+  it('rejects tax lots that do not aggregate to holding quantity', () => {
+    const state: PortfolioState = {
+      accountId: 'tax-lot-invalid-1',
+      cash: 0,
+      holdings: [
+        {
+          instrumentId: 'AAPL',
+          quantity: 10,
+          taxLots: [
+            { lotId: 'lot-1', quantity: 4 },
+            { lotId: 'lot-2', quantity: 5 },
+          ],
+        },
+      ],
+    };
+
+    expect(() => calculateValuation(state, { prices: { AAPL: 100 } })).toThrow(
+      'Tax lot quantities do not sum to holding quantity for instrument: AAPL',
+    );
+  });
 });

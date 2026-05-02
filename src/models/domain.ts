@@ -8,6 +8,14 @@
 export interface Holding {
   instrumentId: string;
   quantity: number;
+  taxLots?: TaxLot[];
+}
+
+export interface TaxLot {
+  lotId: string;
+  quantity: number;
+  acquisitionDate?: string;
+  unitCost?: number;
 }
 
 export type CashFlowDirection = 'DEPOSIT' | 'WITHDRAWAL';
@@ -49,6 +57,8 @@ export type ExecutionTargetMode = 'full_reset' | 'boundary';
 
 export type BoundaryBandMode = 'absolute' | 'relative';
 
+export type SellSelectionMode = 'FIFO' | 'LIFO' | 'HIGHEST_COST' | 'LOWEST_COST';
+
 export interface CalendarRebalancingConfig {
   evaluationDate: string; // ISO date string; supplied by caller, never read from system time
   nextRebalanceDate: string; // ISO date string
@@ -62,6 +72,8 @@ export interface RebalancingPolicy {
   executionTargetMode?: ExecutionTargetMode;
   // Boundary sizing defaults to absolute bands. Relative mode requires relativeDriftTolerance.
   boundaryBandMode?: BoundaryBandMode;
+  // Generic lot allocation mode for sell trades. Defaults to FIFO when lots are supplied.
+  sellSelectionMode?: SellSelectionMode;
   // Global absolute drift tolerance (e.g., 0.05 for 5%)
   absoluteDriftTolerance: number;
   // Global relative drift tolerance (e.g., 0.20 for 20% of target) - Optional
@@ -90,6 +102,15 @@ export interface ProposedTrade {
   quantity: number;
   estimatedPrice: number;
   estimatedValue: number;
+  lotAllocations?: ProposedLotAllocation[];
+}
+
+export interface ProposedLotAllocation {
+  lotId: string;
+  quantity: number;
+  estimatedValue: number;
+  unitCost?: number;
+  acquisitionDate?: string;
 }
 
 export type ProposalWarningCode = 'MINIMUM_TRADE_SIZE' | 'PENDING_CASH_FLOW_EXCLUDED';
