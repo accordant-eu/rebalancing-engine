@@ -19,6 +19,7 @@ export class ManualRebalanceStrategy implements StrategyInterface {
     return {
       isTriggered: true,
       reason: 'Manual rebalance requested.',
+      strategyType: 'manual',
     };
   }
 }

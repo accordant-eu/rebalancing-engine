@@ -4,7 +4,11 @@ import { calculateDrift, validateTargetAllocation } from '../src/core/drift';
 import { simulatePostTrade } from '../src/core/simulation';
 import { generateExplanation } from '../src/explanation';
 import { runScenarios } from '../src/runner';
-import { ManualRebalanceStrategy, ThresholdStrategy } from '../src/strategy';
+import {
+  CalendarRebalanceStrategy,
+  ManualRebalanceStrategy,
+  ThresholdStrategy,
+} from '../src/strategy';
 
 /**
  * Structural smoke tests: verify that core modules are importable and return
@@ -62,6 +66,11 @@ describe('Smoke Test — Core Module Imports', () => {
 
   it('ManualRebalanceStrategy is importable and implements evaluateTrigger', () => {
     const strategy = new ManualRebalanceStrategy();
+    expect(typeof strategy.evaluateTrigger).toBe('function');
+  });
+
+  it('CalendarRebalanceStrategy is importable and implements evaluateTrigger', () => {
+    const strategy = new CalendarRebalanceStrategy();
     expect(typeof strategy.evaluateTrigger).toBe('function');
   });
 

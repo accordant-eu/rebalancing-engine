@@ -198,6 +198,95 @@
         "absoluteDriftTolerance": 0.05,
         "minimumTradeSize": 0
       }
+    },
+    {
+      "id": "calendar_due",
+      "description": "Calendar strategy scenario due for scheduled rebalance",
+      "portfolioState": {
+        "accountId": "acc-9",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 120 },
+          { "instrumentId": "MSFT", "quantity": 80 }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 150, "MSFT": 150 }
+      },
+      "policy": {
+        "strategyType": "calendar",
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0,
+        "calendar": {
+          "evaluationDate": "2026-05-02",
+          "nextRebalanceDate": "2026-05-01",
+          "frequency": "quarterly"
+        }
+      }
+    },
+    {
+      "id": "calendar_not_due",
+      "description": "Calendar strategy scenario not yet due for scheduled rebalance",
+      "portfolioState": {
+        "accountId": "acc-10",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 120 },
+          { "instrumentId": "MSFT", "quantity": 80 }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 150, "MSFT": 150 }
+      },
+      "policy": {
+        "strategyType": "calendar",
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0,
+        "calendar": {
+          "evaluationDate": "2026-05-02",
+          "nextRebalanceDate": "2026-06-01",
+          "frequency": "quarterly"
+        }
+      }
+    },
+    {
+      "id": "threshold_boundary_target",
+      "description": "Threshold strategy using boundary execution target instead of full reset",
+      "portfolioState": {
+        "accountId": "acc-11",
+        "cash": 0,
+        "holdings": [
+          { "instrumentId": "AAPL", "quantity": 120 },
+          { "instrumentId": "MSFT", "quantity": 80 }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "AAPL", "weight": 0.5 },
+          { "instrumentId": "MSFT", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "AAPL": 150, "MSFT": 150 }
+      },
+      "policy": {
+        "strategyType": "threshold",
+        "executionTargetMode": "boundary",
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 0
+      }
     }
   ]
 }

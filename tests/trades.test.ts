@@ -206,4 +206,32 @@ describe('Trade Proposal Generation', () => {
       expect(warning.message).toContain('below minimum trade size');
     }
   });
+
+  it('generates boundary-target trades when configured for proportional-cost threshold execution', () => {
+    const scenario = scenarioById('threshold_boundary_target');
+    const valuation = calculateValuation(scenario.portfolioState, scenario.priceSnapshot);
+
+    const proposal = generateTradeProposal(
+      valuation,
+      scenario.targetAllocation,
+      scenario.priceSnapshot,
+      scenario.policy,
+    );
+
+    expect(proposal.executionTargetMode).toBe('boundary');
+    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'MSFT']);
+
+    const aapl = findTrade(proposal.trades, 'AAPL');
+    expect(aapl.direction).toBe('SELL');
+    expect(aapl.estimatedValue).toBeCloseTo(1500, 8);
+    expect(aapl.quantity).toBeCloseTo(10, 8);
+
+    const msft = findTrade(proposal.trades, 'MSFT');
+    expect(msft.direction).toBe('BUY');
+    expect(msft.estimatedValue).toBeCloseTo(1500, 8);
+    expect(msft.quantity).toBeCloseTo(10, 8);
+
+    expect(proposal.estimatedPostTradeCash).toBeCloseTo(0, 8);
+    expect(proposal.warnings).toEqual([]);
+  });
 });

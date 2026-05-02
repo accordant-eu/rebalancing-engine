@@ -1,4 +1,5 @@
 import {
+  ExecutionTargetMode,
   PriceSnapshot,
   ProposedTrade,
   ProposalWarning,
@@ -29,6 +30,7 @@ export function generateTradeProposal(
     throw new Error('Cannot generate trade proposal for negative cash balance');
   }
 
+  const executionTargetMode = policy?.executionTargetMode ?? 'full_reset';
   const targetWeights = new Map(target.targets.map((t) => [t.instrumentId, t.weight]));
   const currentValues = new Map(valuation.holdings.map((h) => [h.instrumentId, h.marketValue]));
 
@@ -41,7 +43,13 @@ export function generateTradeProposal(
 
   for (const instrumentId of instrumentIds) {
     const currentValue = currentValues.get(instrumentId) ?? 0;
-    const targetValue = (targetWeights.get(instrumentId) ?? 0) * valuation.totalPortfolioValue;
+    const targetValue = calculateTargetValue(
+      currentValue,
+      targetWeights.get(instrumentId) ?? 0,
+      valuation.totalPortfolioValue,
+      policy,
+      executionTargetMode,
+    );
     const valueDelta = targetValue - currentValue;
 
     if (Math.abs(valueDelta) <= TRADE_EPSILON) {
@@ -75,6 +83,7 @@ export function generateTradeProposal(
       trades,
       estimatedPostTradeCash: valuation.cash + netCashDelta,
       warnings: [],
+      executionTargetMode,
     },
     valuation.cash,
     policy?.minimumTradeSize ?? 0,
@@ -120,5 +129,35 @@ export function applyMinimumTradeSize(
     trades,
     estimatedPostTradeCash,
     warnings,
+    executionTargetMode: proposal.executionTargetMode,
   };
+}
+
+function calculateTargetValue(
+  currentValue: number,
+  targetWeight: number,
+  totalPortfolioValue: number,
+  policy: RebalancingPolicy | undefined,
+  executionTargetMode: ExecutionTargetMode,
+): number {
+  if (executionTargetMode === 'full_reset') {
+    return targetWeight * totalPortfolioValue;
+  }
+
+  if (policy === undefined) {
+    throw new Error('Boundary execution target mode requires a rebalancing policy');
+  }
+
+  const currentWeight = totalPortfolioValue === 0 ? 0 : currentValue / totalPortfolioValue;
+  const lowerBoundary = Math.max(0, targetWeight - policy.absoluteDriftTolerance);
+  const upperBoundary = Math.min(1, targetWeight + policy.absoluteDriftTolerance);
+
+  if (currentWeight > upperBoundary) {
+    return upperBoundary * totalPortfolioValue;
+  }
+  if (currentWeight < lowerBoundary) {
+    return lowerBoundary * totalPortfolioValue;
+  }
+
+  return currentValue;
 }

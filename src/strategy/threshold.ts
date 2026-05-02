@@ -18,6 +18,7 @@ export class ThresholdStrategy implements StrategyInterface {
       return {
         isTriggered: false,
         reason: null,
+        strategyType: 'threshold',
       };
     }
 
@@ -28,6 +29,10 @@ export class ThresholdStrategy implements StrategyInterface {
     return {
       isTriggered: true,
       reason: `Breached tolerance bands for: ${breachDescriptions.join(', ')}. Policy absolute tolerance: ${(policy.absoluteDriftTolerance * 100).toFixed(2)}%.`,
+      strategyType: 'threshold',
+      metadata: {
+        breachCount: breaches.length,
+      },
     };
   }
 }

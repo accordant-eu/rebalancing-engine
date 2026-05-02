@@ -129,6 +129,7 @@ describe('Post-Trade Simulation', () => {
       ],
       estimatedPostTradeCash: 200,
       warnings: [],
+      executionTargetMode: 'full_reset',
     };
 
     expect(() => simulatePostTrade(state, prices, target, policy, proposal)).toThrow(
@@ -155,5 +156,33 @@ describe('Post-Trade Simulation', () => {
         { ...proposal, estimatedPostTradeCash: 1 },
       ),
     ).toThrow('Simulated cash does not reconcile with proposal estimated post-trade cash');
+  });
+
+  it('simulates boundary-target trades with residual drift inside tolerance', () => {
+    const scenario = scenarioById('threshold_boundary_target');
+    const valuation = calculateValuation(scenario.portfolioState, scenario.priceSnapshot);
+    const proposal = generateTradeProposal(
+      valuation,
+      scenario.targetAllocation,
+      scenario.priceSnapshot,
+      scenario.policy,
+    );
+
+    const simulation = simulatePostTrade(
+      scenario.portfolioState,
+      scenario.priceSnapshot,
+      scenario.targetAllocation,
+      scenario.policy,
+      proposal,
+    );
+
+    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'AAPL');
+    const msft = simulation.residualDrift.find((drift) => drift.instrumentId === 'MSFT');
+
+    expect(aapl?.currentWeight).toBeCloseTo(0.55, 8);
+    expect(aapl?.isOutOfBand).toBe(false);
+    expect(msft?.currentWeight).toBeCloseTo(0.45, 8);
+    expect(msft?.isOutOfBand).toBe(false);
+    expect(simulation.turnover).toBeCloseTo(0.05, 8);
   });
 });

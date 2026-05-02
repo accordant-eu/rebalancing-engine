@@ -34,6 +34,9 @@ describe('Domain Fixtures', () => {
       'missing_price',
       'target_allocation_sum_error',
       'holding_outside_universe',
+      'calendar_due',
+      'calendar_not_due',
+      'threshold_boundary_target',
     ];
 
     const actualIds = scenarios.map((s) => s.id);
@@ -50,6 +53,11 @@ describe('Domain Fixtures', () => {
       expect(Array.isArray(scenario.targetAllocation.targets)).toBe(true);
       expect(typeof scenario.priceSnapshot.prices).toBe('object');
       expect(typeof scenario.policy.absoluteDriftTolerance).toBe('number');
+      if (scenario.policy.strategyType === 'calendar') {
+        expect(scenario.policy.calendar).toBeDefined();
+        expect(typeof scenario.policy.calendar?.evaluationDate).toBe('string');
+        expect(typeof scenario.policy.calendar?.nextRebalanceDate).toBe('string');
+      }
     });
   });
 });

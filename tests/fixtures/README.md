@@ -12,6 +12,9 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - `missing_price`: Portfolio contains an instrument without a price. Expected result: valuation aborts with an explicit missing-price error.
 - `target_allocation_sum_error`: Target weights sum to 110%. Expected result: target validation aborts before drift or trade proposal generation.
 - `holding_outside_universe`: Portfolio holds TSLA while target allocation only includes AAPL. Expected result: TSLA is treated as target weight zero and proposed for sale in full-reset trade generation.
+- `calendar_due`: Calendar strategy with an evaluation date on or after the next rebalance date. Expected result: calendar trigger, full-reset proposal, and calendar strategy metadata in audit output.
+- `calendar_not_due`: Calendar strategy with an evaluation date before the next rebalance date. Expected result: no trigger, no trades, and calendar strategy metadata in audit output.
+- `threshold_boundary_target`: Threshold strategy with `executionTargetMode: "boundary"`. Expected result: trade to the nearest absolute tolerance boundary instead of fully resetting to target.
 
 ## Fixture Assumptions
 
@@ -20,3 +23,6 @@ All fixtures are synthetic and offline. They are designed to exercise determinis
 - Fractional quantities are allowed in MVP proposal output.
 - Cash is included in total portfolio value but is not represented as a target asset.
 - Negative cash is not represented as a reusable fixture because Slice 6 treats it as invalid for trade proposal generation and tests it inline.
+- `strategyType` defaults to `threshold` when omitted for backward compatibility.
+- Calendar strategy uses caller-supplied date strings in policy configuration. It does not read system time and does not model holidays or business-day calendars.
+- Boundary-target execution currently uses absolute tolerance bands only. Full transaction-cost-aware no-trade-region optimization remains out of scope.

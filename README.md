@@ -4,9 +4,9 @@ A generic, deterministic portfolio rebalancing engine. Built in TypeScript/Node.
 
 ## Overview
 
-The engine evaluates portfolio drift against a target allocation, applies tolerance-band threshold logic, produces deterministic full-reset trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
+The engine evaluates portfolio drift against a target allocation, selects a configured strategy, produces deterministic trade proposals with minimum-trade warnings, simulates post-trade portfolio state, generates deterministic explanations, and emits replayable audit records. It is designed for auditability and reproducibility (MiFID II alignment).
 
-**Current status:** MVP Slices 0–12 implemented and validated for the offline deterministic fixture scope. Post-MVP work remains for production precision, rounding, live integrations, richer policy configuration, and expected-status runner manifests.
+**Current status:** Offline deterministic MVP plus the next multi-strategy iteration are implemented for synthetic fixtures. Supported strategies are threshold/tolerance-band, calendar due-date, and manual forced rebalance. Threshold policies support `full_reset` and `boundary` execution target modes. Post-MVP work remains for production precision, rounding, live integrations, expected-status runner manifests, full transaction-cost optimization, tax-lot logic, and richer cash-flow workflows.
 
 ## Documentation
 
@@ -15,6 +15,10 @@ The engine evaluates portfolio drift against a target allocation, applies tolera
 - [`docs/MVP_Implementation_Plan.md`](docs/MVP_Implementation_Plan.md) — Slice-by-slice implementation plan.
 - [`docs/audits/`](docs/audits/) — Audit reports (red-team audit, test-case audit).
 - [`docs/audits/final-mvp-audit.md`](docs/audits/final-mvp-audit.md) — Final MVP status, validation, and known limitations.
+- [`docs/audits/next-iteration-mvp-audit.md`](docs/audits/next-iteration-mvp-audit.md) — Multi-strategy iteration status, validation, and known limitations.
+- [`docs/strategy-traceability/full-chain-rebalancing-strategy-review.md`](docs/strategy-traceability/full-chain-rebalancing-strategy-review.md) — Research-to-implementation strategy traceability.
+- [`docs/prd/rebalancing-engine-next-iteration-prd.md`](docs/prd/rebalancing-engine-next-iteration-prd.md) — Next-iteration PRD.
+- [`docs/plans/rebalancing-engine-next-iteration-mvp-plan.md`](docs/plans/rebalancing-engine-next-iteration-mvp-plan.md) — Next-iteration implementation plan.
 - `docs/` — Background research and PRD.
 
 ## Getting Started
@@ -62,7 +66,7 @@ npm run format
 npm run scenario:run
 ```
 
-Builds the project and runs all synthetic fixture scenarios through valuation, drift, trigger evaluation, proposal generation, simulation, explanation, and audit record generation. Invalid fixtures are reported as deterministic per-scenario errors instead of aborting the batch.
+Builds the project and runs all synthetic fixture scenarios through valuation, drift, policy-driven strategy selection, trigger evaluation, proposal generation, simulation, explanation, and audit record generation. Invalid fixtures are reported as deterministic per-scenario errors instead of aborting the batch.
 
 ## Project Structure
 
@@ -73,10 +77,12 @@ Builds the project and runs all synthetic fixture scenarios through valuation, d
 │   ├── core/
 │   │   ├── valuation.ts       # Market value and weight calculation
 │   │   ├── drift.ts           # Drift calculation and target validation
+│   │   ├── evaluation.ts      # Policy-driven strategy orchestration
 │   │   ├── trades.ts          # Deterministic full-reset trade proposal generation
 │   │   └── simulation.ts      # Post-trade holdings, weights, residual drift, turnover
 │   ├── strategy/
 │   │   ├── threshold.ts       # Threshold-band trigger strategy
+│   │   ├── calendar.ts        # Calendar due-date trigger strategy
 │   │   └── manual.ts          # Manual forced-rebalance strategy
 │   ├── explanation/
 │   │   └── explanation.ts     # Deterministic recommendation explanations
@@ -93,6 +99,7 @@ Builds the project and runs all synthetic fixture scenarios through valuation, d
 │   ├── valuation.test.ts      # Valuation and weight tests
 │   ├── drift.test.ts          # Drift calculation tests
 │   ├── threshold.test.ts      # Threshold strategy tests
+│   ├── calendar-strategy.test.ts # Calendar strategy tests
 │   ├── manual-strategy.test.ts # Manual strategy tests
 │   ├── trades.test.ts         # Trade proposal generation tests
 │   ├── simulation.test.ts     # Post-trade simulation tests

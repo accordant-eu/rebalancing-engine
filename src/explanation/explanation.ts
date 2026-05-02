@@ -14,15 +14,16 @@ export function generateExplanation(
   proposal: TradeProposal,
   simulation?: PostTradeSimulation,
 ): RecommendationExplanation {
-  const summary = buildSummary(trigger, proposal);
+  const summary = buildSummary(trigger, proposal, simulation);
+  const strategyPrefix = `Strategy ${trigger.strategyType}`;
   const triggerExplanation = trigger.isTriggered
-    ? `Rebalance was triggered: ${trigger.reason ?? 'one or more policy thresholds were breached.'}`
-    : 'No rebalance was triggered because all measured drift is within policy tolerance.';
+    ? `${strategyPrefix} triggered rebalance: ${trigger.reason ?? 'one or more policy thresholds were breached.'}`
+    : `${strategyPrefix} did not trigger rebalance. No rebalance was triggered because the strategy conditions were not met.`;
 
   const tradeExplanation =
     proposal.trades.length === 0
       ? 'No trades are proposed.'
-      : `Proposed trades: ${proposal.trades
+      : `Proposed ${proposal.executionTargetMode} trades: ${proposal.trades
           .map(
             (trade) =>
               `${trade.direction} ${trade.quantity.toFixed(6)} ${trade.instrumentId} for approximately ${trade.estimatedValue.toFixed(2)}`,
@@ -43,8 +44,17 @@ export function generateExplanation(
   };
 }
 
-function buildSummary(trigger: TriggerResult, proposal: TradeProposal): string {
+function buildSummary(
+  trigger: TriggerResult,
+  proposal: TradeProposal,
+  simulation?: PostTradeSimulation,
+): string {
   if (!trigger.isTriggered && proposal.trades.length === 0) {
+    const hasResidualOutOfBandDrift =
+      simulation?.residualDrift.some((drift) => drift.isOutOfBand) ?? false;
+    if (hasResidualOutOfBandDrift) {
+      return 'Strategy did not trigger; no rebalance is recommended.';
+    }
     return 'Portfolio is within tolerance; no rebalance is recommended.';
   }
   if (proposal.trades.length === 0 && proposal.warnings.length > 0) {

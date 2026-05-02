@@ -77,6 +77,8 @@ describe('Audit Record', () => {
     expect(record.inputs.targetAllocation).toEqual(evaluation.scenario.targetAllocation);
     expect(record.inputs.priceSnapshot).toEqual(evaluation.scenario.priceSnapshot);
     expect(record.inputs.policy).toEqual(evaluation.scenario.policy);
+    expect(record.outputs.strategyType).toBe('threshold');
+    expect(record.outputs.executionTargetMode).toBe('full_reset');
     expect(record.outputs.tradeProposal).toEqual(evaluation.tradeProposal);
     expect(record.outputs.explanation.summary).toContain('2 proposed trades');
 

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { calculateDrift } from '../src/core/drift';
+import { evaluateRebalance } from '../src/core/evaluation';
 import { simulatePostTrade } from '../src/core/simulation';
 import { generateTradeProposal } from '../src/core/trades';
 import { calculateCurrentWeights, calculateValuation } from '../src/core/valuation';
@@ -38,6 +39,7 @@ describe('Manual Rebalance Strategy', () => {
     expect(trigger).toEqual({
       isTriggered: true,
       reason: 'Manual rebalance requested.',
+      strategyType: 'manual',
     });
     expect(proposal.trades).toEqual([]);
   });
@@ -70,5 +72,25 @@ describe('Manual Rebalance Strategy', () => {
     expect(proposal.trades.map((trade) => trade.direction)).toEqual(['BUY', 'BUY']);
     expect(simulation.postTradeState.cash).toBe(0);
     expect(explanation.triggerExplanation).toContain('Manual rebalance requested');
+  });
+
+  it('can be selected through the shared evaluation workflow', () => {
+    const scenario = scenarioById('on_target');
+
+    const evaluation = evaluateRebalance({
+      eventId: 'manual-selected-test',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: scenario.portfolioState,
+      targetAllocation: scenario.targetAllocation,
+      priceSnapshot: scenario.priceSnapshot,
+      policy: {
+        ...scenario.policy,
+        strategyType: 'manual',
+      },
+    });
+
+    expect(evaluation.trigger.strategyType).toBe('manual');
+    expect(evaluation.trigger.isTriggered).toBe(true);
+    expect(evaluation.auditRecord.outputs.strategyType).toBe('manual');
   });
 });

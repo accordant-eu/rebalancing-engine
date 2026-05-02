@@ -35,6 +35,8 @@ export interface AuditRecord {
     policy: RebalancingPolicy;
   };
   outputs: {
+    strategyType: TriggerResult['strategyType'];
+    executionTargetMode: TradeProposal['executionTargetMode'];
     driftMeasurements: DriftMeasurement[];
     trigger: TriggerResult;
     tradeProposal: TradeProposal;
@@ -55,6 +57,8 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
       policy: input.policy,
     },
     outputs: {
+      strategyType: input.trigger.strategyType,
+      executionTargetMode: input.tradeProposal.executionTargetMode,
       driftMeasurements: input.driftMeasurements,
       trigger: input.trigger,
       tradeProposal: input.tradeProposal,

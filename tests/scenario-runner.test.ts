@@ -12,6 +12,8 @@ describe('Scenario Runner', () => {
 
     expect(first).toEqual(second);
     expect(first.map((result) => result.scenarioId)).toEqual([
+      'calendar_due',
+      'calendar_not_due',
       'holding_outside_universe',
       'min_trade_size_issue',
       'missing_price',
@@ -20,6 +22,7 @@ describe('Scenario Runner', () => {
       'one_asset_out_of_band',
       'positive_cash',
       'target_allocation_sum_error',
+      'threshold_boundary_target',
     ]);
   });
 
@@ -28,7 +31,7 @@ describe('Scenario Runner', () => {
     const successes = results.filter((result) => result.status === 'success');
     const errors = results.filter((result) => result.status === 'error');
 
-    expect(successes).toHaveLength(6);
+    expect(successes).toHaveLength(9);
     expect(errors).toHaveLength(2);
 
     const success = successes.find((result) => result.scenarioId === 'one_asset_out_of_band');
@@ -51,6 +54,21 @@ describe('Scenario Runner', () => {
     expect(targetError?.status).toBe('error');
     if (targetError?.status === 'error') {
       expect(targetError.error).toContain('Target allocation does not sum to 100%');
+    }
+
+    const calendarDue = successes.find((result) => result.scenarioId === 'calendar_due');
+    expect(calendarDue?.status).toBe('success');
+    if (calendarDue?.status === 'success') {
+      expect(calendarDue.auditRecord.outputs.strategyType).toBe('calendar');
+      expect(calendarDue.auditRecord.outputs.trigger.isTriggered).toBe(true);
+    }
+
+    const calendarNotDue = successes.find((result) => result.scenarioId === 'calendar_not_due');
+    expect(calendarNotDue?.status).toBe('success');
+    if (calendarNotDue?.status === 'success') {
+      expect(calendarNotDue.auditRecord.outputs.strategyType).toBe('calendar');
+      expect(calendarNotDue.auditRecord.outputs.trigger.isTriggered).toBe(false);
+      expect(calendarNotDue.auditRecord.outputs.tradeProposal.trades).toEqual([]);
     }
   });
 });
