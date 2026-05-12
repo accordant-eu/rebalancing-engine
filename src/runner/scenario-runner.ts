@@ -89,11 +89,31 @@ export function runScenario(scenario: ScenarioFixture, createdAt?: string): Scen
 }
 
 export function loadScenarioFixture(filePath: string): ScenarioRunnerInput {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as ScenarioRunnerInput;
+  return readRunnerJsonFile<ScenarioRunnerInput>(filePath);
 }
 
 export function loadScenarioExpectations(filePath: string): ScenarioExpectations {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as ScenarioExpectations;
+  return readRunnerJsonFile<ScenarioExpectations>(filePath);
+}
+
+function readRunnerJsonFile<T>(filePath: string): T {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let raw: any;
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (e: any) {
+    if (e?.code === 'ENOENT') throw new Error(`Runner: file not found: ${filePath}`);
+    throw e;
+  }
+  if (typeof raw === 'string' && raw.trim() === '') {
+    throw new Error(`Runner: file is empty: ${filePath}`);
+  }
+  try {
+    return JSON.parse(raw as string) as T;
+  } catch (e: any) {
+    if (e instanceof SyntaxError) throw new Error(`Runner: invalid JSON in ${filePath}: ${e.message}`);
+    throw e;
+  }
 }
 
 export function validateScenarioExpectations(
@@ -162,16 +182,21 @@ export function validateScenarioExpectations(
 }
 
 if (require.main === module) {
-  const fixturePath =
-    process.argv[2] ?? path.join(process.cwd(), 'tests', 'fixtures', 'scenarios.json');
-  const results = runScenarios(loadScenarioFixture(fixturePath));
-  const expectationsPath = process.argv[3];
-  const expectationValidation =
-    expectationsPath === undefined
-      ? undefined
-      : validateScenarioExpectations(results, loadScenarioExpectations(expectationsPath));
-  if (expectationValidation !== undefined && !expectationValidation.isValid) {
+  try {
+    const fixturePath =
+      process.argv[2] ?? path.join(process.cwd(), 'tests', 'fixtures', 'scenarios.json');
+    const results = runScenarios(loadScenarioFixture(fixturePath));
+    const expectationsPath = process.argv[3];
+    const expectationValidation =
+      expectationsPath === undefined
+        ? undefined
+        : validateScenarioExpectations(results, loadScenarioExpectations(expectationsPath));
+    if (expectationValidation !== undefined && !expectationValidation.isValid) {
+      process.exitCode = 1;
+    }
+    process.stdout.write(`${JSON.stringify({ results, expectationValidation }, null, 2)}\n`);
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   }
-  process.stdout.write(`${JSON.stringify({ results, expectationValidation }, null, 2)}\n`);
 }

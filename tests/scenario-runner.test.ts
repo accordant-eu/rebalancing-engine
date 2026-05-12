@@ -1,7 +1,9 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import {
   loadScenarioExpectations,
+  loadScenarioFixture,
   runScenario,
   runScenarios,
   validateScenarioExpectations,
@@ -227,5 +229,34 @@ describe('Scenario Runner', () => {
       'threshold_boundary_target',
       'threshold_relative_boundary_target',
     ]);
+  });
+});
+
+describe('loadScenarioFixture error handling', () => {
+  it('throws a structured error for a missing file', () => {
+    expect(() => loadScenarioFixture('/nonexistent/path/scenarios.json')).toThrow(
+      'Runner: file not found:',
+    );
+  });
+
+  it('throws a structured error for malformed JSON', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'runner-test-'));
+    const badFile = path.join(tmpDir, 'bad.json');
+    fs.writeFileSync(badFile, '{not valid json');
+
+    expect(() => loadScenarioFixture(badFile)).toThrow('Runner: invalid JSON in');
+  });
+
+  it('throws a structured error for an empty file', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'runner-test-'));
+    const emptyFile = path.join(tmpDir, 'empty.json');
+    fs.writeFileSync(emptyFile, '   ');
+
+    expect(() => loadScenarioFixture(emptyFile)).toThrow('Runner: file is empty:');
+  });
+
+  it('loads a valid fixture file without error', () => {
+    const input = loadScenarioFixture(path.join(__dirname, 'fixtures', 'scenarios.json'));
+    expect(input.scenarios.length).toBeGreaterThan(0);
   });
 });
