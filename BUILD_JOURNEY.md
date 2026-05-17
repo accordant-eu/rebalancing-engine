@@ -1892,3 +1892,20 @@ When the PRD / Architecture document is provided, the agent should complete the 
 - [ ] Convert requirements into implementation phases.
 - [ ] Convert MVP scope into epics and tasks.
 - [ ] Identify proof points for each cycle.
+
+### Iteration 26 Detail — Audit Remediation
+
+**Goal:** Address findings from the independent full-chain audit, improve documentation accuracy, and add automated CI.
+
+**Scope:** Code fixes for timestamps and calendar validation, runner error handling, roadmap update, and GitHub Actions CI workflow.
+
+**Decisions Made:**
+- Inject `createdAt` timestamps instead of hardcoding `RUNNER_CREATED_AT` and `CLI_CREATED_AT` (H-01).
+- Add ISO-date validation guard to `CalendarRebalanceStrategy` to prevent timezone-related bugs from `Date.parse` (M-01).
+- Add graceful error handling for missing/invalid fixture files in the scenario runner (M-03).
+- Update the roadmap scenario count from 18 to 26 (H-03).
+- Implement a GitHub Actions workflow for automated CI checks on push/PR (H-02).
+
+**Validation:**
+- Local tests pass `npm test`, `npx tsc --noEmit`, `npm run lint`.
+- GitHub Actions CI workflow created and ready to be triggered.

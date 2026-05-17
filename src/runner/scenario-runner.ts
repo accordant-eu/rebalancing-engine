@@ -97,12 +97,11 @@ export function loadScenarioExpectations(filePath: string): ScenarioExpectations
 }
 
 function readRunnerJsonFile<T>(filePath: string): T {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let raw: any;
   try {
     raw = fs.readFileSync(filePath, 'utf8');
   } catch (e: any) {
-    if (e?.code === 'ENOENT') throw new Error(`Runner: file not found: ${filePath}`);
+    if (e?.code === 'ENOENT') throw new Error(`Runner: file not found: ${filePath}`, { cause: e });
     throw e;
   }
   if (typeof raw === 'string' && raw.trim() === '') {
@@ -111,7 +110,7 @@ function readRunnerJsonFile<T>(filePath: string): T {
   try {
     return JSON.parse(raw as string) as T;
   } catch (e: any) {
-    if (e instanceof SyntaxError) throw new Error(`Runner: invalid JSON in ${filePath}: ${e.message}`);
+    if (e instanceof SyntaxError) throw new Error(`Runner: invalid JSON in ${filePath}: ${e.message}`, { cause: e });
     throw e;
   }
 }
