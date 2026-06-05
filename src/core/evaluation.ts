@@ -20,10 +20,12 @@ import {
 import { calculateDrift } from './drift';
 import { PostTradeSimulation, simulatePostTrade } from './simulation';
 import {
-  buildCashFlowProposalWarnings,
-  buildCashFlowScheduleProposalWarnings,
   generateTradeProposal,
 } from './trades';
+import {
+  buildCashFlowProposalWarnings,
+  buildCashFlowScheduleProposalWarnings,
+} from '../explanation/warnings';
 import {
   calculateCurrentWeights,
   calculateValuation,

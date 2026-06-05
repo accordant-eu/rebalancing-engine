@@ -387,3 +387,4 @@ CLI tests cover help wording and existing validation behavior.
 - Config files remain deferred.
 - Explicit-file stdin and `batch --scenarios -` remain deferred.
 - JSON output uses existing audit records as the stable machine-readable recommendation contract.
+- Output paths (`--output`, `--output-dir`) are not restricted or sanitized for path traversal. This is acceptable for local CLI use, but programmatic wrappers or services must enforce path restrictions before invoking the CLI.

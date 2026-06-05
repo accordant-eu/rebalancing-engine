@@ -52,20 +52,20 @@ Observed results:
 
 ## Known Limitations
 
-- Numeric calculations use JavaScript `number`; decimal arithmetic remains deferred.
+- Numeric calculations use Decimal.js internally, while public interfaces use JavaScript `number`. Decimal arithmetic is now implemented.
 - Fractional quantities are allowed; no share-rounding, lot-size, or order-type policy exists.
 - Turnover is defined as sell-side trade value divided by starting portfolio value.
 - Negative cash is rejected during trade proposal generation; withdrawal or deficit funding is not modeled.
 - Stale price timestamps are not modeled.
 - Policy supports only global minimum trade size, not account-specific or instrument-specific minimums.
-- Manual forced rebalance is the second strategy proof point for the original MVP. Calendar strategy support is covered by the next-iteration MVP audit.
+- Manual forced rebalance is the second strategy proof point for the original MVP. Calendar strategy support is now implemented and covered by the next-iteration MVP audit.
 - Runner reports invalid fixtures as per-scenario errors. Expected-status manifest validation is covered by the next-iteration MVP audit; output-file support remains deferred.
 - There are no live broker, custodian, market-data, OMS, database, REST API, UI, or cloud integrations.
 
 ## Deferred Decisions
 
-- Decimal arithmetic adoption should be revisited before production monetary outputs or rounding-sensitive workflows.
-- Calendar strategy date/time semantics should be specified before implementation.
+- Decimal arithmetic adoption was implemented after this audit.
+- Calendar strategy date/time semantics were specified and implemented after this audit.
 - Gross trade volume may be added separately if reporting requires it.
 - Audit event IDs may become content-addressed hashes if replay infrastructure needs stable deduplication.
 - Negative cash handling requires explicit withdrawal, margin, or deficit-funding requirements.

@@ -153,6 +153,8 @@ npm run cli -- inspect strategies
 npm run cli -- validate --scenario tests/fixtures/scenarios.json --scenario-id on_target
 ```
 
+Note: Because the project is written in TypeScript, you must run `npm run build` before executing the CLI binary or the scenario runner directly. Otherwise, you may run stale build artifacts from the `dist/` directory.
+
 Focused examples:
 
 ```bash

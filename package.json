@@ -1,6 +1,6 @@
 {
   "name": "rebalancing-engine",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "This repository contains the exploration and future implementation of a generic portfolio rebalancing engine.",
   "main": "dist/core/index.js",
   "bin": {
