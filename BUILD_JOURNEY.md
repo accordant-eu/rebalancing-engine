@@ -1909,3 +1909,21 @@ When the PRD / Architecture document is provided, the agent should complete the 
 **Validation:**
 - Local tests pass `npm test`, `npx tsc --noEmit`, `npm run lint`.
 - GitHub Actions CI workflow created and ready to be triggered.
+
+### Iteration 27 Detail — Final Audit Remediation
+
+**Goal:** Complete the remaining low and medium-severity findings from the independent full-chain audit.
+
+**Scope:** Code refactoring for module cohesion, package versioning, documentation updates for known limitations, and GitHub issue templates.
+
+**Decisions Made:**
+- Move `buildCashFlowProposalWarnings` and `buildCashFlowScheduleProposalWarnings` from `trades.ts` to `explanation/warnings.ts` to improve module cohesion (L-03).
+- Change package version to `0.9.0` to clarify pre-production status (M-04).
+- Document CLI path traversal absence as a known limitation for programmatic wrappers (M-05).
+- Update `final-mvp-audit.md` to reflect that Decimal.js and Calendar strategy support are now implemented (I-01).
+- Add standard GitHub issue templates for bug reports and feature requests (I-02).
+- Add a note in the developer guide that `npm run build` is required to avoid running stale CLI artifacts (I-03).
+- Finding L-02 (`roundAuditNumber` fragility) was intentionally deferred until new output fields are added, per the audit recommendation.
+
+**Validation:**
+- Local tests pass `npm test`, `npx tsc --noEmit`.
