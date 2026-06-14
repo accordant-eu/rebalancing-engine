@@ -8,11 +8,18 @@ import { AlpacaAdapter } from '../broker/alpaca';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../orchestrator';
 import { StdoutNotificationAdapter } from '../notifications';
 import { loadScenarioFixture } from '../runner';
+import { initDb } from '../db/sqlite';
+import { executeSeed } from './seed';
+import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { CommandContext, CommandResult } from './commands';
 import { UsageError } from './errors';
 import { ParsedArgs } from './options';
 
 export function executeAgent(parsed: ParsedArgs, _context: CommandContext): CommandResult {
+  if (parsed.subcommand === 'seed') {
+    return executeSeed(parsed, _context);
+  }
+
   if (parsed.subcommand !== 'start') {
     throw new UsageError(`Unknown agent command: ${parsed.subcommand}`);
   }
@@ -48,9 +55,10 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
 
     (async () => {
       try {
+        initDb();
         const livePortfolio = await adapter.getPortfolioState();
 
-        const stateManager = new MultiPortfolioStateManager();
+        const stateManager = new SqliteStateManager();
         stateManager.registerPortfolio(scenarioId, {
           portfolioState: {
             ...scenario.portfolioState,
@@ -144,31 +152,35 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
       }
     })();
   } else {
-    // DRY RUN SYNTHETIC MODE (MULTI-PORTFOLIO)
-    const stateManager = new MultiPortfolioStateManager();
-    const loadedScenarios = fixture.scenarios.slice(0, 5); // Load first 5 scenarios
-    
-    for (const s of loadedScenarios) {
-      stateManager.registerPortfolio(s.id, {
-        portfolioState: s.portfolioState,
-        priceSnapshot: s.priceSnapshot,
-        targetAllocation: s.targetAllocation,
-        policy: s.policy,
-      });
+    // DRY RUN SYNTHETIC MODE (MULTI-PORTFOLIO via SQLITE)
+    initDb();
+    const stateManager = new SqliteStateManager();
+    const loadedScenarios = fixture.scenarios.slice(0, 5); // Fallback if DB is empty
+
+    // We only load these fallback scenarios if the DB is empty
+    if (stateManager.getAllAccountIds().length === 0) {
+      for (const s of loadedScenarios) {
+        stateManager.registerPortfolio(s.id, {
+          portfolioState: s.portfolioState,
+          priceSnapshot: s.priceSnapshot,
+          targetAllocation: s.targetAllocation,
+          policy: s.policy,
+        });
+        stateManager.updateGlobalPrices(s.priceSnapshot.prices, s.priceSnapshot.asOf);
+      }
     }
+    
+    // Refresh the loaded scenario list from the DB
+    const allIds = stateManager.getAllAccountIds();
 
     const auditStorageAdapter = {
       saveAuditRecord: async (record: any) => {
         await auditStorage.saveAuditRecord(record);
-        if (record.trigger.isTriggered && record.postTradeSimulation) {
-          const accountId = record.eventId.split(':')[0];
-          const s = loadedScenarios.find(x => x.id === accountId);
-          if (s) {
-            stateManager.updatePortfolio(accountId, {
-              ...s.portfolioState,
-              ...record.postTradeSimulation.postTradeState
-            });
-          }
+        if (record.outputs?.trigger?.isTriggered && record.outputs?.postTradeSimulation) {
+          const accountId = record.accountId || record.eventId.split(':')[0];
+          // Update the persistent database directly
+          const postState = record.outputs.postTradeSimulation.postTradeState;
+          stateManager.updatePortfolio(accountId, postState);
         }
       }
     };
@@ -221,7 +233,7 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
     orchestrator.start();
 
     console.error(`Starting Live Agent in Dry-Run mode.`);
-    console.error(`Scenarios loaded: ${loadedScenarios.length}`);
+    console.error(`Scenarios loaded from DB: ${allIds.length}`);
     console.error(`Tick Interval: 1000ms`);
     console.error(`Cooldown: 10000ms`);
     console.error(`Press Ctrl+C to stop.\n`);

@@ -12,7 +12,22 @@ export interface LiveState {
   policy: RebalancingPolicy;
 }
 
-export class MultiPortfolioStateManager {
+export interface LiveStateManager {
+  registerPortfolio(accountId: string, state: LiveState): void;
+  updateGlobalPrices(prices: Record<string, number>, asOf?: string): void;
+  updatePortfolio(accountId: string, portfolioUpdate: Partial<PortfolioState>): void;
+  updateTarget(accountId: string, target: TargetAllocation): void;
+  updatePolicy(accountId: string, policy: RebalancingPolicy): void;
+  markTradeExecution(accountId: string, timestampMs: number): void;
+  getLastTradeTimeMs(accountId: string): number;
+  getAccountState(accountId: string): LiveState;
+  getAllAccountIds(): string[];
+  getAllStates(): Record<string, LiveState>;
+  getGlobalPrices(): PriceSnapshot;
+  isReady(accountId: string): boolean;
+}
+
+export class MultiPortfolioStateManager implements LiveStateManager {
   private globalPriceSnapshot: PriceSnapshot = { prices: {} };
   private portfolios: Map<string, LiveState> = new Map();
   private lastTradeTimes: Map<string, number> = new Map();

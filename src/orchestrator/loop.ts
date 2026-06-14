@@ -2,7 +2,7 @@ import { AuditStorageAdapter } from '../audit/storage';
 import { evaluateRebalance } from '../core/evaluation';
 import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
-import { MultiPortfolioStateManager } from './state';
+import { LiveStateManager } from './state';
 
 export interface OrchestratorConfig {
   cooldownMs: number; // e.g. 10 * 60 * 1000 for 10 minutes
@@ -12,7 +12,7 @@ export class Orchestrator {
   private isRunning: boolean = false;
 
   constructor(
-    private stateManager: MultiPortfolioStateManager,
+    private stateManager: LiveStateManager,
     private executor: Executor,
     private config: OrchestratorConfig,
     private auditStorage?: AuditStorageAdapter,

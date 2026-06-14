@@ -26,6 +26,7 @@ const STRING_OPTIONS = new Set([
   'scenarios',
   'target',
   'live',
+  'count',
 ]);
 
 const BOOLEAN_OPTIONS = new Set(['force', 'help', 'quiet', 'strict', 'verbose', 'version']);
