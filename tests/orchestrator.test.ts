@@ -1,4 +1,4 @@
-import { DryRunExecutor, LiveStateManager, Orchestrator } from '../src/orchestrator';
+import { DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../src/orchestrator';
 import { loadScenarioFixture } from '../src/runner';
 import * as path from 'path';
 
@@ -11,17 +11,21 @@ describe('Orchestrator', () => {
     throw new Error('Test fixture missing');
   }
 
-  let stateManager: LiveStateManager;
+  let stateManager: MultiPortfolioStateManager;
   let executor: DryRunExecutor;
   let orchestrator: Orchestrator;
+  const accountId = 'on_target';
 
   beforeEach(() => {
-    stateManager = new LiveStateManager({
+    stateManager = new MultiPortfolioStateManager();
+    stateManager.registerPortfolio(accountId, {
       portfolioState: JSON.parse(JSON.stringify(scenario.portfolioState)),
       priceSnapshot: JSON.parse(JSON.stringify(scenario.priceSnapshot)),
       targetAllocation: JSON.parse(JSON.stringify(scenario.targetAllocation)),
       policy: JSON.parse(JSON.stringify(scenario.policy)),
     });
+    // init global prices
+    stateManager.updateGlobalPrices(scenario.priceSnapshot.prices);
 
     executor = new DryRunExecutor();
     jest.spyOn(executor, 'execute');
@@ -41,47 +45,47 @@ describe('Orchestrator', () => {
     orchestrator.onTick(1000);
 
     expect(executor.execute).not.toHaveBeenCalled();
-    expect(stateManager.getLastTradeTimeMs()).toBe(0);
+    expect(stateManager.getLastTradeTimeMs(accountId)).toBe(0);
   });
 
   it('triggers execution when prices drift out of bounds', () => {
     orchestrator.start();
     
     // Simulate AAPL price pumping by 50% to trigger drift
-    const currentPrices = stateManager.getState().priceSnapshot.prices;
-    stateManager.updatePrices({ AAPL: currentPrices['AAPL'] * 2.0 });
+    const currentPrices = stateManager.getGlobalPrices().prices;
+    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
     orchestrator.onTick(1000);
 
     expect(executor.execute).toHaveBeenCalledTimes(1);
-    expect(stateManager.getLastTradeTimeMs()).toBe(1000);
+    expect(stateManager.getLastTradeTimeMs(accountId)).toBe(1000);
   });
 
   it('respects cooldown timer after execution', () => {
     orchestrator.start();
     
-    const currentPrices = stateManager.getState().priceSnapshot.prices;
-    stateManager.updatePrices({ AAPL: currentPrices['AAPL'] * 2.0 });
+    const currentPrices = stateManager.getGlobalPrices().prices;
+    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
     // First tick triggers execution
     orchestrator.onTick(1000);
     expect(executor.execute).toHaveBeenCalledTimes(1);
-    expect(stateManager.getLastTradeTimeMs()).toBe(1000);
+    expect(stateManager.getLastTradeTimeMs(accountId)).toBe(1000);
 
     // Second tick within cooldown ignores it
-    stateManager.updatePrices({ AAPL: currentPrices['AAPL'] * 2.1 }); // still out of bounds
+    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.1 }); // still out of bounds
     orchestrator.onTick(2000);
     expect(executor.execute).toHaveBeenCalledTimes(1); // STILL 1
 
     // Third tick after cooldown triggers again
     orchestrator.onTick(7000); // 1000 + 5000 + 1000
     expect(executor.execute).toHaveBeenCalledTimes(2);
-    expect(stateManager.getLastTradeTimeMs()).toBe(7000);
+    expect(stateManager.getLastTradeTimeMs(accountId)).toBe(7000);
   });
 
   it('ignores ticks if not started', () => {
-    const currentPrices = stateManager.getState().priceSnapshot.prices;
-    stateManager.updatePrices({ AAPL: currentPrices['AAPL'] * 2.0 });
+    const currentPrices = stateManager.getGlobalPrices().prices;
+    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
     // Orchestrator not started
     orchestrator.onTick(1000);

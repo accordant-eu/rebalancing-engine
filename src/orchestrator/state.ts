@@ -12,67 +12,87 @@ export interface LiveState {
   policy: RebalancingPolicy;
 }
 
-export class LiveStateManager {
-  private state: LiveState | null = null;
-  private lastTradeTimeMs: number = 0;
+export class MultiPortfolioStateManager {
+  private globalPriceSnapshot: PriceSnapshot = { prices: {} };
+  private portfolios: Map<string, LiveState> = new Map();
+  private lastTradeTimes: Map<string, number> = new Map();
 
-  constructor(initialState?: LiveState) {
-    if (initialState) {
-      this.state = initialState;
+  public registerPortfolio(accountId: string, state: LiveState): void {
+    this.portfolios.set(accountId, state);
+    this.lastTradeTimes.set(accountId, 0);
+  }
+
+  public updateGlobalPrices(prices: Record<string, number>, asOf?: string): void {
+    this.globalPriceSnapshot = {
+      ...this.globalPriceSnapshot,
+      prices: { ...this.globalPriceSnapshot.prices, ...prices },
+      asOf,
+    };
+    
+    for (const [accountId, state] of this.portfolios.entries()) {
+      state.priceSnapshot = {
+        ...state.priceSnapshot,
+        prices: { ...state.priceSnapshot.prices, ...prices },
+        asOf,
+      };
     }
   }
 
-  public initialize(state: LiveState): void {
-    this.state = state;
-  }
-
-  public updatePrices(prices: Record<string, number>, asOf?: string): void {
-    this.ensureInitialized();
-    this.state!.priceSnapshot = {
-      ...this.state!.priceSnapshot,
-      prices: { ...this.state!.priceSnapshot.prices, ...prices },
-      asOf,
-    };
-  }
-
-  public updatePortfolio(portfolioUpdate: Partial<PortfolioState>): void {
-    this.ensureInitialized();
-    this.state!.portfolioState = {
-      ...this.state!.portfolioState,
+  public updatePortfolio(accountId: string, portfolioUpdate: Partial<PortfolioState>): void {
+    const state = this.ensureInitialized(accountId);
+    state.portfolioState = {
+      ...state.portfolioState,
       ...portfolioUpdate,
     };
   }
 
-  public updateTarget(target: TargetAllocation): void {
-    this.ensureInitialized();
-    this.state!.targetAllocation = target;
+  public updateTarget(accountId: string, target: TargetAllocation): void {
+    const state = this.ensureInitialized(accountId);
+    state.targetAllocation = target;
   }
 
-  public updatePolicy(policy: RebalancingPolicy): void {
-    this.ensureInitialized();
-    this.state!.policy = policy;
+  public updatePolicy(accountId: string, policy: RebalancingPolicy): void {
+    const state = this.ensureInitialized(accountId);
+    state.policy = policy;
   }
 
-  public markTradeExecution(timestampMs: number): void {
-    this.lastTradeTimeMs = timestampMs;
+  public markTradeExecution(accountId: string, timestampMs: number): void {
+    this.lastTradeTimes.set(accountId, timestampMs);
   }
 
-  public getLastTradeTimeMs(): number {
-    return this.lastTradeTimeMs;
+  public getLastTradeTimeMs(accountId: string): number {
+    return this.lastTradeTimes.get(accountId) ?? 0;
   }
 
-  public getState(): LiveState {
-    this.ensureInitialized();
-    return this.state!;
+  public getAccountState(accountId: string): LiveState {
+    return this.ensureInitialized(accountId);
   }
 
-  public isReady(): boolean {
-    return this.state !== null;
+  public getAllAccountIds(): string[] {
+    return Array.from(this.portfolios.keys());
   }
 
-  private ensureInitialized(): void {
-    if (this.state === null) {
-      throw new Error('LiveStateManager is not initialized');
+  public getAllStates(): Record<string, LiveState> {
+    const record: Record<string, LiveState> = {};
+    for (const [key, val] of this.portfolios.entries()) {
+      record[key] = val;
     }
+    return record;
+  }
+
+  public getGlobalPrices(): PriceSnapshot {
+    return this.globalPriceSnapshot;
+  }
+
+  public isReady(accountId: string): boolean {
+    return this.portfolios.has(accountId);
+  }
+
+  private ensureInitialized(accountId: string): LiveState {
+    const state = this.portfolios.get(accountId);
+    if (!state) {
+      throw new Error(`MultiPortfolioStateManager is not initialized for account ${accountId}`);
+    }
+    return state;
   }
 }

@@ -4,7 +4,7 @@ import cors from 'cors';
 import fs from 'fs';
 import { FileAuditStorage } from '../audit/storage';
 import { AlpacaAdapter } from '../broker/alpaca';
-import { BrokerExecutor, CircuitBreaker, DryRunExecutor, LiveStateManager, Orchestrator } from '../orchestrator';
+import { BrokerExecutor, CircuitBreaker, DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../orchestrator';
 import { StdoutNotificationAdapter } from '../notifications';
 import { loadScenarioFixture } from '../runner';
 import { CommandContext, CommandResult } from './commands';
@@ -44,7 +44,8 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
       try {
         const livePortfolio = await adapter.getPortfolioState();
 
-        const stateManager = new LiveStateManager({
+        const stateManager = new MultiPortfolioStateManager();
+        stateManager.registerPortfolio(scenarioId, {
           portfolioState: {
             ...scenario.portfolioState,
             ...livePortfolio, // Override synthetic cash/holdings with live ledger
@@ -67,11 +68,10 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
         app.use(cors());
         
         app.get('/api/state', (req, res) => {
-          if (stateManager.isReady()) {
-            res.json(stateManager.getState());
-          } else {
-            res.status(503).json({ error: 'State manager not ready' });
-          }
+          res.json({
+            globalPrices: stateManager.getGlobalPrices(),
+            portfolios: stateManager.getAllStates(),
+          });
         });
 
         app.get('/api/logs', (req, res) => {
@@ -100,11 +100,11 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
             }
 
             const currentPortfolio = await adapter.getPortfolioState();
-            stateManager.updatePortfolio(currentPortfolio);
+            stateManager.updatePortfolio(scenarioId, currentPortfolio);
 
             const symbols = scenario.targetAllocation.targets.map((t) => t.instrumentId);
             const prices = await adapter.getPrices(symbols);
-            stateManager.updatePrices(prices, new Date().toISOString());
+            stateManager.updateGlobalPrices(prices, new Date().toISOString());
 
             orchestrator.onTick(Date.now());
           } catch (e) {
@@ -121,22 +121,31 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
       }
     })();
   } else {
-    // DRY RUN SYNTHETIC MODE
-    const stateManager = new LiveStateManager({
-      portfolioState: scenario.portfolioState,
-      priceSnapshot: scenario.priceSnapshot,
-      targetAllocation: scenario.targetAllocation,
-      policy: scenario.policy,
-    });
+    // DRY RUN SYNTHETIC MODE (MULTI-PORTFOLIO)
+    const stateManager = new MultiPortfolioStateManager();
+    const loadedScenarios = fixture.scenarios.slice(0, 5); // Load first 5 scenarios
+    
+    for (const s of loadedScenarios) {
+      stateManager.registerPortfolio(s.id, {
+        portfolioState: s.portfolioState,
+        priceSnapshot: s.priceSnapshot,
+        targetAllocation: s.targetAllocation,
+        policy: s.policy,
+      });
+    }
 
     const auditStorageAdapter = {
       saveAuditRecord: async (record: any) => {
         await auditStorage.saveAuditRecord(record);
         if (record.trigger.isTriggered && record.postTradeSimulation) {
-          stateManager.updatePortfolio({
-            ...scenario.portfolioState,
-            ...record.postTradeSimulation.postTradeState
-          });
+          const accountId = record.eventId.split(':')[0];
+          const s = loadedScenarios.find(x => x.id === accountId);
+          if (s) {
+            stateManager.updatePortfolio(accountId, {
+              ...s.portfolioState,
+              ...record.postTradeSimulation.postTradeState
+            });
+          }
         }
       }
     };
@@ -149,11 +158,10 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
     app.use(cors());
     
     app.get('/api/state', (req, res) => {
-      if (stateManager.isReady()) {
-        res.json(stateManager.getState());
-      } else {
-        res.status(503).json({ error: 'State manager not ready' });
-      }
+      res.json({
+        globalPrices: stateManager.getGlobalPrices(),
+        portfolios: stateManager.getAllStates(),
+      });
     });
 
     app.get('/api/logs', (req, res) => {
@@ -173,22 +181,26 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
     orchestrator.start();
 
     console.error(`Starting Live Agent in Dry-Run mode.`);
-    console.error(`Scenario: ${scenarioId}`);
+    console.error(`Scenarios loaded: ${loadedScenarios.length}`);
     console.error(`Tick Interval: 1000ms`);
-    console.error(`Cooldown: 5000ms`);
+    console.error(`Cooldown: 10000ms`);
     console.error(`Press Ctrl+C to stop.\n`);
 
     setInterval(() => {
-      const currentPrices = stateManager.getState().priceSnapshot.prices;
+      const currentPrices = stateManager.getGlobalPrices().prices;
       const newPrices = { ...currentPrices };
 
-      // Artificially increase the first asset's price by 2% each tick to eventually trigger rebalance
+      // Artificially drift the prices
       const firstAsset = Object.keys(newPrices)[0];
+      const secondAsset = Object.keys(newPrices)[1];
       if (firstAsset) {
-        newPrices[firstAsset] = newPrices[firstAsset] * 1.02;
+        newPrices[firstAsset] = newPrices[firstAsset] * 1.02; // Up 2%
+      }
+      if (secondAsset) {
+        newPrices[secondAsset] = newPrices[secondAsset] * 0.985; // Down 1.5%
       }
 
-      stateManager.updatePrices(newPrices, new Date().toISOString());
+      stateManager.updateGlobalPrices(newPrices, new Date().toISOString());
       orchestrator.onTick(Date.now());
     }, 1000);
   }
