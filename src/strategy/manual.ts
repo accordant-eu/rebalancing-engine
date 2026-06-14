@@ -7,6 +7,7 @@ import {
 } from '../models/domain';
 
 export class ManualRebalanceStrategy implements StrategyInterface {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   evaluateTrigger(
     _state: PortfolioState,
     _drift: DriftMeasurement[],

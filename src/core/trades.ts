@@ -13,7 +13,7 @@ import {
 import { validateTargetAllocation } from './drift';
 import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
 import { CashFlowScheduleSummary } from './cash-flows';
-import { CashFlowSummary, ValuationResult } from './valuation';
+import { ValuationResult } from './valuation';
 import { buildCashFlowProposalWarnings, buildCashFlowScheduleProposalWarnings } from '../explanation/warnings';
 
 const TRADE_EPSILON = CALCULATION_EPSILON;

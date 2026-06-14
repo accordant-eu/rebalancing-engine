@@ -2,14 +2,13 @@ import 'dotenv/config';
 import { FileAuditStorage } from '../audit/storage';
 import { AlpacaAdapter } from '../broker/alpaca';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, LiveStateManager, Orchestrator } from '../orchestrator';
-import { Executor } from '../orchestrator/executor';
 import { StdoutNotificationAdapter } from '../notifications';
 import { loadScenarioFixture } from '../runner';
 import { CommandContext, CommandResult } from './commands';
 import { UsageError } from './errors';
 import { ParsedArgs } from './options';
 
-export function executeAgent(parsed: ParsedArgs, context: CommandContext): CommandResult {
+export function executeAgent(parsed: ParsedArgs, _context: CommandContext): CommandResult {
   if (parsed.subcommand !== 'start') {
     throw new UsageError(`Unknown agent command: ${parsed.subcommand}`);
   }

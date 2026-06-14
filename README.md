@@ -1,32 +1,30 @@
 # rebalancing-engine
 
-Generic deterministic portfolio rebalancing engine in TypeScript/Node.js. The project is an offline calculation core with a CLI and synthetic fixtures; it has no live market data, no banking/custody integration, no execution integration, no API, no UI, and no persistence layer.
+Generic deterministic portfolio rebalancing engine in TypeScript/Node.js. Originally built as an offline calculation core, it now features a fully autonomous Live Agent capable of streaming evaluation, real-time paper trading via Alpaca, circuit breaker limits, and persistent JSONL audit trails.
 
-## Current Status
+## Current Status (Live Agent v2.0 MVP)
 
-Implemented for offline synthetic scenarios:
+The project consists of an offline pure calculation core wrapped inside an autonomous, stateful Orchestrator agent.
 
+**Core Capabilities (Offline & Live):**
 - Portfolio valuation from holdings, cash, settled cash flows, and prices.
-- Current weights and drift against target allocations.
 - Threshold, calendar due-date, and manual forced-rebalance trigger strategies.
-- Full-reset trade proposals.
-- Absolute and relative boundary proposal modes.
-- Minimum-trade warnings.
+- Full-reset and boundary-band trade proposal modes.
 - Decimal-backed internal calculation helpers and centralized output rounding.
-- Settled and pending cash-flow records.
-- Scheduled and recurring cash-flow schedules for offline planning.
-- Generic tax-lot allocation metadata on sell trades.
-- Post-trade simulation, residual drift, turnover, explanations, and audit records.
-- Fixture runner and `rebalance` CLI workflows.
+- Immutable, deterministic JSON audit trails.
+
+**Live Agent Capabilities:**
+- `LiveStateManager` for continuous, safe evaluation of streaming drift.
+- Cooldown and debounce timers to prevent micro-churning around thresholds.
+- `AlpacaAdapter` for fetching live portfolio state and submitting real trades (Paper Trading).
+- `CircuitBreaker` safety limits to hard-stop execution on maximum trades or gross notional value.
+- Reconciliation Pause Strategy to safely halt evaluations while broker orders are pending.
+- Persistent JSONL audit logging (`data/audit-trail.jsonl`) and stdout notifications.
 
 Explicitly out of scope today:
-
-- Jurisdiction-specific tax advice or tax optimization.
-- Live market data.
-- Banking, custody, payment initiation, trade execution, or OMS integration.
-- API, UI, database, persistence, auth, deployment, or operations.
-- Full optimizer or solver-backed transaction-cost optimization.
-- Business-day, holiday, time-zone, settlement-calendar, or production scheduling semantics.
+- Full transaction-cost optimizer (rule-based boundary targeting is sufficient for now).
+- Jurisdiction-specific tax advice or tax-loss harvesting optimization.
+- Production deployment infrastructure (e.g., Kubernetes/Docker setup).
 
 See the roadmap in [docs/roadmap/rebalancing-engine-roadmap.md](docs/roadmap/rebalancing-engine-roadmap.md).
 
@@ -71,6 +69,12 @@ Run one scenario:
 
 ```bash
 npm run cli -- run --scenario tests/fixtures/scenarios.json --scenario-id one_asset_out_of_band --format pretty
+```
+
+Start the Live Agent (Paper Trading with Alpaca):
+
+```bash
+npm run cli -- agent start --scenarios tests/fixtures/scenarios.json --scenario-id on_target --live alpaca
 ```
 
 Run batch scenarios against expected statuses:

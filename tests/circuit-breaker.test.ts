@@ -3,7 +3,7 @@ import { CircuitBreaker } from '../src/orchestrator/circuit-breaker';
 import { Executor } from '../src/orchestrator/executor';
 
 class MockExecutor implements Executor {
-  public execute(proposal: TradeProposal, eventId: string): void {}
+  public execute(): void {}
 }
 
 describe('CircuitBreaker', () => {
