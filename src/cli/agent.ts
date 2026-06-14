@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
+import readline from 'readline';
 import { FileAuditStorage } from '../audit/storage';
 import { AlpacaAdapter } from '../broker/alpaca';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../orchestrator';
@@ -37,6 +38,11 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
   const auditStorage = new FileAuditStorage('./data/audit-trail.jsonl');
 
   if (isLive) {
+    if (!process.env.APCA_API_KEY_ID || !process.env.APCA_API_SECRET_KEY) {
+      notifications.notify('error', 'Missing Alpaca API credentials. Please set APCA_API_KEY_ID and APCA_API_SECRET_KEY in the environment.');
+      process.exit(1);
+    }
+    
     notifications.notify('info', 'Initializing live broker connection...');
     const adapter = new AlpacaAdapter();
 
@@ -75,17 +81,34 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
         });
 
         app.get('/api/logs', (req, res) => {
-          try {
-            const data = fs.readFileSync('./data/audit-trail.jsonl', 'utf8');
-            const lines = data.split('\n').filter(l => l.trim().length > 0);
-            res.json(lines.slice(-100).map(l => JSON.parse(l)));
-          } catch (e) {
-            res.json([]);
-          }
+          const lines: any[] = [];
+          const rl = readline.createInterface({
+            input: fs.createReadStream('./data/audit-trail.jsonl'),
+            crlfDelay: Infinity
+          });
+
+          rl.on('line', (line) => {
+            if (line.trim().length > 0) {
+              try {
+                lines.push(JSON.parse(line));
+                if (lines.length > 100) lines.shift();
+              } catch (e) {
+                // Ignore invalid lines
+              }
+            }
+          });
+
+          rl.on('close', () => {
+            res.json(lines);
+          });
+          
+          rl.on('error', () => {
+            if (!res.headersSent) res.json([]);
+          });
         });
 
-        app.listen(4444, () => {
-          notifications.notify('info', 'Command Center API listening on http://localhost:4444');
+        app.listen(4444, '127.0.0.1', () => {
+          notifications.notify('info', 'Command Center API listening on http://127.0.0.1:4444');
         });
 
         orchestrator.start();
@@ -165,17 +188,34 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
     });
 
     app.get('/api/logs', (req, res) => {
-      try {
-        const data = fs.readFileSync('./data/audit-trail.jsonl', 'utf8');
-        const lines = data.split('\n').filter(l => l.trim().length > 0);
-        res.json(lines.slice(-100).map(l => JSON.parse(l)));
-      } catch (e) {
-        res.json([]);
-      }
+      const lines: any[] = [];
+      const rl = readline.createInterface({
+        input: fs.createReadStream('./data/audit-trail.jsonl'),
+        crlfDelay: Infinity
+      });
+
+      rl.on('line', (line) => {
+        if (line.trim().length > 0) {
+          try {
+            lines.push(JSON.parse(line));
+            if (lines.length > 100) lines.shift();
+          } catch (e) {
+            // Ignore invalid lines
+          }
+        }
+      });
+
+      rl.on('close', () => {
+        res.json(lines);
+      });
+      
+      rl.on('error', () => {
+        if (!res.headersSent) res.json([]);
+      });
     });
 
-    app.listen(4444, () => {
-      notifications.notify('info', 'Command Center API listening on http://localhost:4444');
+    app.listen(4444, '127.0.0.1', () => {
+      notifications.notify('info', 'Command Center API listening on http://127.0.0.1:4444');
     });
 
     orchestrator.start();
