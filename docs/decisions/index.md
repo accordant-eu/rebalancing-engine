@@ -51,6 +51,8 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0041: Pivot Live Agent to a B2B SaaS Multi-Tenant Architecture](0041-pivot-to-b2b-saas-multi-tenant-architecture.md) - Accepted
 * [ADR-0042: Separate Allocation Strategy from Execution Overlays](0042-separate-allocation-strategy-from-execution-overlays.md) - Accepted
 * [ADR-0043: Adopt UX-First Thin Slice MVP Methodology for v3](0043-adopt-ux-first-thin-slice-mvp-methodology-for-v3.md) - Accepted
+* [ADR-0044: Use npm workspaces for monorepo structure](0044-use-npm-workspaces-for-monorepo.md) - Accepted
+* [ADR-0045: Colocate API Server within Live Agent Process](0045-colocate-api-server-within-agent-process.md) - Accepted
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

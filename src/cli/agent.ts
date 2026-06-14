@@ -1,4 +1,7 @@
 import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import fs from 'fs';
 import { FileAuditStorage } from '../audit/storage';
 import { AlpacaAdapter } from '../broker/alpaca';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, LiveStateManager, Orchestrator } from '../orchestrator';
@@ -30,11 +33,12 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
     throw new UsageError(`Scenario ${scenarioId} not found in fixture ${scenarioFile}`);
   }
 
+  const notifications = new StdoutNotificationAdapter();
+  const auditStorage = new FileAuditStorage('./data/audit-trail.jsonl');
+
   if (isLive) {
-    const notifications = new StdoutNotificationAdapter();
     notifications.notify('info', 'Initializing live broker connection...');
     const adapter = new AlpacaAdapter();
-    const auditStorage = new FileAuditStorage('./data/audit-trail.jsonl');
 
     (async () => {
       try {
@@ -58,6 +62,31 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
         const orchestrator = new Orchestrator(stateManager, executor, {
           cooldownMs: 60000, // 1 minute cooldown for paper trading
         }, auditStorage, notifications);
+
+        const app = express();
+        app.use(cors());
+        
+        app.get('/api/state', (req, res) => {
+          if (stateManager.isReady()) {
+            res.json(stateManager.getState());
+          } else {
+            res.status(503).json({ error: 'State manager not ready' });
+          }
+        });
+
+        app.get('/api/logs', (req, res) => {
+          try {
+            const data = fs.readFileSync('./data/audit-trail.jsonl', 'utf8');
+            const lines = data.split('\n').filter(l => l.trim().length > 0);
+            res.json(lines.slice(-100).map(l => JSON.parse(l)));
+          } catch (e) {
+            res.json([]);
+          }
+        });
+
+        app.listen(4444, () => {
+          notifications.notify('info', 'Command Center API listening on http://localhost:4444');
+        });
 
         orchestrator.start();
         notifications.notify('info', 'Live Agent (Alpaca Paper) Started.', { target: scenarioId });
@@ -100,9 +129,33 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
       policy: scenario.policy,
     });
 
-    const executor = new DryRunExecutor();
-    const orchestrator = new Orchestrator(stateManager, executor, {
-      cooldownMs: 5000,
+    const orchestrator = new Orchestrator(stateManager, new DryRunExecutor(), {
+      cooldownMs: 1000,
+    }, auditStorage, notifications);
+
+    const app = express();
+    app.use(cors());
+    
+    app.get('/api/state', (req, res) => {
+      if (stateManager.isReady()) {
+        res.json(stateManager.getState());
+      } else {
+        res.status(503).json({ error: 'State manager not ready' });
+      }
+    });
+
+    app.get('/api/logs', (req, res) => {
+      try {
+        const data = fs.readFileSync('./data/audit-trail.jsonl', 'utf8');
+        const lines = data.split('\n').filter(l => l.trim().length > 0);
+        res.json(lines.slice(-100).map(l => JSON.parse(l)));
+      } catch (e) {
+        res.json([]);
+      }
+    });
+
+    app.listen(4444, () => {
+      notifications.notify('info', 'Command Center API listening on http://localhost:4444');
     });
 
     orchestrator.start();
