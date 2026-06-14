@@ -179,7 +179,14 @@ function App() {
                 <span className="logTime">{new Date(log.timestamp || log.createdAt).toLocaleTimeString()}</span>
                 <span className="logEvent">[{log.type || 'EVALUATION'}]</span>
                 <div className="logData">
-                  {log.proposal ? `Proposed ${log.proposal.trades.length} trades` : 'Event Data'}
+                  {log.outputs?.tradeProposal ? `Proposed ${log.outputs.tradeProposal.trades.length} trades` : 'Event Data'}
+                  {log.outputs?.tradeProposal?.warnings?.length > 0 && (
+                    <div style={{ color: 'var(--status-yellow)', marginTop: '4px', fontSize: '0.7rem' }}>
+                      {log.outputs.tradeProposal.warnings.map((w: any, idx: number) => (
+                        <div key={idx}>⚠️ {w.message}</div>
+                      ))}
+                    </div>
+                  )}
                   <details className="logDetails">
                     <summary>View Full JSON</summary>
                     <pre>{JSON.stringify(log, null, 2)}</pre>

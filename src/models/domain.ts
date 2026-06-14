@@ -106,6 +106,8 @@ export interface RebalancingPolicy {
   relativeDriftTolerance?: number;
   // Minimum trade size (absolute monetary value)
   minimumTradeSize: number;
+  // Global maximum acceptable friction cost in basis points (e.g., 50 for 0.50%)
+  maxFrictionBps?: number;
   // Required only when strategyType is calendar.
   calendar?: CalendarRebalancingConfig;
 }
@@ -142,7 +144,8 @@ export interface ProposedLotAllocation {
 export type ProposalWarningCode =
   | 'MINIMUM_TRADE_SIZE'
   | 'PENDING_CASH_FLOW_EXCLUDED'
-  | 'FUTURE_CASH_FLOW_SCHEDULED';
+  | 'FUTURE_CASH_FLOW_SCHEDULED'
+  | 'FRICTION_COST_EXCEEDED';
 
 export interface ProposalWarning {
   code: ProposalWarningCode;

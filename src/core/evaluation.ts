@@ -22,6 +22,7 @@ import { PostTradeSimulation, simulatePostTrade } from './simulation';
 import {
   generateTradeProposal,
 } from './trades';
+import { FrictionModel } from './friction';
 import {
   buildCashFlowProposalWarnings,
   buildCashFlowScheduleProposalWarnings,
@@ -47,6 +48,7 @@ export interface RebalanceEvaluationInput {
   targetAllocation: TargetAllocation;
   priceSnapshot: PriceSnapshot;
   policy: RebalancingPolicy;
+  frictionModel?: FrictionModel;
 }
 
 export interface RebalanceEvaluation {
@@ -78,6 +80,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
         input.priceSnapshot,
         input.policy,
         cashFlowScheduleSummary,
+        input.frictionModel,
       )
     : {
         trades: [],

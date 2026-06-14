@@ -15,6 +15,7 @@ import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
 import { CashFlowScheduleSummary } from './cash-flows';
 import { ValuationResult } from './valuation';
 import { buildCashFlowProposalWarnings, buildCashFlowScheduleProposalWarnings } from '../explanation/warnings';
+import { FrictionModel } from './friction';
 
 const TRADE_EPSILON = CALCULATION_EPSILON;
 
@@ -31,6 +32,7 @@ export function generateTradeProposal(
   priceSnapshot: PriceSnapshot,
   policy?: RebalancingPolicy,
   cashFlowScheduleSummary?: CashFlowScheduleSummary,
+  frictionModel?: FrictionModel,
 ): TradeProposal {
   validateTargetAllocation(target);
   if (valuation.cash < 0 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
@@ -105,7 +107,7 @@ export function generateTradeProposal(
       direction === 'BUY' ? netCashDelta.minus(estimatedValue) : netCashDelta.plus(estimatedValue);
   }
 
-  const proposal = applyMinimumTradeSize(
+  let finalizedProposal = applyMinimumTradeSize(
     {
       trades,
       estimatedPostTradeCash: toDecimal(valuation.cash).plus(netCashDelta).toNumber(),
@@ -117,7 +119,61 @@ export function generateTradeProposal(
     policy?.minimumTradeSize ?? 0,
   );
 
-  return proposal;
+  if (frictionModel) {
+    finalizedProposal = applyFrictionPenalties(
+      finalizedProposal,
+      valuation.cash,
+      frictionModel,
+      policy?.maxFrictionBps,
+    );
+  }
+
+  return finalizedProposal;
+}
+
+export function applyFrictionPenalties(
+  proposal: TradeProposal,
+  startingCash: number,
+  frictionModel: FrictionModel,
+  maxFrictionBps?: number,
+): TradeProposal {
+  if (maxFrictionBps === undefined || maxFrictionBps <= 0) {
+    return proposal;
+  }
+
+  const warnings: ProposalWarning[] = [...proposal.warnings];
+  const trades = proposal.trades.filter((trade) => {
+    const estimatedCost = frictionModel.estimateCost(trade.estimatedValue, trade.instrumentId);
+    const maxAcceptableCost = trade.estimatedValue * (maxFrictionBps / 10000);
+
+    if (estimatedCost <= maxAcceptableCost) {
+      return true;
+    }
+
+    warnings.push({
+      code: 'FRICTION_COST_EXCEEDED',
+      instrumentId: trade.instrumentId,
+      estimatedValue: trade.estimatedValue,
+      message: `Suppressed ${trade.direction} for ${trade.instrumentId}: estimated friction cost ${formatFixed(estimatedCost, 2)} exceeds maximum acceptable cost ${formatFixed(maxAcceptableCost, 2)} (${maxFrictionBps} bps).`,
+    });
+
+    return false;
+  });
+
+  const estimatedPostTradeCash = trades
+    .reduce((cash, trade) => {
+      return trade.direction === 'BUY'
+        ? cash.minus(trade.estimatedValue)
+        : cash.plus(trade.estimatedValue);
+    }, toDecimal(startingCash))
+    .toNumber();
+
+  return {
+    ...proposal,
+    trades,
+    estimatedPostTradeCash,
+    warnings,
+  };
 }
 
 
