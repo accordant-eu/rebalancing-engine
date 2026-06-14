@@ -1,7 +1,9 @@
 import 'dotenv/config';
+import { FileAuditStorage } from '../audit/storage';
 import { AlpacaAdapter } from '../broker/alpaca';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, LiveStateManager, Orchestrator } from '../orchestrator';
 import { Executor } from '../orchestrator/executor';
+import { StdoutNotificationAdapter } from '../notifications';
 import { loadScenarioFixture } from '../runner';
 import { CommandContext, CommandResult } from './commands';
 import { UsageError } from './errors';
@@ -30,8 +32,10 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
   }
 
   if (isLive) {
-    console.error(`Initializing live broker connection...`);
+    const notifications = new StdoutNotificationAdapter();
+    notifications.notify('info', 'Initializing live broker connection...');
     const adapter = new AlpacaAdapter();
+    const auditStorage = new FileAuditStorage('./data/audit-trail.jsonl');
 
     (async () => {
       try {
@@ -50,19 +54,23 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
         const executor = new CircuitBreaker(new BrokerExecutor(adapter), {
           maxTradesPerSession: 5,
           maxGrossNotionalPerTrade: 500000,
-        });
+        }, notifications);
 
         const orchestrator = new Orchestrator(stateManager, executor, {
           cooldownMs: 60000, // 1 minute cooldown for paper trading
-        });
+        }, auditStorage, notifications);
 
         orchestrator.start();
-        console.error(`Live Agent (Alpaca Paper) Started.`);
-        console.error(`Targeting: ${scenarioId}`);
+        notifications.notify('info', 'Live Agent (Alpaca Paper) Started.', { target: scenarioId });
         console.error(`Press Ctrl+C to stop.\n`);
 
         const poll = async () => {
           try {
+            if (await adapter.hasOpenOrders()) {
+              notifications.notify('info', 'Pending broker orders detected. Pausing drift evaluation.');
+              return;
+            }
+
             const currentPortfolio = await adapter.getPortfolioState();
             stateManager.updatePortfolio(currentPortfolio);
 
@@ -72,7 +80,7 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
 
             orchestrator.onTick(Date.now());
           } catch (e) {
-            console.error(`[Poll Error]:`, e);
+            notifications.notify('error', 'Poll Error', { error: String(e) });
           }
         };
 
@@ -80,7 +88,7 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
         await poll();
         setInterval(poll, 10000);
       } catch (e) {
-        console.error(`[Init Error]:`, e);
+        notifications.notify('error', 'Init Error', { error: String(e) });
         process.exit(1);
       }
     })();

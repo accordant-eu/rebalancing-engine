@@ -15,4 +15,9 @@ export interface BrokerAdapter {
    * Submits trade proposals to the broker for execution.
    */
   submitTrades(proposal: TradeProposal): Promise<void>;
+
+  /**
+   * Checks if there are any pending/open orders at the broker.
+   */
+  hasOpenOrders(): Promise<boolean>;
 }

@@ -61,4 +61,9 @@ export class AlpacaAdapter implements BrokerAdapter {
       });
     }
   }
+
+  public async hasOpenOrders(): Promise<boolean> {
+    const orders = await this.alpaca.getOrders({ status: 'open' });
+    return orders.length > 0;
+  }
 }

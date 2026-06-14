@@ -1,4 +1,6 @@
+import { AuditStorageAdapter } from '../audit/storage';
 import { evaluateRebalance } from '../core/evaluation';
+import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
 import { LiveStateManager } from './state';
 
@@ -13,6 +15,8 @@ export class Orchestrator {
     private stateManager: LiveStateManager,
     private executor: Executor,
     private config: OrchestratorConfig,
+    private auditStorage?: AuditStorageAdapter,
+    private notifications?: NotificationAdapter,
   ) {}
 
   public start(): void {
@@ -54,8 +58,22 @@ export class Orchestrator {
     });
 
     if (evaluation.trigger.isTriggered && evaluation.tradeProposal.trades.length > 0) {
+      if (this.notifications) {
+        this.notifications.notify('info', `Triggered rebalance. Strategy: ${evaluation.trigger.strategyType}`, { eventId: evaluation.auditRecord.eventId });
+      }
+
       this.executor.execute(evaluation.tradeProposal, evaluation.auditRecord.eventId);
       this.stateManager.markTradeExecution(timestampMs);
+
+      if (this.auditStorage) {
+        this.auditStorage.saveAuditRecord(evaluation.auditRecord).catch((err) => {
+          if (this.notifications) {
+            this.notifications.notify('error', 'Failed to save audit record', { error: String(err) });
+          } else {
+            console.error('Failed to save audit record:', err);
+          }
+        });
+      }
     }
   }
 }

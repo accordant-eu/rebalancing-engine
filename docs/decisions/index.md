@@ -46,3 +46,5 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0036: Restrict scheduled cash flows to projection/planning only](0036-restrict-scheduled-cash-flows-to-projection-planning-only.md) - Accepted
 * [ADR-0037: Add optional `asOf` timestamp on prices for audit traceability](0037-add-optional-asof-timestamp-on-prices-for-audit-traceability.md) - Accepted for next increment
 * [ADR-0038: Document live-agent vision as directional architecture](0038-document-live-agent-vision-as-directional-architecture.md) - Accepted
+* [ADR-0039: Use JSONL for persistent audit trails in MVP](0039-use-jsonl-for-persistent-audit-trails.md) - Accepted
+* [ADR-0040: Use Pause Strategy for Reconciliation](0040-use-pause-strategy-for-reconciliation.md) - Accepted

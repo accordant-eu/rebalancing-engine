@@ -1,4 +1,5 @@
 import { TradeProposal } from '../models/domain';
+import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
 
 export interface CircuitBreakerLimits {
@@ -12,6 +13,7 @@ export class CircuitBreaker implements Executor {
   constructor(
     private targetExecutor: Executor,
     private limits: CircuitBreakerLimits,
+    private notifications?: NotificationAdapter,
   ) {}
 
   public execute(proposal: TradeProposal, eventId: string): void {
@@ -20,9 +22,11 @@ export class CircuitBreaker implements Executor {
     }
 
     if (this.executedTradesCount >= this.limits.maxTradesPerSession) {
-      throw new Error(
-        `CIRCUIT BREAKER: Max trades per session (${this.limits.maxTradesPerSession}) reached. Blocking execution.`,
-      );
+      const msg = `CIRCUIT BREAKER: Max trades per session (${this.limits.maxTradesPerSession}) reached. Blocking execution.`;
+      if (this.notifications) {
+        this.notifications.notify('error', msg, { eventId, tradesCount: proposal.trades.length });
+      }
+      throw new Error(msg);
     }
 
     let grossNotional = 0;
@@ -31,9 +35,11 @@ export class CircuitBreaker implements Executor {
     }
 
     if (grossNotional > this.limits.maxGrossNotionalPerTrade) {
-      throw new Error(
-        `CIRCUIT BREAKER: Gross notional value (${grossNotional}) exceeds limit (${this.limits.maxGrossNotionalPerTrade}). Blocking execution.`,
-      );
+      const msg = `CIRCUIT BREAKER: Gross notional value (${grossNotional}) exceeds limit (${this.limits.maxGrossNotionalPerTrade}). Blocking execution.`;
+      if (this.notifications) {
+        this.notifications.notify('error', msg, { eventId, grossNotional });
+      }
+      throw new Error(msg);
     }
 
     this.targetExecutor.execute(proposal, eventId);
