@@ -98,3 +98,4 @@ These rules govern AI-assisted development in this repository. The project is in
 - Otherwise make a conservative, reversible choice and document it.
 - Keep changes scoped to the current task.
 - Provide a concise summary of changes, tests, and open questions after each iteration.
+- **MANDATORY**: After completing any significant task, you must update the `BUILD_JOURNEY.md` iteration log table before committing your changes.

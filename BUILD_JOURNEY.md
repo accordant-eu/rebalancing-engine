@@ -110,6 +110,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 24        | 2026-05-02 | Scheduled Cash Flows             | Offline domain increment   | Implemented scheduled and recurring cash-flow domain types, validation, expansion, valuation/proposal integration, warnings, explanation/audit output, CLI rendering/inspection, fixtures, expectation updates, and audit documentation.                                                                                                                                                                                                                                                                                                                              | `src/models/domain.ts`, `src/core/cash-flows.ts`, `src/core/evaluation.ts`, `src/core/trades.ts`, `src/core/valuation.ts`, `src/explanation/explanation.ts`, `src/audit/audit.ts`, `src/cli`, tests, fixtures, README, fixture README, PRD/plan/roadmap/audit docs, `BUILD_JOURNEY.md` | Scheduled flows can remain deterministic and auditable when evaluated from explicit date-only inputs and expanded into internal schedule-derived settled cash-flow records.                                                                   | Business-day calendars, holidays, payment initiation, custody movement, weekly/custom recurrence, production API, persistence, and optimizer-driven cash-flow planning remain deferred. | Consolidate user/developer documentation around the implemented CLI and architecture.                    |
 | 25        | 2026-05-02 | Documentation Consolidation      | User/developer experience  | Created dedicated user, CLI reference, developer, strategy-extension, architecture, and examples docs; replaced README with a concise entry point; documented strategy extension rules, warnings/errors, input/output models, CLI behavior, fixtures, audit/explanation concepts, and safe extension expectations.                                                                                                                                                                                                                                                    | `README.md`, `docs/guides/user-guide.md`, `docs/cli/cli-reference.md`, `docs/guides/developer-guide.md`, `docs/guides/adding-rebalancing-strategies.md`, `docs/architecture/overview.md`, `docs/examples.md`, `BUILD_JOURNEY.md`                                                       | Separate guides are clearer than a large README and make CLI behavior, strategy extension, architecture, and examples easier to keep aligned with observed repository behavior.                                                               | Published JSON Schema, schema-only validation, CI workflow, API/UI/database design, and production integration docs remain deferred.                                                    | Run full validation, commit, merge to `main`, and push if branch state is safe.                          |
 | 26        | 2026-05-02 | Independent Full-Chain Audit     | Audit                      | Performed 10-pass independent audit: research-to-implementation traceability, PRD/plan alignment, architecture, financial correctness, security/privacy, CLI, test quality, reliability, documentation/DX, and deferred scope. Verified all 26 fixture scenarios, boundary-mode cash invariant, month-end clamping, dedup semantics, and Decimal.js internalization. Identified 13 findings (2 High operational gaps, 4 Medium, 3 Low, 3 Info). No critical defects found. Created full-chain audit report with findings register, issue-ready backlog, and remediation sequence. | `docs/audits/independent-full-chain-audit.md`, `BUILD_JOURNEY.md`                                                                                                                                                                                                                      | Hardcoded creation timestamps in runner and CLI undermine audit-trail temporal integrity. Calendar Date.parse() timezone behavior needs a date-only validation guard. No CI remains the most operationally impactful gap. All deferred scope is correctly bounded with no accidental partial implementations. | H-01 (timestamps), H-02 (CI), M-01 (calendar timezone) are the top three remediation priorities. | Fix hardcoded timestamps (H-01), update roadmap count (H-03), add calendar date-only guard (M-01), add runner error handling (M-03), then add CI (H-02). |
+| 27        | 2026-06-14 | Restructure Foundational Docs    | Documentation structure    | Restructured the `docs/` folder, moved historical/iterative PRDs/Plans into subdirectories, split the monolithic vision PRD into a concise `product-vision.md` and `engine-architecture.md`, archived the old vision, and established the "Live Agent Vision" as the current north star. Enforced BUILD_JOURNEY updating in AGENTS.md.                                                                                                                                                                                                                                                        | `docs/product-vision.md`, `docs/architecture/engine-architecture.md`, `docs/prd/original-vision-prd.md`, `README.md`, index files, `AGENTS.md`, `BUILD_JOURNEY.md`                                                                   | The "Live Agent Vision" clarifies the strict boundary between the deterministic pure-function engine and the live execution orchestrator.                                                                                     | None.                                                                                                                                                                                   | Address remaining backlog items or transition to Live Agent exploration.                                 |
 
 ### Iteration 26 Detail — 2026-05-02
 
@@ -524,3 +525,31 @@ The offline CLI and fixtures remain the development and regression interface.
 - `docs/roadmap/rebalancing-engine-roadmap.md` — open questions resolved; next steps updated.
 
 **Decisions made:**
+
+### Iteration 27 Detail — 2026-06-14
+
+**Goal:** Consolidate foundational documentation and enforce AI agent rules regarding project journals.
+
+**Scope:** Documentation only. Restructured `docs/` and updated `AGENTS.md`.
+
+**Materials reviewed:** `README.md`, all docs in `docs/`, `AGENTS.md`, and `BUILD_JOURNEY.md`.
+
+**Decisions made:**
+1. Split the massive PRD/Vision document into a concise `product-vision.md` and a core `engine-architecture.md`.
+2. Move historical documents (MVP plans, PRDs) into `docs/plans` and `docs/prd/`.
+3. Establish the "Live Agent Vision" as the true north star moving forward.
+4. Update `AGENTS.md` to explicitly require AI agents to update `BUILD_JOURNEY.md` before committing changes.
+
+**Documentation created:**
+- `docs/product-vision.md`
+- `docs/architecture/engine-architecture.md`
+- `docs/research/index.md`
+
+**Documentation updated:**
+- `docs/index.md`, `README.md`, and all sub-indices.
+- `AGENTS.md` to enforce journaling.
+- `BUILD_JOURNEY.md` to capture this iteration.
+
+**Open questions:** None at this time.
+
+**Recommended next step:** Address the remaining high-priority gaps from the independent full-chain audit (H-01 timestamps, H-02 CI pipeline).

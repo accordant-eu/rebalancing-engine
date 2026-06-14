@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 ## Documents
 
+* **[Initial Mvp Plan](initial-mvp-plan.md)** - Documentation for MVP implementation plan
 * **[Rebalancing Engine Cash Flows Mvp Plan](rebalancing-engine-cash-flows-mvp-plan.md)** - Documentation for rebalancing engine cash flows mvp plan
 * **[Rebalancing Engine Deferred Capabilities Mvp Plan](rebalancing-engine-deferred-capabilities-mvp-plan.md)** - Documentation for rebalancing engine deferred capabilities mvp plan
 * **[Rebalancing Engine Next Iteration Mvp Plan](rebalancing-engine-next-iteration-mvp-plan.md)** - Documentation for rebalancing engine next iteration mvp plan

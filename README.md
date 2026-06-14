@@ -144,6 +144,9 @@ The `docs/` directory contains the project knowledge base in [OKF (Open Knowledg
 Start at **[docs/index.md](docs/index.md)** for an overview of all available documentation.
 
 Key entry points:
+- [Product Vision](docs/product-vision.md): high-level product vision for the live agent portfolio rebalancing engine.
+- [Engine Architecture](docs/architecture/engine-architecture.md): engine component architecture and domain models.
+- [Live Agent Vision](docs/architecture/live-agent-vision.md): live agent orchestrator and state management.
 - [Architecture Overview](docs/architecture/overview.md): high-level system boundaries and flow.
 - [User Guide](docs/guides/user-guide.md): how to use the engine and CLI.
 - [CLI Reference](docs/cli/cli-reference.md): command syntax, options, output, and errors.

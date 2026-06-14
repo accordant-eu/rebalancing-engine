@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 ## Documents
 
+* **[Original Vision Prd](original-vision-prd.md)** - Original foundational PRD (Superseded)
 * **[Rebalancing Engine Cash Flows Prd](rebalancing-engine-cash-flows-prd.md)** - Documentation for rebalancing engine cash flows prd
 * **[Rebalancing Engine Deferred Capabilities Prd](rebalancing-engine-deferred-capabilities-prd.md)** - Documentation for rebalancing engine deferred capabilities prd
 * **[Rebalancing Engine Next Iteration Prd](rebalancing-engine-next-iteration-prd.md)** - Documentation for rebalancing engine next iteration prd

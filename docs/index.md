@@ -18,13 +18,11 @@ timestamp: 2026-06-14T00:00:00Z
 * [Plans](plans/index.md)
 * [Prd](prd/index.md)
 * [Refactoring](refactoring/index.md)
+* [Research](research/index.md)
 * [Roadmap](roadmap/index.md)
 * [Strategy Traceability](strategy-traceability/index.md)
 
 ## Documents
 
 * **[Documentation Conventions (OKF)](CONTRIBUTING_DOCS.md)** - How to maintain the Open Knowledge Format (OKF) bundle and Architecture Decision Records (ADRs).
-* **[Examples](examples.md)** - Documentation for examples
-* **[Mvp Implementation Plan](mvp-implementation-plan.md)** - Documentation for mvp implementation plan
-* **[Portfolio Rebalancing Meta Paper Synthesis](portfolio-rebalancing-meta-paper-synthesis.md)** - Documentation for portfolio rebalancing meta paper synthesis
-* **[Rebalancing Engine Prd Architecture Vision](rebalancing-engine-prd-architecture-vision.md)** - Documentation for rebalancing engine prd architecture vision
+* **[Product Vision](product-vision.md)** - High-level product vision for the live agent portfolio rebalancing engine.

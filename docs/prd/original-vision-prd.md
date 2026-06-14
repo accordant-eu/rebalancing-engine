@@ -1,16 +1,22 @@
 ---
 type: PRD
-title: Rebalancing Engine Prd Architecture Vision
-description: Documentation for rebalancing engine prd architecture vision
-tags: [root]
+title: Original Vision PRD (Superseded)
+description: Original foundational PRD, superseded by Live Agent Vision
+tags: [prd, archived]
 timestamp: 2026-06-14T00:00:00Z
 ---
 
-# **1\. Title**
+# Original Vision, Requirements, and Architectural Blueprint
 
-# **Generic Portfolio Rebalancing Engine: Product Vision, Requirements, and Architectural Blueprint**
+> [!WARNING]
+> **SUPERSEDED DOCUMENT:** This document represents the *Original* V1 Vision for an offline calculation core with a human-in-the-loop OMS routing model. 
+> It is retained for historical context but has been **superseded** by the Live Agent Vision.
+> Please refer to the following current documents:
+> - **Product Vision:** [Product Vision](../product-vision.md)
+> - **Live Agent Vision:** [Live Agent Vision](../architecture/live-agent-vision.md)
+> - **Engine Architecture:** [Engine Architecture](../architecture/engine-architecture.md)
 
-## **2\. Executive Summary**
+
 
 The discipline of portfolio rebalancing serves as the foundational mechanical process used to enforce strategic asset allocation, maintain mandated risk profiles, and control portfolio volatility over time.1 Theoretical and empirical literature demonstrates a profound industry shift away from heuristic, calendar-based rules toward dynamic, transaction-cost-aware, and tax-optimized methodologies.1 Analysis of rigorous institutional literature reveals that the primary mathematical benefit of rebalancing is risk control and variance reduction, not return enhancement, as frequent rebalancing in trending markets interrupts positive price momentum and degrades returns.1
 

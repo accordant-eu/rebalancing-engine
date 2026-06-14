@@ -10,5 +10,6 @@ timestamp: 2026-06-14T00:00:00Z
 
 ## Documents
 
+* **[Engine Architecture](engine-architecture.md)** - Component architecture and domain models
 * **[Live Agent Vision](live-agent-vision.md)** - Documentation for live agent vision
 * **[Overview](overview.md)** - Documentation for overview
