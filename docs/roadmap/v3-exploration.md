@@ -68,6 +68,10 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
 - **Change Propagation & Audit Trails:**
   - Every change to a portfolio's settings (e.g., changing absolute drift tolerance from 5% to 3%) must be logged immutably.
   - The JSONL audit trail must be expanded to link the exact *version* of the mandate that was used to evaluate a trade. If a bad trade occurs, we must have provenance proving exactly who authorized the mandate and when it was modified.
+- **B2B Partner API Access (Machine-to-Machine):**
+  - **API-First Design:** The Command Center UI will simply be one consumer of the underlying API. We must assume wealth management partners will want to integrate their own CRMs (e.g., Salesforce) or proprietary portals directly into the engine.
+  - **Scoped API Keys:** Partners will require API keys with granular scopes (e.g., `read:drift` vs `write:mandates`). 
+  - **M2M Rate Limiting:** Partner API traffic must be strictly rate-limited and isolated from the core Orchestrator execution loop to ensure heavy read-queries don't starve the engine's ability to execute live trades.
 
 ## 7. Additional Operational Considerations
 
