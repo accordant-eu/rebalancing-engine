@@ -49,6 +49,25 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
   - "Near-Miss" Visualizations: How many portfolios are within `0.1%` of triggering a massive wave of orders?
   - Aggregated execution volumes and API rate-limit pressures.
 - **Interdependencies:** This heavily relies on the SQLite multi-portfolio foundation (Point 3). The UI needs a structured way to query the global state rapidly.
+## 5. Portfolio Mandate & Lifecycle Management
+
+**Goal:** Establish how portfolios are born, configured, and maintained.
+**Discussion:**
+- **The "Mandate" Definition:** A portfolio is not just balances; it's a living mandate. The mandate must include the target allocation policy, friction tolerances (TCO/drift limits), and eligibility flags (e.g., "ESG Only" or "No TLH").
+- **Initial Setup (Onboarding):** We need an API or bulk-upload mechanism to ingest new portfolios. When a portfolio is loaded, it must undergo a rigorous "Validation Check" before being armed for live trading.
+- **Maintenance Lifecycle:** Mandates change. Target weights shift over time (e.g., target-date funds) or due to client requests. The system must support atomic, versioned updates to a portfolio's mandate so the engine always evaluates against the exact, temporally-correct policy.
+
+## 6. Authentication, Authorization & Provenance
+
+**Goal:** Strictly control and audit who can change what, separating operational oversight from financial mandate authority.
+**Discussion:**
+- **Role-Based Access Control (RBAC):**
+  - *Sysadmins/Ops:* Can start/stop the Orchestrator, view error logs, and monitor API rate limits. Cannot change target weights or manually trigger trades.
+  - *Portfolio Managers (Advisors):* Can propose changes to the target allocation mandates or adjust rebalancing parameters.
+  - *Compliance/Approvers:* May be required in a "Maker-Checker" workflow. A PM proposes a mandate change; it remains pending until Compliance approves it.
+- **Change Propagation & Audit Trails:**
+  - Every change to a portfolio's settings (e.g., changing absolute drift tolerance from 5% to 3%) must be logged immutably.
+  - The JSONL audit trail must be expanded to link the exact *version* of the mandate that was used to evaluate a trade. If a bad trade occurs, we must have provenance proving exactly who authorized the mandate and when it was modified.
 
 ---
 
