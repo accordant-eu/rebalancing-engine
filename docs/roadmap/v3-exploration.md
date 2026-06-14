@@ -102,6 +102,14 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
   2. A background propagation job fans out the new target weights to all 10,000 subscribed portfolios.
   3. The engine detects massive drift across 10,000 portfolios and gracefully queues evaluation events, respecting broker rate limits.
 
+## 10. SaaS Go-To-Market & Partner Onboarding
+
+**Goal:** Define the frictionless funnel from a prospective partner to a fully integrated, trading tenant.
+**Discussion:**
+- **The Marketing Sandbox:** A public marketing site should feature an interactive "Sandbox Mode." Prospective wealth managers can input a dummy target allocation and instantly see how the engine would handle drift, friction, and TCO over a historical backtest. This acts as a powerful lead-generation tool powered by a headless, ephemeral instance of the core engine.
+- **Automated Provisioning:** Partner onboarding should be zero-touch. When a firm signs up (and passes necessary broker-dealer or KYC checks), an automated deployment pipeline instantly provisions their isolated Tenant DB partition, issues their initial Admin RBAC credentials, and generates their scoped M2M API keys.
+- **White-Label UI Options:** While API-First is the priority, many smaller advisory firms lack developer resources. We should offer the React/Vite Command Center (built in Tranche 7) as a configurable White-Label product. Partners can inject their own logos and brand colors and embed the dashboard via iframe or map it to a custom subdomain (e.g., `rebalance.partner-firm.com`).
+
 ---
 
 ## Proposed Sequencing (For Discussion)
