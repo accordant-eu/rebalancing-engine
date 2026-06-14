@@ -19,6 +19,6 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Rebalancing Engine Tax Lots Mvp Plan](rebalancing-engine-tax-lots-mvp-plan.md)** - Documentation for rebalancing engine tax lots mvp plan
 * **[Scheduled Recurring Cash Flow Mvp Plan](scheduled-recurring-cash-flow-mvp-plan.md)** - Documentation for scheduled recurring cash flow mvp plan
 * **[Live Agent v3.0 MVP Plan](live-agent-v3-mvp-plan.md)** - Formal slice-by-slice implementation plan for v3 concepts
-
+* **[SaaS Architecture Plan](saas-architecture-plan.md)** - Detailed domain & architecture plan for B2B SaaS
 
 &copy; 2026 Johan Hellman. All rights reserved.
