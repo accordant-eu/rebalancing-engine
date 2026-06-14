@@ -178,9 +178,13 @@ function App() {
               <div className="logEntry" key={i}>
                 <span className="logTime">{new Date(log.timestamp || log.createdAt).toLocaleTimeString()}</span>
                 <span className="logEvent">[{log.type || 'EVALUATION'}]</span>
-                <span className="logData">
-                  {log.proposal ? `Proposed ${log.proposal.trades.length} trades` : JSON.stringify(log.context || {})}
-                </span>
+                <div className="logData">
+                  {log.proposal ? `Proposed ${log.proposal.trades.length} trades` : 'Event Data'}
+                  <details className="logDetails">
+                    <summary>View Full JSON</summary>
+                    <pre>{JSON.stringify(log, null, 2)}</pre>
+                  </details>
+                </div>
               </div>
             ))}
           </div>

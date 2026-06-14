@@ -130,7 +130,7 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
     });
 
     const orchestrator = new Orchestrator(stateManager, new DryRunExecutor(), {
-      cooldownMs: 1000,
+      cooldownMs: 10000,
     }, auditStorage, notifications);
 
     const app = express();

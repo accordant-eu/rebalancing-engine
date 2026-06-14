@@ -192,3 +192,30 @@
 .logData {
   color: var(--text-primary);
 }
+
+.logDetails {
+  margin-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 8px;
+}
+
+.logDetails summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.logDetails summary:hover {
+  color: var(--accent-blue);
+}
+
+.logDetails pre {
+  background: var(--bg-surface);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
