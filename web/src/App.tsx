@@ -14,7 +14,7 @@ interface Position {
 interface StatePayload {
   portfolioState: {
     cash: number;
-    positions: Position[];
+    holdings: Position[];
   };
   priceSnapshot: {
     prices: Record<string, number>;
@@ -79,14 +79,16 @@ function App() {
     let totalEquity = portfolioState.cash;
     const currentValues: Record<string, number> = {};
     
-    portfolioState.positions.forEach(p => {
-      const price = priceSnapshot.prices[p.instrumentId] || 0;
+    const holdings = portfolioState?.holdings || [];
+    holdings.forEach(p => {
+      const price = priceSnapshot?.prices?.[p.instrumentId] || 0;
       const value = p.quantity * price;
       currentValues[p.instrumentId] = value;
       totalEquity += value;
     });
 
-    return targetAllocation.targets.map(t => {
+    const targets = targetAllocation?.targets || [];
+    return targets.map(t => {
       const targetWeight = t.weight;
       const currentValue = currentValues[t.instrumentId] || 0;
       const currentWeight = totalEquity > 0 ? currentValue / totalEquity : 0;
@@ -174,8 +176,8 @@ function App() {
             {logs.length === 0 && <div>Waiting for logs...</div>}
             {logs.slice().reverse().map((log, i) => (
               <div className="logEntry" key={i}>
-                <span className="logTime">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                <span className="logEvent">[{log.type}]</span>
+                <span className="logTime">{new Date(log.timestamp || log.createdAt).toLocaleTimeString()}</span>
+                <span className="logEvent">[{log.type || 'EVALUATION'}]</span>
                 <span className="logData">
                   {log.proposal ? `Proposed ${log.proposal.trades.length} trades` : JSON.stringify(log.context || {})}
                 </span>
