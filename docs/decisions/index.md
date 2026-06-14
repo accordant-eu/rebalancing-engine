@@ -48,6 +48,9 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0038: Document live-agent vision as directional architecture](0038-document-live-agent-vision-as-directional-architecture.md) - Accepted
 * [ADR-0039: Use JSONL for persistent audit trails in MVP](0039-use-jsonl-for-persistent-audit-trails.md) - Accepted
 * [ADR-0040: Use Pause Strategy for Reconciliation](0040-use-pause-strategy-for-reconciliation.md) - Accepted
+* [ADR-0041: Pivot Live Agent to a B2B SaaS Multi-Tenant Architecture](0041-pivot-to-b2b-saas-multi-tenant-architecture.md) - Accepted
+* [ADR-0042: Separate Allocation Strategy from Execution Overlays](0042-separate-allocation-strategy-from-execution-overlays.md) - Accepted
+* [ADR-0043: Adopt UX-First Thin Slice MVP Methodology for v3](0043-adopt-ux-first-thin-slice-mvp-methodology-for-v3.md) - Accepted
 
 
 &copy; 2026 Johan Hellman. All rights reserved.
