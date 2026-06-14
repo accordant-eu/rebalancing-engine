@@ -97,12 +97,12 @@ Beyond read-only observability, the dashboard must expose write capabilities for
 
 ---
 
-## 6. Execution Slicing Strategy
+## 6. Execution Slicing Strategy (MVP Approach)
 
-We will execute this architecture in the following sequence:
+To adhere strictly to our MVP "thin vertical slice" principles, we avoid building massive backend schema changes in a vacuum. Each tranche must deliver a demonstrable, verifiable increment of value—ideally visible in the Command Center.
 
-* **Tranche 9 (Data Layer & Mandates)**: Update the SQLite schema and Domain models to support Cohesive Mandates, Models, and `subscriptionType`. Prove this offline/in-memory first.
-* **Tranche 10 (Multi-Tenancy)**: Introduce the `Tenant` entity, update the Express API to require Tenant-scoped authentication, and group portfolios by Tenant.
-* **Tranche 11 (Broker Routing)**: Overhaul the `BrokerAdapter` to accept contextual credentials and map internal portfolios to external `brokerAccountId`s. Integrate the Alpaca B2B Broker API.
+* **Tranche 9 (Model Management UX)**: Implement the Cohesive Mandate and Model hierarchy in the database and API. Crucially, build the UI to visualize this: allow the user to create a Model in the dashboard, assign a portfolio to `discretionary` subscription, and watch the Orchestrator instantly update the portfolio's target allocations. This proves the core domain logic end-to-end.
+* **Tranche 10 (SaaS Tenant Partitioning)**: Introduce the `Tenant` entity and API keys. Update the dashboard to require tenant context (e.g., a login or tenant-switcher). Prove that the UI and API strictly isolate data, so Tenant A cannot see Tenant B's portfolios, even while the engine evaluates them all concurrently in dry-run mode.
+* **Tranche 11 (B2B Broker Routing)**: Finally, with the domain logic and tenant partitioning proven safely offline/dry-run, overhaul the `BrokerAdapter`. Integrate the Alpaca B2B Broker API to map internal portfolios to external sub-accounts and execute real trades contextually per tenant.
 
 &copy; 2026 Johan Hellman. All rights reserved.
