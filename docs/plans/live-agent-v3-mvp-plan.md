@@ -19,48 +19,46 @@ To translate the concepts mapped out in `docs/roadmap/v3-exploration.md` into co
 
 ## 2. Sequencing Overview
 
-The sequence prioritizes foundational data architecture first (Multi-portfolio SQLite), core calculation enhancements second (Friction), followed by macro-observability (Command Center), and finally Enterprise features (Models and Multi-Tenancy).
+To adhere strictly to MVP principles, we must avoid "bottom-up waterfall" engineering. Instead of building a massive SQLite backend before anyone sees value, we will build "thin vertical slices." We prioritize the Command Center UX and Core Engine Friction *first*, mocking the multi-portfolio data layer until persistence is strictly necessary.
 
-### Tranche 5: The Multi-Portfolio Foundation (SQLite MVP)
-Before we can scale or build a dashboard, the agent must be able to manage more than one portfolio at a time without network latency.
-- **Goal:** Shift from a single `LiveStateManager` holding JSON in memory to a persistent, queried state.
-- **Action 1:** Introduce `better-sqlite3` (synchronous, in-memory/WAL capable) as our state foundation.
-- **Action 2:** Define a minimal schema: `Portfolios`, `Assets`, `TaxLots`, and `TargetAllocations`.
-- **Action 3:** Refactor the Orchestrator loop to query active portfolios and evaluate them sequentially (or via worker threads).
-- **Action 4:** Build a CLI tool (`agent seed`) to generate 1,000 synthetic portfolios into the local database for load testing.
-- **Exit Criteria:** The agent boots up, loads 1,000 portfolios, and continuously evaluates their drift safely without crashing.
+### Tranche 5: The Command Center Dashboard (UX-First MVP)
+Before scaling to thousands of portfolios, we must prove we can observe what the Live Agent is doing *right now*.
+- **Goal:** Surface the agent's internal state to a macro-observability dashboard.
+- **Action 1:** Embed a lightweight HTTP server (e.g., Express) inside the Agent to expose read-only API routes querying the existing `LiveStateManager` and JSONL audit trails.
+- **Action 2:** Create a `/web` package containing a React/Vite UI.
+- **Action 3:** Build the UI to visualize the active portfolio's drift, threshold "near-misses," and live execution logs.
+- **Exit Criteria:** A user can navigate to `localhost:3000` while the Agent is running and watch the portfolio drift and trade logs update in real-time.
 
 ### Tranche 6: Friction Optimization (TCO & Slippage)
-With thousands of portfolios, we must prevent the agent from destroying wealth via micro-churn.
+Before we scale out, we must prevent the core engine from generating wealth-destroying micro-churn.
 - **Goal:** Introduce explicit and implicit cost models to the pure evaluation core.
 - **Action 1:** Inject a `FrictionModel` interface into the `core/trades.ts` pipeline.
-- **Action 2:** Implement a mocked `FixedFeeModel` (e.g., $1 per trade) and a `PercentageSlippageModel` (e.g., 5 bps spread).
-- **Action 3:** Implement the Penalty Function: Before emitting a `TradeProposal`, the engine compares the estimated friction cost against the monetary value of reducing the drift. If Cost > Benefit, the trade is rejected.
-- **Exit Criteria:** Unit tests prove that a portfolio perfectly on the boundary line does not trade if the TCO penalty outweighs the drift benefit.
+- **Action 2:** Implement a mocked `FixedFeeModel` (e.g., $1 per trade) and a `PercentageSlippageModel`.
+- **Action 3:** Implement the Penalty Function: If estimated Cost > Benefit, the trade is rejected.
+- **Exit Criteria:** The Dashboard (from Tranche 5) explicitly highlights trades that were *suppressed* due to TCO penalties.
 
-### Tranche 7: The Command Center Dashboard (MVP)
-With 1,000 portfolios being evaluated safely, we need macro-observability.
-- **Goal:** Provide a high-level systemic view of agent health.
-- **Action 1:** Embed a lightweight HTTP server (e.g., Express) within the Agent to expose read-only API routes querying the SQLite database and the JSONL audit trails.
-- **Action 2:** Create a `/web` package containing a React/Vite UI.
-- **Action 3:** Build a dashboard displaying a Global Health Heatmap (drift distribution) and a "Near-Miss" table.
-- **Exit Criteria:** A user can navigate to `localhost:3000` while the Agent is running and watch aggregate drift scores update in real-time as prices tick.
+### Tranche 7: The Multi-Portfolio Mock (In-Memory Scale)
+We prove the Orchestrator can handle multiple portfolios without yet taking on database dependencies.
+- **Goal:** Transition the Orchestrator loop from evaluating 1 portfolio to evaluating $N$ portfolios asynchronously.
+- **Action 1:** Refactor `LiveStateManager` to hold an array of 5-10 synthetic portfolios in memory.
+- **Action 2:** Refactor the Orchestrator loop to evaluate the array sequentially or via `Promise.all`.
+- **Action 3:** Update the Dashboard to aggregate these 5-10 portfolios into a "Global Health Heatmap".
+- **Exit Criteria:** The dashboard successfully aggregates and visualizes multiple portfolios running concurrently.
 
-### Tranche 8: Mandate Propagation & Model Portfolios
-Transitioning from individual mandates to a scalable SaaS paradigm.
-- **Goal:** Update 1,000 portfolios securely via a single model change.
-- **Action 1:** Add `Models` to the SQLite schema and link `Portfolios` via a `model_id` foreign key.
-- **Action 2:** Write the propagation "fan-out" function. When a `Model`'s target allocation changes, immediately clone the new targets to all linked portfolios.
-- **Action 3:** Implement Queueing constraints: Triggering a Model change across 1,000 portfolios will cause massive simultaneous drift. Ensure the Orchestrator evaluates these asynchronously so we don't blow up the Broker API rate limits.
-- **Exit Criteria:** Updating a Model via CLI correctly triggers a throttled wave of evaluations across the linked portfolios.
+### Tranche 8: The SQLite Foundation (Data Persistence)
+Once the UI and the multi-portfolio loop are proven in memory, we swap the mock for a real database to scale to 10,000+.
+- **Goal:** Shift from the in-memory array to a queried relational state.
+- **Action 1:** Introduce `better-sqlite3`.
+- **Action 2:** Define the schema: `Portfolios`, `Assets`, `TaxLots`, and `TargetAllocations`.
+- **Action 3:** Build a CLI tool (`agent seed`) to generate 1,000 synthetic portfolios into SQLite for load testing.
+- **Exit Criteria:** The agent boots up, loads 1,000 portfolios from disk, and the Dashboard remains highly responsive.
 
-### Tranche 9: Enterprise Operations & SaaS Readiness
+### Tranche 9: Mandates, Models & Enterprise SaaS
 The final hardening phase for production.
-- **Goal:** Implement the fail-safes required for an enterprise deployment.
-- **Action 1:** Write an EOD Reconciliation CLI job that fetches the broker's "Settled Ledger" and compares it to the internal SQLite state, flagging unmatched balances.
-- **Action 2:** Implement Tenant Isolation: Refactor the schema to strictly require `tenant_id` on all tables.
-- **Action 3:** Establish the RBAC framework around the API to separate sysadmin operations from mandate modifications.
-- **Exit Criteria:** The system successfully passes an audit proving Firm A cannot query or alter Firm B's portfolio mandates.
+- **Goal:** Implement SaaS fan-out mechanics and EOD reconciliations.
+- **Action 1:** Add `Models` to SQLite and write the "fan-out" queue to update linked portfolios when a model changes.
+- **Action 2:** Write an EOD Reconciliation CLI job that fetches the broker's "Settled Ledger" to catch unmatched balances.
+- **Exit Criteria:** Updating a Model via CLI correctly triggers a throttled wave of evaluations across 1,000 linked portfolios.
 
 ---
 
