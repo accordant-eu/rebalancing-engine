@@ -12,6 +12,7 @@ Commands:
   run        Run one rebalancing scenario
   batch      Run multiple scenarios
   inspect    Inspect scenarios, strategies, or policy fields
+  agent      Run the Orchestrator loop in Dry-Run mode with synthetic data
 
 Global options:
   --format json|pretty|summary   Output format (default: summary)

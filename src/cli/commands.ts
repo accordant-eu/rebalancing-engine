@@ -16,6 +16,7 @@ import {
 import { getFormat, getStringOption, hasBooleanOption, OutputFormat, ParsedArgs } from './options';
 import { BatchOutput, CliOutput, InspectOutput, renderOutput, ValidateOutput } from './render';
 import { validateScenarioFixture } from './validation';
+import { executeAgent } from './agent';
 
 export interface CommandContext {
   cwd: string;
@@ -52,6 +53,8 @@ export function executeCommand(parsed: ParsedArgs, context: CommandContext): Com
       return renderCommandOutput(executeBatch(parsed, context), format, quiet);
     case 'inspect':
       return renderCommandOutput(executeInspect(parsed, context), format, quiet);
+    case 'agent':
+      return executeAgent(parsed, context);
     default:
       throw new UsageError(`Unknown command: ${parsed.command}`);
   }
