@@ -53,6 +53,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0043: Adopt UX-First Thin Slice MVP Methodology for v3](0043-adopt-ux-first-thin-slice-mvp-methodology-for-v3.md) - Accepted
 * [ADR-0044: Use npm workspaces for monorepo structure](0044-use-npm-workspaces-for-monorepo.md) - Accepted
 * [ADR-0045: Colocate API Server within Live Agent Process](0045-colocate-api-server-within-agent-process.md) - Accepted
-
+* [ADR-0046: Use size-based log rotation and realistic simulation reset in dry-run](0046-use-size-based-rotation-and-simulation-reset.md) - Accepted
 
 &copy; 2026 Johan Hellman. All rights reserved.

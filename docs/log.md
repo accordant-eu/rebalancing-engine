@@ -16,6 +16,7 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-06-14 | Created formal `docs/plans/live-agent-v3-mvp-plan.md` to sequence the implementation of Tranches 5-9. |
 | 2026-06-14 | Extracted formal decisions from the v3 exploration phase into ADRs 0041, 0042, and 0043. |
 | 2026-06-14 | Drafted ADRs 0044 and 0045 for the Tranche 5 Monorepo and API architecture. |
+| 2026-06-14 | Drafted ADR 0046 for size-based log rotation and dry-run simulation reset. |
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

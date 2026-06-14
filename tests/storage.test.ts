@@ -8,6 +8,8 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn(),
   promises: {
     appendFile: jest.fn(),
+    stat: jest.fn().mockRejectedValue({ code: 'ENOENT' }),
+    rename: jest.fn(),
   },
 }));
 

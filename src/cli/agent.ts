@@ -129,9 +129,21 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
       policy: scenario.policy,
     });
 
+    const auditStorageAdapter = {
+      saveAuditRecord: async (record: any) => {
+        await auditStorage.saveAuditRecord(record);
+        if (record.trigger.isTriggered && record.postTradeSimulation) {
+          stateManager.updatePortfolio({
+            ...scenario.portfolioState,
+            ...record.postTradeSimulation.postTradeState
+          });
+        }
+      }
+    };
+
     const orchestrator = new Orchestrator(stateManager, new DryRunExecutor(), {
       cooldownMs: 10000,
-    }, auditStorage, notifications);
+    }, auditStorageAdapter, notifications);
 
     const app = express();
     app.use(cors());

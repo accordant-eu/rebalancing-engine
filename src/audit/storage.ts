@@ -18,10 +18,35 @@ export class FileAuditStorage implements AuditStorageAdapter {
     }
   }
 
+  private async rotateLogsIfNeeded(newEntrySize: number): Promise<void> {
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_FILES = 3;
+
+    try {
+      const stats = await fs.promises.stat(this.filePath);
+      if (stats.size + newEntrySize > MAX_SIZE) {
+        // Rotate: .2 -> .3, .1 -> .2, original -> .1
+        for (let i = MAX_FILES - 1; i >= 1; i--) {
+          const oldPath = `${this.filePath}.${i}`;
+          const newPath = `${this.filePath}.${i + 1}`;
+          if (fs.existsSync(oldPath)) {
+            await fs.promises.rename(oldPath, newPath);
+          }
+        }
+        await fs.promises.rename(this.filePath, `${this.filePath}.1`);
+      }
+    } catch (e: any) {
+      if (e.code !== 'ENOENT') {
+        console.error('Error rotating logs:', e);
+      }
+    }
+  }
+
   public async saveAuditRecord(record: AuditRecord): Promise<void> {
     // Round outputs before saving for deterministic JSON equality
     const rounded = roundAuditRecordOutputs(record);
     const jsonl = JSON.stringify(rounded) + '\n';
+    await this.rotateLogsIfNeeded(Buffer.byteLength(jsonl, 'utf-8'));
     await fs.promises.appendFile(this.filePath, jsonl, 'utf-8');
   }
 }
