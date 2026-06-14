@@ -82,7 +82,22 @@ Currently, the `Orchestrator` loops over all portfolios sequentially and uses a 
 
 ---
 
-## 5. Execution Slicing Strategy
+## 5. Web Dashboard Impact (Tenant Portals)
+
+The current global observability dashboard (`/web`) must evolve into a tenant-aware portal.
+
+### Tenant Access & Scoping
+- **Authentication**: The UI must support logging in as a specific `Tenant`. The frontend will hold the tenant's authentication context and append the necessary `x-api-key` or JWT to all API requests.
+- **Data Isolation**: The API routes (`/api/state`, `/api/logs`) will filter responses strictly to the authenticated `tenantId`, ensuring B2B partners only see their own fleet.
+
+### Management Capabilities
+Beyond read-only observability, the dashboard must expose write capabilities for tenants:
+- **Model Management**: UI to create, edit, and delete Model Mandates.
+- **Portfolio Overrides**: UI to manually edit bespoke allocations for portfolios with `subscriptionType === 'bespoke'`, or to change a portfolio's subscription type.
+
+---
+
+## 6. Execution Slicing Strategy
 
 We will execute this architecture in the following sequence:
 
