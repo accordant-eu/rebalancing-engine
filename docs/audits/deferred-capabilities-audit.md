@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Deferred Capabilities Audit
+description: Documentation for deferred capabilities audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Deferred Capabilities Increment Audit
 
 Date: 2026-05-02

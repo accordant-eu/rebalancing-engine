@@ -137,19 +137,23 @@ Exit codes:
 
 Full reference: [docs/cli/cli-reference.md](docs/cli/cli-reference.md).
 
-## Documentation
+## Knowledge Base (Documentation)
 
-- [User guide](docs/guides/user-guide.md): how to use the engine and CLI.
-- [CLI reference](docs/cli/cli-reference.md): command syntax, options, output, and errors.
-- [Examples](docs/examples.md): copy-pasteable CLI examples.
-- [Developer guide](docs/guides/developer-guide.md): repository structure, architecture, tests, and workflows.
-- [Strategy extension guide](docs/guides/adding-rebalancing-strategies.md): how to add or extend strategies safely.
-- [Architecture overview](docs/architecture/overview.md): high-level system boundaries and flow.
-- [Fixture guide](tests/fixtures/README.md): synthetic scenarios and assumptions.
-- [Build journey](BUILD_JOURNEY.md): decision log and iteration history.
+The `docs/` directory contains the project knowledge base in [OKF (Open Knowledge Format)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md). 
+
+Start at **[docs/index.md](docs/index.md)** for an overview of all available documentation.
+
+Key entry points:
+- [Architecture Overview](docs/architecture/overview.md): high-level system boundaries and flow.
+- [User Guide](docs/guides/user-guide.md): how to use the engine and CLI.
+- [CLI Reference](docs/cli/cli-reference.md): command syntax, options, output, and errors.
+- [Decision Records (ADRs)](docs/decisions/index.md): chronological log of architecture and design decisions.
+- [Developer Guide](docs/guides/developer-guide.md): repository structure, architecture, tests, and workflows.
+- [Strategy Extension Guide](docs/guides/adding-rebalancing-strategies.md): how to add or extend strategies safely.
+
+Root files:
+- [Build journey](BUILD_JOURNEY.md): iteration history.
 - [AGENTS.md](AGENTS.md): repository rules for AI-assisted development.
-
-Planning, audit, and roadmap material lives under [docs/](docs).
 
 ## Project Structure
 
@@ -175,4 +179,4 @@ docs/
 
 ## Development Discipline
 
-Keep changes small and testable. For meaningful domain, architecture, API, CLI, fixture, audit, explanation, or documentation decisions, record the decision and options considered in `BUILD_JOURNEY.md`. New engine behavior should be exposed through the CLI or explicitly documented as not exposed.
+Keep changes small and testable. For meaningful domain, architecture, API, CLI, fixture, audit, explanation, or documentation decisions, record an **Architecture Decision Record (ADR)** in `docs/decisions/` and link it from `BUILD_JOURNEY.md`. New engine behavior should be exposed through the CLI or explicitly documented as not exposed.

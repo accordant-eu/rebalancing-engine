@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Production Boundary Audit
+description: Documentation for production boundary audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Production Boundary Audit
 
 Date: 2026-05-02

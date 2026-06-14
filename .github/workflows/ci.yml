@@ -32,5 +32,8 @@ jobs:
     - name: Lint
       run: npm run lint
       
+    - name: Validate Docs (OKF)
+      run: ./scripts/validate-docs.sh
+      
     - name: Test
       run: npm test -- --runInBand

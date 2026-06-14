@@ -1,3 +1,11 @@
+---
+type: Guide
+title: Adding Rebalancing Strategies
+description: Documentation for adding rebalancing strategies
+tags: [guide]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Adding Rebalancing Strategies
 
 Date: 2026-05-02

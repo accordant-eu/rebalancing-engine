@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Optimizer Feasibility Audit
+description: Documentation for optimizer feasibility audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Optimizer Feasibility Audit
 
 Date: 2026-05-02

@@ -1,3 +1,11 @@
+---
+type: Research
+title: Portfolio Rebalancing Meta Paper Synthesis
+description: Documentation for portfolio rebalancing meta paper synthesis
+tags: [root]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # **Meta-Analysis of Portfolio Rebalancing Methodologies: Theoretical Frameworks, Empirical Evidence, and Practical Implementation**
 
 ## **TL;DR**

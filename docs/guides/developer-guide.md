@@ -1,3 +1,11 @@
+---
+type: Guide
+title: Developer Guide
+description: Documentation for developer guide
+tags: [guide]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Developer Guide
 
 Date: 2026-05-02

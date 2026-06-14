@@ -1,3 +1,11 @@
+---
+type: PRD
+title: Rebalancing Engine Next Iteration Prd
+description: Documentation for rebalancing engine next iteration prd
+tags: [prd]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Rebalancing Engine Next-Iteration PRD
 
 Date: 2026-05-02

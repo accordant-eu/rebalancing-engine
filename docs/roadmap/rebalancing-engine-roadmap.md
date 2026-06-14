@@ -1,3 +1,11 @@
+---
+type: Roadmap
+title: Rebalancing Engine Roadmap
+description: Documentation for rebalancing engine roadmap
+tags: [roadmap]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Rebalancing Engine Roadmap
 
 Date: 2026-05-02
@@ -274,15 +282,31 @@ Integration risks:
 
 - Productionization work could start accidentally through cash-flow scheduling. Default assumption: no API, persistence, banking, custody, or execution code in the scheduled-flow increment.
 
-Open questions:
+Open questions (resolved 2026-06-14):
 
-- Should weekly/custom recurrence be added later, or are monthly/quarterly/annual sufficient?
-- Should schema-only validation be split from engine-path validation for CLI `validate`?
-- Should future scheduled flows remain warnings, or become audit-only metadata in a later output contract?
-- Should static price timestamp/freshness semantics be the next offline data-integrity increment?
+- ~~Should weekly/custom recurrence be added later, or are monthly/quarterly/annual sufficient?~~ **Resolved:** Add weekly recurrence. Custom intervals remain deferred. Owner uses a broker with weekly contributions.
+- ~~Should schema-only validation be split from engine-path validation for CLI `validate`?~~ **Resolved:** Deferred. Engine-path validation terminates early on structural errors; performance profile is effectively identical.
+- ~~Should future scheduled flows remain warnings, or become audit-only metadata in a later output contract?~~ **Resolved:** Larger change — scheduled flows should be projection/planning only and should not inflate available cash for actionable proposals. The engine should not assume what happened outside its visibility boundary.
+- ~~Should static price timestamp/freshness semantics be the next offline data-integrity increment?~~ **Resolved:** Add optional `asOf` timestamp for audit traceability. Staleness enforcement belongs in the orchestrator per the live-agent vision.
+
+New open questions:
+
+- Should the orchestrator/agent be a separate repository or part of this one?
+- What persistence model should the agent use for audit trails?
+- How should the engine distinguish projection/simulation from actionable proposals in its output contract?
+- Should the engine support a "dry run" mode for the live agent?
 
 ## 10. Recommended Next Action
 
-Recommended next task/prompt:
+Updated 2026-06-14 after open questions review and live-agent vision.
 
-Run a small hardening increment for fixture/schema validation or add CI using the existing validation commands: `npm test`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, scenario runner expectation validation, and representative CLI smoke commands. Keep optimizer, tax, API, UI, database, live data, banking/custody, and execution work deferred until dedicated requirements exist.
+Recommended near-term implementation candidates, in suggested priority order:
+
+1. **Scheduled-flow behavioral change:** Restrict due scheduled flows to projection/planning output only; do not inflate available cash for actionable trade proposals. This is a behavioral change with test/fixture impact.
+2. **Weekly recurrence:** Add `WEEKLY` frequency to cash-flow schedule recurrence.
+3. **Price `asOf` metadata:** Add optional `asOf` timestamp to price entries for audit traceability.
+4. **CI hardening:** Add `npm run build`, scenario-runner expectation validation, and CLI smoke commands to the GitHub Actions workflow.
+
+Keep optimizer, tax, API, UI, database, live data, banking/custody, and execution work deferred until dedicated requirements exist. The live-agent orchestrator layer should be designed after the engine's core changes above are implemented.
+
+See [docs/architecture/live-agent-vision.md](../architecture/live-agent-vision.md) for the directional architecture.

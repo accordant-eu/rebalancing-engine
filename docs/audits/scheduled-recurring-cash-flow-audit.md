@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Scheduled Recurring Cash Flow Audit
+description: Documentation for scheduled recurring cash flow audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Scheduled and Recurring Cash-Flow Audit
 
 Date: 2026-05-02

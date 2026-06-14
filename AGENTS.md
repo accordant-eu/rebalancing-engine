@@ -19,11 +19,12 @@ These rules govern AI-assisted development in this repository. The project is in
 - Do not make irreversible architectural decisions without evidence.
 - Mark uncertain decisions as provisional.
 - Prefer reversible choices during early exploration.
-- Record meaningful decisions in `BUILD_JOURNEY.md`.
+- Record meaningful decisions as ADR files in `docs/decisions/`. Use `docs/decisions/TEMPLATE.md` as the starting point. Add a summary row to the BUILD_JOURNEY decisions table with a link to the ADR.
+- Assign the next sequential ADR number. Check existing files to determine the current highest number.
 - Separate facts, assumptions, inferences, and decisions.
 - Treat decision discipline as a standing instruction for all product, architecture, domain, calculation, testing, tooling, documentation, and implementation work.
 - When a meaningful decision arises, explicitly identify it, consider reasonable alternatives, assess trade-offs, choose a preferred option when enough information exists, document the decision, implement it consistently, and validate it.
-- Document meaningful decisions using this structure: Decision, Status, Date, Context, Options considered, Preferred option, Rationale, Implementation impact, Validation.
+- Document meaningful decisions using the OKF Decision Record structure: Context, Options considered, Decision, Rationale, Implementation impact, Validation.
 - Defer a decision only when it is genuinely premature, blocked, post-MVP, or lacks necessary stakeholder/integration information. Document the default behavior, revisit point, risk, and whether it blocks current work.
 - Prefer deterministic, explicit, testable, MVP-compatible, reversible choices over silent fallback behavior, broad abstractions, or undocumented assumptions.
 
@@ -49,7 +50,11 @@ These rules govern AI-assisted development in this repository. The project is in
 ## 5. Documentation Discipline
 
 - Update documentation when behavior, setup, assumptions, or architecture changes.
-- Keep `BUILD_JOURNEY.md` current.
+- All new documents in `docs/` must include OKF-compliant YAML frontmatter with at minimum: `type`, `title`, `description`, and `timestamp`.
+- When adding a new file to any `docs/` subdirectory, update the corresponding `index.md` to include the new file.
+- When making substantive documentation changes, add an entry to the root `docs/log.md`.
+- Keep `BUILD_JOURNEY.md` current for high-level iteration summaries only. Do not embed full decision records—link to ADR files instead.
+- Refer to `docs/CONTRIBUTING_DOCS.md` for our documentation conventions.
 - Explain why changes were made, not only what changed.
 - Keep setup instructions practical and tested where possible.
 - Document known gaps rather than hiding them.

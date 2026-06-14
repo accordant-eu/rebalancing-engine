@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Red Team Audit Current
+description: Documentation for red team audit current
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Red-Team Audit Report: MVP Implementation
 
 ## 1. Audit Summary

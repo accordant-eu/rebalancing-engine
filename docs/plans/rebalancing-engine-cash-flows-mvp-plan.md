@@ -1,3 +1,11 @@
+---
+type: Implementation Plan
+title: Rebalancing Engine Cash Flows Mvp Plan
+description: Documentation for rebalancing engine cash flows mvp plan
+tags: [plan]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Cash Flows MVP Plan
 
 Date: 2026-05-02

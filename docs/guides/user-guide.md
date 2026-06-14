@@ -1,3 +1,11 @@
+---
+type: Guide
+title: User Guide
+description: Documentation for user guide
+tags: [guide]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # User Guide
 
 Date: 2026-05-02

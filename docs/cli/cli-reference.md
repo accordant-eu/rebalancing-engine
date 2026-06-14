@@ -1,3 +1,11 @@
+---
+type: Reference
+title: Cli Reference
+description: Documentation for cli reference
+tags: [cli]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # CLI Reference
 
 Date: 2026-05-02

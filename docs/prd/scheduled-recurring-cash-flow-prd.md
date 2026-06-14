@@ -1,3 +1,11 @@
+---
+type: PRD
+title: Scheduled Recurring Cash Flow Prd
+description: Documentation for scheduled recurring cash flow prd
+tags: [prd]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Scheduled and Recurring Cash-Flow PRD
 
 Date: 2026-05-02

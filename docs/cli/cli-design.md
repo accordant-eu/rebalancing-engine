@@ -1,3 +1,11 @@
+---
+type: Design
+title: Cli Design
+description: Documentation for cli design
+tags: [cli]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # CLI Design
 
 Date: 2026-05-02

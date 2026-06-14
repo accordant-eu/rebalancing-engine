@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Cash Flows Audit
+description: Documentation for cash flows audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Cash Flows Increment Audit
 
 Date: 2026-05-02

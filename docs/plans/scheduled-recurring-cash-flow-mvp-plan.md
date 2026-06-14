@@ -1,3 +1,11 @@
+---
+type: Implementation Plan
+title: Scheduled Recurring Cash Flow Mvp Plan
+description: Documentation for scheduled recurring cash flow mvp plan
+tags: [plan]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Scheduled and Recurring Cash-Flow MVP Plan
 
 Date: 2026-05-02

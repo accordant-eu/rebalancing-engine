@@ -1,3 +1,11 @@
+---
+type: Implementation Plan
+title: Rebalancing Engine Production Boundary Plan
+description: Documentation for rebalancing engine production boundary plan
+tags: [plan]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Production Boundary Plan
 
 Date: 2026-05-02

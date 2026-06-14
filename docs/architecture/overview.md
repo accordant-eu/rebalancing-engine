@@ -1,3 +1,11 @@
+---
+type: Architecture
+title: Overview
+description: Documentation for overview
+tags: [architecture]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Architecture Overview
 
 Date: 2026-05-02

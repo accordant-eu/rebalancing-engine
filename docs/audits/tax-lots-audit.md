@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Tax Lots Audit
+description: Documentation for tax lots audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Tax Lot Foundations Increment Audit
 
 Date: 2026-05-02

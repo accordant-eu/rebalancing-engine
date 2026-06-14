@@ -1,3 +1,11 @@
+---
+type: Implementation Plan
+title: Mvp Implementation Plan
+description: Documentation for mvp implementation plan
+tags: [root]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # MVP Implementation Plan: Generic Portfolio Rebalancing Engine
 
 ## 1. Executive Summary

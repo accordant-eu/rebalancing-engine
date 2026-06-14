@@ -1,3 +1,11 @@
+---
+type: Reference
+title: Examples
+description: Documentation for examples
+tags: [root]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Examples
 
 Date: 2026-05-02

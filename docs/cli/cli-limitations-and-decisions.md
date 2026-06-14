@@ -1,3 +1,11 @@
+---
+type: Reference
+title: Cli Limitations And Decisions
+description: Documentation for cli limitations and decisions
+tags: [cli]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # CLI Limitations and Decisions
 
 Date: 2026-05-02

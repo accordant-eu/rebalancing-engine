@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Test Case Audit
+description: Documentation for test case audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Test-Case Audit Report: MVP Portfolio Rebalancing Engine
 
 ---

@@ -1,0 +1,48 @@
+---
+type: Reference
+title: Architecture Decision Records
+description: Index of all project decisions.
+tags: [decisions, adr, index]
+timestamp: 2026-06-14T00:00:00Z
+---
+
+# Architecture Decision Records
+
+* [ADR-0001: Add thin offline CLI around existing engine and fixture runner](0001-add-thin-offline-cli-around-existing-engine-and-fixture-runner.md) - Accepted
+* [ADR-0002: Resolve CLI limitations pragmatically](0002-resolve-cli-limitations-pragmatically.md) - Accepted
+* [ADR-0003: Adopt standing decision discipline in repository rules](0003-adopt-standing-decision-discipline-in-repository-rules.md) - Accepted
+* [ADR-0004: Push validated commits at reasonable checkpoints](0004-push-validated-commits-at-reasonable-checkpoints.md) - Accepted
+* [ADR-0005: Suppress below-minimum trades with structured warnings](0005-suppress-below-minimum-trades-with-structured-warnings.md) - Accepted
+* [ADR-0006: Reject negative cash in trade proposal generation](0006-reject-negative-cash-in-trade-proposal-generation.md) - Accepted
+* [ADR-0007: Simulate exact proposed trades with sell-side turnover](0007-simulate-exact-proposed-trades-with-sell-side-turnover.md) - Accepted
+* [ADR-0008: Use sell-side turnover for MVP simulation](0008-use-sell-side-turnover-for-mvp-simulation.md) - Accepted
+* [ADR-0009: Generate deterministic explanations from calculation outputs](0009-generate-deterministic-explanations-from-calculation-outputs.md) - Accepted
+* [ADR-0010: Use caller-supplied audit metadata](0010-use-caller-supplied-audit-metadata.md) - Accepted
+* [ADR-0011: Report batch scenario errors per scenario](0011-report-batch-scenario-errors-per-scenario.md) - Accepted
+* [ADR-0012: Use manual forced rebalance as second strategy](0012-use-manual-forced-rebalance-as-second-strategy.md) - Accepted
+* [ADR-0013: Mark offline fixture MVP complete](0013-mark-offline-fixture-mvp-complete.md) - Accepted
+* [ADR-0014: Use hybrid multi-strategy architecture next](0014-use-hybrid-multi-strategy-architecture-next.md) - Accepted for next iteration
+* [ADR-0015: Prioritize calendar and boundary-target strategy slices](0015-prioritize-calendar-and-boundary-target-strategy-slices.md) - Provisional
+* [ADR-0016: Default omitted strategy policy to threshold](0016-default-omitted-strategy-policy-to-threshold.md) - Accepted
+* [ADR-0017: Use explicit calendar dates only](0017-use-explicit-calendar-dates-only.md) - Accepted for MVP
+* [ADR-0018: Limit boundary targeting to absolute bands first](0018-limit-boundary-targeting-to-absolute-bands-first.md) - Accepted for MVP
+* [ADR-0019: Use separate expected-status runner manifest](0019-use-separate-expected-status-runner-manifest.md) - Accepted
+* [ADR-0020: Mark active MVP slice sets complete](0020-mark-active-mvp-slice-sets-complete.md) - Accepted
+* [ADR-0021: Use a strategy registry for selection](0021-use-a-strategy-registry-for-selection.md) - Accepted
+* [ADR-0022: Scope next deferred-capability increment to numeric policy and relative boundaries](0022-scope-next-deferred-capability-increment-to-numeric-policy-and-relative-boundaries.md) - Accepted for next increment
+* [ADR-0023: Use `decimal.js` internally with explicit output rounding](0023-use-decimal-js-internally-with-explicit-output-rounding.md) - Accepted
+* [ADR-0024: Add policy-selected relative boundary targeting](0024-add-policy-selected-relative-boundary-targeting.md) - Accepted
+* [ADR-0025: Defer production surfaces until concrete consumers and operations are defined](0025-defer-production-surfaces-until-concrete-consumers-and-operations-are-defined.md) - Accepted
+* [ADR-0026: Prioritize scheduled/recurring cash-flow semantics next](0026-prioritize-scheduled-recurring-cash-flow-semantics-next.md) - Accepted for planning
+* [ADR-0027: Require CLI exposure decisions for future engine capabilities](0027-require-cli-exposure-decisions-for-future-engine-capabilities.md) - Accepted
+* [ADR-0028: Consolidate user/developer docs around observed behavior](0028-consolidate-user-developer-docs-around-observed-behavior.md) - Accepted
+* [ADR-0029: Place scheduled flows on `PortfolioState.cashFlowSchedules`](0029-place-scheduled-flows-on-portfoliostate-cashflowschedules.md) - Accepted
+* [ADR-0030: Use explicit ISO date-only evaluation semantics](0030-use-explicit-iso-date-only-evaluation-semantics.md) - Accepted
+* [ADR-0031: Apply due schedules as schedule-derived settled cash-flow events in an internal copy](0031-apply-due-schedules-as-schedule-derived-settled-cash-flow-events-in-an-internal-copy.md) - Accepted
+* [ADR-0032: Support monthly, quarterly, and annual recurrence only](0032-support-monthly-quarterly-and-annual-recurrence-only.md) - Accepted
+* [ADR-0033: Keep scheduled-flow CLI inputs file-based](0033-keep-scheduled-flow-cli-inputs-file-based.md) - Accepted
+* [ADR-0034: Add weekly recurrence frequency for cash-flow schedules](0034-add-weekly-recurrence-frequency-for-cash-flow-schedules.md) - Accepted for next increment
+* [ADR-0035: Defer schema-only validation mode](0035-defer-schema-only-validation-mode.md) - Deferred
+* [ADR-0036: Restrict scheduled cash flows to projection/planning only](0036-restrict-scheduled-cash-flows-to-projection-planning-only.md) - Accepted
+* [ADR-0037: Add optional `asOf` timestamp on prices for audit traceability](0037-add-optional-asof-timestamp-on-prices-for-audit-traceability.md) - Accepted for next increment
+* [ADR-0038: Document live-agent vision as directional architecture](0038-document-live-agent-vision-as-directional-architecture.md) - Accepted

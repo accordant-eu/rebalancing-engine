@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Independent Full Chain Audit
+description: Documentation for independent full chain audit
+tags: [audit]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Independent Full-Chain Audit
 
 **Date:** 2026-05-02

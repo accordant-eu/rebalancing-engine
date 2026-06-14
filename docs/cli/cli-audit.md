@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Cli Audit
+description: Documentation for cli audit
+tags: [cli]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # CLI Audit
 
 Date: 2026-05-02

@@ -1,3 +1,11 @@
+---
+type: Assessment
+title: Refactoring Assessment
+description: Documentation for refactoring assessment
+tags: [refactoring]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Refactoring Assessment
 
 Date: 2026-05-02

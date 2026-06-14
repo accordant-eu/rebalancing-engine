@@ -1,3 +1,11 @@
+---
+type: Research
+title: Full Chain Rebalancing Strategy Review
+description: Documentation for full chain rebalancing strategy review
+tags: [research, traceability]
+timestamp: 2026-06-14T00:00:00Z
+---
+
 # Full-Chain Rebalancing Strategy Review
 
 Date: 2026-05-02
