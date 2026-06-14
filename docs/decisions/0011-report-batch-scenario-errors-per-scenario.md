@@ -54,3 +54,6 @@ This best fits the MVP fixture harness because invalid scenarios are intentional
 ## Validation
 
 Run tests, type-check, lint, build, format, and `npm run scenario:run`.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

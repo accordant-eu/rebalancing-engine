@@ -80,3 +80,6 @@ The API design utilizes clear boundaries and structured JSON payloads.
  "simulation": { "estimatedTurnover": 0.04, "postTradeCash": 800.00 }  
 }
 ```
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

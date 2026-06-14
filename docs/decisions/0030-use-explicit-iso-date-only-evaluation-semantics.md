@@ -43,3 +43,6 @@ Date-only validation requires `YYYY-MM-DD`. Due events include `effectiveDate <=
 ## Validation
 
 Tests cover before/on/after dates and invalid date-time strings.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

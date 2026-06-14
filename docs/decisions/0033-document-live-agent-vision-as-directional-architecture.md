@@ -33,3 +33,6 @@ The owner clarified that the project direction is toward a live autonomous agent
 ## Rationale
 
 The vision is directional, not a PRD. Documenting it now prevents the engine from making choices (like scheduled-flow cash inflation) that conflict with the eventual operating model. The existing production-boundary deferral remains valid — the agent/orchestrator is a separate system that calls the engine.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

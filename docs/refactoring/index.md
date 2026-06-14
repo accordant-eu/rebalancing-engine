@@ -11,3 +11,6 @@ timestamp: 2026-06-14T00:00:00Z
 ## Documents
 
 * **[Refactoring Assessment](refactoring-assessment.md)** - Documentation for refactoring assessment
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

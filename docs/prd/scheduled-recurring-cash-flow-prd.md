@@ -293,3 +293,6 @@ Audit/explanation output:
 | Should schema-only validation be separated?     | Deferred; CLI `validate` continues to run the deterministic engine path.       | Not blocking.   |
 | Should future schedules be warnings forever?    | Provisional; current CLI strict mode treats them as warnings.                  | Not blocking.   |
 | Should API/persistence wire formats differ?     | Deferred to productionization PRD; current public TypeScript inputs are files. | Not blocking.   |
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

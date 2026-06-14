@@ -42,3 +42,6 @@ The orchestrator wraps the engine in an autonomous loop. It connects to the brok
 ## Future Optionality
 
 While currently designed for liquid, long-only assets and threshold-based rebalancing, the engine's decoupled architecture (utilizing Strategy and Command patterns) provides immense optionality. It establishes a foundation to eventually support optimal control theory, direct indexing with tax-loss harvesting, and regime-adaptive machine learning models, seamlessly applied within the same autonomous pipeline.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

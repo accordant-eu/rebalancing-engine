@@ -83,3 +83,6 @@ Observed results before final commit:
 ## Recommendation
 
 Treat the next-iteration MVP as complete for offline deterministic fixtures. The next safe work is hardening rather than new strategy breadth: decimal/rounding policy evaluation, relative-boundary support if needed, and richer cash-flow semantics for deposits and withdrawals.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

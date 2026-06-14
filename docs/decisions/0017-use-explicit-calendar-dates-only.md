@@ -53,3 +53,6 @@ This proves calendar strategy support while preserving deterministic replay and 
 ## Validation
 
 Calendar due/not-due tests and mixed scenario runner tests pass.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

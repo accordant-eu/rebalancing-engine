@@ -113,3 +113,6 @@ This is the smallest useful workflow increment. It makes cash movement explicit 
 - Should a future API use a separate request-level `cashFlows` object instead of embedding flows on `PortfolioState`?
 - Should scheduled flows be generated from recurrence rules or supplied as explicit pending/settled events?
 - Should withdrawals later support sell priority, tax-lot selection, or cash-only partial funding policies?
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

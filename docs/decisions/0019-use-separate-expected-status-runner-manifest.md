@@ -54,3 +54,6 @@ This preserves reusable scenario input data while giving the CLI and tests a det
 ## Validation
 
 Jest runner tests pass, the scenario runner validates 12 manifest entries with zero mismatches, and invalid strategy scenarios remain isolated per scenario.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

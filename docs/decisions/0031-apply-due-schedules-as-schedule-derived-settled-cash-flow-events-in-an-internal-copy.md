@@ -43,3 +43,6 @@ Added `src/core/cash-flows.ts`, integrated expansion in `evaluateRebalance`, and
 ## Validation
 
 Tests cover due deposits, due withdrawals, future schedules, recurring expansion, and already-settled/double-count behavior.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

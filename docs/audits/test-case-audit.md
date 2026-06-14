@@ -246,3 +246,6 @@ All expected values were verified by hand. No mathematical errors were found in 
 3. **Add `tests/fixtures/README.md`** documenting each scenario's mathematical intent (D-09). Low effort, high value for future contributors.
 4. **Test relative drift tolerance** (D-10) — `relativeDriftTolerance` is in the domain model but never exercised. Add a fixture and tests before S5 to ensure the policy field is properly propagated through the engine.
 5. **Evaluate `decimal.js`** before Slice 5 — trade quantities and monetary values are where float arithmetic becomes financially consequential. The MVP plan flagged this; now is the right moment to make the decision before financial outputs (monetary trade values) are introduced.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -11,3 +11,6 @@ timestamp: 2026-06-14T00:00:00Z
 ## Documents
 
 * **[Full Chain Rebalancing Strategy Review](full-chain-rebalancing-strategy-review.md)** - Documentation for full chain rebalancing strategy review
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

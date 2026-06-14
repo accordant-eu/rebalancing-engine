@@ -284,3 +284,6 @@ Commit recommendation: `docs: document result contracts`.
 | Price timestamp/staleness model | Changes domain inputs and validation semantics.                              | Market-data freshness becomes part of requirements.                                         | Stale price behavior remains unmodeled.                         | No for offline fixtures.                                   |
 | CI workflow                     | Tooling addition outside requested refactoring slice.                        | User asks for CI or remote validation becomes a recurring issue.                            | Regressions rely on local checks.                               | No.                                                        |
 | Renaming domain fields          | Would be a broad fixture/audit compatibility change.                         | A versioned API/schema migration is planned.                                                | Some names remain minimal rather than enterprise-rich.          | No.                                                        |
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

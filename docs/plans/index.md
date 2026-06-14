@@ -18,3 +18,6 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Rebalancing Engine Production Boundary Plan](rebalancing-engine-production-boundary-plan.md)** - Documentation for rebalancing engine production boundary plan
 * **[Rebalancing Engine Tax Lots Mvp Plan](rebalancing-engine-tax-lots-mvp-plan.md)** - Documentation for rebalancing engine tax lots mvp plan
 * **[Scheduled Recurring Cash Flow Mvp Plan](scheduled-recurring-cash-flow-mvp-plan.md)** - Documentation for scheduled recurring cash flow mvp plan
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

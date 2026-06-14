@@ -54,3 +54,6 @@ Exact replay is the best MVP trade-off. It proves proposals can be simulated, pr
 ## Validation
 
 Run tests, type-check, lint, build, and format after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

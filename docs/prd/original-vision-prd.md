@@ -516,3 +516,6 @@ Several operational ambiguities must be resolved prior to finalizing the system 
 39. How to Rebalance Your Stock Portfolio with Alpaca Trading API \~ Part II \- Intrinio \- Medium, accessed April 29, 2026, [https://intrinio.medium.com/how-to-rebalance-your-stock-portfolio-with-alpaca-trading-api-part-ii-5cbd8bc30107](https://intrinio.medium.com/how-to-rebalance-your-stock-portfolio-with-alpaca-trading-api-part-ii-5cbd8bc30107)
 40. Questions and answers on the implementation of the MiFID II Directive \- CNMV, accessed April 29, 2026, [http://www.cnmv.es/loultimo/FAQMiFIDII_EN.pdf](http://www.cnmv.es/loultimo/FAQMiFIDII_EN.pdf)
 41. ESMA Final Report on the Guidelines on certain aspects of the MiFID II suitability requirements. International Bulletin of November 2022\. \- Boletín Internacional, accessed April 29, 2026, [https://boletininternacionalcnmv.es/en/esma-en/investor-protection-en/esma-final-report-on-the-guidelines-on-certain-aspects-of-the-mifid-ii-suitability-requirements-international-bulletin-of-november-2022/](https://boletininternacionalcnmv.es/en/esma-en/investor-protection-en/esma-final-report-on-the-guidelines-on-certain-aspects-of-the-mifid-ii-suitability-requirements-international-bulletin-of-november-2022/)
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

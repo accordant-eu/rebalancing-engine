@@ -296,3 +296,6 @@ Avoid:
 - Updating code without updating CLI docs, user docs, developer docs, fixture docs, tests, and `BUILD_JOURNEY.md`.
 - Making explanations diverge from calculation outputs.
 - Adding broad strategy abstractions before a concrete second use case exists.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -57,3 +57,6 @@ Out of scope remains unchanged: no banking, payment initiation, custody movement
 ## Audit Conclusion
 
 The scheduled/recurring cash-flow increment is implemented for the repository's offline deterministic MVP scope. The implementation is deterministic, uses synthetic fixtures only, preserves existing cash-flow behavior, avoids production integrations, and exposes the behavior through the CLI.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

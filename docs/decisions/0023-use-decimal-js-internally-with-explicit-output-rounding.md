@@ -54,3 +54,6 @@ This option materially improves calculation correctness without breaking the exi
 ## Validation
 
 Jest, TypeScript build, ESLint, scenario runner, and manifest validation pass after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

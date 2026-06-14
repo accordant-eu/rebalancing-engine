@@ -55,3 +55,6 @@ Validation passed before commit:
 ## Recommendation
 
 Treat the post-MVP domain/correctness increment as complete for the assessed deferred items. The next coherent technical step is either scheduled/recurring cash-flow semantics or productionization PRD work with concrete consumer and operational requirements.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

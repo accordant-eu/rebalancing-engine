@@ -182,3 +182,6 @@ The engine's current value is in its deterministic calculation core, its test co
 - How should the agent handle multi-portfolio monitoring?
 - What safety limits should be configurable (max trade size, max trades per day, etc.)?
 - Should the engine support a "dry run" mode where it generates proposals but the orchestrator does not execute them?
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

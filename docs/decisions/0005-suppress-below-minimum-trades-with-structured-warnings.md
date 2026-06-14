@@ -54,3 +54,6 @@ This is deterministic, MVP-compatible, and auditable. It avoids blocking the pro
 ## Validation
 
 Run tests, type-check, lint, build, and format after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

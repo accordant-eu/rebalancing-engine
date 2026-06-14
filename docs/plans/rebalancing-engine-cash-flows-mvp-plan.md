@@ -121,3 +121,6 @@ Scope:
 - `feat: model explicit cash flows`
 - `feat: surface cash flow effects`
 - `docs: audit cash flow increment`
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

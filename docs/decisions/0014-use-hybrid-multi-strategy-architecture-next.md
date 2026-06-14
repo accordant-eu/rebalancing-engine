@@ -66,3 +66,6 @@ This is the smallest architecture that supports explicit strategy selection, cal
 ## Validation
 
 The next iteration should first prove backward-compatible threshold behavior, then add calendar and boundary-target fixtures through the shared runner.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -106,3 +106,6 @@ Mitigations:
 - Document explicitly that this is generic lot allocation, not tax optimization.
 - Fail if cost-based modes are requested and unit cost is missing.
 - Keep aggregate trade sizing unchanged.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

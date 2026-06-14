@@ -245,3 +245,6 @@ npm run cli -- inspect strategies
 ```
 
 Select a strategy by setting `policy.strategyType` in the input file. Omitted `strategyType` defaults to `threshold`. There is intentionally no CLI `--strategy` override because CLI overrides would diverge from audited scenario/policy files.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -18,3 +18,6 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Rebalancing Engine Production Boundary Prd](rebalancing-engine-production-boundary-prd.md)** - Documentation for rebalancing engine production boundary prd
 * **[Rebalancing Engine Tax Lots Prd](rebalancing-engine-tax-lots-prd.md)** - Documentation for rebalancing engine tax lots prd
 * **[Scheduled Recurring Cash Flow Prd](scheduled-recurring-cash-flow-prd.md)** - Documentation for scheduled recurring cash flow prd
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -53,3 +53,6 @@ Absolute-band boundary mode demonstrates reduced-turnover execution while keepin
 ## Validation
 
 Boundary fixture produces lower sell-side turnover than full reset and leaves post-trade drift inside absolute tolerance.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

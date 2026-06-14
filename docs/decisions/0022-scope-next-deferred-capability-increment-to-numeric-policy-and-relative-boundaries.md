@@ -66,3 +66,6 @@ Numeric policy is the clearest correctness prerequisite for any later financial 
 ## Validation
 
 Run the full test suite, TypeScript build, ESLint, scenario runner, manifest validation, and formatting before each focused commit.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

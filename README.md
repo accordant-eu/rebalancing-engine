@@ -187,3 +187,6 @@ docs/
 ## Development Discipline
 
 Keep changes small and testable. For meaningful domain, architecture, API, CLI, fixture, audit, explanation, or documentation decisions, record an **Architecture Decision Record (ADR)** in `docs/decisions/` and link it from `BUILD_JOURNEY.md`. New engine behavior should be exposed through the CLI or explicitly documented as not exposed.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -54,3 +54,6 @@ This balances the user's request for automatic pushing with repository stewardsh
 ## Validation
 
 Run formatting and repository checks before committing the rule, then push the branch.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

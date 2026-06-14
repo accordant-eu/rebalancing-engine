@@ -197,3 +197,6 @@ Help text, README, and CLI docs describe `validate` as engine-path validation an
 
 Validation:
 CLI tests cover validate help wording and existing valid/invalid engine-path behavior.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

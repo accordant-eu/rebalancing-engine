@@ -143,3 +143,6 @@ Mitigations:
 - Whether a later public API should expose decimal strings instead of numbers.
 - Whether richer cash-flow workflows should treat pending flows as valuation inputs or proposal constraints.
 - Whether future tax-lot primitives should support FIFO/LIFO/highest-cost or require caller-specified lots first.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

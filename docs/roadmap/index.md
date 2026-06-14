@@ -12,3 +12,6 @@ timestamp: 2026-06-14T00:00:00Z
 
 * **[Rebalancing Engine Roadmap](rebalancing-engine-roadmap.md)** - Documentation for rebalancing engine roadmap
 * **[Live Agent v3.0 Exploration](v3-exploration.md)** - Working document for future feature and scale discussions
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -60,3 +60,6 @@ npx tsc --noEmit
 npm run lint
 npm run build
 ```
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

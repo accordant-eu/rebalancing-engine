@@ -39,3 +39,6 @@ The owner's principle: "If the input says Cash X, that's what the engine should 
 - Tests: Update scheduled-flow tests to reflect new behavior.
 - Fixtures: Update scheduled-flow fixtures and expectations.
 - CLI: Update output rendering for projection vs actionable sections.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

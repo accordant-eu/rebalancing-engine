@@ -26,3 +26,6 @@ timestamp: 2026-06-14T00:00:00Z
 
 * **[Documentation Conventions (OKF)](CONTRIBUTING_DOCS.md)** - How to maintain the Open Knowledge Format (OKF) bundle and Architecture Decision Records (ADRs).
 * **[Product Vision](product-vision.md)** - High-level product vision for the live agent portfolio rebalancing engine.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

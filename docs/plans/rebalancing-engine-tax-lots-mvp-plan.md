@@ -108,3 +108,6 @@ Scope:
 - `feat: validate tax lot holdings`
 - `feat: allocate sell trades by lot`
 - `docs: audit tax lot increment`
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

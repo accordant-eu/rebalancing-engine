@@ -51,3 +51,6 @@ Weekly is a concrete real-world frequency the owner needs. Custom intervals add 
 ## Validation
 
 Implement and test alongside existing recurrence frequencies.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

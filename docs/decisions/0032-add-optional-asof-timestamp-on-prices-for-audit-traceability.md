@@ -44,3 +44,6 @@ In the live-agent model with instant execution, valuation price ≈ execution pr
 - Code: Add optional `asOf` field to `PriceSnapshot` entries; pass through to audit records.
 - Tests: Add audit tests verifying `asOf` is recorded when present.
 - CLI: Include `asOf` in JSON output when present.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

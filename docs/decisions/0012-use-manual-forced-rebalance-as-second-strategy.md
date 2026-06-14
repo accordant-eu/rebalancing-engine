@@ -54,3 +54,6 @@ Manual forced rebalance is the smallest useful proof point. It validates that st
 ## Validation
 
 Run tests, type-check, lint, build, format, and `npm run scenario:run`.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

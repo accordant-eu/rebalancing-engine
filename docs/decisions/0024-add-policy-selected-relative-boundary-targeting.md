@@ -54,3 +54,6 @@ This is the smallest coherent extension of the existing boundary mode. Absolute 
 ## Validation
 
 Jest, TypeScript build, ESLint, scenario runner, and 13-entry manifest validation pass after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

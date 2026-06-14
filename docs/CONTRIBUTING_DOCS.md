@@ -71,3 +71,6 @@ A CI script validates that the documentation adheres to these rules. Run it loca
 ```bash
 ./scripts/validate-docs.sh
 ```
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -256,3 +256,6 @@ If scheduled cash flows fail with a missing evaluation date, add `policy.evaluat
 If relative boundary mode fails for a zero-target instrument, use absolute boundary mode or full reset. Relative boundaries are undefined around zero target weight when a trade is required.
 
 If a tax-lot sell mode based on cost fails, provide `unitCost` for every lot in the sold holding.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

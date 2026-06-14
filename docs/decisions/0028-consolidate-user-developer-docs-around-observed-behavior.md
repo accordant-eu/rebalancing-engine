@@ -53,3 +53,6 @@ Dedicated docs match how different readers use the project. README stays practic
 ## Validation
 
 Run formatting/checks, full tests, TypeScript, lint, build, CLI help, documented CLI examples, scenario runner, and expected-status batch validation before commit.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

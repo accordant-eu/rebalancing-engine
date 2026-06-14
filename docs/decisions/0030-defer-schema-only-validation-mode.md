@@ -31,3 +31,6 @@ The CLI `validate` command runs the full engine path. A schema-only mode would c
 ## Rationale
 
 The owner observed that engine-path validation already terminates early on structural errors, so the performance and behavior profile is effectively identical. Schema-only mode adds maintenance burden without a concrete consumer.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

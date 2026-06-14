@@ -44,3 +44,6 @@ The project has no API, UI, or persistence layer. The CLI is therefore the opera
 ## Validation
 
 CLI tests and documented command examples become required gates for engine behavior increments.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

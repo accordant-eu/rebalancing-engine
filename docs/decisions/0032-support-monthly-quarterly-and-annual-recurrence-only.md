@@ -43,3 +43,6 @@ Monthly/quarterly/annual are enough for the current offline planning increment. 
 ## Validation
 
 Unit tests cover monthly month-end clamping, quarterly expansion, annual leap-day clamping, end-date behavior, and unsupported frequency rejection.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

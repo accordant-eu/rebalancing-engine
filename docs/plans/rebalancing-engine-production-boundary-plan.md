@@ -112,3 +112,6 @@ Use one focused documentation commit:
 - `docs: document production boundary deferral`
 
 Push the branch after validation and open a draft PR.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

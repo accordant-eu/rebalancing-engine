@@ -54,3 +54,6 @@ This follows the project bias toward explicit validation over silent fallback be
 ## Validation
 
 Run tests, type-check, lint, build, and format after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

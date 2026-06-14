@@ -54,3 +54,6 @@ This preserves deterministic pure logic and leaves uniqueness/time policy to a f
 ## Validation
 
 Run tests, type-check, lint, build, and format after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

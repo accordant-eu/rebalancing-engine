@@ -54,3 +54,6 @@ This is the best MVP-compatible trade-off. It improves discoverability and autom
 ## Validation
 
 Run CLI tests, the full Jest suite, TypeScript checks, linting, formatting, and build before committing.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

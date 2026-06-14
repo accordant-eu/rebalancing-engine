@@ -209,3 +209,6 @@ Before commit:
 3. Review `git diff`.
 4. Update docs and `BUILD_JOURNEY.md`.
 5. Confirm no generated junk or secrets are staged.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

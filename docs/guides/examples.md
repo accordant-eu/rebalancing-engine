@@ -211,3 +211,6 @@ node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures
 ```
 
 The second command requires `npm run build` first if `dist` is stale or missing.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

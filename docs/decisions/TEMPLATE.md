@@ -46,3 +46,6 @@ supersedes: <ADR number, if applicable>
 ## Follow-up
 
 <What comes next? Is there a deferred capability to track?>
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

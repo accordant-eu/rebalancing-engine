@@ -58,3 +58,6 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
 2. **Friction Optimization (Mocked):** Inject the basic TCO/slippage model into the core to prevent the engine from generating micro-churn across the 1,000 portfolios.
 3. **The Command Center:** Build the macro-observability UI to query the SQLite state.
 4. **Advanced Strategies & TLH:** With a safe, multi-tenant, observable engine in place, we can begin experimenting with dynamic targeting and wash-sale constraint overlays.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

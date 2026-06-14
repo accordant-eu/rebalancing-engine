@@ -81,3 +81,6 @@ Observed results:
 ## Recommendation
 
 Treat this repository as an MVP calculation core ready for review and future extension. For current multi-strategy completion status, use the next-iteration MVP audit. The next safe work should be post-MVP hardening: stricter fixture schema validation, decimal/rounding policy evaluation, and live-integration design when needed.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

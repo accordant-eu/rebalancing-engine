@@ -49,3 +49,6 @@ Option 2.
 ## Validation
 
 Run CLI tests, full Jest suite, TypeScript checks, linting, formatting, build, scenario runner, and representative CLI smoke commands before committing.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

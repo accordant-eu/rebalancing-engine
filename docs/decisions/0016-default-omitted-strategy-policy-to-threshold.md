@@ -53,3 +53,6 @@ This keeps the next iteration backward compatible and makes the default strategy
 ## Validation
 
 Existing threshold tests and scenario runner tests pass with omitted strategy type.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

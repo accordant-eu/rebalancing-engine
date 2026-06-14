@@ -95,3 +95,6 @@ Before implementation, a future productionization PRD should define:
 - No application framework, database dependency, or live-integration dependency is added.
 - README and build journey describe the current offline/library/CLI boundary.
 - Existing tests, build, lint, scenario runner, manifest validation, and format pass.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

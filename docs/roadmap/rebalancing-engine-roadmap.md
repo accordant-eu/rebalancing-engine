@@ -75,3 +75,6 @@ Transition to real capital with production-grade monitoring and persistent audit
 - **Repository Structure:** Should the Orchestrator/Agent be a separate package/folder within this monorepo, or an entirely new repository?
 - **Broker Target:** Is Alpaca the confirmed target for Tranche 3?
 - **Persistence Model:** What persistent store will be used for the Tranche 4 audit trails? (e.g., Postgres, DynamoDB, flat files in S3).
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

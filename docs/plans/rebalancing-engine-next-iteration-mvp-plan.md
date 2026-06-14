@@ -842,3 +842,6 @@ Use focused commits per slice:
 - `docs: add next-iteration mvp audit`
 
 Do not push partial or failing work. Push only after a completed validated slice or documentation/process checkpoint, after reviewing `git status` and summarizing what will be pushed.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

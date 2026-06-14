@@ -43,3 +43,6 @@ Added `CashFlowSchedule`, `CashFlowRecurrence`, and recurrence frequency types t
 ## Validation
 
 Unit, evaluation, fixture, runner, and CLI tests cover schedule input.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

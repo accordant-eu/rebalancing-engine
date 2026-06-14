@@ -582,3 +582,6 @@ The offline CLI and fixtures remain the development and regression interface.
 - What persistent store will be used for the Tranche 4 audit trails?
 
 **Recommended next step:** Begin execution of Tranche 1: Core Engine Readiness (CI pipeline, timestamp traceability, cash flow realism).
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

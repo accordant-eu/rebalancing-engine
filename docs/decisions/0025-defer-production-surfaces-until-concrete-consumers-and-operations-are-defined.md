@@ -60,3 +60,6 @@ The calculation core has enough domain breadth to remain useful without producti
 ## Validation
 
 Run format, full Jest suite, TypeScript build, ESLint, scenario runner, and expected-status manifest validation. Confirm no application framework, database dependency, live-integration dependency, or production runtime surface was added.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

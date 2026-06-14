@@ -54,3 +54,6 @@ This aligns with determinism, auditability, and behavior-focused tests. It preve
 ## Validation
 
 Run tests, type-check, lint, build, and format after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

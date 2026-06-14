@@ -236,3 +236,6 @@ Out of scope:
 | Should boundary targeting support relative bands immediately? | Start with absolute bands; add relative support if low-risk. | No for first proof point.               |
 | Should manual be a product-supported strategy?                | Treat as internal/proof strategy until explicitly accepted.  | No.                                     |
 | Should decimal arithmetic be adopted before boundary mode?    | Revisit but do not add by default.                           | Potentially blocks production, not MVP. |
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

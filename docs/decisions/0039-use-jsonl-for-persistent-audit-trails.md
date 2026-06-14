@@ -33,3 +33,6 @@ The primary requirement for Tranche 4 is an append-only, immutable regulatory lo
 
 - Verified that JSONL files can be appended to continuously without memory bloat.
 - Verified that the logs can be easily tail-ed or parsed via `jq`.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -15,3 +15,6 @@ These documents are meant to explore industry standard practices, optimal contro
 ## Documents
 
 - [Portfolio Rebalancing Meta Paper Synthesis](portfolio-rebalancing-meta-paper-synthesis.md)
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

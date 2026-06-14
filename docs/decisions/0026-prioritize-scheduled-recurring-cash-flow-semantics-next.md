@@ -65,3 +65,6 @@ Scheduled and recurring cash flows are the closest unimplemented domain capabili
 ## Validation
 
 This planning slice creates roadmap and planning documents only. Implementation validation remains the existing documentation/build/test gate; schedule behavior must not be claimed implemented until code, fixtures, CLI, and tests exist.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

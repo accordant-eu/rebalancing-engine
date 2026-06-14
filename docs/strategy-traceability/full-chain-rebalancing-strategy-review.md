@@ -619,3 +619,6 @@ What should not be implemented yet:
 - ML/regime-aware models.
 - Live market data or execution integrations.
 - UI or persistence.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

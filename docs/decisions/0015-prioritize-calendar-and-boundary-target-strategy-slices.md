@@ -59,3 +59,6 @@ This sequence fills the clearest strategy carry-forward gap and then extends the
 ## Validation
 
 Calendar must be deterministic from supplied evaluation dates. Boundary targeting must produce lower trade value than full reset and leave post-trade drift inside tolerance bands.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -44,3 +44,6 @@ Final validation commands should pass before this audit is committed:
 - `npm run scenario:run`
 - `npm run build && node dist/runner/scenario-runner.js tests/fixtures/scenarios.json tests/fixtures/scenario-expectations.json`
 - `npm run format`
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

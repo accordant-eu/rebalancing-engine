@@ -54,3 +54,6 @@ This aligns with the existing audit recommendation and the MVP focus on minimizi
 ## Validation
 
 Run tests, type-check, lint, build, and format after implementation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

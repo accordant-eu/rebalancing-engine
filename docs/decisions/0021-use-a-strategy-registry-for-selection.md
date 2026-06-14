@@ -54,3 +54,6 @@ This is the smallest behavior-preserving improvement to strategy-selection clari
 ## Validation
 
 Focused evaluation tests, full Jest suite, TypeScript, ESLint, build, scenario runner, expected-status manifest validation, formatting, and diff whitespace checks should pass before commit.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

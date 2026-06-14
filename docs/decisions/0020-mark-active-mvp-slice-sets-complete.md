@@ -54,3 +54,6 @@ The implemented behavior satisfies the slice plans as written. Production precis
 ## Validation
 
 The final validation gate should rerun format, Jest, type-check, lint, build, scenario runner, manifest validation, and diff whitespace checks.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

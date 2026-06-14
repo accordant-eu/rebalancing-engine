@@ -14,3 +14,6 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Cli Design](cli-design.md)** - Documentation for cli design
 * **[Cli Limitations And Decisions](cli-limitations-and-decisions.md)** - Documentation for cli limitations and decisions
 * **[Cli Reference](cli-reference.md)** - Documentation for cli reference
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

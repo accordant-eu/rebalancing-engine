@@ -254,3 +254,6 @@ The architecture will use the Strategy pattern for trigger evaluation, but we wi
 - **First Slice:** Commence Slice 1 (Domain Fixture Foundation).
 - **Why:** Establishing the strict JSON schemas and synthetic data allows the mathematical core to be built entirely offline without external dependencies.
 - **Avoid:** Do not select a language or framework without user confirmation. Do not build any web servers or databases in the first pass. Focus purely on data structures and pure functions.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

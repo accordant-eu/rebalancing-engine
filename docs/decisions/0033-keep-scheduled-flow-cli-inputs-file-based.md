@@ -49,3 +49,6 @@ CLI tests cover valid scheduled run JSON, invalid recurrence validation, strict 
 **Final validation:** `npm test` passed with 138 tests across 17 suites; `npx tsc --noEmit` passed; `npm run lint` passed; `npm run build` passed; `npm run scenario:run` passed; expected-status validation passed with 26 checked scenarios; CLI smoke commands passed for scheduled validation, recurring-withdrawal JSON run, batch expectations, and scenario inspection.
 
 **Recommended next step:** Run final full validation, commit focused changes, and push the feature branch if all gates pass.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

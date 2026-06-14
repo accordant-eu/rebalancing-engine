@@ -33,3 +33,6 @@ A periodic rebalancing engine treats a rebalance as a synchronized, portfolio-wi
 ## Validation
 
 - Verify that the agent logs a "waiting for pending orders" message and bypasses drift evaluation.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

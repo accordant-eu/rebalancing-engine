@@ -196,3 +196,6 @@ Extension discipline:
 - Strategy-specific proposal hooks are deferred.
 - CLI config files and CLI strategy overrides are deferred.
 - Production API, persistence, and integration boundaries are deferred.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

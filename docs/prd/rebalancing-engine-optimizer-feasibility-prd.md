@@ -86,3 +86,6 @@ Before implementation, a future optimizer PRD should define:
 - No solver dependency is added.
 - README and build journey reflect the active proposal engine boundary.
 - Existing tests, build, lint, scenario runner, manifest validation, and format pass.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

@@ -54,3 +54,6 @@ This is the clearest boundary. The implemented system satisfies the documented M
 ## Validation
 
 Run tests, type-check, lint, build, format, and `npm run scenario:run`.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.

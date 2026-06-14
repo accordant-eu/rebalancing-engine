@@ -54,3 +54,6 @@ This is the best MVP-compatible trade-off. It keeps the rule close to agent oper
 ## Validation
 
 Documentation formatting and repository checks should pass after the update.
+
+
+&copy; 2026 Johan Hellman. All rights reserved.
