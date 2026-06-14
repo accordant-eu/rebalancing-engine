@@ -1,4 +1,7 @@
-import { DryRunExecutor, LiveStateManager, Orchestrator } from '../orchestrator';
+import 'dotenv/config';
+import { AlpacaAdapter } from '../broker/alpaca';
+import { BrokerExecutor, CircuitBreaker, DryRunExecutor, LiveStateManager, Orchestrator } from '../orchestrator';
+import { Executor } from '../orchestrator/executor';
 import { loadScenarioFixture } from '../runner';
 import { CommandContext, CommandResult } from './commands';
 import { UsageError } from './errors';
@@ -11,6 +14,7 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
 
   const scenarioFile = parsed.options['scenarios'];
   const scenarioId = parsed.options['scenario-id'];
+  const isLive = parsed.options['live'] === 'alpaca';
 
   if (typeof scenarioFile !== 'string') {
     throw new UsageError('--scenarios <file> is required');
@@ -25,42 +29,93 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
     throw new UsageError(`Scenario ${scenarioId} not found in fixture ${scenarioFile}`);
   }
 
-  const stateManager = new LiveStateManager({
-    portfolioState: scenario.portfolioState,
-    priceSnapshot: scenario.priceSnapshot,
-    targetAllocation: scenario.targetAllocation,
-    policy: scenario.policy,
-  });
+  if (isLive) {
+    console.error(`Initializing live broker connection...`);
+    const adapter = new AlpacaAdapter();
 
-  const executor = new DryRunExecutor();
-  const orchestrator = new Orchestrator(stateManager, executor, {
-    cooldownMs: 5000, // 5 second cooldown for demonstration
-  });
+    (async () => {
+      try {
+        const livePortfolio = await adapter.getPortfolioState();
 
-  orchestrator.start();
+        const stateManager = new LiveStateManager({
+          portfolioState: {
+            ...scenario.portfolioState,
+            ...livePortfolio, // Override synthetic cash/holdings with live ledger
+          },
+          priceSnapshot: { prices: {} },
+          targetAllocation: scenario.targetAllocation,
+          policy: scenario.policy,
+        });
 
-  console.error(`Starting Live Agent in Dry-Run mode.`);
-  console.error(`Scenario: ${scenarioId}`);
-  console.error(`Tick Interval: 1000ms`);
-  console.error(`Cooldown: 5000ms`);
-  console.error(`Press Ctrl+C to stop.\n`);
+        const executor = new CircuitBreaker(new BrokerExecutor(adapter), {
+          maxTradesPerSession: 5,
+          maxGrossNotionalPerTrade: 100000,
+        });
 
-  let iteration = 0;
-  setInterval(() => {
-    iteration++;
-    const currentPrices = stateManager.getState().priceSnapshot.prices;
-    const newPrices = { ...currentPrices };
+        const orchestrator = new Orchestrator(stateManager, executor, {
+          cooldownMs: 60000, // 1 minute cooldown for paper trading
+        });
 
-    // Artificially increase the first asset's price by 2% each tick to eventually trigger rebalance
-    const firstAsset = Object.keys(newPrices)[0];
-    if (firstAsset) {
-      newPrices[firstAsset] = newPrices[firstAsset] * 1.02;
-    }
+        orchestrator.start();
+        console.error(`Live Agent (Alpaca Paper) Started.`);
+        console.error(`Targeting: ${scenarioId}`);
+        console.error(`Press Ctrl+C to stop.\n`);
 
-    stateManager.updatePrices(newPrices, new Date().toISOString());
-    orchestrator.onTick(Date.now());
-  }, 1000);
+        setInterval(async () => {
+          try {
+            const currentPortfolio = await adapter.getPortfolioState();
+            stateManager.updatePortfolio(currentPortfolio);
 
-  // Return a generic success message. The streaming outputs bypass this.
+            const symbols = scenario.targetAllocation.targets.map((t) => t.instrumentId);
+            const prices = await adapter.getPrices(symbols);
+            stateManager.updatePrices(prices, new Date().toISOString());
+
+            orchestrator.onTick(Date.now());
+          } catch (e) {
+            console.error(`[Poll Error]:`, e);
+          }
+        }, 10000); // Poll every 10 seconds
+      } catch (e) {
+        console.error(`[Init Error]:`, e);
+        process.exit(1);
+      }
+    })();
+  } else {
+    // DRY RUN SYNTHETIC MODE
+    const stateManager = new LiveStateManager({
+      portfolioState: scenario.portfolioState,
+      priceSnapshot: scenario.priceSnapshot,
+      targetAllocation: scenario.targetAllocation,
+      policy: scenario.policy,
+    });
+
+    const executor = new DryRunExecutor();
+    const orchestrator = new Orchestrator(stateManager, executor, {
+      cooldownMs: 5000,
+    });
+
+    orchestrator.start();
+
+    console.error(`Starting Live Agent in Dry-Run mode.`);
+    console.error(`Scenario: ${scenarioId}`);
+    console.error(`Tick Interval: 1000ms`);
+    console.error(`Cooldown: 5000ms`);
+    console.error(`Press Ctrl+C to stop.\n`);
+
+    setInterval(() => {
+      const currentPrices = stateManager.getState().priceSnapshot.prices;
+      const newPrices = { ...currentPrices };
+
+      // Artificially increase the first asset's price by 2% each tick to eventually trigger rebalance
+      const firstAsset = Object.keys(newPrices)[0];
+      if (firstAsset) {
+        newPrices[firstAsset] = newPrices[firstAsset] * 1.02;
+      }
+
+      stateManager.updatePrices(newPrices, new Date().toISOString());
+      orchestrator.onTick(Date.now());
+    }, 1000);
+  }
+
   return { exitCode: 0, output: '' };
 }

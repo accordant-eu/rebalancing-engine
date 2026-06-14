@@ -20,6 +20,7 @@ Global options:
   --strict                       Treat warnings as failures
   --verbose                      Include stack traces for unexpected errors
   --quiet                        Suppress human-readable success output
+  --live <broker>                Connect to a live broker (e.g. alpaca)
   --help                         Show help
   --version                      Show package version
 
