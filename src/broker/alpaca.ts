@@ -32,13 +32,14 @@ export class AlpacaAdapter implements BrokerAdapter {
       return {};
     }
 
-    // Alpaca v2 data API
-    const bars = await this.alpaca.getLatestBars(symbols);
+    const snapshots = await this.alpaca.getSnapshots(symbols);
     const prices: Record<string, number> = {};
 
-    for (const symbol of symbols) {
-      if (bars[symbol] && bars[symbol].c) {
-        prices[symbol] = bars[symbol].c;
+    for (const snapshot of snapshots) {
+      if (snapshot.LatestTrade && snapshot.LatestTrade.Price) {
+        prices[snapshot.symbol] = snapshot.LatestTrade.Price;
+      } else if (snapshot.DailyBar && snapshot.DailyBar.ClosePrice) {
+        prices[snapshot.symbol] = snapshot.DailyBar.ClosePrice;
       }
     }
 

@@ -49,7 +49,7 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
 
         const executor = new CircuitBreaker(new BrokerExecutor(adapter), {
           maxTradesPerSession: 5,
-          maxGrossNotionalPerTrade: 100000,
+          maxGrossNotionalPerTrade: 500000,
         });
 
         const orchestrator = new Orchestrator(stateManager, executor, {
@@ -61,7 +61,7 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
         console.error(`Targeting: ${scenarioId}`);
         console.error(`Press Ctrl+C to stop.\n`);
 
-        setInterval(async () => {
+        const poll = async () => {
           try {
             const currentPortfolio = await adapter.getPortfolioState();
             stateManager.updatePortfolio(currentPortfolio);
@@ -74,7 +74,11 @@ export function executeAgent(parsed: ParsedArgs, context: CommandContext): Comma
           } catch (e) {
             console.error(`[Poll Error]:`, e);
           }
-        }, 10000); // Poll every 10 seconds
+        };
+
+        // Run immediately, then poll every 10s
+        await poll();
+        setInterval(poll, 10000);
       } catch (e) {
         console.error(`[Init Error]:`, e);
         process.exit(1);
