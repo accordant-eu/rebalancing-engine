@@ -139,7 +139,7 @@ describe('CLI', () => {
     const outputs = parsed.result.auditRecord.outputs;
     expect(outputs.cashFlowScheduleSummary.appliedEventCount).toBe(1);
     expect(outputs.cashFlowScheduleSummary.netAppliedCashFlow).toBe(1000);
-    expect(outputs.tradeProposal.trades).toHaveLength(2);
+    expect(outputs.tradeProposal.trades).toHaveLength(0);
   });
 
   it('validates an invalid recurring cash-flow scenario with a clear error', () => {

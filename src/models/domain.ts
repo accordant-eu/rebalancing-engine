@@ -35,7 +35,7 @@ export interface CashFlow {
   sourceScheduleId?: string;
 }
 
-export type CashFlowRecurrenceFrequency = 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+export type CashFlowRecurrenceFrequency = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
 
 export interface CashFlowRecurrence {
   frequency: CashFlowRecurrenceFrequency;
@@ -71,6 +71,7 @@ export interface TargetAllocation {
 
 export interface PriceSnapshot {
   prices: Record<string, number>; // Map of instrumentId -> price
+  asOf?: string; // Optional ISO timestamp for audit traceability
 }
 
 export type RebalancingStrategyType = 'threshold' | 'manual' | 'calendar';

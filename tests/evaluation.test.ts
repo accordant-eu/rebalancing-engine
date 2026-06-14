@@ -97,7 +97,7 @@ describe('Rebalance Evaluation', () => {
     expect(evaluation.auditRecord.outputs.cashFlowSummary?.pendingDeposits).toBe(1000);
   });
 
-  it('applies due scheduled deposits to valuation, proposal sizing, explanation, and audit output', () => {
+  it('evaluates due scheduled deposits as pending projections only without inflating cash', () => {
     const evaluation = evaluateRebalance({
       eventId: 'evaluation-scheduled-deposit',
       createdAt: '2026-05-02T00:00:00.000Z',
@@ -127,18 +127,15 @@ describe('Rebalance Evaluation', () => {
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 
-    expect(evaluation.valuation.cash).toBe(1000);
-    expect(evaluation.tradeProposal.trades).toEqual([
-      expect.objectContaining({ instrumentId: 'AAPL', direction: 'BUY', estimatedValue: 500 }),
-      expect.objectContaining({ instrumentId: 'MSFT', direction: 'BUY', estimatedValue: 500 }),
-    ]);
+    expect(evaluation.valuation.cash).toBe(0);
+    expect(evaluation.tradeProposal.trades).toEqual([]);
     expect(evaluation.cashFlowScheduleSummary?.appliedEventCount).toBe(1);
     expect(evaluation.auditRecord.inputs.portfolioState.cashFlows).toBeUndefined();
     expect(evaluation.auditRecord.outputs.cashFlowScheduleSummary?.netAppliedCashFlow).toBe(1000);
     expect(evaluation.explanation.cashFlowScheduleExplanation).toContain('applied 1 event');
   });
 
-  it('applies due scheduled withdrawals through existing sell proposal behavior', () => {
+  it('applies due scheduled withdrawals as pending and does not trigger sells', () => {
     const evaluation = evaluateRebalance({
       eventId: 'evaluation-scheduled-withdrawal',
       createdAt: '2026-05-02T00:00:00.000Z',
@@ -168,11 +165,8 @@ describe('Rebalance Evaluation', () => {
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 
-    expect(evaluation.valuation.cash).toBe(-1000);
-    expect(evaluation.tradeProposal.trades).toEqual([
-      expect.objectContaining({ instrumentId: 'AAPL', direction: 'SELL', estimatedValue: 500 }),
-      expect.objectContaining({ instrumentId: 'MSFT', direction: 'SELL', estimatedValue: 500 }),
-    ]);
+    expect(evaluation.valuation.cash).toBe(0);
+    expect(evaluation.tradeProposal.trades).toEqual([]);
     expect(evaluation.tradeProposal.estimatedPostTradeCash).toBe(0);
     expect(evaluation.auditRecord.outputs.cashFlowScheduleSummary?.netAppliedCashFlow).toBe(
       -1000,

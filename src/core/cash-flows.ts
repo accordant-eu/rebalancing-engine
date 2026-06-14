@@ -88,7 +88,7 @@ export function applyCashFlowSchedules(
       generatedAppliedCashFlows.push({
         cashFlowId: event.cashFlowId,
         direction: event.direction,
-        status: 'SETTLED',
+        status: 'PENDING',
         amount: event.amount,
         effectiveDate: event.effectiveDate,
         description: event.description,
@@ -210,14 +210,17 @@ function expandCashFlowSchedule(
   }
 
   const recurrence = schedule.recurrence;
-  const monthStep = recurrenceFrequencyToMonths(recurrence.frequency);
+  const step = getRecurrenceStep(recurrence.frequency);
   const endDate = recurrence.endDate ?? evaluationDate;
   const occurrenceLimit =
     recurrence.occurrenceCount ?? MAX_GENERATED_OCCURRENCES_PER_SCHEDULE;
   const events: CashFlowScheduleEvent[] = [];
 
   for (let ordinal = 1; ordinal <= occurrenceLimit; ordinal += 1) {
-    const effectiveDate = addMonths(schedule.effectiveDate, (ordinal - 1) * monthStep);
+    const effectiveDate =
+      step.unit === 'DAYS'
+        ? addDays(schedule.effectiveDate, (ordinal - 1) * step.value)
+        : addMonths(schedule.effectiveDate, (ordinal - 1) * step.value);
     if (effectiveDate > endDate) {
       break;
     }
@@ -297,14 +300,18 @@ function sortEvents(events: CashFlowScheduleEvent[]): CashFlowScheduleEvent[] {
   );
 }
 
-function recurrenceFrequencyToMonths(frequency: CashFlowRecurrenceFrequency): number {
+function getRecurrenceStep(
+  frequency: CashFlowRecurrenceFrequency,
+): { unit: 'DAYS' | 'MONTHS'; value: number } {
   switch (frequency) {
+    case 'WEEKLY':
+      return { unit: 'DAYS', value: 7 };
     case 'MONTHLY':
-      return 1;
+      return { unit: 'MONTHS', value: 1 };
     case 'QUARTERLY':
-      return 3;
+      return { unit: 'MONTHS', value: 3 };
     case 'ANNUAL':
-      return 12;
+      return { unit: 'MONTHS', value: 12 };
   }
 }
 
@@ -319,6 +326,14 @@ function addMonths(dateOnly: string, monthDelta: number): string {
 
 function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function addDays(dateOnly: string, dayDelta: number): string {
+  if (dayDelta === 0) return dateOnly;
+  const { year, month, day } = parseDateOnly(dateOnly);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + dayDelta);
+  return formatDateOnly(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
 }
 
 function parseDateOnly(value: string): { year: number; month: number; day: number } {
@@ -337,5 +352,5 @@ function validateCashFlowDirection(direction: string): void {
 }
 
 function isRecurrenceFrequency(value: string): value is CashFlowRecurrenceFrequency {
-  return value === 'MONTHLY' || value === 'QUARTERLY' || value === 'ANNUAL';
+  return value === 'WEEKLY' || value === 'MONTHLY' || value === 'QUARTERLY' || value === 'ANNUAL';
 }

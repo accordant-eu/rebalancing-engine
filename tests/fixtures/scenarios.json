@@ -731,7 +731,7 @@
             "direction": "DEPOSIT",
             "amount": 100,
             "effectiveDate": "2026-05-02",
-            "recurrence": { "frequency": "WEEKLY" }
+            "recurrence": { "frequency": "DAILY" }
           }
         ]
       },
