@@ -23,8 +23,8 @@ To adhere strictly to MVP principles, we must avoid "bottom-up waterfall" engine
 
 ### Tranche 5: The Command Center Dashboard (UX-First MVP)
 Before scaling to thousands of portfolios, we must prove we can observe what the Live Agent is doing *right now*.
-- **Goal:** Surface the agent's internal state to a macro-observability dashboard.
-- **Action 1:** Embed a lightweight HTTP server (e.g., Express) inside the Agent to expose read-only API routes querying the existing `LiveStateManager` and JSONL audit trails.
+- **Goal:** Surface the agent's internal state via an API-First foundation to a macro-observability dashboard.
+- **Action 1:** Embed a lightweight HTTP server (e.g., Express) inside the Agent to expose read-only API routes querying the existing `LiveStateManager` and JSONL audit trails. *Crucially, this proves our API-First design: the UI will consume these endpoints exactly as a B2B partner CRM would.*
 - **Action 2:** Create a `/web` package containing a React/Vite UI.
 - **Action 3:** Build the UI to visualize the active portfolio's drift, threshold "near-misses," and live execution logs.
 - **Exit Criteria:** A user can navigate to `localhost:3000` while the Agent is running and watch the portfolio drift and trade logs update in real-time.
@@ -55,10 +55,11 @@ Once the UI and the multi-portfolio loop are proven in memory, we swap the mock 
 
 ### Tranche 9: Mandates, Models & Enterprise SaaS
 The final hardening phase for production.
-- **Goal:** Implement SaaS fan-out mechanics and EOD reconciliations.
+- **Goal:** Implement SaaS fan-out mechanics, EOD reconciliations, and secure API access.
 - **Action 1:** Add `Models` to SQLite and write the "fan-out" queue to update linked portfolios when a model changes.
 - **Action 2:** Write an EOD Reconciliation CLI job that fetches the broker's "Settled Ledger" to catch unmatched balances.
-- **Exit Criteria:** Updating a Model via CLI correctly triggers a throttled wave of evaluations across 1,000 linked portfolios.
+- **Action 3:** Implement Scoped M2M Authentication: Secure the Tranche 5 API with scoped API keys (e.g., `read:drift` vs `write:mandates`) so B2B partners can integrate safely.
+- **Exit Criteria:** Updating a Model via CLI correctly triggers a throttled wave of evaluations, and the API successfully rejects unauthorized B2B partner mutation attempts.
 
 ---
 
