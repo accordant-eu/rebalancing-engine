@@ -69,6 +69,15 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
   - Every change to a portfolio's settings (e.g., changing absolute drift tolerance from 5% to 3%) must be logged immutably.
   - The JSONL audit trail must be expanded to link the exact *version* of the mandate that was used to evaluate a trade. If a bad trade occurs, we must have provenance proving exactly who authorized the mandate and when it was modified.
 
+## 7. Additional Operational Considerations
+
+**Goal:** Anticipate edge-cases that cause catastrophic failures or systemic desyncs in production environments.
+**Discussion:**
+- **Corporate Actions & Dividends:** Stock splits, mergers, and spin-offs are incredibly dangerous for an autonomous agent. If a 4-for-1 split occurs, the price drops 75%. If the agent receives the new price *before* the broker updates the portfolio's share quantity, the agent will perceive a massive underweight drift and execute erroneous buy orders. We must integrate a Corporate Action feed to pause trading on affected tickers on ex-dates.
+- **Market Hours & Calendars:** The engine must be fully aware of exchange holidays, early closures, and weekends. Evaluating drift on stale Friday prices over the weekend, or reacting to wide after-hours bid/ask spreads, will lead to highly suboptimal triggers.
+- **End-of-Day (EOD) Reconciliation:** While we currently pause during open orders, we must also implement a rigorous EOD daily batch job. This job will query the broker's official "settled" ledger and compare it against our internal SQLite shadow ledger to detect settlement failures, broken trades, or unmatched cash flows.
+- **Disaster Recovery (DR) & Dead-Letter Queues:** If the Orchestrator server suffers a catastrophic hardware failure mid-evaluation, the system must recover gracefully on reboot without duplicating orders. Message queues must use "at-least-once" delivery with idempotency checks on execution.
+
 ---
 
 ## Proposed Sequencing (For Discussion)
