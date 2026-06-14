@@ -54,5 +54,11 @@
     "decimal.js": "^10.6.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
+  },
+  "overrides": {
+    "@alpacahq/alpaca-trade-api": {
+      "axios": "^1.7.4"
+    },
+    "brace-expansion": "^2.0.1"
   }
 }
