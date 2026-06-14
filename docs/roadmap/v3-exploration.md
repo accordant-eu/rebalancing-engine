@@ -78,6 +78,26 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
 - **End-of-Day (EOD) Reconciliation:** While we currently pause during open orders, we must also implement a rigorous EOD daily batch job. This job will query the broker's official "settled" ledger and compare it against our internal SQLite shadow ledger to detect settlement failures, broken trades, or unmatched cash flows.
 - **Disaster Recovery (DR) & Dead-Letter Queues:** If the Orchestrator server suffers a catastrophic hardware failure mid-evaluation, the system must recover gracefully on reboot without duplicating orders. Message queues must use "at-least-once" delivery with idempotency checks on execution.
 
+## 8. Multi-Tenancy & SaaS Architecture
+
+**Goal:** Safely host multiple independent advisory firms (tenants) within a single deployed instance of the engine.
+**Discussion:**
+- **Tenant Isolation:** A tenant (e.g., Wealth Firm A) must have zero visibility into the portfolios of Tenant B. This requires strict row-level security or tenant-ID partitioning in the SQLite/database layer.
+- **Broker Connections:** Different tenants use different custodians. The `BrokerAdapter` architecture must support dynamic injection of broker credentials per tenant (or even per portfolio).
+- **Broker Templates & Limitations:** We should provide "Supported Broker Templates" (e.g., Alpaca, Interactive Brokers). If a tenant brings a custom broker, we define the minimum API requirements (ability to query positions, fetch live prices, submit market/limit orders).
+- **Configuration Overrides:** Tenants should be able to define firm-wide defaults (e.g., "Firm A never allows drift > 5%"), which override the global engine defaults, but can be further overridden at the individual portfolio mandate level.
+
+## 9. Model Portfolios & Mandate Propagation
+
+**Goal:** Efficiently manage thousands of portfolios that all track the same underlying strategy without manually updating each one.
+**Discussion:**
+- **The "Model" Abstraction:** Instead of defining target weights (e.g., 60% SPY / 40% AGG) on 10,000 individual portfolios, the PM defines a single **Model Portfolio**.
+- **Mandate Inheritance:** Individual portfolios subscribe to the Model. The portfolio's mandate says: "Track Model X, subject to Client Y's specific tax restrictions and cash buffers."
+- **Update Propagation (Fan-out):** When the Investment Committee changes Model X to 65% SPY / 35% AGG:
+  1. The new Model is versioned and approved (via Maker-Checker RBAC).
+  2. A background propagation job fans out the new target weights to all 10,000 subscribed portfolios.
+  3. The engine detects massive drift across 10,000 portfolios and gracefully queues evaluation events, respecting broker rate limits.
+
 ---
 
 ## Proposed Sequencing (For Discussion)
