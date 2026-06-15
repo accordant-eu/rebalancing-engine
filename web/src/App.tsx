@@ -269,27 +269,40 @@ function App() {
 
         {/* Subscription Control Panel */}
         <div className="panel" style={{ marginBottom: '16px' }}>
-          <div className="panelHeader">Mandate Subscription</div>
-          <div className="panelBody" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <select 
-              value={portfolio.portfolioState.subscriptionType || 'bespoke'}
-              onChange={(e) => handleUpdateSubscription(selectedAccountId, e.target.value === 'bespoke' ? null : (activeModelId || models[0]?.modelId), e.target.value)}
-              style={{ padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}
-            >
-              <option value="bespoke">Bespoke (Custom Weights)</option>
-              <option value="discretionary">Discretionary (Model Mandate)</option>
-            </select>
-
-            {isDiscretionary && (
+          <div className="panelHeader" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Mandate</span>
+            <span style={{ fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', background: isDiscretionary ? 'var(--accent-blue)' : 'var(--status-yellow)', color: isDiscretionary ? 'white' : 'black', fontWeight: 'bold' }}>
+              {isDiscretionary ? 'SUBSCRIBED TO MODEL' : 'BESPOKE (CUSTOM)'}
+            </span>
+          </div>
+          <div className="panelBody" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               <select 
-                value={activeModelId || ''}
-                onChange={(e) => handleUpdateSubscription(selectedAccountId, e.target.value, 'discretionary')}
-                style={{ padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}
+                value={portfolio.portfolioState.subscriptionType || 'bespoke'}
+                onChange={(e) => handleUpdateSubscription(selectedAccountId, e.target.value === 'bespoke' ? null : (activeModelId || models[0]?.modelId), e.target.value)}
+                style={{ padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px', minWidth: '200px' }}
               >
-                {models.map(m => (
-                  <option key={m.modelId} value={m.modelId}>{m.name}</option>
-                ))}
+                <option value="bespoke">Bespoke</option>
+                <option value="discretionary">Discretionary (Model Mandate)</option>
               </select>
+
+              {isDiscretionary && (
+                <select 
+                  value={activeModelId || ''}
+                  onChange={(e) => handleUpdateSubscription(selectedAccountId, e.target.value, 'discretionary')}
+                  style={{ padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px', minWidth: '200px' }}
+                >
+                  {models.map(m => (
+                    <option key={m.modelId} value={m.modelId}>{m.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {!isDiscretionary && (
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', border: '1px dashed var(--border-subtle)' }}>
+                <em>Note: UI for manually editing Bespoke Mandate parameters (target weights, absolute drift tolerance, etc.) is scheduled for a future Tranche. Currently viewing read-only targets.</em>
+              </div>
             )}
           </div>
         </div>
