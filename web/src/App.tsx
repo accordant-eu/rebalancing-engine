@@ -1,35 +1,8 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 
-interface Target {
-  instrumentId: string;
-  weight: number;
-}
-
-interface Position {
-  instrumentId: string;
-  quantity: number;
-}
-
-interface LiveState {
-  portfolioState: { accountId: string; tenantId?: string; modelId?: string; subscriptionType?: string; cash: number; holdings: Position[] };
-  priceSnapshot: { prices: Record<string, number> };
-  targetAllocation: { targets: Target[] };
-  policy: { strategyType?: string; absoluteDriftTolerance?: number; thresholds?: { absolute?: number; relative?: number } };
-}
-
-interface ModelMandate {
-  modelId: string;
-  tenantId: string;
-  name: string;
-  targetAllocation: { targets: Target[] };
-  policy: any;
-}
-
-interface StatePayload {
-  globalPrices: { prices: Record<string, number> };
-  portfolios: Record<string, LiveState>;
-}
+import type { LiveState, ModelMandate, StatePayload } from './types';
+import { MandateBuilderForm } from './components/MandateBuilderForm';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -48,7 +21,7 @@ function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, 
   let maxDrift = 0;
   let isBreached = false;
   
-  const absoluteThreshold = portfolio.policy.absoluteDriftTolerance || portfolio.policy.thresholds?.absolute || 0.05;
+  const absoluteThreshold = portfolio.policy.absoluteDriftTolerance || 0.05;
 
   const positions = targets.map(t => {
     const targetWeight = t.weight;
@@ -87,9 +60,7 @@ function App() {
   const [models, setModels] = useState<ModelMandate[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
-  // new model form
-  const [newModelName, setNewModelName] = useState('');
-  const [newModelTargets, setNewModelTargets] = useState('AAPL:0.5,MSFT:0.5');
+  // new model form state removed, managed by MandateBuilderForm
 
   useEffect(() => {
     if (!tenantToken) return;
@@ -149,18 +120,11 @@ function App() {
     if (tenantId) setTenantToken(tenantId);
   };
 
-  const handleCreateModel = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const targets = newModelTargets.split(',').map(t => {
-      const [instrumentId, weight] = t.split(':');
-      return { instrumentId: instrumentId.trim(), weight: parseFloat(weight) };
-    });
-    
+  const handleCreateModel = async (mandateData: Partial<ModelMandate>) => {
     const payload = {
       modelId: `model-${Date.now()}`,
-      name: newModelName,
-      targetAllocation: { targets },
-      policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 }
+      tenantId: tenantToken === 'superadmin' ? 'tenant-baseline' : tenantToken,
+      ...mandateData
     };
 
     await fetch('/api/models', {
@@ -169,7 +133,7 @@ function App() {
       body: JSON.stringify(payload)
     });
     
-    setNewModelName('');
+    // Refresh models list
     const res = await fetch('/api/models', { headers: { 'Authorization': `Bearer ${tenantToken}` } });
     if (res.ok) setModels(await res.json());
   };
@@ -244,7 +208,7 @@ function App() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span className="metricLabel">Max Drift</span>
-                  <span className="metricValue" style={{ color: Math.abs(metrics.maxDrift) > (portfolio.policy.absoluteDriftTolerance || portfolio.policy.thresholds?.absolute || 0.05) ? 'var(--status-red)' : 'var(--status-green)' }}>
+                  <span className="metricValue" style={{ color: Math.abs(metrics.maxDrift) > (portfolio.policy.absoluteDriftTolerance || 0.05) ? 'var(--status-red)' : 'var(--status-green)' }}>
                     {(metrics.maxDrift * 100).toFixed(2)}%
                   </span>
                 </div>
@@ -319,7 +283,7 @@ function App() {
           <div className="panelHeader">Target Allocation Drift</div>
           <div className="panelBody holdingsGrid">
             {metrics.positions.map(h => {
-              const maxDriftDisplay = (portfolio.policy.absoluteDriftTolerance || portfolio.policy.thresholds?.absolute || 0.05) * 2;
+              const maxDriftDisplay = (portfolio.policy.absoluteDriftTolerance || 0.05) * 2;
               const normalizedDrift = Math.min(Math.max(h.drift / maxDriftDisplay, -1), 1);
               const barStyle = {
                 left: normalizedDrift < 0 ? `${50 + normalizedDrift * 50}%` : '50%',
@@ -365,19 +329,7 @@ function App() {
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panelHeader">Create New Model Mandate</div>
           <div className="panelBody">
-            <form onSubmit={handleCreateModel} style={{ display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
-              <div style={{ flex: 1 }}>
-                <label className="metricLabel" style={{ display: 'block', marginBottom: '8px' }}>Model Name</label>
-                <input required value={newModelName} onChange={e => setNewModelName(e.target.value)} placeholder="e.g. Aggressive Growth" style={{ width: '100%', padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }} />
-              </div>
-              <div style={{ flex: 2 }}>
-                <label className="metricLabel" style={{ display: 'block', marginBottom: '8px' }}>Targets (Symbol:Weight, ...)</label>
-                <input required value={newModelTargets} onChange={e => setNewModelTargets(e.target.value)} style={{ width: '100%', padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }} />
-              </div>
-              <button type="submit" style={{ padding: '8px 16px', height: '37px', background: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                Publish Model
-              </button>
-            </form>
+            <MandateBuilderForm onSubmit={handleCreateModel} />
           </div>
         </div>
 

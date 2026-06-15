@@ -283,8 +283,11 @@ function setupExpressApp(stateManager: SqliteStateManager) {
         modelId: r.modelId,
         tenantId: r.tenantId,
         name: r.name,
+        archetype: r.archetype,
+        evaluationFrequency: r.evaluationFrequency,
         targetAllocation: JSON.parse(r.targetAllocation),
-        policy: JSON.parse(r.policy)
+        policy: JSON.parse(r.policy),
+        constraints: r.constraints ? JSON.parse(r.constraints) : []
       }));
       return res.json(models);
     }

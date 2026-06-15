@@ -38,6 +38,9 @@ Based on optimal control research, rigid calendar rebalancing (trading blindly o
 
 The `EvaluationFrequency` determines how often the engine checks the portfolio against its targets. If `daily`, the Orchestrator queues the portfolio at the end of the day. The evaluation only triggers an execution workflow if the current weights have drifted outside the absolute or relative bands defined in the `policy`.
 
+> [!TIP]
+> **Tactical Momentum Riding (Rebalance-on-Update Only)**: A common strategy for risk-on/risk-off models is to let winners run between model updates. Instead of using wide drift tolerances, this is achieved by relying on a separate **Model Update Trigger**. The engine tracks `model_last_update` and the portfolio's `last_rebalance`. If `model_last_update > last_rebalance`, a mandatory rebalance is forced to snap the portfolio to the new risk profile. In the interim, no drift threshold breaches are generated, allowing the portfolio to freely ride underlying momentum.
+
 ## 4. Trade Sizing (Execution Modes)
 If an asset drifts beyond its band, the `generateTradeProposal` function calculates the required trades. This archetype natively supports two modes derived from optimal control theory:
 

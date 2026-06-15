@@ -129,6 +129,34 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 38        | 2026-06-14 | SQLite Data Persistence (Tranche 8) | Architecture Scale         | Replaced in-memory state tracking with embedded `better-sqlite3`. Refactored `LiveStateManager` into an interface and implemented `SqliteStateManager`. Built `agent seed` CLI tool. Migrated `agent start` loop to evaluate directly against the SQL database. Seeded 1000 synthetic portfolios successfully. Drafted ADR 0049. | `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/seed.ts`, `src/cli/agent.ts`, `BUILD_JOURNEY.md` | `better-sqlite3` is synchronously fast enough to handle massive multi-portfolio looping natively inside Node without polluting orchestration logic with asynchronous Promises. | None. | Tranche 9: Orchestrator Fleet Simulation. |
 | 39        | 2026-06-15 | SaaS Shell & Multi-Tenant Model Execution (Tranche 9) | Architecture Scale         | Transformed global state into a multi-tenant isolated architecture. Added `Tenant`, `ModelMandate`, and subscription logic to `domain.ts`. Updated SQLite schema with `Tenants`, `Models`, and linked `Portfolios`. Intercepted Express API with mock JWT `tenantId` extraction. Overhauled React frontend with Tenant Login, Models Tab, and Discretionary model assignment in Portfolio details. | `src/models/domain.ts`, `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/seed.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `BUILD_JOURNEY.md` | Abstracting models separately from portfolios using a pub/sub subscription model prepares the system for scalable generic strategy execution. React frontend scales well for testing multi-tenant configurations. | None. | Tranche 10: Event-Driven Triggers & Core Logic Re-alignment. |
 | 40        | 2026-06-15 | Event-Driven Orchestrator & Pub/Sub (Tranche 10) | Architecture Scale         | Added `EvaluationQueue` table, built reverse index `getPortfoliosAffectedByInstrument`, implemented pub/sub model cascading inside a SQLite transaction, and refactored orchestrator loop to pop from the queue instead of full-table scans. | `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/orchestrator/loop.ts`, `src/cli/agent.ts`, `BUILD_JOURNEY.md` | Event-driven dequeuing resolves the O(N) evaluation bottleneck across the fleet when central models update or prices stream. | SQLite in-memory mode investigation? | Tranche 11: B2B Broker Routing. |
+| 41        | 2026-06-15 | UX Mandate Builder (Tranche B) | UI & API MVP | Implemented bespoke MandateBuilderForm with dynamic conditional archetype fields, updated SQLite schema to support archetype/constraints, and decoupled Models UI with react-hook-form. | `src/cli/agent.ts`, `src/db/sqlite.ts`, `web/src/App.tsx`, `web/src/components/MandateBuilderForm.tsx`, `web/src/types.ts` | Abstracting models separately from portfolios using a pub/sub subscription model prepares the system for scalable generic strategy execution. React frontend scales well for testing multi-tenant configurations. | None. | Tranche C (Core Optimizer). |
+
+### Iteration 41 Detail — 2026-06-15
+
+**Goal:** Implement Reusable Mandate Builder Form in React (Tranche B).
+
+**Scope:** UI & API integration.
+
+**Materials reviewed:** `src/models/domain.ts`, `docs/archetypes/static-weights-archetype.md`.
+
+**Decisions made:**
+1. Installed `react-hook-form` to cleanly manage the large, complex API-native mandate structures.
+2. Created a dedicated `MandateBuilderForm` React component with dynamic conditional sections (e.g. Archetype selections, target allocations).
+3. Exposed advanced `RebalancingPolicy` execution inputs, including the newly defined `driftUtilityConversionRate`, directly in the UI.
+4. Added safe SQLite table alters to add `archetype`, `evaluationFrequency`, and `constraints` columns on startup to accommodate the extended `ModelMandate` payload.
+
+**Files changed:**
+- `src/cli/agent.ts`
+- `src/db/sqlite.ts`
+- `web/src/App.tsx`
+- `web/src/components/MandateBuilderForm.tsx`
+- `web/src/types.ts`
+- `BUILD_JOURNEY.md`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Proceed to Tranche C (Dynamic targeting or execution logic).
 
 ### Iteration 26 Detail — 2026-05-02
 

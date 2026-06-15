@@ -53,8 +53,5 @@
     "decimal.js": "^10.6.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
-  },
-  "overrides": {
-    "brace-expansion": "^2.0.1"
   }
 }
