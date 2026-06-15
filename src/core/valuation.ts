@@ -5,6 +5,7 @@ import {
   Holding,
   PortfolioState,
   PriceSnapshot,
+  ProposedTrade,
 } from '../models/domain';
 import { CALCULATION_EPSILON, toDecimal } from './numeric';
 
@@ -142,6 +143,62 @@ export function calculateCurrentWeights(valuation: ValuationResult): WeightResul
     instrumentId: h.instrumentId,
     weight: toDecimal(h.marketValue).div(valuation.totalPortfolioValue).toNumber(),
   }));
+}
+
+/**
+ * Simulates the post-trade valuation given a set of trades and estimated friction cost.
+ */
+export function simulatePostTradeValuation(
+  preTradeValuation: ValuationResult,
+  trades: ProposedTrade[],
+  totalEstimatedTco: number
+): ValuationResult {
+  let estimatedCash = toDecimal(preTradeValuation.cash).minus(totalEstimatedTco);
+
+  const postHoldingsMap = new Map<string, HoldingValue>();
+  for (const h of preTradeValuation.holdings) {
+    postHoldingsMap.set(h.instrumentId, { ...h });
+  }
+
+  for (const trade of trades) {
+    if (trade.direction === 'BUY') {
+      estimatedCash = estimatedCash.minus(trade.estimatedValue);
+      let holding = postHoldingsMap.get(trade.instrumentId);
+      if (!holding) {
+        holding = {
+          instrumentId: trade.instrumentId,
+          quantity: 0,
+          price: trade.estimatedPrice,
+          marketValue: 0
+        };
+        postHoldingsMap.set(trade.instrumentId, holding);
+      }
+      holding.quantity = toDecimal(holding.quantity).plus(trade.quantity).toNumber();
+      holding.marketValue = toDecimal(holding.quantity).mul(holding.price).toNumber();
+    } else {
+      estimatedCash = estimatedCash.plus(trade.estimatedValue);
+      const holding = postHoldingsMap.get(trade.instrumentId);
+      if (holding) {
+        holding.quantity = toDecimal(holding.quantity).minus(trade.quantity).toNumber();
+        holding.marketValue = toDecimal(holding.quantity).mul(holding.price).toNumber();
+        if (holding.quantity <= 0) {
+          postHoldingsMap.delete(trade.instrumentId);
+        }
+      }
+    }
+  }
+
+  const holdings = Array.from(postHoldingsMap.values());
+  const totalHoldingsValue = holdings.reduce((acc, h) => acc.plus(h.marketValue), toDecimal(0));
+  const totalPortfolioValue = totalHoldingsValue.plus(estimatedCash);
+
+  return {
+    holdings,
+    totalHoldingsValue: totalHoldingsValue.toNumber(),
+    cash: estimatedCash.toNumber(),
+    totalPortfolioValue: totalPortfolioValue.toNumber(),
+    cashFlowSummary: preTradeValuation.cashFlowSummary
+  };
 }
 
 function summarizeCashFlows(

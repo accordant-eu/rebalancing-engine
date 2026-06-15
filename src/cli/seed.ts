@@ -41,6 +41,8 @@ export function executeSeed(parsed: ParsedArgs, _context: CommandContext): Comma
     modelId,
     tenantId,
     name: `Scenario Model: ${scenarioId}`,
+    archetype: 'StaticWeights',
+    evaluationFrequency: 'realtime',
     targetAllocation: scenario.targetAllocation,
     policy: scenario.policy
   });

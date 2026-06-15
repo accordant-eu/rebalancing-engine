@@ -13,9 +13,10 @@ import {
 import { validateTargetAllocation } from './drift';
 import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
 import { CashFlowScheduleSummary } from './cash-flows';
-import { ValuationResult } from './valuation';
+import { ValuationResult, calculateCurrentWeights, simulatePostTradeValuation } from './valuation';
 import { buildCashFlowProposalWarnings, buildCashFlowScheduleProposalWarnings } from '../explanation/warnings';
 import { FrictionModel } from './friction';
+import { QualityIndicator, EvaluationState, QualityEvaluationResult } from './quality';
 
 const TRADE_EPSILON = CALCULATION_EPSILON;
 
@@ -33,6 +34,7 @@ export function generateTradeProposal(
   policy?: RebalancingPolicy,
   cashFlowScheduleSummary?: CashFlowScheduleSummary,
   frictionModel?: FrictionModel,
+  qualityIndicators?: QualityIndicator[],
 ): TradeProposal {
   validateTargetAllocation(target);
   if (valuation.cash < 0 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
@@ -128,7 +130,112 @@ export function generateTradeProposal(
     );
   }
 
+  if (qualityIndicators && qualityIndicators.length > 0) {
+    finalizedProposal = applyQualityEvaluationPipeline(
+      finalizedProposal,
+      valuation,
+      target,
+      policy,
+      qualityIndicators,
+      frictionModel
+    );
+  }
+
   return finalizedProposal;
+}
+
+export function applyQualityEvaluationPipeline(
+  proposal: TradeProposal,
+  valuation: ValuationResult,
+  target: TargetAllocation,
+  policy: RebalancingPolicy | undefined,
+  qualityIndicators: QualityIndicator[],
+  frictionModel?: FrictionModel
+): TradeProposal {
+  if (qualityIndicators.length === 0 || proposal.trades.length === 0) {
+    return proposal;
+  }
+
+  const totalTco = proposal.trades.reduce((acc, trade) => {
+    return acc + (frictionModel ? frictionModel.estimateCost(trade.estimatedValue, trade.instrumentId) : 0);
+  }, 0);
+
+  const preTradeState: EvaluationState = {
+    valuation,
+    weightResults: calculateCurrentWeights(valuation),
+    target,
+    policy: policy || { absoluteDriftTolerance: 0, minimumTradeSize: 0 },
+    proposedTrades: [],
+    estimatedTco: 0
+  };
+
+  const postTradeValuation = simulatePostTradeValuation(valuation, proposal.trades, totalTco);
+
+  const postTradeState: EvaluationState = {
+    valuation: postTradeValuation,
+    weightResults: calculateCurrentWeights(postTradeValuation),
+    target,
+    policy: policy || { absoluteDriftTolerance: 0, minimumTradeSize: 0 },
+    proposedTrades: proposal.trades,
+    estimatedTco: totalTco
+  };
+
+  let allPassed = true;
+  let netUtilityBps = 0;
+  const reasons: string[] = [];
+  let expectedImprovement = 0;
+  let qualityEvaluation: QualityEvaluationResult | undefined;
+
+  for (const indicator of qualityIndicators) {
+    const result = indicator.evaluate(preTradeState, postTradeState);
+    if (!result.passed) {
+      allPassed = false;
+      if (result.reason) reasons.push(result.reason);
+    }
+    if (result.netUtilityBps) {
+      netUtilityBps += result.netUtilityBps;
+    }
+    if (result.expectedImprovement) {
+      expectedImprovement += result.expectedImprovement;
+    }
+    
+    if (!qualityEvaluation) {
+      qualityEvaluation = { ...result };
+    } else {
+      qualityEvaluation.passed = qualityEvaluation.passed && result.passed;
+      if (result.reason) {
+        qualityEvaluation.reason = qualityEvaluation.reason 
+          ? qualityEvaluation.reason + '; ' + result.reason 
+          : result.reason;
+      }
+    }
+  }
+
+  if (qualityEvaluation) {
+    qualityEvaluation.netUtilityBps = netUtilityBps;
+    qualityEvaluation.expectedImprovement = expectedImprovement;
+  }
+
+  if (!allPassed) {
+    return {
+      ...proposal,
+      trades: [], // Rejected
+      estimatedPostTradeCash: valuation.cash,
+      warnings: [
+        ...proposal.warnings,
+        {
+          code: 'QUALITY_EVALUATION_FAILED',
+          message: `Trade proposal rejected by Quality Evaluation Pipeline: ${reasons.join('; ')}`
+        }
+      ],
+      qualityEvaluation
+    };
+  }
+
+  return {
+    ...proposal,
+    qualityEvaluation
+  };
 }
 
 export function applyFrictionPenalties(

@@ -57,12 +57,24 @@ export interface Tenant {
   name: string;
 }
 
+export type MandateArchetype = 'StaticWeights' | 'EfficientFrontier' | 'MinimumVariance';
+
+export type EvaluationFrequency = 'realtime' | 'daily' | 'weekly' | 'monthly';
+
+export interface ConstraintIndicator {
+  type: 'concentration_limit' | 'wash_sale_lockout';
+  parameters: Record<string, any>;
+}
+
 export interface ModelMandate {
   modelId: string;
   tenantId: string;
   name: string;
+  archetype: MandateArchetype;
+  evaluationFrequency: EvaluationFrequency;
   targetAllocation: TargetAllocation;
   policy: RebalancingPolicy;
+  constraints?: ConstraintIndicator[];
 }
 
 export type SubscriptionType = 'discretionary' | 'bespoke';
@@ -163,7 +175,8 @@ export type ProposalWarningCode =
   | 'MINIMUM_TRADE_SIZE'
   | 'PENDING_CASH_FLOW_EXCLUDED'
   | 'FUTURE_CASH_FLOW_SCHEDULED'
-  | 'FRICTION_COST_EXCEEDED';
+  | 'FRICTION_COST_EXCEEDED'
+  | 'QUALITY_EVALUATION_FAILED';
 
 export interface ProposalWarning {
   code: ProposalWarningCode;
@@ -177,12 +190,22 @@ export interface ProposalWarning {
   futureScheduledNetAmount?: number;
 }
 
+export interface QualityEvaluationResult {
+  passed: boolean;
+  scoreBefore?: number;
+  scoreAfter?: number;
+  expectedImprovement?: number;
+  netUtilityBps?: number;
+  reason?: string;
+}
+
 export interface TradeProposal {
   trades: ProposedTrade[];
   estimatedPostTradeCash: number;
   warnings: ProposalWarning[];
   executionTargetMode: ExecutionTargetMode;
   boundaryBandMode?: BoundaryBandMode;
+  qualityEvaluation?: QualityEvaluationResult;
 }
 
 export interface TriggerResult {

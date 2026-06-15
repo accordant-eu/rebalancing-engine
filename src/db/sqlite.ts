@@ -21,8 +21,11 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       modelId TEXT PRIMARY KEY,
       tenantId TEXT NOT NULL,
       name TEXT NOT NULL,
+      archetype TEXT DEFAULT 'StaticWeights',
+      evaluationFrequency TEXT DEFAULT 'realtime',
       targetAllocation TEXT NOT NULL,
       policy TEXT NOT NULL,
+      constraints TEXT,
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
     );
 

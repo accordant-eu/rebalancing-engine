@@ -26,8 +26,8 @@ export class SqliteStateManager implements LiveStateManager {
     const db = getDb();
     
     // Save model
-    db.prepare(`INSERT OR REPLACE INTO Models (modelId, tenantId, name, targetAllocation, policy) VALUES (?, ?, ?, ?, ?)`).run(
-      model.modelId, model.tenantId, model.name, JSON.stringify(model.targetAllocation), JSON.stringify(model.policy)
+    db.prepare(`INSERT OR REPLACE INTO Models (modelId, tenantId, name, archetype, evaluationFrequency, targetAllocation, policy, constraints) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      model.modelId, model.tenantId, model.name, model.archetype, model.evaluationFrequency, JSON.stringify(model.targetAllocation), JSON.stringify(model.policy), model.constraints ? JSON.stringify(model.constraints) : null
     );
     
     // Cascade to all subscribed portfolios
@@ -61,8 +61,11 @@ export class SqliteStateManager implements LiveStateManager {
       modelId: r.modelId,
       tenantId: r.tenantId,
       name: r.name,
+      archetype: r.archetype || 'StaticWeights',
+      evaluationFrequency: r.evaluationFrequency || 'realtime',
       targetAllocation: JSON.parse(r.targetAllocation),
-      policy: JSON.parse(r.policy)
+      policy: JSON.parse(r.policy),
+      constraints: r.constraints ? JSON.parse(r.constraints) : undefined
     }));
   }
 
