@@ -60,6 +60,12 @@ Before executing any generated trades, the pipeline simulates **State B**:
 
 This mathematically guarantees that the system never spends more in guaranteed transaction costs than the value it assigns to the risk-reduction benefits, governed by the mandate's defined conversion rate.
 
-## 6. Execution Constraints
 Because the archetype provides the cohesive base model, users can freely stack universal `ConstraintIndicators` on top of it.
 - **Concentration Limits**: E.g., "No single stock > 10%". If the trade proposal results in State B breaching this limit, the Quality Indicator returns a utility of `-Infinity`, and the proposal is safely rejected.
+
+## 7. Cash Deployment Strategy (Deposit Allocation)
+When new cash (deposits) enters the portfolio, the archetype governs how that cash is deployed. There are three supported modes:
+
+1. **Rebalancing Allocation (Default)**: Cash is deployed specifically to under-weight assets to bring the portfolio closer to its target weights. This serves as a "free" rebalance, reducing drift without incurring sell-side transaction costs or capital gains taxes.
+2. **Current Weight Allocation**: Cash is deployed proportionally to the *current* market weights of the portfolio. This strategy allows winners to run by explicitly leveraging existing momentum, maintaining the current drift rather than correcting it.
+3. **Fixed Target Allocation**: Cash is deployed proportionally to the *target* weights, entirely ignoring the current market values. This is a naive "set-and-forget" approach often used in simple automated deposit plans (e.g., investing a monthly $500 deposit strictly 60/40 regardless of current portfolio shape).

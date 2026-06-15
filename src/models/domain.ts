@@ -112,6 +112,8 @@ export type BoundaryBandMode = 'absolute' | 'relative';
 
 export type SellSelectionMode = 'FIFO' | 'LIFO' | 'HIGHEST_COST' | 'LOWEST_COST';
 
+export type DepositAllocationMode = 'REBALANCING' | 'CURRENT_WEIGHT' | 'FIXED_TARGET';
+
 export interface CalendarRebalancingConfig {
   evaluationDate: string; // ISO date string; supplied by caller, never read from system time
   nextRebalanceDate: string; // ISO date string
@@ -143,6 +145,11 @@ export interface RebalancingPolicy {
    * E.g., a rate of 0.1 means 10 bps of drift reduction is required to justify 1 bps of TCO.
    */
   driftUtilityConversionRate?: number;
+  /**
+   * Governs how new cash deposits are deployed into the portfolio.
+   * Defaults to 'REBALANCING' (deploying cash to under-weight assets).
+   */
+  depositAllocationMode?: DepositAllocationMode;
   // Required only when strategyType is calendar.
   calendar?: CalendarRebalancingConfig;
 }
