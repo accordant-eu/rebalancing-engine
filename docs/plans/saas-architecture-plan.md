@@ -18,17 +18,18 @@ This document maps out the domain model and architecture required to transition 
 Currently, target weights (`TargetAllocations`) and rules (`RebalancingPolicy`) are disjointed. We need to unify them into a cohesive `Mandate`.
 
 ### The `Mandate` Entity
-A `Mandate` encapsulates exactly *how* a portfolio should behave:
-- **`targetAllocation`**: The desired asset weights (e.g., 60% AAPL, 40% MSFT).
+A `Mandate` encapsulates exactly *how* a portfolio should behave. It is a materialized, self-contained record:
+- **`targetAllocation`**: Sophisticated target definitions. Beyond simple instrument weights, this may include hierarchical asset-class targets, boundary/drift tolerances per-asset, fixed-quantity lockups (for out-of-band assets), and explicit cash reserve targets.
 - **`rebalancingPolicy`**: The strategy and triggers (e.g., `strategyType: 'threshold'`, `absoluteDriftTolerance: 0.05`).
 - **`frictionModel`**: Constraints on trading (e.g., `maxFrictionBps`).
 
-### Model Mandates vs Bespoke Mandates
-- **Model Mandate**: A generic, named mandate stored in the database (e.g., `modelId: "AGG_GROWTH"`). It is maintained centrally. 
+### Model Mandates vs Bespoke Mandates (Pub/Sub Model)
+- **Model Mandate**: A generic, named mandate maintained centrally by an author (e.g., `modelId: "AGG_GROWTH"`).
 - **Portfolio Subscription**: A Portfolio has a `subscriptionType` (`'discretionary'` or `'bespoke'`).
-  - If `'discretionary'`, the portfolio links to a `modelId` and strictly inherits the Model Mandate. Updating the Model instantly fans out to all subscribed portfolios.
-  - If `'bespoke'`, the portfolio has its own unique, non-shared `Mandate`.
-  - *(Future)* `'advised'`: Inherits from a Model but requires out-of-band client consent before trade execution.
+  - **Weak Coupling via Pub/Sub**: Portfolios do *not* tightly couple to a Model via a runtime SQL `JOIN`. Instead, every portfolio stores a full, materialized copy of its Mandate.
+  - If `'discretionary'`, the portfolio subscribes to a `modelId`. When the author publishes a Model update, an async pub/sub job cascades the changes, explicitly overwriting the local mandate of all subscribed portfolios. This ensures a portfolio's state is fully self-contained and auditable at any point in time.
+  - If `'bespoke'`, the portfolio has its own unique Mandate and ignores published model updates.
+  - *(Future)* `'advised'`: Subscribes to a Model, but the pub/sub cascade generates a "proposed mandate update" requiring out-of-band client consent before mutating the portfolio's active mandate.
 
 ---
 
@@ -44,11 +45,13 @@ Represents an advisory firm or partner using the SaaS.
 ### Broker Connection Mapping
 Each Tenant brings their own broker relationship (or utilizes a segregated master account).
 - **`TenantBrokerConfig`**: Stores the Tenant's specific broker credentials (e.g., Alpaca B2B Broker API keys).
-- **`BrokerAdapter` Interface Evolution**: Must be updated to support contextual execution.
+- **`BrokerAdapter` Interface Evolution**: Must be updated to support contextual execution and asynchronous feedback.
   ```typescript
   interface BrokerAdapter {
     getPortfolioState(context: ExecutionContext): Promise<PortfolioState>;
     submitTrades(context: ExecutionContext, proposal: TradeProposal): Promise<void>;
+    // Asynchronous order confirmations and fill streams
+    subscribeToFills(context: ExecutionContext, callback: (fill: ExecutionFill) => void): void;
   }
   ```
   Where `ExecutionContext` contains the Tenant's broker credentials and the specific `brokerAccountId`.
@@ -73,12 +76,14 @@ The SQLite `Portfolios` table expands significantly:
 
 Currently, the `Orchestrator` loops over all portfolios sequentially and uses a single global `AlpacaAdapter`.
 
-### The New Evaluation Loop
-1. **Fetch Global Prices**: Retrieve market data once.
-2. **Group by Tenant**: Group all active portfolios by `tenantId`.
-3. **Resolve Broker Adapter**: For each Tenant, instantiate or retrieve the configured `BrokerAdapter` using their `TenantBrokerConfig`.
-4. **Resolve Mandate**: For each Portfolio, fetch its Cohesive Mandate (either traversing the `modelId` or reading the bespoke mandate).
+### The New Evaluation Loop (Event-Driven)
+Rather than a blind sequential polling loop, the Orchestrator should transition to an event-driven model:
+1. **Price Event Streams**: Subscribe to live market data events (e.g., WebSockets). A price change event wakes up the Orchestrator to evaluate affected portfolios.
+2. **Group by Tenant**: Group the affected portfolios by `tenantId`.
+3. **Resolve Broker Adapter**: For each Tenant, retrieve the configured `BrokerAdapter` using their `TenantBrokerConfig`.
+4. **Resolve Mandate**: For each Portfolio, read its self-contained, materialized Mandate from the database.
 5. **Evaluate & Execute**: Pass the Mandate and the Tenant's `BrokerAdapter` context into the engine.
+6. **Execution Reconciliation**: Listen to the `BrokerAdapter.subscribeToFills()` stream to asynchronously reconcile broker executions back into the local SQLite ledger.
 
 ---
 
