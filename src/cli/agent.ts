@@ -223,14 +223,29 @@ function setupExpressApp(stateManager: SqliteStateManager) {
 
   app.get('/api/state', (req, res) => {
     const tenantId = (req as any).tenantId;
+    const targetTenant = tenantId === 'superadmin' ? null : tenantId;
     res.json({
       globalPrices: stateManager.getGlobalPrices(),
-      portfolios: stateManager.getStatesFilteredByTenant(tenantId),
+      portfolios: stateManager.getStatesFilteredByTenant(targetTenant),
     });
   });
 
   app.get('/api/models', (req, res) => {
     const tenantId = (req as any).tenantId;
+    if (tenantId === 'superadmin') {
+      // In a real app we'd fetch all models across all tenants or have a specific superadmin view
+      // For now we'll just return all models
+      const db = require('../db/sqlite').getDb();
+      const rows = db.prepare(`SELECT * FROM Models`).all() as any[];
+      const models = rows.map(r => ({
+        modelId: r.modelId,
+        tenantId: r.tenantId,
+        name: r.name,
+        targetAllocation: JSON.parse(r.targetAllocation),
+        policy: JSON.parse(r.policy)
+      }));
+      return res.json(models);
+    }
     res.json(stateManager.getModels(tenantId));
   });
 
@@ -270,12 +285,17 @@ function setupExpressApp(stateManager: SqliteStateManager) {
           const parsed = JSON.parse(line);
           // Only show logs for this tenant's portfolios
           // In a real system, audit records would explicitly contain tenantId
-          // Here we just check if the accountId is owned by this tenant
+          // Here we just check if the accountId is owned by this tenant, or if it's superadmin
           const accountId = parsed.accountId || (parsed.eventId && parsed.eventId.split(':')[0]);
-          const tenantStates = stateManager.getStatesFilteredByTenant(tenantId);
-          if (accountId && tenantStates[accountId]) {
+          if (tenantId === 'superadmin') {
             lines.push(parsed);
             if (lines.length > 100) lines.shift();
+          } else {
+            const tenantStates = stateManager.getStatesFilteredByTenant(tenantId);
+            if (accountId && tenantStates[accountId]) {
+              lines.push(parsed);
+              if (lines.length > 100) lines.shift();
+            }
           }
         } catch (e) {
           // Ignore

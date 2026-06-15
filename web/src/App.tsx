@@ -194,6 +194,7 @@ function App() {
               <select name="tenantId" style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}>
                 <option value="tenant-baseline">Baseline Tenant</option>
                 <option value="tenant-b">Tenant B (Empty Data Isolation)</option>
+                <option value="superadmin">System Superadmin (All Tenants)</option>
               </select>
             </div>
             <button type="submit" style={{ padding: '12px', background: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -225,9 +226,16 @@ function App() {
             >
               <div className="panelHeader" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {accountId}
-                {portfolio.portfolioState.subscriptionType === 'discretionary' && (
-                  <span style={{ fontSize: '0.7rem', background: 'var(--accent-blue)', padding: '2px 6px', borderRadius: '4px' }}>MODEL</span>
-                )}
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  {tenantToken === 'superadmin' && portfolio.portfolioState.tenantId && (
+                    <span style={{ fontSize: '0.6rem', background: 'var(--border-subtle)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)' }}>
+                      {portfolio.portfolioState.tenantId}
+                    </span>
+                  )}
+                  {portfolio.portfolioState.subscriptionType === 'discretionary' && (
+                    <span style={{ fontSize: '0.7rem', background: 'var(--accent-blue)', padding: '2px 6px', borderRadius: '4px' }}>MODEL</span>
+                  )}
+                </div>
               </div>
               <div className="panelBody">
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -378,7 +386,10 @@ function App() {
             <div key={m.modelId} className="panel">
               <div className="panelHeader">{m.name}</div>
               <div className="panelBody">
-                <div style={{ marginBottom: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {m.modelId}</div>
+                <div style={{ marginBottom: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>ID: {m.modelId}</span>
+                  {tenantToken === 'superadmin' && <span>Tenant: {m.tenantId}</span>}
+                </div>
                 <div>
                   <span className="metricLabel" style={{ display: 'block', marginBottom: '4px' }}>Target Allocation</span>
                   {m.targetAllocation.targets.map(t => (
