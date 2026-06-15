@@ -113,4 +113,21 @@ To adhere strictly to our MVP "thin vertical slice" principles, we avoid buildin
 * **Tranche 10 (SaaS Tenant Partitioning)**: Introduce the `Tenant` entity and API keys. Update the dashboard to require tenant context (e.g., a login or tenant-switcher). Prove that the UI and API strictly isolate data, so Tenant A cannot see Tenant B's portfolios, even while the engine evaluates them all concurrently in dry-run mode.
 * **Tranche 11 (B2B Broker Routing)**: Finally, with the domain logic and tenant partitioning proven safely offline/dry-run, overhaul the `BrokerAdapter`. Integrate the Alpaca B2B Broker API to map internal portfolios to external sub-accounts and execute real trades contextually per tenant.
 
+## 7. Pragmatic Edge Cases & Operational Risks
+
+While the domain and execution loop mapping provides a strong foundation, there are several pragmatic edge cases and operational complexities that must be explicitly accounted for before entering production.
+
+### 7.1. Execution & Broker Complexities
+- **Rate Limits & API Throttling**: A tenant with 5,000 portfolios reacting to a market event could generate 10,000 simultaneous order requests. The `BrokerAdapter` needs a robust, tenant-scoped queuing/throttling mechanism (e.g., Token Bucket) to avoid bans.
+- **Partial Fills & Stale Pending States**: When an order is placed, cash and positions are "locked" until settlement. If an order is partially filled and then cancelled (e.g., end of day), the engine must gracefully unlock the unexecuted cash/positions without causing a double-trade on the next tick.
+- **Corporate Actions (Splits/Dividends)**: If a stock splits 4-for-1 overnight, the broker updates the quantity, but our local SQLite `Holdings` ledger will be stale. The reverse-index will incorrectly flag massive drift. The system must listen to a Corporate Actions data stream to adjust local ledgers before trading opens.
+- **Fractional Share Constraints**: Not all brokers support fractional shares, and those that do might restrict them to specific tickers. The `TenantBrokerConfig` or `BrokerAdapter` must enforce precision rounding rules to avoid rejected orders.
+
+### 7.2. Event-Driven Loop Bottlenecks
+- **Event Storms (Thundering Herd)**: An event-driven price stream on highly correlated assets (e.g., SPY) could trigger the reverse index to wake up 10,000 portfolios multiple times per second. The Orchestrator requires a strict **Debounce/Cooldown Queue** per portfolio to prevent CPU/database melting during volatile market opens.
+- **Missing Triggers (Cash Deposits)**: Price changes aren't the only trigger. If an end-user deposits $50,000 into their broker account, the Orchestrator must know to wake up and invest it. The system must subscribe to Broker Account/Ledger events, not just Market Data events.
+
+### 7.3. Infrastructure Limitations
+- **SQLite Concurrency Limits**: We are utilizing a single embedded SQLite database. While fast, write-heavy operations (e.g., 10,000 portfolios writing JSONL audit tails and updating pending orders concurrently) may encounter `SQLITE_BUSY` locks. We must evaluate WAL mode tuning or eventual Tenant-level database partitioning (one `.db` file per tenant) for horizontal scale.
+
 &copy; 2026 Johan Hellman. All rights reserved.
