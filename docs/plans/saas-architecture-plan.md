@@ -132,8 +132,9 @@ Before entering a multi-tenant production environment, the data layer must be mi
 
 To adhere strictly to our MVP "thin vertical slice" principles, we avoid building massive backend schema changes in a vacuum. Each tranche must deliver a demonstrable, verifiable increment of value—ideally visible in the Command Center.
 
-* **Tranche 9 (Model Management UX)**: Implement the Cohesive Mandate and Model hierarchy in the database and API. Crucially, build the UI to visualize this: allow the user to create a Model in the dashboard, assign a portfolio to `discretionary` subscription, and watch the Orchestrator instantly update the portfolio's target allocations. This proves the core domain logic end-to-end.
-* **Tranche 10 (SaaS Tenant Partitioning)**: Introduce the `Tenant` entity and API keys. Update the dashboard to require tenant context (e.g., a login or tenant-switcher). Prove that the UI and API strictly isolate data, so Tenant A cannot see Tenant B's portfolios, even while the engine evaluates them all concurrently in dry-run mode.
-* **Tranche 11 (B2B Broker Routing)**: Finally, with the domain logic and tenant partitioning proven safely offline/dry-run, overhaul the `BrokerAdapter`. Integrate the Alpaca B2B Broker API (including order grouping) to map internal portfolios to external sub-accounts and execute real trades contextually per tenant.
+* **Tranche 9 (SaaS Shell & Model UX)**: Introduce the `Tenant` entity, JWT authentication, and Model Mandates. Update the dashboard so a user logs into a Tenant context, creates a Model Mandate, and assigns portfolios. The engine continues to use the existing polling loop under the hood, but the UI immediately proves the SaaS partitioning and Mandate domain logic end-to-end.
+* **Tranche 10 (Event-Driven Orchestrator & Pub/Sub)**: With the domain logic visually proven, replace the naive polling loop with an event-driven core (Price WebSockets + Reverse Index). Implement the async Pub/Sub cascade for Model updates. This proves the system can scale its compute efficiently.
+* **Tranche 11 (B2B Broker Routing & Async Fills)**: Overhaul the `BrokerAdapter` to use tenant-specific credentials, implement order grouping to minimize costs, and consume the `subscribeToFills` stream for asynchronous reconciliation.
+* **Tranche 12 (Data Layer Scale)**: Migrate from embedded SQLite to PostgreSQL before onboarding live B2B integrations, ensuring concurrent write safety and horizontal scaling.
 
 &copy; 2026 Johan Hellman. All rights reserved.
