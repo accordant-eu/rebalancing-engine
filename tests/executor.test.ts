@@ -3,16 +3,16 @@ import { BrokerAdapter } from '../src/broker/adapter';
 import { TradeProposal, PortfolioState } from '../src/models/domain';
 
 class MockAdapter implements BrokerAdapter {
-  getPortfolioState(): Promise<PortfolioState> {
+  getPortfolioState(brokerAccountId: string): Promise<PortfolioState> {
     throw new Error('Method not implemented.');
   }
   getPrices(): Promise<Record<string, number>> {
     throw new Error('Method not implemented.');
   }
-  submitTrades(): Promise<void> {
+  submitTrades(brokerAccountId: string): Promise<void> {
     return Promise.resolve();
   }
-  hasOpenOrders(): Promise<boolean> {
+  hasOpenOrders(brokerAccountId: string): Promise<boolean> {
     return Promise.resolve(false);
   }
 }
@@ -49,26 +49,26 @@ describe('BrokerExecutor', () => {
   };
 
   it('does nothing if proposal has no trades', () => {
-    executor.execute(emptyProposal, 'event-1');
+    executor.execute('account-1',emptyProposal, 'event-1');
     expect(submitSpy).not.toHaveBeenCalled();
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   it('submits trades and logs info to console', () => {
-    executor.execute(validProposal, 'event-2');
-    expect(submitSpy).toHaveBeenCalledWith(validProposal);
-    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Submitting 1 trades to broker for event: event-2'));
+    executor.execute('account-1',validProposal, 'event-2');
+    expect(submitSpy).toHaveBeenCalledWith('account-1', validProposal);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Submitting 1 trades to broker for account account-1 on event: event-2'));
   });
 
   it('catches and logs errors asynchronously during submission', async () => {
     const error = new Error('Broker disconnected');
     submitSpy.mockRejectedValueOnce(error);
 
-    executor.execute(validProposal, 'event-3');
+    executor.execute('account-1',validProposal, 'event-3');
     
     // Allow the promise chain to settle
     await new Promise(process.nextTick);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[BrokerExecutor] CRITICAL ERROR SUBMITTING TRADES:', error);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[BrokerExecutor] CRITICAL ERROR SUBMITTING TRADES FOR account-1:', error);
   });
 });

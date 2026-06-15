@@ -39,33 +39,39 @@ describe('CircuitBreaker', () => {
     executionTargetMode: 'full_reset',
   });
 
-  it('allows valid trades and increments count', () => {
-    circuitBreaker.execute(createProposal(5000), 'event-1');
+  it('forwards valid proposals to target executor', () => {
+    circuitBreaker.execute('account-1', createProposal(5000), 'event-1');
     expect(mockExecutor.execute).toHaveBeenCalledTimes(1);
     expect(circuitBreaker.getExecutedCount()).toBe(1);
   });
 
-  it('blocks trades exceeding gross notional limit', () => {
-    expect(() => circuitBreaker.execute(createProposal(15000), 'event-1')).toThrow(/Gross notional value/);
+  it('enforces gross notional limit', () => {
+    expect(() => circuitBreaker.execute('account-1', createProposal(15000), 'event-1')).toThrow(/Gross notional value/);
     expect(mockExecutor.execute).not.toHaveBeenCalled();
     expect(circuitBreaker.getExecutedCount()).toBe(0);
   });
 
-  it('blocks trades exceeding session count limit', () => {
-    circuitBreaker.execute(createProposal(1000), 'event-1');
-    circuitBreaker.execute(createProposal(1000), 'event-2');
-
+  it('enforces max trades per session limit', () => {
+    circuitBreaker.execute('account-1', createProposal(1000), 'event-1');
+    circuitBreaker.execute('account-1', createProposal(1000), 'event-2');
+    
     expect(circuitBreaker.getExecutedCount()).toBe(2);
     expect(mockExecutor.execute).toHaveBeenCalledTimes(2);
 
-    expect(() => circuitBreaker.execute(createProposal(1000), 'event-3')).toThrow(/Max trades per session/);
-    expect(mockExecutor.execute).toHaveBeenCalledTimes(2);
+    expect(() => circuitBreaker.execute('account-1', createProposal(1000), 'event-3')).toThrow(/Max trades per session/);
+    expect(mockExecutor.execute).toHaveBeenCalledTimes(2); // Still 2
     expect(circuitBreaker.getExecutedCount()).toBe(2);
   });
 
-  it('ignores empty proposals without incrementing', () => {
+  it('does not increment count for empty proposals', () => {
     circuitBreaker.execute(
-      { trades: [], estimatedPostTradeCash: 0, warnings: [], executionTargetMode: 'full_reset' },
+      'account-1',
+      {
+        trades: [],
+        estimatedPostTradeCash: 0,
+        warnings: [],
+        executionTargetMode: 'full_reset',
+      },
       'event-1',
     );
     expect(mockExecutor.execute).not.toHaveBeenCalled();

@@ -1,2 +1,2 @@
 export * from './adapter';
-export * from './alpaca';
+export * from './alpaca-broker';

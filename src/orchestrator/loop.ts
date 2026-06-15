@@ -68,7 +68,7 @@ export class Orchestrator {
           this.notifications.notify('info', `Triggered rebalance for ${accountId}. Strategy: ${evaluation.trigger.strategyType}`, { eventId: evaluation.auditRecord.eventId, accountId });
         }
 
-        this.executor.execute(evaluation.tradeProposal, evaluation.auditRecord.eventId);
+        this.executor.execute(accountId, evaluation.tradeProposal, evaluation.auditRecord.eventId);
         this.stateManager.markTradeExecution(accountId, timestampMs);
 
         if (this.auditStorage) {

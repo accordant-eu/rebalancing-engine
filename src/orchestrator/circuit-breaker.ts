@@ -16,7 +16,7 @@ export class CircuitBreaker implements Executor {
     private notifications?: NotificationAdapter,
   ) {}
 
-  public execute(proposal: TradeProposal, eventId: string): void {
+  public execute(accountId: string, proposal: TradeProposal, eventId: string): void {
     if (proposal.trades.length === 0) {
       return;
     }
@@ -24,7 +24,7 @@ export class CircuitBreaker implements Executor {
     if (this.executedTradesCount >= this.limits.maxTradesPerSession) {
       const msg = `CIRCUIT BREAKER: Max trades per session (${this.limits.maxTradesPerSession}) reached. Blocking execution.`;
       if (this.notifications) {
-        this.notifications.notify('error', msg, { eventId, tradesCount: proposal.trades.length });
+        this.notifications.notify('error', msg, { eventId, accountId, tradesCount: proposal.trades.length });
       }
       throw new Error(msg);
     }
@@ -37,12 +37,12 @@ export class CircuitBreaker implements Executor {
     if (grossNotional > this.limits.maxGrossNotionalPerTrade) {
       const msg = `CIRCUIT BREAKER: Gross notional value (${grossNotional}) exceeds limit (${this.limits.maxGrossNotionalPerTrade}). Blocking execution.`;
       if (this.notifications) {
-        this.notifications.notify('error', msg, { eventId, grossNotional });
+        this.notifications.notify('error', msg, { eventId, accountId, grossNotional });
       }
       throw new Error(msg);
     }
 
-    this.targetExecutor.execute(proposal, eventId);
+    this.targetExecutor.execute(accountId, proposal, eventId);
     this.executedTradesCount++;
   }
 

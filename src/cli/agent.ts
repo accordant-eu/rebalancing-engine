@@ -4,7 +4,7 @@ import cors from 'cors';
 import fs from 'fs';
 import readline from 'readline';
 import { FileAuditStorage } from '../audit/storage';
-import { AlpacaAdapter } from '../broker/alpaca';
+import { AlpacaBrokerAdapter } from '../broker/alpaca-broker';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../orchestrator';
 import { StdoutNotificationAdapter } from '../notifications';
 import { loadScenarioFixture } from '../runner';
@@ -51,19 +51,25 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
     }
     
     notifications.notify('info', 'Initializing live broker connection...');
-    const adapter = new AlpacaAdapter();
+    const adapter = new AlpacaBrokerAdapter();
 
     (async () => {
       try {
         initDb();
-        const livePortfolio = await adapter.getPortfolioState();
-
         const stateManager = new SqliteStateManager();
-        stateManager.registerPortfolio(scenarioId, {
-          portfolioState: {
-            ...scenario.portfolioState,
-            ...livePortfolio, // Override synthetic cash/holdings with live ledger
-          },
+        
+        // Ensure the scenario portfolio is loaded into SQLite (our shadow ledger)
+        // If we wanted to load live state, we'd do: await adapter.getPortfolioState(scenarioId)
+        // But for B2B we rely on webhooks for fills and local state for decisions.
+        const accountIdToUse = isLive ? 'f7ec6539-d742-4b91-a5db-20f475e8acfc' : scenarioId;
+        
+        let initialPortfolioState = { ...scenario.portfolioState, accountId: accountIdToUse };
+        if (isLive && adapter) {
+          initialPortfolioState = await adapter.getPortfolioState(accountIdToUse);
+        }
+
+        stateManager.registerPortfolio(accountIdToUse, {
+          portfolioState: initialPortfolioState,
           priceSnapshot: { prices: {} },
           targetAllocation: scenario.targetAllocation,
           policy: scenario.policy,
@@ -85,23 +91,30 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
         });
 
         orchestrator.start();
-        notifications.notify('info', 'Live Agent (Alpaca Paper) Started.', { target: scenarioId });
+        notifications.notify('info', 'Live Agent (Alpaca Broker API) Started.', { target: scenarioId });
         console.error(`Press Ctrl+C to stop.\n`);
 
-        const poll = async () => {
+        const pollPrices = async () => {
           try {
-            if (await adapter.hasOpenOrders()) {
-              notifications.notify('info', 'Pending broker orders detected. Pausing drift evaluation.');
-              return;
+            // Fetch prices for all symbols across all portfolios
+            const allIds = stateManager.getAllAccountIds();
+            const allSymbols = new Set<string>();
+            for (const id of allIds) {
+              const state = stateManager.getAccountState(id);
+              state.targetAllocation.targets.forEach(t => allSymbols.add(t.instrumentId));
+              state.portfolioState.holdings.forEach(h => allSymbols.add(h.instrumentId));
             }
-
-            const currentPortfolio = await adapter.getPortfolioState();
-            stateManager.updatePortfolio(scenarioId, currentPortfolio);
-
-            const symbols = scenario.targetAllocation.targets.map((t) => t.instrumentId);
-            const prices = await adapter.getPrices(symbols);
-            stateManager.updateGlobalPrices(prices, new Date().toISOString());
-            stateManager.enqueuePortfolio(scenarioId, Date.now());
+            
+            if (allSymbols.size > 0) {
+              const prices = await adapter.getPrices(Array.from(allSymbols));
+              stateManager.updateGlobalPrices(prices, new Date().toISOString());
+              
+              // We rely on price updates to enqueue portfolios via reverse-index in a real system.
+              // For the sake of keeping the tick moving, we explicitly enqueue all accounts here.
+              for (const id of allIds) {
+                stateManager.enqueuePortfolio(id, Date.now());
+              }
+            }
 
             orchestrator.onTick(Date.now());
           } catch (e) {
@@ -109,9 +122,9 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
           }
         };
 
-        // Run immediately, then poll every 10s
-        await poll();
-        setInterval(poll, 10000);
+        // Run immediately, then poll prices every 10s
+        await pollPrices();
+        setInterval(pollPrices, 10000);
       } catch (e) {
         notifications.notify('error', 'Init Error', { error: String(e) });
         process.exit(1);
@@ -207,7 +220,7 @@ function setupExpressApp(stateManager: SqliteStateManager) {
 
   // Mock JWT Auth Middleware
   app.use((req, res, next) => {
-    if (req.path === '/api/auth/login') return next();
+    if (req.path === '/api/auth/login' || req.path === '/api/webhooks/alpaca') return next();
     
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -229,6 +242,25 @@ function setupExpressApp(stateManager: SqliteStateManager) {
     if (!tenantId) return res.status(400).json({ error: 'tenantId required' });
     // In real app, we would verify tenant exists and return a signed JWT
     res.json({ token: tenantId });
+  });
+
+  app.post('/api/webhooks/alpaca', (req, res) => {
+    // Simulated webhook endpoint for asynchronous trade fills from Alpaca
+    // A real implementation would parse the TradeUpdate payload:
+    // https://alpaca.markets/docs/api-references/broker-api/events/trade-updates/
+    const event = req.body;
+    console.log('[Webhook] Received Alpaca event:', event);
+
+    if (event.event === 'fill') {
+      // In a real system, we'd update the SqliteStateManager with the new settled quantity and cash.
+      // For this MVP, we just acknowledge receipt.
+      const accountId = event.account_id;
+      if (accountId) {
+        // We could also enqueue the portfolio for an immediate re-evaluation after a fill
+        stateManager.enqueuePortfolio(accountId, Date.now());
+      }
+    }
+    res.json({ success: true });
   });
 
   app.get('/api/state', (req, res) => {

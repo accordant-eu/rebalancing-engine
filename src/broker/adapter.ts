@@ -2,9 +2,9 @@ import { PortfolioState, TradeProposal } from '../models/domain';
 
 export interface BrokerAdapter {
   /**
-   * Fetches the current live portfolio state including settled cash and holdings.
+   * Fetches the current live portfolio state including settled cash and holdings for a sub-account.
    */
-  getPortfolioState(): Promise<PortfolioState>;
+  getPortfolioState(brokerAccountId: string): Promise<PortfolioState>;
 
   /**
    * Fetches current market prices for the given symbols.
@@ -12,12 +12,12 @@ export interface BrokerAdapter {
   getPrices(symbols: string[]): Promise<Record<string, number>>;
 
   /**
-   * Submits trade proposals to the broker for execution.
+   * Submits trade proposals to the broker for execution on behalf of a sub-account.
    */
-  submitTrades(proposal: TradeProposal): Promise<void>;
+  submitTrades(brokerAccountId: string, proposal: TradeProposal): Promise<void>;
 
   /**
-   * Checks if there are any pending/open orders at the broker.
+   * Checks if there are any pending/open orders at the broker for a sub-account.
    */
-  hasOpenOrders(): Promise<boolean>;
+  hasOpenOrders(brokerAccountId: string): Promise<boolean>;
 }

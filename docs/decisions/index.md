@@ -57,5 +57,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0047: Use simple margin constraint for TCO penalty](0047-use-simple-margin-for-tco-penalty.md) - Accepted
 * [ADR-0048: Use MultiPortfolioStateManager for in-memory scaling mock](0048-use-multi-portfolio-in-memory-scale.md) - Accepted
 * [ADR-0049: Use better-sqlite3 for Persistent State Management](0049-use-sqlite-for-persistent-state-management.md) - Accepted
+* [ADR-0050: Use B2B Broker API for Execution](0050-use-b2b-broker-api.md) - Accepted
 
 &copy; 2026 Johan Hellman. All rights reserved.
