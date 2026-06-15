@@ -113,6 +113,12 @@ Beyond read-only observability, the dashboard must expose write capabilities for
 - **Model Management**: UI to create, edit, and delete Model Mandates.
 - **Portfolio Overrides**: UI to manually edit bespoke allocations for portfolios with `subscriptionType === 'bespoke'`, or to change a portfolio's subscription type.
 
+### Platform Administration (Superadmin)
+In addition to tenant-scoped portals, the system requires a global **Platform Admin** (Superadmin) interface and role.
+- **Global Observability**: Superadmins need cross-tenant visibility to monitor the health of the entire Orchestrator, track global API rate limits, and identify system-wide execution bottlenecks.
+- **Tenant Provisioning**: The ability to onboard new B2B partners, generate initial `Tenant` records, issue machine API keys, and assign `TenantBrokerConfig` credentials securely.
+- **Break-Glass Operations**: In the event of a critical broker API failure or global market halt, the Superadmin requires the authority to globally pause the Orchestrator loop (triggering the global Circuit Breaker) across all tenants simultaneously, or suspend individual misbehaving tenants.
+
 ---
 
 ## 6. Infrastructure Scale (Moving Beyond SQLite)
