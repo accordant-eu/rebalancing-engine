@@ -25,12 +25,18 @@ export interface LiveStateManager {
   getAllStates(): Record<string, LiveState>;
   getGlobalPrices(): PriceSnapshot;
   isReady(accountId: string): boolean;
+  
+  // Event-Driven Queueing
+  enqueuePortfolio(accountId: string, timestampMs: number): void;
+  dequeuePortfolios(limit: number): string[];
+  getPortfoliosAffectedByInstrument(instrumentId: string): string[];
 }
 
 export class MultiPortfolioStateManager implements LiveStateManager {
   private globalPriceSnapshot: PriceSnapshot = { prices: {} };
   private portfolios: Map<string, LiveState> = new Map();
   private lastTradeTimes: Map<string, number> = new Map();
+  private dirtyQueue: Set<string> = new Set();
 
   public registerPortfolio(accountId: string, state: LiveState): void {
     this.portfolios.set(accountId, state);
@@ -100,7 +106,38 @@ export class MultiPortfolioStateManager implements LiveStateManager {
   }
 
   public isReady(accountId: string): boolean {
-    return this.portfolios.has(accountId);
+    const p = this.portfolios.get(accountId);
+    if (!p) return false;
+    return p.portfolioState.holdings.every((h) => p.priceSnapshot.prices[h.instrumentId] !== undefined) &&
+           p.targetAllocation.targets.every((t) => p.priceSnapshot.prices[t.instrumentId] !== undefined);
+  }
+
+  public enqueuePortfolio(accountId: string, timestampMs: number): void {
+    if (this.portfolios.has(accountId)) {
+      this.dirtyQueue.add(accountId);
+    }
+  }
+
+  public dequeuePortfolios(limit: number): string[] {
+    const items: string[] = [];
+    for (const item of this.dirtyQueue) {
+      items.push(item);
+      this.dirtyQueue.delete(item);
+      if (items.length >= limit) break;
+    }
+    return items;
+  }
+
+  public getPortfoliosAffectedByInstrument(instrumentId: string): string[] {
+    const affected: string[] = [];
+    for (const [accountId, state] of this.portfolios.entries()) {
+      const holds = state.portfolioState.holdings.some(h => h.instrumentId === instrumentId);
+      const targets = state.targetAllocation.targets.some(t => t.instrumentId === instrumentId);
+      if (holds || targets) {
+        affected.push(accountId);
+      }
+    }
+    return affected;
   }
 
   private ensureInitialized(accountId: string): LiveState {

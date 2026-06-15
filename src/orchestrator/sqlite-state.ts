@@ -22,11 +22,36 @@ export class SqliteStateManager implements LiveStateManager {
     db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name) VALUES (?, ?)`).run(tenantId, name);
   }
 
-  public createModel(model: ModelMandate): void {
+  public createModel(model: ModelMandate): string[] {
     const db = getDb();
+    
+    // Save model
     db.prepare(`INSERT OR REPLACE INTO Models (modelId, tenantId, name, targetAllocation, policy) VALUES (?, ?, ?, ?, ?)`).run(
       model.modelId, model.tenantId, model.name, JSON.stringify(model.targetAllocation), JSON.stringify(model.policy)
     );
+    
+    // Cascade to all subscribed portfolios
+    const rows = db.prepare(`SELECT accountId FROM Portfolios WHERE modelId = ? AND subscriptionType = 'discretionary'`).all(model.modelId) as { accountId: string }[];
+    const affectedAccounts = rows.map(r => r.accountId);
+    
+    if (affectedAccounts.length > 0) {
+      const tx = db.transaction(() => {
+        const updatePolicy = db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`);
+        const delTargets = db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`);
+        const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
+        
+        for (const accountId of affectedAccounts) {
+          updatePolicy.run(JSON.stringify(model.policy), accountId);
+          delTargets.run(accountId);
+          for (const t of model.targetAllocation.targets) {
+            insertTarget.run(accountId, t.instrumentId, t.weight);
+          }
+        }
+      });
+      tx();
+    }
+    
+    return affectedAccounts;
   }
 
   public getModels(tenantId: string): ModelMandate[] {
@@ -43,7 +68,27 @@ export class SqliteStateManager implements LiveStateManager {
 
   public assignPortfolioToModel(accountId: string, modelId: string | null, subscriptionType: 'bespoke' | 'discretionary'): void {
     const db = getDb();
-    db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ? WHERE accountId = ?`).run(modelId, subscriptionType, accountId);
+    const tx = db.transaction(() => {
+      if (subscriptionType === 'discretionary' && modelId) {
+        const modelRow = db.prepare(`SELECT targetAllocation, policy FROM Models WHERE modelId = ?`).get(modelId) as any;
+        if (modelRow) {
+          db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ?, policy = ? WHERE accountId = ?`)
+            .run(modelId, subscriptionType, modelRow.policy, accountId);
+            
+          const targets = JSON.parse(modelRow.targetAllocation).targets;
+          db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`).run(accountId);
+          const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
+          for (const t of targets) {
+            insertTarget.run(accountId, t.instrumentId, t.weight);
+          }
+        } else {
+          db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ? WHERE accountId = ?`).run(modelId, subscriptionType, accountId);
+        }
+      } else {
+        db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ? WHERE accountId = ?`).run(modelId, subscriptionType, accountId);
+      }
+    });
+    tx();
   }
 
   public assignPortfolioToTenant(accountId: string, tenantId: string): void {
@@ -288,8 +333,42 @@ export class SqliteStateManager implements LiveStateManager {
   }
 
   public isReady(accountId: string): boolean {
+    // For MVP, assume the DB has been fully seeded if a row exists.
     const db = getDb();
-    const count = db.prepare(`SELECT COUNT(*) as c FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
-    return count.c > 0;
+    const row = db.prepare(`SELECT 1 FROM Portfolios WHERE accountId = ?`).get(accountId);
+    return !!row;
+  }
+
+  // Event-Driven Queueing
+  public enqueuePortfolio(accountId: string, timestampMs: number): void {
+    const db = getDb();
+    db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`).run(accountId, timestampMs);
+  }
+
+  public dequeuePortfolios(limit: number): string[] {
+    const db = getDb();
+    const tx = db.transaction(() => {
+      const rows = db.prepare(`SELECT accountId FROM EvaluationQueue ORDER BY queuedAtMs ASC LIMIT ?`).all(limit) as { accountId: string }[];
+      const ids = rows.map(r => r.accountId);
+      if (ids.length > 0) {
+        const placeholders = ids.map(() => '?').join(',');
+        db.prepare(`DELETE FROM EvaluationQueue WHERE accountId IN (${placeholders})`).run(...ids);
+      }
+      return ids;
+    });
+    return tx();
+  }
+
+  public getPortfoliosAffectedByInstrument(instrumentId: string): string[] {
+    const db = getDb();
+    // A portfolio is affected if it holds the instrument OR if it targets the instrument.
+    const rows = db.prepare(`
+      SELECT DISTINCT p.accountId 
+      FROM Portfolios p
+      LEFT JOIN Holdings h ON p.accountId = h.accountId
+      LEFT JOIN TargetAllocations t ON p.accountId = t.accountId
+      WHERE h.instrumentId = ? OR t.instrumentId = ?
+    `).all(instrumentId, instrumentId) as { accountId: string }[];
+    return rows.map(r => r.accountId);
   }
 }

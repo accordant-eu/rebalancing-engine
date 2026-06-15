@@ -101,6 +101,7 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
             const symbols = scenario.targetAllocation.targets.map((t) => t.instrumentId);
             const prices = await adapter.getPrices(symbols);
             stateManager.updateGlobalPrices(prices, new Date().toISOString());
+            stateManager.enqueuePortfolio(scenarioId, Date.now());
 
             orchestrator.onTick(Date.now());
           } catch (e) {
@@ -183,7 +184,16 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
       }
 
       stateManager.updateGlobalPrices(newPrices, new Date().toISOString());
-      orchestrator.onTick(Date.now());
+      
+      const now = Date.now();
+      const affected1 = firstAsset ? stateManager.getPortfoliosAffectedByInstrument(firstAsset) : [];
+      const affected2 = secondAsset ? stateManager.getPortfoliosAffectedByInstrument(secondAsset) : [];
+      
+      for (const id of new Set([...affected1, ...affected2])) {
+        stateManager.enqueuePortfolio(id, now);
+      }
+
+      orchestrator.onTick(now);
     }, 1000);
   }
 
@@ -253,8 +263,12 @@ function setupExpressApp(stateManager: SqliteStateManager) {
     const tenantId = (req as any).tenantId;
     const model = { ...req.body, tenantId };
     try {
-      stateManager.createModel(model);
-      res.json({ success: true, model });
+      const affectedAccounts = stateManager.createModel(model);
+      const now = Date.now();
+      for (const accountId of affectedAccounts) {
+        stateManager.enqueuePortfolio(accountId, now);
+      }
+      res.json({ success: true, model, affectedAccounts });
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -265,6 +279,7 @@ function setupExpressApp(stateManager: SqliteStateManager) {
     const { modelId, subscriptionType } = req.body;
     try {
       stateManager.assignPortfolioToModel(accountId, modelId, subscriptionType);
+      stateManager.enqueuePortfolio(accountId, Date.now());
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: String(e) });

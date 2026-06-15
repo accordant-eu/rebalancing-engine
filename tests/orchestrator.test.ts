@@ -42,6 +42,7 @@ describe('Orchestrator', () => {
 
   it('does not trigger on tick if portfolio is on target', () => {
     orchestrator.start();
+    stateManager.enqueuePortfolio(accountId, 1000);
     orchestrator.onTick(1000);
 
     expect(executor.execute).not.toHaveBeenCalled();
@@ -55,6 +56,7 @@ describe('Orchestrator', () => {
     const currentPrices = stateManager.getGlobalPrices().prices;
     stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
+    stateManager.enqueuePortfolio(accountId, 1000);
     orchestrator.onTick(1000);
 
     expect(executor.execute).toHaveBeenCalledTimes(1);
@@ -68,16 +70,19 @@ describe('Orchestrator', () => {
     stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
     // First tick triggers execution
+    stateManager.enqueuePortfolio(accountId, 1000);
     orchestrator.onTick(1000);
     expect(executor.execute).toHaveBeenCalledTimes(1);
     expect(stateManager.getLastTradeTimeMs(accountId)).toBe(1000);
 
     // Second tick within cooldown ignores it
     stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.1 }); // still out of bounds
+    stateManager.enqueuePortfolio(accountId, 2000);
     orchestrator.onTick(2000);
     expect(executor.execute).toHaveBeenCalledTimes(1); // STILL 1
 
     // Third tick after cooldown triggers again
+    stateManager.enqueuePortfolio(accountId, 7000);
     orchestrator.onTick(7000); // 1000 + 5000 + 1000
     expect(executor.execute).toHaveBeenCalledTimes(2);
     expect(stateManager.getLastTradeTimeMs(accountId)).toBe(7000);
@@ -88,6 +93,7 @@ describe('Orchestrator', () => {
     stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
     // Orchestrator not started
+    stateManager.enqueuePortfolio(accountId, 1000);
     orchestrator.onTick(1000);
 
     expect(executor.execute).not.toHaveBeenCalled();

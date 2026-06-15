@@ -68,6 +68,12 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       price REAL NOT NULL,
       asOf TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS EvaluationQueue (
+      accountId TEXT PRIMARY KEY,
+      queuedAtMs INTEGER NOT NULL,
+      FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
+    );
   `);
 
   // Safe migrations for existing databases

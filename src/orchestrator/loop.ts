@@ -40,7 +40,8 @@ export class Orchestrator {
       return;
     }
 
-    const accountIds = this.stateManager.getAllAccountIds();
+    // We dequeue up to 50 portfolios per tick to prevent blocking the event loop for too long
+    const accountIds = this.stateManager.dequeuePortfolios(50);
 
     for (const accountId of accountIds) {
       if (!this.stateManager.isReady(accountId)) continue;

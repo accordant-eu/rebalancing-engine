@@ -128,6 +128,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 37        | 2026-06-14 | Multi-Portfolio In-Memory Mock (Tranche 7) | Architecture Scale         | Refactored `LiveStateManager` to `MultiPortfolioStateManager`. Updated `Orchestrator.onTick` to execute synchronous rebalance evaluations for all registered portfolios. Updated `agent.ts` to load 5 concurrent scenarios. Updated `/web` UI to a two-level Fleet View (Heatmap Grid -> Details). Drafted ADR 0048. | `src/orchestrator/state.ts`, `src/orchestrator/loop.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `tests/orchestrator.test.ts`, `docs/decisions/0048...`, `BUILD_JOURNEY.md` | Proving the core loop scales asynchronously over a fleet of portfolios in-memory guarantees performance before migrating to a heavy SQL database. | None. | Tranche 8: SQLite Foundation. |
 | 38        | 2026-06-14 | SQLite Data Persistence (Tranche 8) | Architecture Scale         | Replaced in-memory state tracking with embedded `better-sqlite3`. Refactored `LiveStateManager` into an interface and implemented `SqliteStateManager`. Built `agent seed` CLI tool. Migrated `agent start` loop to evaluate directly against the SQL database. Seeded 1000 synthetic portfolios successfully. Drafted ADR 0049. | `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/seed.ts`, `src/cli/agent.ts`, `BUILD_JOURNEY.md` | `better-sqlite3` is synchronously fast enough to handle massive multi-portfolio looping natively inside Node without polluting orchestration logic with asynchronous Promises. | None. | Tranche 9: Orchestrator Fleet Simulation. |
 | 39        | 2026-06-15 | SaaS Shell & Multi-Tenant Model Execution (Tranche 9) | Architecture Scale         | Transformed global state into a multi-tenant isolated architecture. Added `Tenant`, `ModelMandate`, and subscription logic to `domain.ts`. Updated SQLite schema with `Tenants`, `Models`, and linked `Portfolios`. Intercepted Express API with mock JWT `tenantId` extraction. Overhauled React frontend with Tenant Login, Models Tab, and Discretionary model assignment in Portfolio details. | `src/models/domain.ts`, `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/seed.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `BUILD_JOURNEY.md` | Abstracting models separately from portfolios using a pub/sub subscription model prepares the system for scalable generic strategy execution. React frontend scales well for testing multi-tenant configurations. | None. | Tranche 10: Event-Driven Triggers & Core Logic Re-alignment. |
+| 40        | 2026-06-15 | Event-Driven Orchestrator & Pub/Sub (Tranche 10) | Architecture Scale         | Added `EvaluationQueue` table, built reverse index `getPortfoliosAffectedByInstrument`, implemented pub/sub model cascading inside a SQLite transaction, and refactored orchestrator loop to pop from the queue instead of full-table scans. | `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/orchestrator/loop.ts`, `src/cli/agent.ts`, `BUILD_JOURNEY.md` | Event-driven dequeuing resolves the O(N) evaluation bottleneck across the fleet when central models update or prices stream. | SQLite in-memory mode investigation? | Tranche 11: B2B Broker Routing. |
 
 ### Iteration 26 Detail — 2026-05-02
 
@@ -645,3 +646,31 @@ The offline CLI and fixtures remain the development and regression interface.
 - None.
 
 **Recommended next step:** Proceed to Tranche 10: Core Engine Refactoring for Event-Driven Rebalancing (resolving the architecture bottleneck of executing central model updates across subscribed portfolios).
+
+### Iteration 40 Detail — 2026-06-15
+
+**Goal:** Implement Event-Driven Orchestrator & Pub/Sub Model Cascading (Tranche 10).
+
+**Scope:** Core Architecture.
+
+**Materials reviewed:** `saas-architecture-plan.md`, `src/orchestrator/sqlite-state.ts`, `src/orchestrator/loop.ts`.
+
+**Decisions made:**
+1. Added an `EvaluationQueue` table to back the orchestrator's queue safely.
+2. Built a `getPortfoliosAffectedByInstrument` reverse index query. When prices stream in, the agent instantly identifies portfolios holding or targeting the asset and enqueues them.
+3. Implemented a Pub/Sub Model Cascade in `SqliteStateManager`. Updating a `Model` automatically identifies `discretionary` portfolios subscribing to that model, overwrites their materialized targets, and forces them into the Event Queue.
+4. Changed `Orchestrator.onTick` to only process accounts dequeued from the `EvaluationQueue` instead of polling all accounts on every tick.
+
+**Files changed:**
+- `src/db/sqlite.ts`
+- `src/orchestrator/state.ts`
+- `src/orchestrator/sqlite-state.ts`
+- `src/orchestrator/loop.ts`
+- `src/cli/agent.ts`
+- `tests/orchestrator.test.ts`
+- `BUILD_JOURNEY.md`
+
+**Open questions:**
+- We may need to investigate running SQLite in memory with a write-to-disk flag for higher throughput.
+
+**Recommended next step:** Proceed to Tranche 11 (B2B Broker Routing) or investigate SQLite memory optimization.
