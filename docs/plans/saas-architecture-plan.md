@@ -78,12 +78,13 @@ Currently, the `Orchestrator` loops over all portfolios sequentially and uses a 
 
 ### The New Evaluation Loop (Event-Driven)
 Rather than a blind sequential polling loop, the Orchestrator should transition to an event-driven model:
-1. **Price Event Streams**: Subscribe to live market data events (e.g., WebSockets). A price change event wakes up the Orchestrator to evaluate affected portfolios.
-2. **Group by Tenant**: Group the affected portfolios by `tenantId`.
-3. **Resolve Broker Adapter**: For each Tenant, retrieve the configured `BrokerAdapter` using their `TenantBrokerConfig`.
-4. **Resolve Mandate**: For each Portfolio, read its self-contained, materialized Mandate from the database.
-5. **Evaluate & Execute**: Pass the Mandate and the Tenant's `BrokerAdapter` context into the engine.
-6. **Execution Reconciliation**: Listen to the `BrokerAdapter.subscribeToFills()` stream to asynchronously reconcile broker executions back into the local SQLite ledger.
+1. **Price Event Streams**: Subscribe to live market data events (e.g., WebSockets). 
+2. **Identify Affected Portfolios**: When a price updates (e.g., AAPL), the engine queries an internal reverse-index (mapping `instrumentId -> Set<accountId>`) to identify which portfolios either currently hold AAPL or have it in their Target Allocation.
+3. **Group by Tenant**: Group the affected portfolios by `tenantId`.
+4. **Resolve Broker Adapter**: For each Tenant, retrieve the configured `BrokerAdapter` using their `TenantBrokerConfig`.
+5. **Resolve Mandate**: For each affected Portfolio, read its self-contained, materialized Mandate from the database.
+6. **Evaluate & Execute**: Pass the Mandate and the Tenant's `BrokerAdapter` context into the engine.
+7. **Execution Reconciliation**: Listen to the `BrokerAdapter.subscribeToFills()` stream to asynchronously reconcile broker executions back into the local SQLite ledger.
 
 ---
 
@@ -91,9 +92,11 @@ Rather than a blind sequential polling loop, the Orchestrator should transition 
 
 The current global observability dashboard (`/web`) must evolve into a tenant-aware portal.
 
-### Tenant Access & Scoping
-- **Authentication**: The UI must support logging in as a specific `Tenant`. The frontend will hold the tenant's authentication context and append the necessary `x-api-key` or JWT to all API requests.
-- **Data Isolation**: The API routes (`/api/state`, `/api/logs`) will filter responses strictly to the authenticated `tenantId`, ensuring B2B partners only see their own fleet.
+### Tenant Access & Security (UI vs API)
+We must explicitly separate Human UI access from Machine API access:
+- **UI User Authentication (JWT/Sessions)**: Human operators access the Command Center dashboard using user credentials (e.g., email/password). The frontend receives a session token (JWT) containing their `tenantId` and specific role permissions (e.g., `read-only`, `admin`). This allows for future RBAC (Role-Based Access Control) within the dashboard.
+- **Machine API Authentication (API Keys)**: B2B integrations interact with our system via permanent API Keys securely tied to a `tenantId`.
+- **Data Isolation**: Regardless of the authentication method (UI Session or API Key), the backend router strictly filters all queries and mutations to the authenticated `tenantId`, ensuring B2B partners only interact with their own fleet.
 
 ### Management Capabilities
 Beyond read-only observability, the dashboard must expose write capabilities for tenants:
