@@ -137,5 +137,116 @@ describe('Quality Indicators', () => {
       expect(result.netUtilityBps).toBe(-50);
       expect(result.reason).toContain('is not positive');
     });
+
+    it('should reject trades when multiplier devalues drift reduction', () => {
+      // Mandate requires 10bps drift reduction to justify 1bps of TCO (rate = 0.1)
+      const translator = new DriftUtilityTranslator(0.1);
+      const indicator = new DriftReductionIndicator(translator);
+
+      const preState: EvaluationState = {
+        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
+        weightResults: [
+          { instrumentId: 'AAPL', weight: 0.7 },
+          { instrumentId: 'MSFT', weight: 0.3 }
+        ],
+        target: mockTarget,
+        policy: mockPolicy,
+        proposedTrades: [],
+        estimatedTco: 0
+      };
+
+      const postState: EvaluationState = {
+        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
+        weightResults: [
+          { instrumentId: 'AAPL', weight: 0.5 },
+          { instrumentId: 'MSFT', weight: 0.5 }
+        ],
+        target: mockTarget,
+        policy: mockPolicy,
+        proposedTrades: [],
+        estimatedTco: 500 // $500 TCO on $10,000 = 500 bps
+      };
+
+      const result = indicator.evaluate(preState, postState);
+      
+      expect(result.passed).toBe(false);
+      // Drift went from 0.4 total absolute to 0.0. Reduction = 0.4 = 4000 bps.
+      // Converted utility = 4000 * 0.1 = 400 utility bps.
+      // 400 bps utility < 500 bps TCO. It should fail.
+    });
+
+    it('should pass trades when multiplier is sufficient', () => {
+      const translator = new DriftUtilityTranslator(0.1);
+      const indicator = new DriftReductionIndicator(translator);
+
+      const preState: EvaluationState = {
+        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
+        weightResults: [
+          { instrumentId: 'AAPL', weight: 0.7 },
+          { instrumentId: 'MSFT', weight: 0.3 }
+        ],
+        target: mockTarget,
+        policy: mockPolicy,
+        proposedTrades: [],
+        estimatedTco: 0
+      };
+
+      // TCO is $50 (50 bps)
+      const postState: EvaluationState = {
+        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
+        weightResults: [
+          { instrumentId: 'AAPL', weight: 0.5 },
+          { instrumentId: 'MSFT', weight: 0.5 }
+        ],
+        target: mockTarget,
+        policy: mockPolicy,
+        proposedTrades: [],
+        estimatedTco: 50
+      };
+
+      const result = indicator.evaluate(preState, postState);
+      
+      expect(result.passed).toBe(true);
+      // Raw drift reduction = 4000 bps. Utility = 400 bps.
+      // TCO = 50 bps. Net = 350 bps.
+      expect(result.netUtilityBps).toBe(350);
+    });
+
+    it('should reject trades when multiplier devalues drift reduction to less than TCO', () => {
+      const translator = new DriftUtilityTranslator(0.1);
+      const indicator = new DriftReductionIndicator(translator);
+
+      const preState: EvaluationState = {
+        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
+        weightResults: [
+          { instrumentId: 'AAPL', weight: 0.7 },
+          { instrumentId: 'MSFT', weight: 0.3 }
+        ],
+        target: mockTarget,
+        policy: mockPolicy,
+        proposedTrades: [],
+        estimatedTco: 0
+      };
+
+      // TCO is $500 (500 bps)
+      const postState: EvaluationState = {
+        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
+        weightResults: [
+          { instrumentId: 'AAPL', weight: 0.5 },
+          { instrumentId: 'MSFT', weight: 0.5 }
+        ],
+        target: mockTarget,
+        policy: mockPolicy,
+        proposedTrades: [],
+        estimatedTco: 500
+      };
+
+      const result = indicator.evaluate(preState, postState);
+      
+      expect(result.passed).toBe(false);
+      // Raw drift reduction = 4000 bps. Utility = 400 bps.
+      // TCO = 500 bps. Net = -100 bps.
+      expect(result.netUtilityBps).toBe(-100);
+    });
   });
 });

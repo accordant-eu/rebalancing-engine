@@ -43,14 +43,17 @@ export interface UtilityTranslator {
 }
 
 /**
- * A basic translator that equates 1% of drift reduction to 100 bps of utility.
+ * A basic translator that equates 1% of drift reduction to 100 bps of utility,
+ * adjusted by a configured conversion rate.
  */
 export class DriftUtilityTranslator implements UtilityTranslator {
+  constructor(private conversionRate: number = 1.0) {}
+
   translateImprovementToBps(scoreBefore: number, scoreAfter: number): number {
     const driftReduction = scoreBefore - scoreAfter; 
     // Example: If absolute drift sum went from 0.05 to 0.01, reduction is 0.04
-    // 0.04 * 10000 = 400 bps.
-    return driftReduction * 10000;
+    // 0.04 * 10000 = 400 bps. Multiply by conversion rate (e.g. 0.1 -> 40 utility bps).
+    return (driftReduction * 10000) * this.conversionRate;
   }
 
   translateTcoToBps(tcoValue: number, portfolioValue: number): number {

@@ -138,6 +138,11 @@ export interface RebalancingPolicy {
   minimumTradeSize: number;
   // Global maximum acceptable friction cost in basis points (e.g., 50 for 0.50%)
   maxFrictionBps?: number;
+  /**
+   * The conversion rate used by the Utility Translator to equate drift reduction with TCO.
+   * E.g., a rate of 0.1 means 10 bps of drift reduction is required to justify 1 bps of TCO.
+   */
+  driftUtilityConversionRate?: number;
   // Required only when strategyType is calendar.
   calendar?: CalendarRebalancingConfig;
 }
