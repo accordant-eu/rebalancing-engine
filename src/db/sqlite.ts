@@ -12,10 +12,29 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   db.pragma('foreign_keys = ON');
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS Tenants (
+      tenantId TEXT PRIMARY KEY,
+      name TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS Models (
+      modelId TEXT PRIMARY KEY,
+      tenantId TEXT NOT NULL,
+      name TEXT NOT NULL,
+      targetAllocation TEXT NOT NULL,
+      policy TEXT NOT NULL,
+      FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS Portfolios (
       accountId TEXT PRIMARY KEY,
+      tenantId TEXT,
+      modelId TEXT,
+      subscriptionType TEXT DEFAULT 'bespoke',
       cash REAL NOT NULL,
-      policy TEXT NOT NULL
+      policy TEXT NOT NULL,
+      FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE,
+      FOREIGN KEY(modelId) REFERENCES Models(modelId) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS Holdings (
@@ -50,6 +69,11 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       asOf TEXT
     );
   `);
+
+  // Safe migrations for existing databases
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN tenantId TEXT REFERENCES Tenants(tenantId) ON DELETE CASCADE`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN modelId TEXT REFERENCES Models(modelId) ON DELETE SET NULL`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN subscriptionType TEXT DEFAULT 'bespoke'`); } catch (e) { /* ignore if exists */ }
 
   dbInstance = db;
   return dbInstance;

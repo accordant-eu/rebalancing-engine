@@ -127,6 +127,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 36        | 2026-06-14 | Friction Optimization (Tranche 6) | Evaluation Enhancement     | Introduced `FrictionModel` interface (`FixedFeeModel`, `PercentageSlippageModel`). Implemented penalty function in `generateTradeProposal` using a simple margin constraint (`maxFrictionBps`) to act as a dynamic minimum trade size. Suppressed trades append `FRICTION_COST_EXCEEDED` warnings. Dashboard highlights friction warnings. Drafted ADR 0047. | `src/core/friction.ts`, `src/core/trades.ts`, `src/models/domain.ts`, `web/src/App.tsx`, `tests/friction.test.ts`, `docs/decisions/0047...`, `BUILD_JOURNEY.md` | Suppressing mathematically pure but financially disastrous micro-trades via TCO margins prevents wealth destruction at scale. | None. | Tranche 7: Multi-Portfolio Mock. |
 | 37        | 2026-06-14 | Multi-Portfolio In-Memory Mock (Tranche 7) | Architecture Scale         | Refactored `LiveStateManager` to `MultiPortfolioStateManager`. Updated `Orchestrator.onTick` to execute synchronous rebalance evaluations for all registered portfolios. Updated `agent.ts` to load 5 concurrent scenarios. Updated `/web` UI to a two-level Fleet View (Heatmap Grid -> Details). Drafted ADR 0048. | `src/orchestrator/state.ts`, `src/orchestrator/loop.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `tests/orchestrator.test.ts`, `docs/decisions/0048...`, `BUILD_JOURNEY.md` | Proving the core loop scales asynchronously over a fleet of portfolios in-memory guarantees performance before migrating to a heavy SQL database. | None. | Tranche 8: SQLite Foundation. |
 | 38        | 2026-06-14 | SQLite Data Persistence (Tranche 8) | Architecture Scale         | Replaced in-memory state tracking with embedded `better-sqlite3`. Refactored `LiveStateManager` into an interface and implemented `SqliteStateManager`. Built `agent seed` CLI tool. Migrated `agent start` loop to evaluate directly against the SQL database. Seeded 1000 synthetic portfolios successfully. Drafted ADR 0049. | `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/seed.ts`, `src/cli/agent.ts`, `BUILD_JOURNEY.md` | `better-sqlite3` is synchronously fast enough to handle massive multi-portfolio looping natively inside Node without polluting orchestration logic with asynchronous Promises. | None. | Tranche 9: Orchestrator Fleet Simulation. |
+| 39        | 2026-06-15 | SaaS Shell & Multi-Tenant Model Execution (Tranche 9) | Architecture Scale         | Transformed global state into a multi-tenant isolated architecture. Added `Tenant`, `ModelMandate`, and subscription logic to `domain.ts`. Updated SQLite schema with `Tenants`, `Models`, and linked `Portfolios`. Intercepted Express API with mock JWT `tenantId` extraction. Overhauled React frontend with Tenant Login, Models Tab, and Discretionary model assignment in Portfolio details. | `src/models/domain.ts`, `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/seed.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `BUILD_JOURNEY.md` | Abstracting models separately from portfolios using a pub/sub subscription model prepares the system for scalable generic strategy execution. React frontend scales well for testing multi-tenant configurations. | None. | Tranche 10: Event-Driven Triggers & Core Logic Re-alignment. |
 
 ### Iteration 26 Detail — 2026-05-02
 
@@ -616,3 +617,31 @@ The offline CLI and fixtures remain the development and regression interface.
 **Recommended next step:** Consider evaluating `alpaca-ts` for future API interactions.
 
 &copy; 2026 Johan Hellman. All rights reserved.
+
+### Iteration 39 Detail — 2026-06-15
+
+**Goal:** Transform the rebalancing engine into a multi-tenant SaaS shell and enable central Model Mandate subscription (Tranche 9).
+
+**Scope:** Architecture Scale & UI.
+
+**Materials reviewed:** `saas-architecture-plan.md`, `src/models/domain.ts`, `src/db/sqlite.ts`, `src/cli/agent.ts`, `web/src/App.tsx`.
+
+**Decisions made:**
+1. Created `Tenants` and `Models` tables in SQLite to isolate state and store centralized mandates.
+2. Portfolios updated to link to a `tenantId` and optionally a `modelId` (with `subscriptionType` 'discretionary' or 'bespoke').
+3. Utilized a lightweight mock JWT middleware in Express (`Authorization: Bearer <tenantId>`) to mock multi-tenant routing locally.
+4. Overhauled the React Fleet UI to include an initial SaaS login screen, a "Model Mandates" creation tab, and mandate-assignment dropdowns in the portfolio view.
+
+**Files changed:**
+- `src/models/domain.ts`
+- `src/db/sqlite.ts`
+- `src/orchestrator/sqlite-state.ts`
+- `src/cli/seed.ts`
+- `src/cli/agent.ts`
+- `web/src/App.tsx`
+- `BUILD_JOURNEY.md`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Proceed to Tranche 10: Core Engine Refactoring for Event-Driven Rebalancing (resolving the architecture bottleneck of executing central model updates across subscribed portfolios).

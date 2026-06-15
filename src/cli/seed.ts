@@ -33,6 +33,18 @@ export function executeSeed(parsed: ParsedArgs, _context: CommandContext): Comma
 
   const stateManager = new SqliteStateManager();
 
+  const tenantId = 'tenant-baseline';
+  stateManager.createTenant(tenantId, 'Baseline Tenant');
+  
+  const modelId = `${scenarioId}-model`;
+  stateManager.createModel({
+    modelId,
+    tenantId,
+    name: `Scenario Model: ${scenarioId}`,
+    targetAllocation: scenario.targetAllocation,
+    policy: scenario.policy
+  });
+
   console.log(`Seeding ${count} portfolios based on scenario ${scenarioId}...`);
 
   const startTime = Date.now();
@@ -47,6 +59,9 @@ export function executeSeed(parsed: ParsedArgs, _context: CommandContext): Comma
       portfolioState: {
         ...scenario.portfolioState,
         accountId,
+        tenantId,
+        modelId,
+        subscriptionType: 'discretionary' as const,
         cash: scenario.portfolioState.cash * randomFactor,
         holdings: scenario.portfolioState.holdings.map(h => ({
           ...h,

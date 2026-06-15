@@ -52,8 +52,26 @@ export interface CashFlowSchedule {
   description?: string;
 }
 
+export interface Tenant {
+  tenantId: string;
+  name: string;
+}
+
+export interface ModelMandate {
+  modelId: string;
+  tenantId: string;
+  name: string;
+  targetAllocation: TargetAllocation;
+  policy: RebalancingPolicy;
+}
+
+export type SubscriptionType = 'discretionary' | 'bespoke';
+
 export interface PortfolioState {
   accountId: string;
+  tenantId?: string;
+  modelId?: string;
+  subscriptionType?: SubscriptionType;
   cash: number;
   holdings: Holding[];
   cashFlows?: CashFlow[];

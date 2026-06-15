@@ -78,42 +78,7 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
           cooldownMs: 60000, // 1 minute cooldown for paper trading
         }, auditStorage, notifications);
 
-        const app = express();
-        app.use(cors());
-        
-        app.get('/api/state', (req, res) => {
-          res.json({
-            globalPrices: stateManager.getGlobalPrices(),
-            portfolios: stateManager.getAllStates(),
-          });
-        });
-
-        app.get('/api/logs', (req, res) => {
-          const lines: any[] = [];
-          const rl = readline.createInterface({
-            input: fs.createReadStream('./data/audit-trail.jsonl'),
-            crlfDelay: Infinity
-          });
-
-          rl.on('line', (line) => {
-            if (line.trim().length > 0) {
-              try {
-                lines.push(JSON.parse(line));
-                if (lines.length > 100) lines.shift();
-              } catch (e) {
-                // Ignore invalid lines
-              }
-            }
-          });
-
-          rl.on('close', () => {
-            res.json(lines);
-          });
-          
-          rl.on('error', () => {
-            if (!res.headersSent) res.json([]);
-          });
-        });
+        const app = setupExpressApp(stateManager);
 
         app.listen(4444, '127.0.0.1', () => {
           notifications.notify('info', 'Command Center API listening on http://127.0.0.1:4444');
@@ -189,42 +154,7 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
       cooldownMs: 10000,
     }, auditStorageAdapter, notifications);
 
-    const app = express();
-    app.use(cors());
-    
-    app.get('/api/state', (req, res) => {
-      res.json({
-        globalPrices: stateManager.getGlobalPrices(),
-        portfolios: stateManager.getAllStates(),
-      });
-    });
-
-    app.get('/api/logs', (req, res) => {
-      const lines: any[] = [];
-      const rl = readline.createInterface({
-        input: fs.createReadStream('./data/audit-trail.jsonl'),
-        crlfDelay: Infinity
-      });
-
-      rl.on('line', (line) => {
-        if (line.trim().length > 0) {
-          try {
-            lines.push(JSON.parse(line));
-            if (lines.length > 100) lines.shift();
-          } catch (e) {
-            // Ignore invalid lines
-          }
-        }
-      });
-
-      rl.on('close', () => {
-        res.json(lines);
-      });
-      
-      rl.on('error', () => {
-        if (!res.headersSent) res.json([]);
-      });
-    });
+    const app = setupExpressApp(stateManager);
 
     app.listen(4444, '127.0.0.1', () => {
       notifications.notify('info', 'Command Center API listening on http://127.0.0.1:4444');
@@ -258,4 +188,109 @@ export function executeAgent(parsed: ParsedArgs, _context: CommandContext): Comm
   }
 
   return { exitCode: 0, output: '' };
+}
+
+function setupExpressApp(stateManager: SqliteStateManager) {
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
+
+  // Mock JWT Auth Middleware
+  app.use((req, res, next) => {
+    if (req.path === '/api/auth/login') return next();
+    
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Missing Authorization header' });
+    }
+    
+    // In our mock, the token IS the tenantId (e.g. "Bearer tenant-baseline")
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Invalid token format' });
+    }
+    
+    (req as any).tenantId = token;
+    next();
+  });
+
+  app.post('/api/auth/login', (req, res) => {
+    const { tenantId } = req.body;
+    if (!tenantId) return res.status(400).json({ error: 'tenantId required' });
+    // In real app, we would verify tenant exists and return a signed JWT
+    res.json({ token: tenantId });
+  });
+
+  app.get('/api/state', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    res.json({
+      globalPrices: stateManager.getGlobalPrices(),
+      portfolios: stateManager.getStatesFilteredByTenant(tenantId),
+    });
+  });
+
+  app.get('/api/models', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    res.json(stateManager.getModels(tenantId));
+  });
+
+  app.post('/api/models', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const model = { ...req.body, tenantId };
+    try {
+      stateManager.createModel(model);
+      res.json({ success: true, model });
+    } catch (e) {
+      res.status(500).json({ error: String(e) });
+    }
+  });
+
+  app.put('/api/portfolios/:id/subscription', (req, res) => {
+    const accountId = req.params.id;
+    const { modelId, subscriptionType } = req.body;
+    try {
+      stateManager.assignPortfolioToModel(accountId, modelId, subscriptionType);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: String(e) });
+    }
+  });
+
+  app.get('/api/logs', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const lines: any[] = [];
+    const rl = readline.createInterface({
+      input: fs.createReadStream('./data/audit-trail.jsonl'),
+      crlfDelay: Infinity
+    });
+
+    rl.on('line', (line) => {
+      if (line.trim().length > 0) {
+        try {
+          const parsed = JSON.parse(line);
+          // Only show logs for this tenant's portfolios
+          // In a real system, audit records would explicitly contain tenantId
+          // Here we just check if the accountId is owned by this tenant
+          const accountId = parsed.accountId || (parsed.eventId && parsed.eventId.split(':')[0]);
+          const tenantStates = stateManager.getStatesFilteredByTenant(tenantId);
+          if (accountId && tenantStates[accountId]) {
+            lines.push(parsed);
+            if (lines.length > 100) lines.shift();
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+    });
+
+    rl.on('close', () => {
+      res.json(lines);
+    });
+    
+    rl.on('error', () => {
+      if (!res.headersSent) res.json([]);
+    });
+  });
+
+  return app;
 }

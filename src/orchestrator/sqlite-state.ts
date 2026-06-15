@@ -5,6 +5,8 @@ import {
   RebalancingPolicy,
   TargetAllocation,
   Holding,
+  Tenant,
+  ModelMandate,
 } from '../models/domain';
 import { LiveState, LiveStateManager } from './state';
 
@@ -14,12 +16,47 @@ export class SqliteStateManager implements LiveStateManager {
   // we would add it to the Portfolios table.
   private lastTradeTimes: Map<string, number> = new Map();
 
+  // Tenant & Model Management
+  public createTenant(tenantId: string, name: string): void {
+    const db = getDb();
+    db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name) VALUES (?, ?)`).run(tenantId, name);
+  }
+
+  public createModel(model: ModelMandate): void {
+    const db = getDb();
+    db.prepare(`INSERT OR REPLACE INTO Models (modelId, tenantId, name, targetAllocation, policy) VALUES (?, ?, ?, ?, ?)`).run(
+      model.modelId, model.tenantId, model.name, JSON.stringify(model.targetAllocation), JSON.stringify(model.policy)
+    );
+  }
+
+  public getModels(tenantId: string): ModelMandate[] {
+    const db = getDb();
+    const rows = db.prepare(`SELECT * FROM Models WHERE tenantId = ?`).all(tenantId) as any[];
+    return rows.map(r => ({
+      modelId: r.modelId,
+      tenantId: r.tenantId,
+      name: r.name,
+      targetAllocation: JSON.parse(r.targetAllocation),
+      policy: JSON.parse(r.policy)
+    }));
+  }
+
+  public assignPortfolioToModel(accountId: string, modelId: string | null, subscriptionType: 'bespoke' | 'discretionary'): void {
+    const db = getDb();
+    db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ? WHERE accountId = ?`).run(modelId, subscriptionType, accountId);
+  }
+
+  public assignPortfolioToTenant(accountId: string, tenantId: string): void {
+    const db = getDb();
+    db.prepare(`UPDATE Portfolios SET tenantId = ? WHERE accountId = ?`).run(tenantId, accountId);
+  }
+
   public registerPortfolio(accountId: string, state: LiveState): void {
     const db = getDb();
     
     const insertPortfolio = db.prepare(`
-      INSERT OR REPLACE INTO Portfolios (accountId, cash, policy)
-      VALUES (?, ?, ?)
+      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     const insertHolding = db.prepare(`
@@ -36,7 +73,14 @@ export class SqliteStateManager implements LiveStateManager {
     const deleteTargets = db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`);
 
     const tx = db.transaction(() => {
-      insertPortfolio.run(accountId, state.portfolioState.cash, JSON.stringify(state.policy));
+      insertPortfolio.run(
+        accountId, 
+        state.portfolioState.tenantId || null, 
+        state.portfolioState.modelId || null, 
+        state.portfolioState.subscriptionType || 'bespoke',
+        state.portfolioState.cash, 
+        JSON.stringify(state.policy)
+      );
       
       deleteHoldings.run(accountId);
       for (const h of state.portfolioState.holdings) {
@@ -123,7 +167,7 @@ export class SqliteStateManager implements LiveStateManager {
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     
-    const portRow = db.prepare(`SELECT cash, policy FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
+    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
     if (!portRow) {
       throw new Error(`SqliteStateManager is not initialized for account ${accountId}`);
     }
@@ -146,6 +190,9 @@ export class SqliteStateManager implements LiveStateManager {
     return {
       portfolioState: {
         accountId,
+        tenantId: portRow.tenantId,
+        modelId: portRow.modelId,
+        subscriptionType: portRow.subscriptionType,
         cash: portRow.cash,
         holdings,
       },
@@ -162,11 +209,31 @@ export class SqliteStateManager implements LiveStateManager {
   }
 
   public getAllStates(): Record<string, LiveState> {
+    return this.getStatesFilteredByTenant(null);
+  }
+
+  public getStatesFilteredByTenant(tenantId: string | null): Record<string, LiveState> {
     const db = getDb();
     // For efficiency, we load everything in a few queries instead of N queries
-    const portfolios = db.prepare(`SELECT accountId, cash, policy FROM Portfolios`).all() as any[];
-    const holdings = db.prepare(`SELECT accountId, instrumentId, quantity FROM Holdings`).all() as any[];
-    const targets = db.prepare(`SELECT accountId, instrumentId, weight FROM TargetAllocations`).all() as any[];
+    let portfolios: any[];
+    if (tenantId) {
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
+    } else {
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType FROM Portfolios`).all() as any[];
+    }
+    
+    const accountIds = portfolios.map(p => p.accountId);
+    if (accountIds.length === 0) return {};
+    
+    // Fallback: we should technically parameterize the IN clause, but for mock simplicity if there are many we just pull all and filter in memory, 
+    // or since this is SQLite and we can use a simpler query:
+    const holdings = tenantId 
+      ? db.prepare(`SELECT h.accountId, h.instrumentId, h.quantity FROM Holdings h JOIN Portfolios p ON h.accountId = p.accountId WHERE p.tenantId = ?`).all(tenantId) as any[]
+      : db.prepare(`SELECT accountId, instrumentId, quantity FROM Holdings`).all() as any[];
+      
+    const targets = tenantId
+      ? db.prepare(`SELECT t.accountId, t.instrumentId, t.weight FROM TargetAllocations t JOIN Portfolios p ON t.accountId = p.accountId WHERE p.tenantId = ?`).all(tenantId) as any[]
+      : db.prepare(`SELECT accountId, instrumentId, weight FROM TargetAllocations`).all() as any[];
     
     const holdingsByAcc: Record<string, Holding[]> = {};
     for (const h of holdings) {
@@ -187,6 +254,9 @@ export class SqliteStateManager implements LiveStateManager {
       result[p.accountId] = {
         portfolioState: {
           accountId: p.accountId,
+          tenantId: p.tenantId,
+          modelId: p.modelId,
+          subscriptionType: p.subscriptionType,
           cash: p.cash,
           holdings: holdingsByAcc[p.accountId] || [],
         },
