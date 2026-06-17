@@ -10,11 +10,16 @@ import {
 } from '../models/domain';
 import { LiveState, LiveStateManager } from './state';
 
+import { ModelRepository } from '../db/repositories/ModelRepository';
+import { PortfolioRepository } from '../db/repositories/PortfolioRepository';
+
 export class SqliteStateManager implements LiveStateManager {
   // In-memory cache for lastTradeTimes to avoid writing frequent updates to DB
   // if it's purely for cooldown tracking. If persistence across restarts is needed,
   // we would add it to the Portfolios table.
   private lastTradeTimes: Map<string, number> = new Map();
+  private modelRepo: ModelRepository = new ModelRepository();
+  private portfolioRepo: PortfolioRepository = new PortfolioRepository();
 
   // Tenant & Model Management
   public createTenant(tenantId: string, name: string): void {
@@ -26,15 +31,13 @@ export class SqliteStateManager implements LiveStateManager {
     const db = getDb();
     
     // Save model
-    db.prepare(`INSERT OR REPLACE INTO Models (modelId, tenantId, name, archetype, evaluationFrequency, targetAllocation, policy, constraints) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      model.modelId, model.tenantId, model.name, model.archetype, model.evaluationFrequency, JSON.stringify(model.targetAllocation), JSON.stringify(model.policy), model.constraints ? JSON.stringify(model.constraints) : null
-    );
+    this.modelRepo.save(model);
     
     // Cascade to all subscribed portfolios
-    const rows = db.prepare(`SELECT accountId FROM Portfolios WHERE modelId = ? AND subscriptionType = 'discretionary'`).all(model.modelId) as { accountId: string }[];
-    const affectedAccounts = rows.map(r => r.accountId);
+    const affectedAccounts = this.portfolioRepo.getSubscribedAccounts(model.modelId, 'discretionary');
     
     if (affectedAccounts.length > 0) {
+      const db = getDb();
       const tx = db.transaction(() => {
         const updatePolicy = db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`);
         const delTargets = db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`);
@@ -55,63 +58,31 @@ export class SqliteStateManager implements LiveStateManager {
   }
 
   public getModels(tenantId: string): ModelMandate[] {
-    const db = getDb();
-    const rows = db.prepare(`SELECT * FROM Models WHERE tenantId = ?`).all(tenantId) as any[];
-    return rows.map(r => ({
-      modelId: r.modelId,
-      tenantId: r.tenantId,
-      name: r.name,
-      archetype: r.archetype || 'StaticWeights',
-      evaluationFrequency: r.evaluationFrequency || 'realtime',
-      targetAllocation: JSON.parse(r.targetAllocation),
-      policy: JSON.parse(r.policy),
-      constraints: r.constraints ? JSON.parse(r.constraints) : undefined
-    }));
+    return this.modelRepo.findByTenant(tenantId);
   }
 
   public getAllModels(): ModelMandate[] {
-    const db = getDb();
-    const rows = db.prepare(`SELECT * FROM Models`).all() as any[];
-    return rows.map(r => ({
-      modelId: r.modelId,
-      tenantId: r.tenantId,
-      name: r.name,
-      archetype: r.archetype || 'StaticWeights',
-      evaluationFrequency: r.evaluationFrequency || 'realtime',
-      targetAllocation: JSON.parse(r.targetAllocation),
-      policy: JSON.parse(r.policy),
-      constraints: r.constraints ? JSON.parse(r.constraints) : undefined
-    }));
+    return this.modelRepo.findAll();
   }
 
   public updateModelTargetAllocation(modelId: string, newTarget: TargetAllocation): void {
     const db = getDb();
     const tx = db.transaction(() => {
-      // 1. Update the Model row
-      db.prepare(`UPDATE Models SET targetAllocation = ? WHERE modelId = ?`)
-        .run(JSON.stringify(newTarget), modelId);
+      // 1. Update the Model row via repo
+      this.modelRepo.updateTargetAllocation(modelId, newTarget);
 
       // 2. Find all 'discretionary' portfolios subscribed to this model
-      const subscribedAccounts = db.prepare(`SELECT accountId FROM Portfolios WHERE modelId = ? AND subscriptionType = 'discretionary'`).all(modelId) as any[];
+      const subscribedAccounts = this.portfolioRepo.getSubscribedAccounts(modelId, 'discretionary');
 
       // 3. Update TargetAllocations for each portfolio
-      const deleteTargets = db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`);
-      const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
-      const updateCashBuffer = db.prepare(`UPDATE Portfolios SET cashBuffer = ? WHERE accountId = ?`);
+      this.portfolioRepo.updateTargetsAndCashBuffer(subscribedAccounts, newTarget);
       
       const now = Date.now();
       const insertQueue = db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`);
 
-      for (const acc of subscribedAccounts) {
-        deleteTargets.run(acc.accountId);
-        for (const t of newTarget.targets) {
-          insertTarget.run(acc.accountId, t.instrumentId, t.weight);
-        }
-        
-        updateCashBuffer.run(newTarget.cashBuffer || 0, acc.accountId);
-        
+      for (const accountId of subscribedAccounts) {
         // Enqueue the portfolio for re-evaluation
-        insertQueue.run(acc.accountId, now);
+        insertQueue.run(accountId, now);
       }
     });
     tx();
@@ -121,25 +92,15 @@ export class SqliteStateManager implements LiveStateManager {
     const db = getDb();
     const tx = db.transaction(() => {
       if (subscriptionType === 'discretionary' && modelId) {
-        const modelRow = db.prepare(`SELECT targetAllocation, policy FROM Models WHERE modelId = ?`).get(modelId) as any;
+        const modelRow = this.modelRepo.findById(modelId);
         if (modelRow) {
-          const parsedTarget = JSON.parse(modelRow.targetAllocation);
-          const cashBuffer = parsedTarget.cashBuffer || 0;
-
-          db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ?, policy = ?, cashBuffer = ? WHERE accountId = ?`)
-            .run(modelId, subscriptionType, modelRow.policy, cashBuffer, accountId);
-            
-          const targets = parsedTarget.targets;
-          db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`).run(accountId);
-          const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
-          for (const t of targets) {
-            insertTarget.run(accountId, t.instrumentId, t.weight);
-          }
+          const cashBuffer = modelRow.targetAllocation.cashBuffer || 0;
+          this.portfolioRepo.assignToModel(accountId, modelId, subscriptionType, modelRow.policy, cashBuffer, modelRow.targetAllocation.targets);
         } else {
-          db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ? WHERE accountId = ?`).run(modelId, subscriptionType, accountId);
+          this.portfolioRepo.assignToModel(accountId, modelId, subscriptionType);
         }
       } else {
-        db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ? WHERE accountId = ?`).run(modelId, subscriptionType, accountId);
+        this.portfolioRepo.assignToModel(accountId, modelId, subscriptionType);
       }
     });
     tx();

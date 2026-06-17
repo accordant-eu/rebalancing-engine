@@ -9,11 +9,11 @@ export interface CliRunResult {
   stderr: string;
 }
 
-export function runCli(args: string[], cwd = process.cwd(), stdin?: string): CliRunResult {
+export async function runCli(args: string[], cwd = process.cwd(), stdin?: string): Promise<CliRunResult> {
   let parsed;
   try {
     parsed = parseArgs(args);
-    const result = executeCommand(parsed, { cwd, stdin });
+    const result = await executeCommand(parsed, { cwd, stdin });
     const outputResult = writeOutputIfRequested(result, parsed.options, cwd);
     return {
       exitCode: outputResult.exitCode,
@@ -42,8 +42,9 @@ export function runCli(args: string[], cwd = process.cwd(), stdin?: string): Cli
 }
 
 if (require.main === module) {
-  const result = runCli(process.argv.slice(2));
-  process.stdout.write(result.stdout);
-  process.stderr.write(result.stderr);
-  process.exitCode = result.exitCode;
+  runCli(process.argv.slice(2)).then(result => {
+    process.stdout.write(result.stdout);
+    process.stderr.write(result.stderr);
+    process.exitCode = result.exitCode;
+  });
 }

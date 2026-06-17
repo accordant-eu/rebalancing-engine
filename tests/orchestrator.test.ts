@@ -40,16 +40,16 @@ describe('Orchestrator', () => {
     jest.restoreAllMocks();
   });
 
-  it('does not trigger on tick if portfolio is on target', () => {
+  it('does not trigger on tick if portfolio is on target', async () => {
     orchestrator.start();
     stateManager.enqueuePortfolio(accountId, 1000);
-    orchestrator.onTick(1000);
+    await orchestrator.onTick(1000);
 
     expect(executor.execute).not.toHaveBeenCalled();
     expect(stateManager.getLastTradeTimeMs(accountId)).toBe(0);
   });
 
-  it('triggers execution when prices drift out of bounds', () => {
+  it('triggers execution when prices drift out of bounds', async () => {
     orchestrator.start();
     
     // Simulate AAPL price pumping by 50% to trigger drift
@@ -57,13 +57,13 @@ describe('Orchestrator', () => {
     stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
     stateManager.enqueuePortfolio(accountId, 1000);
-    orchestrator.onTick(1000);
+    await orchestrator.onTick(1000);
 
     expect(executor.execute).toHaveBeenCalledTimes(1);
     expect(stateManager.getLastTradeTimeMs(accountId)).toBe(1000);
   });
 
-  it('respects cooldown timer after execution', () => {
+  it('respects cooldown timer after execution', async () => {
     orchestrator.start();
     
     const currentPrices = stateManager.getGlobalPrices().prices;
@@ -71,7 +71,7 @@ describe('Orchestrator', () => {
 
     // First tick triggers execution
     stateManager.enqueuePortfolio(accountId, 1000);
-    orchestrator.onTick(1000);
+    await orchestrator.onTick(1000);
     expect(executor.execute).toHaveBeenCalledTimes(1);
     expect(stateManager.getLastTradeTimeMs(accountId)).toBe(1000);
 
@@ -83,18 +83,18 @@ describe('Orchestrator', () => {
 
     // Third tick after cooldown triggers again
     stateManager.enqueuePortfolio(accountId, 7000);
-    orchestrator.onTick(7000); // 1000 + 5000 + 1000
+    await orchestrator.onTick(7000); // 1000 + 5000 + 1000
     expect(executor.execute).toHaveBeenCalledTimes(2);
     expect(stateManager.getLastTradeTimeMs(accountId)).toBe(7000);
   });
 
-  it('ignores ticks if not started', () => {
+  it('ignores ticks if not started', async () => {
     const currentPrices = stateManager.getGlobalPrices().prices;
     stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
 
     // Orchestrator not started
     stateManager.enqueuePortfolio(accountId, 1000);
-    orchestrator.onTick(1000);
+    await orchestrator.onTick(1000);
 
     expect(executor.execute).not.toHaveBeenCalled();
   });

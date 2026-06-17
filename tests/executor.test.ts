@@ -48,27 +48,22 @@ describe('BrokerExecutor', () => {
     executionTargetMode: 'full_reset',
   };
 
-  it('does nothing if proposal has no trades', () => {
-    executor.execute('account-1',emptyProposal, 'event-1');
+  it('does nothing if proposal has no trades', async () => {
+    await executor.execute('account-1',emptyProposal, 'event-1');
     expect(submitSpy).not.toHaveBeenCalled();
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
-  it('submits trades and logs info to console', () => {
-    executor.execute('account-1',validProposal, 'event-2');
+  it('submits trades and logs info to console', async () => {
+    await executor.execute('account-1',validProposal, 'event-2');
     expect(submitSpy).toHaveBeenCalledWith('account-1', validProposal);
     expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Submitting 1 trades to broker for account account-1 on event: event-2'));
   });
 
-  it('catches and logs errors asynchronously during submission', async () => {
+  it('propagates errors if submission fails', async () => {
     const error = new Error('Broker disconnected');
     submitSpy.mockRejectedValueOnce(error);
 
-    executor.execute('account-1',validProposal, 'event-3');
-    
-    // Allow the promise chain to settle
-    await new Promise(process.nextTick);
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[BrokerExecutor] CRITICAL ERROR SUBMITTING TRADES FOR account-1:', error);
+    await expect(executor.execute('account-1',validProposal, 'event-3')).rejects.toThrow('Broker disconnected');
   });
 });

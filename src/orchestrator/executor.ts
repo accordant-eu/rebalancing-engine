@@ -2,11 +2,11 @@ import { BrokerAdapter } from '../broker/adapter';
 import { TradeProposal } from '../models/domain';
 
 export interface Executor {
-  execute(accountId: string, proposal: TradeProposal, eventId: string): void;
+  execute(accountId: string, proposal: TradeProposal, eventId: string): Promise<void>;
 }
 
 export class DryRunExecutor implements Executor {
-  public execute(accountId: string, proposal: TradeProposal, eventId: string): void {
+  public async execute(accountId: string, proposal: TradeProposal, eventId: string): Promise<void> {
     if (proposal.trades.length === 0) {
       return;
     }
@@ -27,17 +27,13 @@ export class DryRunExecutor implements Executor {
 export class BrokerExecutor implements Executor {
   constructor(private adapter: BrokerAdapter) {}
 
-  public execute(accountId: string, proposal: TradeProposal, eventId: string): void {
+  public async execute(accountId: string, proposal: TradeProposal, eventId: string): Promise<void> {
     if (proposal.trades.length === 0) {
       return;
     }
 
     console.error(`[BrokerExecutor] Submitting ${proposal.trades.length} trades to broker for account ${accountId} on event: ${eventId}`);
     
-    // The orchestration loop is synchronous, so we fire-and-forget the async submission
-    // with a strict catch handler for logging fatal errors.
-    this.adapter.submitTrades(accountId, proposal).catch((err) => {
-      console.error(`[BrokerExecutor] CRITICAL ERROR SUBMITTING TRADES FOR ${accountId}:`, err);
-    });
+    await this.adapter.submitTrades(accountId, proposal);
   }
 }

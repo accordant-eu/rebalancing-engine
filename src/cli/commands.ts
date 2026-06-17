@@ -28,7 +28,7 @@ export interface CommandResult {
   output: string;
 }
 
-export function executeCommand(parsed: ParsedArgs, context: CommandContext): CommandResult {
+export async function executeCommand(parsed: ParsedArgs, context: CommandContext): Promise<CommandResult> {
   if (hasBooleanOption(parsed.options, 'help') && parsed.command === undefined) {
     return { exitCode: 0, output: ROOT_HELP };
   }
@@ -54,7 +54,7 @@ export function executeCommand(parsed: ParsedArgs, context: CommandContext): Com
     case 'inspect':
       return renderCommandOutput(executeInspect(parsed, context), format, quiet);
     case 'agent':
-      return executeAgent(parsed, context);
+      return await executeAgent(parsed, context);
     default:
       throw new UsageError(`Unknown command: ${parsed.command}`);
   }

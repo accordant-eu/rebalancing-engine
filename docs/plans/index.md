@@ -20,6 +20,7 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Scheduled Recurring Cash Flow Mvp Plan](scheduled-recurring-cash-flow-mvp-plan.md)** - Documentation for scheduled recurring cash flow mvp plan
 * **[Target Sum Flexibility Plan](target-sum-flexibility-plan.md)** - Analysis and options for target sums < 100% and > 100%
 * **[Dynamic Targeting Plan](dynamic-targeting-plan.md)** - Architectural plan for introducing dynamic targeting (Efficient Frontier/VaR) via an asynchronous optimizer.
+* **[Architecture Review & Mitigation Plan](architecture-review-and-mitigation-plan.md)** - Independent assessment of anti-patterns and a sequenced mitigation plan.
 
 ## Exploration Plans
 These documents detail how we intend to translate v3 exploration concepts into concrete tranches.

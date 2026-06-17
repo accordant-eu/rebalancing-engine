@@ -133,13 +133,42 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 42        | 2026-06-17 | Target Sum Flexibility (Tranche C) | Core Evaluation Enhancement | Implemented explicit `cashBuffer` parameter in `TargetAllocation` schema. Updated `validateTargetAllocation` to allow `sum(targets) + cashBuffer == 1.0`. Added client-side UI validation in `MandateBuilderForm`. Updated unit test suites. Documented architectural logic in `target-sum-flexibility-plan.md`. | `src/models/domain.ts`, `src/core/drift.ts`, `tests/drift.test.ts`, `tests/edge-cases.test.ts`, `web/src/components/MandateBuilderForm.tsx`, `web/src/types.ts` | The core trading mathematics naturally support arbitrary target sums based on total portfolio value without generating synthetic `BUY CASH` orders, as long as explicit validation guardrails are defined. | None. | Continue with Tranche C (Core Optimizer). |
 | 43        | 2026-06-17 | Asynchronous Mock Optimizer (Tranche C) | Architecture Scale | Implemented an asynchronous `MockOptimizerService` that updates model targets and fans them out to all subscribed portfolios. Stored `cashBuffer` directly on the `Portfolios` SQLite table. Exposed a `/api/optimizer/run` endpoint and added a dashboard UI button. | `src/optimizer/index.ts`, `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `docs/plans/dynamic-targeting-plan.md` | Moving optimization math out of the high-speed evaluation loop proves the scale and isolation of the event-driven pub/sub architecture. | None. | Tranche 11 (B2B Broker Routing) or more execution overlays. |
 
+| 44        | 2026-06-17 | Architecture Mitigation Plan (Tranche 11 Prep) | Refactoring & Resilience | Implemented architecture mitigation plan: wrapped `orchestrator.onTick` execution in async global try/catch, decoupled CLI by moving express to `api/server.ts` and ticker to `simulator/ticker.ts`, and extracted raw SQL from `sqlite-state.ts` into `ModelRepository` and `PortfolioRepository`. | `src/orchestrator/loop.ts`, `src/orchestrator/executor.ts`, `src/cli/agent.ts`, `src/api/server.ts`, `src/simulator/ticker.ts`, `src/db/repositories/ModelRepository.ts`, `src/db/repositories/PortfolioRepository.ts`, `src/orchestrator/sqlite-state.ts`, `tests/cli.test.ts`, `tests/orchestrator.test.ts`, `tests/executor.test.ts`, `BUILD_JOURNEY.md` | `async/await` flows prevent unhandled promise rejections and try/catch barriers ensure no single malformed portfolio can halt the engine. Repositories drastically reduce clutter in state managers. | None. | Tranche 11 (B2B Broker Routing). |
+
+### Iteration 44 Detail — 2026-06-17
+
+**Goal:** Execute Architecture Review & Mitigation Plan to fix God Objects, unhandled promise rejections, and raw SQL queries.
+
+**Scope:** Code refactoring and system resilience.
+
+**Materials reviewed:** `docs/plans/architecture-review-and-mitigation-plan.md`, `src/cli/agent.ts`, `src/orchestrator/loop.ts`.
+
+**Decisions made:**
+1. Made `orchestrator.onTick` asynchronous.
+2. Wrapped portfolio evaluation in a massive try/catch loop so malformed portfolios do not crash the engine.
+3. Decoupled `src/cli/agent.ts` into `src/api/server.ts` and `src/simulator/ticker.ts`.
+4. Decoupled `SqliteStateManager` by implementing `ModelRepository` and `PortfolioRepository` in `src/db/repositories/`.
+
+**Files changed:**
+- `src/orchestrator/loop.ts`
+- `src/orchestrator/executor.ts`
+- `src/cli/agent.ts`
+- `src/api/server.ts`
+- `src/simulator/ticker.ts`
+- `src/db/repositories/ModelRepository.ts`
+- `src/db/repositories/PortfolioRepository.ts`
+- `src/orchestrator/sqlite-state.ts`
+- `tests/cli.test.ts`
+- `tests/orchestrator.test.ts`
+- `tests/executor.test.ts`
+- `BUILD_JOURNEY.md`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Proceed to Tranche 11 (B2B Broker Routing).
+
 ### Iteration 41 Detail — 2026-06-15
-
-**Goal:** Implement Reusable Mandate Builder Form in React (Tranche B).
-
-**Scope:** UI & API integration.
-
-**Materials reviewed:** `src/models/domain.ts`, `docs/archetypes/static-weights-archetype.md`.
 
 **Decisions made:**
 1. Installed `react-hook-form` to cleanly manage the large, complex API-native mandate structures.

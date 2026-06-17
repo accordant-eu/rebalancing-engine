@@ -35,7 +35,7 @@ export class Orchestrator {
   /**
    * Called by the data feed or polling loop whenever prices or positions change.
    */
-  public onTick(timestampMs: number = Date.now()): void {
+  public async onTick(timestampMs: number = Date.now()): Promise<void> {
     if (!this.isRunning) {
       return;
     }
@@ -52,33 +52,54 @@ export class Orchestrator {
         continue;
       }
 
-      const currentState = this.stateManager.getAccountState(accountId);
+      try {
+        const currentState = this.stateManager.getAccountState(accountId);
 
-      const evaluation = evaluateRebalance({
-        eventId: `${accountId}:tick:${timestampMs}`,
-        createdAt: new Date(timestampMs).toISOString(),
-        portfolioState: currentState.portfolioState,
-        targetAllocation: currentState.targetAllocation,
-        priceSnapshot: currentState.priceSnapshot,
-        policy: currentState.policy,
-      });
+        const evaluation = evaluateRebalance({
+          eventId: `${accountId}:tick:${timestampMs}`,
+          createdAt: new Date(timestampMs).toISOString(),
+          portfolioState: currentState.portfolioState,
+          targetAllocation: currentState.targetAllocation,
+          priceSnapshot: currentState.priceSnapshot,
+          policy: currentState.policy,
+        });
 
-      if (evaluation.trigger.isTriggered && evaluation.tradeProposal.trades.length > 0) {
-        if (this.notifications) {
-          this.notifications.notify('info', `Triggered rebalance for ${accountId}. Strategy: ${evaluation.trigger.strategyType}`, { eventId: evaluation.auditRecord.eventId, accountId });
+        if (evaluation.trigger.isTriggered && evaluation.tradeProposal.trades.length > 0) {
+          if (this.notifications) {
+            this.notifications.notify('info', `Triggered rebalance for ${accountId}. Strategy: ${evaluation.trigger.strategyType}`, { eventId: evaluation.auditRecord.eventId, accountId });
+          }
+
+          await this.executor.execute(accountId, evaluation.tradeProposal, evaluation.auditRecord.eventId);
+          this.stateManager.markTradeExecution(accountId, timestampMs);
+
+          if (this.auditStorage) {
+            this.auditStorage.saveAuditRecord(evaluation.auditRecord).catch((err) => {
+              if (this.notifications) {
+                this.notifications.notify('error', `Failed to save audit record for ${accountId}`, { error: String(err) });
+              } else {
+                console.error(`Failed to save audit record for ${accountId}:`, err);
+              }
+            });
+          }
         }
-
-        this.executor.execute(accountId, evaluation.tradeProposal, evaluation.auditRecord.eventId);
-        this.stateManager.markTradeExecution(accountId, timestampMs);
-
+      } catch (err: any) {
+        if (this.notifications) {
+          this.notifications.notify('error', `Evaluation loop crashed for ${accountId}`, { error: err.message, stack: err.stack });
+        } else {
+          console.error(`[CRITICAL] Evaluation loop crashed for ${accountId}:`, err);
+        }
+        
+        // Log a fatal failure to audit storage if possible
         if (this.auditStorage) {
-          this.auditStorage.saveAuditRecord(evaluation.auditRecord).catch((err) => {
-            if (this.notifications) {
-              this.notifications.notify('error', `Failed to save audit record for ${accountId}`, { error: String(err) });
-            } else {
-              console.error(`Failed to save audit record for ${accountId}:`, err);
-            }
-          });
+          this.auditStorage.saveAuditRecord({
+            eventId: `${accountId}:tick:${timestampMs}:FATAL`,
+            createdAt: new Date(timestampMs).toISOString(),
+            accountId,
+            type: 'EVALUATION',
+            trigger: { isTriggered: false, strategyType: 'unknown', reason: 'FATAL_ERROR' },
+            error: err.message,
+            stack: err.stack
+          } as any).catch(() => {});
         }
       }
     }

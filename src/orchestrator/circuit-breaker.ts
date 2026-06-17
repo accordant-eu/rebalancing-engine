@@ -16,7 +16,7 @@ export class CircuitBreaker implements Executor {
     private notifications?: NotificationAdapter,
   ) {}
 
-  public execute(accountId: string, proposal: TradeProposal, eventId: string): void {
+  public async execute(accountId: string, proposal: TradeProposal, eventId: string): Promise<void> {
     if (proposal.trades.length === 0) {
       return;
     }
@@ -42,7 +42,7 @@ export class CircuitBreaker implements Executor {
       throw new Error(msg);
     }
 
-    this.targetExecutor.execute(accountId, proposal, eventId);
+    await this.targetExecutor.execute(accountId, proposal, eventId);
     this.executedTradesCount++;
   }
 

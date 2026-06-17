@@ -11,8 +11,8 @@ const scenarios = JSON.parse(fs.readFileSync(path.join(cwd, scenariosPath), 'utf
 };
 
 describe('CLI', () => {
-  it('renders root help', () => {
-    const result = runCli(['--help'], cwd);
+  it('renders root help', async () => {
+    const result = await runCli(['--help'], cwd);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('rebalance <command>');
@@ -20,8 +20,8 @@ describe('CLI', () => {
     expect(result.stderr).toBe('');
   });
 
-  it('renders command help', () => {
-    const result = runCli(['run', '--help'], cwd);
+  it('renders command help', async () => {
+    const result = await runCli(['run', '--help'], cwd);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('rebalance run');
@@ -29,23 +29,23 @@ describe('CLI', () => {
     expect(result.stdout).toContain('use - to read from stdin');
   });
 
-  it('clarifies that validate uses the deterministic engine path', () => {
-    const result = runCli(['validate', '--help'], cwd);
+  it('clarifies that validate uses the deterministic engine path', async () => {
+    const result = await runCli(['validate', '--help'], cwd);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('same deterministic engine');
     expect(result.stdout).toContain('not a separate schema-only validator');
   });
 
-  it('reports missing required inputs as usage errors', () => {
-    const result = runCli(['run'], cwd);
+  it('reports missing required inputs as usage errors', async () => {
+    const result = await runCli(['run'], cwd);
 
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain('Provide --scenario or explicit input files');
   });
 
-  it('rejects incompatible scenario and explicit input modes', () => {
-    const result = runCli(
+  it('rejects incompatible scenario and explicit input modes', async () => {
+    const result = await runCli(
       ['run', '--scenario', scenariosPath, '--portfolio', 'portfolio.json'],
       cwd,
     );
@@ -54,8 +54,8 @@ describe('CLI', () => {
     expect(result.stderr).toContain('Use either --scenario or explicit input files');
   });
 
-  it('validates a valid scenario', () => {
-    const result = runCli(
+  it('validates a valid scenario', async () => {
+    const result = await runCli(
       ['validate', '--scenario', scenariosPath, '--scenario-id', 'on_target'],
       cwd,
     );
@@ -65,8 +65,8 @@ describe('CLI', () => {
     expect(result.stdout).toContain('valid: 1 invalid: 0');
   });
 
-  it('validates an invalid scenario with a clear error', () => {
-    const result = runCli(
+  it('validates an invalid scenario with a clear error', async () => {
+    const result = await runCli(
       ['validate', '--scenario', scenariosPath, '--scenario-id', 'missing_price'],
       cwd,
     );
@@ -76,31 +76,31 @@ describe('CLI', () => {
     expect(result.stdout).toContain('Missing price for instrument: MSFT');
   });
 
-  it('validates scenario input from stdin', () => {
+  it('validates scenario input from stdin', async () => {
     const scenario = scenarios.scenarios.find((candidate) => candidate.id === 'on_target');
-    const result = runCli(['validate', '--scenario', '-'], cwd, JSON.stringify(scenario));
+    const result = await runCli(['validate', '--scenario', '-'], cwd, JSON.stringify(scenario));
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Validation: valid');
     expect(result.stderr).toBe('');
   });
 
-  it('reports malformed stdin scenario input clearly', () => {
-    const result = runCli(['validate', '--scenario', '-'], cwd, '{not-json');
+  it('reports malformed stdin scenario input clearly', async () => {
+    const result = await runCli(['validate', '--scenario', '-'], cwd, '{not-json');
 
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain('Invalid JSON in stdin');
   });
 
-  it('reports empty stdin scenario input clearly', () => {
-    const result = runCli(['validate', '--scenario', '-'], cwd, '   ');
+  it('reports empty stdin scenario input clearly', async () => {
+    const result = await runCli(['validate', '--scenario', '-'], cwd, '   ');
 
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain('Stdin scenario input is empty');
   });
 
-  it('runs one scenario and returns deterministic JSON', () => {
-    const result = runCli(
+  it('runs one scenario and returns deterministic JSON', async () => {
+    const result = await runCli(
       [
         'run',
         '--scenario',
@@ -120,8 +120,8 @@ describe('CLI', () => {
     expect(parsed.result.auditRecord.outputs.tradeProposal.trades).toHaveLength(2);
   });
 
-  it('runs a scheduled cash-flow scenario and includes deterministic schedule metadata', () => {
-    const result = runCli(
+  it('runs a scheduled cash-flow scenario and includes deterministic schedule metadata', async () => {
+    const result = await runCli(
       [
         'run',
         '--scenario',
@@ -142,8 +142,8 @@ describe('CLI', () => {
     expect(outputs.tradeProposal.trades).toHaveLength(0);
   });
 
-  it('validates an invalid recurring cash-flow scenario with a clear error', () => {
-    const result = runCli(
+  it('validates an invalid recurring cash-flow scenario with a clear error', async () => {
+    const result = await runCli(
       ['validate', '--scenario', scenariosPath, '--scenario-id', 'invalid_recurring_cash_flow'],
       cwd,
     );
@@ -153,11 +153,11 @@ describe('CLI', () => {
     expect(result.stdout).toContain('Unsupported cash flow recurrence frequency');
   });
 
-  it('runs scenario input from stdin with clean JSON stdout', () => {
+  it('runs scenario input from stdin with clean JSON stdout', async () => {
     const scenario = scenarios.scenarios.find(
       (candidate) => candidate.id === 'one_asset_out_of_band',
     );
-    const result = runCli(
+    const result = await runCli(
       ['run', '--scenario', '-', '--format', 'json'],
       cwd,
       JSON.stringify(scenario),
@@ -170,8 +170,8 @@ describe('CLI', () => {
     expect(parsed.scenarioId).toBe('one_asset_out_of_band');
   });
 
-  it('rejects stdin for explicit input mode', () => {
-    const result = runCli(
+  it('rejects stdin for explicit input mode', async () => {
+    const result = await runCli(
       [
         'run',
         '--portfolio',
@@ -190,8 +190,8 @@ describe('CLI', () => {
     expect(result.stderr).toContain('Stdin is supported only for --scenario -');
   });
 
-  it('renders detailed pretty output for a scenario run', () => {
-    const result = runCli(
+  it('renders detailed pretty output for a scenario run', async () => {
+    const result = await runCli(
       [
         'run',
         '--scenario',
@@ -210,8 +210,8 @@ describe('CLI', () => {
     expect(result.stdout).toContain('SELL AAPL');
   });
 
-  it('returns non-zero for strict warning handling', () => {
-    const result = runCli(
+  it('returns non-zero for strict warning handling', async () => {
+    const result = await runCli(
       ['run', '--scenario', scenariosPath, '--scenario-id', 'pending_cash_flow', '--strict'],
       cwd,
     );
@@ -220,8 +220,8 @@ describe('CLI', () => {
     expect(result.stdout).toContain('Warnings: 1');
   });
 
-  it('returns non-zero in strict mode when a future scheduled cash flow is excluded', () => {
-    const result = runCli(
+  it('returns non-zero in strict mode when a future scheduled cash flow is excluded', async () => {
+    const result = await runCli(
       ['run', '--scenario', scenariosPath, '--scenario-id', 'scheduled_deposit_future', '--strict'],
       cwd,
     );
@@ -230,8 +230,8 @@ describe('CLI', () => {
     expect(result.stdout).toContain('Warnings: 1');
   });
 
-  it('runs a batch with an expected-status manifest', () => {
-    const result = runCli(
+  it('runs a batch with an expected-status manifest', async () => {
+    const result = await runCli(
       ['batch', '--scenarios', scenariosPath, '--expectations', expectationsPath],
       cwd,
     );
@@ -241,11 +241,11 @@ describe('CLI', () => {
     expect(result.stdout).toContain('Expectations: valid checked: 26');
   });
 
-  it('writes deterministic per-scenario batch outputs without changing stdout summary', () => {
+  it('writes deterministic per-scenario batch outputs without changing stdout summary', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rebalance-cli-batch-'));
     const outputDir = path.join(tempDir, 'results');
 
-    const result = runCli(
+    const result = await runCli(
       [
         'batch',
         '--scenarios',
@@ -268,11 +268,11 @@ describe('CLI', () => {
     expect(parsed.scenarioId).toBe('on_target');
   });
 
-  it('refuses to overwrite existing batch outputs without force', () => {
+  it('refuses to overwrite existing batch outputs without force', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rebalance-cli-batch-existing-'));
     fs.writeFileSync(path.join(tempDir, 'on_target.json'), '{}');
 
-    const result = runCli(
+    const result = await runCli(
       [
         'batch',
         '--scenarios',
@@ -289,11 +289,11 @@ describe('CLI', () => {
     expect(result.stderr).toContain('Batch output file already exists');
   });
 
-  it('overwrites existing batch outputs with force', () => {
+  it('overwrites existing batch outputs with force', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rebalance-cli-batch-force-'));
     fs.writeFileSync(path.join(tempDir, 'on_target.json'), '{}');
 
-    const result = runCli(
+    const result = await runCli(
       [
         'batch',
         '--scenarios',
@@ -312,10 +312,10 @@ describe('CLI', () => {
     expect(parsed.scenarioId).toBe('on_target');
   });
 
-  it('writes per-scenario batch outputs for partial failures and returns non-zero', () => {
+  it('writes per-scenario batch outputs for partial failures and returns non-zero', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rebalance-cli-batch-errors-'));
 
-    const result = runCli(['batch', '--scenarios', scenariosPath, '--output-dir', tempDir], cwd);
+    const result = await runCli(['batch', '--scenarios', scenariosPath, '--output-dir', tempDir], cwd);
 
     expect(result.exitCode).toBe(1);
     const parsed = JSON.parse(fs.readFileSync(path.join(tempDir, 'missing_price.json'), 'utf8'));
@@ -323,16 +323,16 @@ describe('CLI', () => {
     expect(parsed.result.error).toContain('Missing price for instrument: MSFT');
   });
 
-  it('returns non-zero for batch errors without expectations', () => {
-    const result = runCli(['batch', '--scenarios', scenariosPath], cwd);
+  it('returns non-zero for batch errors without expectations', async () => {
+    const result = await runCli(['batch', '--scenarios', scenariosPath], cwd);
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('Batch: error');
     expect(result.stdout).toContain('errors: 5');
   });
 
-  it('inspects supported strategies', () => {
-    const result = runCli(['inspect', 'strategies'], cwd);
+  it('inspects supported strategies', async () => {
+    const result = await runCli(['inspect', 'strategies'], cwd);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('threshold (default)');
@@ -340,16 +340,16 @@ describe('CLI', () => {
     expect(result.stdout).toContain('manual');
   });
 
-  it('inspects scheduled cash-flow scenarios', () => {
-    const result = runCli(['inspect', 'scenarios', '--scenarios', scenariosPath], cwd);
+  it('inspects scheduled cash-flow scenarios', async () => {
+    const result = await runCli(['inspect', 'scenarios', '--scenarios', scenariosPath], cwd);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('scheduled_deposit_due [scheduled cash flows: 1]');
   });
 
-  it('keeps config files and strategy overrides unsupported', () => {
-    const configResult = runCli(['run', '--config', 'rebalance.json'], cwd);
-    const strategyResult = runCli(
+  it('keeps config files and strategy overrides unsupported', async () => {
+    const configResult = await runCli(['run', '--config', 'rebalance.json'], cwd);
+    const strategyResult = await runCli(
       ['run', '--scenario', scenariosPath, '--strategy', 'manual'],
       cwd,
     );
@@ -360,11 +360,11 @@ describe('CLI', () => {
     expect(strategyResult.stderr).toContain('Unknown option: --strategy');
   });
 
-  it('writes output to a file without mixing stdout', () => {
+  it('writes output to a file without mixing stdout', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rebalance-cli-'));
     const outputPath = path.join(tempDir, 'run.json');
 
-    const result = runCli(
+    const result = await runCli(
       [
         'run',
         '--scenario',
@@ -384,7 +384,7 @@ describe('CLI', () => {
     expect(JSON.parse(fs.readFileSync(outputPath, 'utf8')).scenarioId).toBe('on_target');
   });
 
-  it('runs explicit input files', () => {
+  it('runs explicit input files', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rebalance-cli-inputs-'));
     const portfolioPath = path.join(tempDir, 'portfolio.json');
     const pricesPath = path.join(tempDir, 'prices.json');
@@ -416,7 +416,7 @@ describe('CLI', () => {
       JSON.stringify({ absoluteDriftTolerance: 0.05, minimumTradeSize: 0 }),
     );
 
-    const result = runCli(
+    const result = await runCli(
       [
         'run',
         '--portfolio',
