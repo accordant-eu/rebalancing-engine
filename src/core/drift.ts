@@ -7,10 +7,11 @@ import { WeightResult } from './valuation';
  * Uses a small epsilon to account for minor floating point imprecision.
  */
 export function validateTargetAllocation(target: TargetAllocation): void {
-  const sum = target.targets.reduce((acc, t) => acc.plus(t.weight), toDecimal(0));
-  if (sum.minus(1.0).abs().gt(0.0001)) {
+  const assetSum = target.targets.reduce((acc, t) => acc.plus(t.weight), toDecimal(0));
+  const totalSum = assetSum.plus(target.cashBuffer || 0);
+  if (totalSum.minus(1.0).abs().gt(0.0001)) {
     throw new Error(
-      `Target allocation does not sum to 100%. Total: ${formatFixed(sum.mul(100).toNumber(), 2)}%`,
+      `Target allocation (assets + cash buffer) does not sum to 100%. Total: ${formatFixed(totalSum.mul(100).toNumber(), 2)}%`,
     );
   }
 }

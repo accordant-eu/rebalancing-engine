@@ -84,7 +84,7 @@ describe('Scenario Runner', () => {
     );
     expect(targetError?.status).toBe('error');
     if (targetError?.status === 'error') {
-      expect(targetError.error).toContain('Target allocation does not sum to 100%');
+      expect(targetError.error).toContain('Target allocation (assets + cash buffer) does not sum to 100%');
     }
 
     const invalidCashFlow = errors.find(

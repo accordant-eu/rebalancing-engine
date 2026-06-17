@@ -97,6 +97,7 @@ export interface TargetWeight {
 
 export interface TargetAllocation {
   targets: TargetWeight[];
+  cashBuffer?: number; // e.g. 0.10 for 10% cash buffer
 }
 
 export interface PriceSnapshot {

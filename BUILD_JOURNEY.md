@@ -130,6 +130,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 39        | 2026-06-15 | SaaS Shell & Multi-Tenant Model Execution (Tranche 9) | Architecture Scale         | Transformed global state into a multi-tenant isolated architecture. Added `Tenant`, `ModelMandate`, and subscription logic to `domain.ts`. Updated SQLite schema with `Tenants`, `Models`, and linked `Portfolios`. Intercepted Express API with mock JWT `tenantId` extraction. Overhauled React frontend with Tenant Login, Models Tab, and Discretionary model assignment in Portfolio details. | `src/models/domain.ts`, `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/seed.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `BUILD_JOURNEY.md` | Abstracting models separately from portfolios using a pub/sub subscription model prepares the system for scalable generic strategy execution. React frontend scales well for testing multi-tenant configurations. | None. | Tranche 10: Event-Driven Triggers & Core Logic Re-alignment. |
 | 40        | 2026-06-15 | Event-Driven Orchestrator & Pub/Sub (Tranche 10) | Architecture Scale         | Added `EvaluationQueue` table, built reverse index `getPortfoliosAffectedByInstrument`, implemented pub/sub model cascading inside a SQLite transaction, and refactored orchestrator loop to pop from the queue instead of full-table scans. | `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/orchestrator/loop.ts`, `src/cli/agent.ts`, `BUILD_JOURNEY.md` | Event-driven dequeuing resolves the O(N) evaluation bottleneck across the fleet when central models update or prices stream. | SQLite in-memory mode investigation? | Tranche 11: B2B Broker Routing. |
 | 41        | 2026-06-15 | UX Mandate Builder (Tranche B) | UI & API MVP | Implemented bespoke MandateBuilderForm with dynamic conditional archetype fields, updated SQLite schema to support archetype/constraints, and decoupled Models UI with react-hook-form. | `src/cli/agent.ts`, `src/db/sqlite.ts`, `web/src/App.tsx`, `web/src/components/MandateBuilderForm.tsx`, `web/src/types.ts` | Abstracting models separately from portfolios using a pub/sub subscription model prepares the system for scalable generic strategy execution. React frontend scales well for testing multi-tenant configurations. | None. | Tranche C (Core Optimizer). |
+| 42        | 2026-06-17 | Target Sum Flexibility (Tranche C) | Core Evaluation Enhancement | Implemented explicit `cashBuffer` parameter in `TargetAllocation` schema. Updated `validateTargetAllocation` to allow `sum(targets) + cashBuffer == 1.0`. Added client-side UI validation in `MandateBuilderForm`. Updated unit test suites. Documented architectural logic in `target-sum-flexibility-plan.md`. | `src/models/domain.ts`, `src/core/drift.ts`, `tests/drift.test.ts`, `tests/edge-cases.test.ts`, `web/src/components/MandateBuilderForm.tsx`, `web/src/types.ts` | The core trading mathematics naturally support arbitrary target sums based on total portfolio value without generating synthetic `BUY CASH` orders, as long as explicit validation guardrails are defined. | None. | Continue with Tranche C (Core Optimizer). |
 
 ### Iteration 41 Detail — 2026-06-15
 
@@ -702,3 +703,52 @@ The offline CLI and fixtures remain the development and regression interface.
 - We may need to investigate running SQLite in memory with a write-to-disk flag for higher throughput.
 
 **Recommended next step:** Proceed to Tranche 11 (B2B Broker Routing) or investigate SQLite memory optimization.
+
+### Iteration 41 Detail — 2026-06-15
+
+**Goal:** Fix CI pipeline failures.
+
+**Scope:** Dependencies & Linting.
+
+**Materials reviewed:** `package.json`, `src/cli/agent.ts`.
+
+**Decisions made:**
+1. Removed `brace-expansion` override from `package.json` that was breaking `eslint`.
+2. Fixed a `require()` import violation in `src/cli/agent.ts` introduced in a prior commit.
+
+**Files changed:**
+- `package.json`
+- `src/cli/agent.ts`
+- `BUILD_JOURNEY.md`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Resume prior implementation track.
+
+### Iteration 42 Detail — 2026-06-17
+
+**Goal:** Implement Target Sum Flexibility for Cash Buffers (Tranche C).
+
+**Scope:** Core Evaluation Enhancement & UI.
+
+**Materials reviewed:** `src/broker/alpaca-broker.ts`, `src/core/trades.ts`.
+
+**Decisions made:**
+1. Confirmed that treating cash as an explicit target asset (`USD`) creates invalid broker orders.
+2. Implemented Option 1B: an explicit `cashBuffer` on the `TargetAllocation` schema.
+3. Decided to retain ADR-0006 prohibiting native negative cash/margin.
+4. Created permanent documentation plan in `docs/plans/target-sum-flexibility-plan.md`.
+
+**Files changed:**
+- `src/models/domain.ts`
+- `src/core/drift.ts`
+- `tests/drift.test.ts`
+- `tests/edge-cases.test.ts`
+- `web/src/components/MandateBuilderForm.tsx`
+- `web/src/types.ts`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Continue with Tranche C (Core Optimizer / Dynamic Targeting).

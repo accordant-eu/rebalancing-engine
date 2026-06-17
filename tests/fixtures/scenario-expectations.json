@@ -37,7 +37,7 @@
     "tax_lot_fifo_sell": { "status": "success" },
     "target_allocation_sum_error": {
       "status": "error",
-      "errorIncludes": "Target allocation does not sum to 100%"
+      "errorIncludes": "Target allocation (assets + cash buffer) does not sum to 100%"
     },
     "threshold_boundary_target": { "status": "success" },
     "threshold_relative_boundary_target": { "status": "success" }

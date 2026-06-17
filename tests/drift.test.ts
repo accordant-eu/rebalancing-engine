@@ -29,7 +29,25 @@ describe('Drift Calculation', () => {
       ],
     };
     expect(() => validateTargetAllocation(invalidTarget)).toThrow(
-      'Target allocation does not sum to 100%. Total: 110.00%',
+      'Target allocation (assets + cash buffer) does not sum to 100%. Total: 110.00%',
+    );
+
+    const validTargetWithCash: TargetAllocation = {
+      targets: [
+        { instrumentId: 'A', weight: 0.8 },
+      ],
+      cashBuffer: 0.2
+    };
+    expect(() => validateTargetAllocation(validTargetWithCash)).not.toThrow();
+
+    const invalidTargetWithCash: TargetAllocation = {
+      targets: [
+        { instrumentId: 'A', weight: 0.8 },
+      ],
+      cashBuffer: 0.3
+    };
+    expect(() => validateTargetAllocation(invalidTargetWithCash)).toThrow(
+      'Target allocation (assets + cash buffer) does not sum to 100%. Total: 110.00%',
     );
 
     const sumErrorScenario = scenariosData.scenarios.find(

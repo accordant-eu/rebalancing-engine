@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-06-17 | Added `docs/plans/target-sum-flexibility-plan.md` to analyze target sum logic for cash buffers and margin. |
 | 2026-06-14 | Restructured documentation into an OKF-compliant bundle with extracted Architecture Decision Records (ADRs). |
 | 2026-06-14 | Rewrote `README.md` to formally document the completed Live Agent v2.0 MVP capabilities, including the Orchestrator, live Alpaca polling, Circuit Breakers, and persistent JSONL audit trails. |
 | 2026-06-14 | Added `docs/roadmap/v3-exploration.md` to map out scaling architectures and future feature requirements (TCO, TLH, Dashboard). |

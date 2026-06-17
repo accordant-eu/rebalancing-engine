@@ -110,6 +110,14 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
 - **Automated Provisioning:** Partner onboarding should be zero-touch. When a firm signs up (and passes necessary broker-dealer or KYC checks), an automated deployment pipeline instantly provisions their isolated Tenant DB partition, issues their initial Admin RBAC credentials, and generates their scoped M2M API keys.
 - **White-Label UI Options:** While API-First is the priority, many smaller advisory firms lack developer resources. We should offer the React/Vite Command Center (built in Tranche 7) as a configurable White-Label product. Partners can inject their own logos and brand colors and embed the dashboard via iframe or map it to a custom subdomain (e.g., `rebalance.partner-firm.com`).
 
+## 11. Margin and Leverage (Target Sums > 100%)
+
+**Goal:** Safely support investment mandates that require leveraged positions (total weights exceeding 100%) while avoiding cascading margin calls or runaway execution.
+**Discussion:**
+- **Current Restriction:** ADR-0006 strictly prohibits the engine from generating trades that result in negative cash. The `cashBuffer` feature (Option 1B) supports allocations `< 100%`, but explicitly going `> 100%` requires borrowing.
+- **Implementation Complexity:** Allowing a negative cash target means evaluating margin requirements, maintenance excess, and broker-specific borrowing power. If a portfolio uses $10,000 in equity to buy $15,000 of assets, a 10% market dip could trigger an automated broker liquidation that the agent would aggressively try to "fix" by re-leveraging, causing an infinite liquidation spiral.
+- **Future Integration:** To support leverage, the engine will need a dedicated `MarginConstraint` interface that queries the broker's real-time maintenance margin API before committing any buy orders that dip into negative cash.
+
 ---
 
 ## Proposed Sequencing (For Discussion)

@@ -8,12 +8,13 @@ import { AlpacaBrokerAdapter } from '../broker/alpaca-broker';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../orchestrator';
 import { StdoutNotificationAdapter } from '../notifications';
 import { loadScenarioFixture } from '../runner';
-import { initDb } from '../db/sqlite';
+import { initDb, getDb } from '../db/sqlite';
 import { executeSeed } from './seed';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { CommandContext, CommandResult } from './commands';
 import { UsageError } from './errors';
 import { ParsedArgs } from './options';
+import { validateTargetAllocation } from '../core/drift';
 
 export function executeAgent(parsed: ParsedArgs, _context: CommandContext): CommandResult {
   if (parsed.subcommand === 'seed') {
@@ -277,7 +278,7 @@ function setupExpressApp(stateManager: SqliteStateManager) {
     if (tenantId === 'superadmin') {
       // In a real app we'd fetch all models across all tenants or have a specific superadmin view
       // For now we'll just return all models
-      const db = require('../db/sqlite').getDb();
+      const db = getDb();
       const rows = db.prepare(`SELECT * FROM Models`).all() as any[];
       const models = rows.map(r => ({
         modelId: r.modelId,
@@ -298,6 +299,9 @@ function setupExpressApp(stateManager: SqliteStateManager) {
     const tenantId = (req as any).tenantId;
     const model = { ...req.body, tenantId };
     try {
+      if (model.archetype === 'StaticWeights' && model.targetAllocation) {
+        validateTargetAllocation(model.targetAllocation);
+      }
       const affectedAccounts = stateManager.createModel(model);
       const now = Date.now();
       for (const accountId of affectedAccounts) {

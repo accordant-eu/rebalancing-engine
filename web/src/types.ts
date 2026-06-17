@@ -47,7 +47,7 @@ export interface ModelMandate {
   name: string;
   archetype?: MandateArchetype;
   evaluationFrequency?: EvaluationFrequency;
-  targetAllocation: { targets: Target[] };
+  targetAllocation: { targets: Target[]; cashBuffer?: number };
   policy: RebalancingPolicy;
   constraints?: ConstraintIndicator[];
 }
@@ -62,7 +62,7 @@ export interface LiveState {
     holdings: Position[] 
   };
   priceSnapshot: { prices: Record<string, number> };
-  targetAllocation: { targets: Target[] };
+  targetAllocation: { targets: Target[]; cashBuffer?: number };
   policy: RebalancingPolicy;
 }
 

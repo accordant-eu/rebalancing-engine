@@ -244,7 +244,7 @@ describe('Edge Cases — target allocation validation', () => {
     };
     // Sum = 0.8; should throw
     expect(() => validateTargetAllocation(underTarget)).toThrow(
-      'Target allocation does not sum to 100%. Total: 80.00%',
+      'Target allocation (assets + cash buffer) does not sum to 100%. Total: 80.00%',
     );
   });
 
@@ -270,9 +270,9 @@ describe('Edge Cases — target allocation validation', () => {
 
   it('rejects an empty targets array', () => {
     // An empty allocation sums to 0.0 — not a valid target.
-    const emptyTarget: TargetAllocation = { targets: [] };
-    expect(() => validateTargetAllocation(emptyTarget)).toThrow(
-      'Target allocation does not sum to 100%. Total: 0.00%',
+    const target: TargetAllocation = { targets: [] };
+    expect(() => validateTargetAllocation(target)).toThrow(
+      'Target allocation (assets + cash buffer) does not sum to 100%. Total: 0.00%',
     );
   });
 });

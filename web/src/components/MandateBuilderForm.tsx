@@ -9,12 +9,14 @@ interface MandateBuilderFormProps {
 }
 
 export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialData, onSubmit, onCancel }) => {
+  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+
   const { register, control, handleSubmit, watch } = useForm<Partial<ModelMandate>>({
     defaultValues: {
       name: initialData?.name || '',
       archetype: initialData?.archetype || 'StaticWeights',
       evaluationFrequency: initialData?.evaluationFrequency || 'daily',
-      targetAllocation: initialData?.targetAllocation || { targets: [{ instrumentId: '', weight: 0 }] },
+      targetAllocation: initialData?.targetAllocation || { targets: [{ instrumentId: '', weight: 0 }], cashBuffer: 0 },
       policy: initialData?.policy || {
         absoluteDriftTolerance: 0.05,
         minimumTradeSize: 10,
@@ -40,12 +42,27 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
 
   const onFormSubmit = (data: any) => {
     // Clean up data
-    if (data.targetAllocation?.targets) {
-      data.targetAllocation.targets = data.targetAllocation.targets.map((t: any) => ({
-        ...t,
-        weight: parseFloat(t.weight)
-      }));
+    if (data.targetAllocation) {
+      if (data.targetAllocation.targets) {
+        data.targetAllocation.targets = data.targetAllocation.targets.map((t: any) => ({
+          ...t,
+          weight: parseFloat(t.weight)
+        }));
+      }
+      if (data.targetAllocation.cashBuffer) {
+        data.targetAllocation.cashBuffer = parseFloat(data.targetAllocation.cashBuffer);
+      }
+      
+      if (selectedArchetype === 'StaticWeights') {
+        const assetSum = data.targetAllocation.targets?.reduce((acc: number, t: any) => acc + t.weight, 0) || 0;
+        const totalSum = assetSum + (data.targetAllocation.cashBuffer || 0);
+        if (Math.abs(totalSum - 1.0) > 0.0001) {
+          setErrorMsg(`Target weights (assets + cash buffer) must sum exactly to 1.0 (100%). Current sum: ${totalSum.toFixed(4)}`);
+          return;
+        }
+      }
     }
+    setErrorMsg(null);
     if (data.policy) {
       data.policy.absoluteDriftTolerance = parseFloat(data.policy.absoluteDriftTolerance);
       data.policy.minimumTradeSize = parseFloat(data.policy.minimumTradeSize);
@@ -118,6 +135,10 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
             <button type="button" onClick={() => appendTarget({ instrumentId: '', weight: 0 })} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--accent-blue)', border: '1px solid var(--accent-blue)', borderRadius: '4px', cursor: 'pointer', marginTop: '8px' }}>
               + Add Target Asset
             </button>
+            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+              <label className="metricLabel">Cash Buffer (e.g. 0.1 for 10%)</label>
+              <input type="number" step="0.01" max="1" min="0" {...register('targetAllocation.cashBuffer')} placeholder="0.0" className="formInput" style={{ maxWidth: '200px', display: 'block' }} />
+            </div>
           </div>
         )}
       </div>
@@ -176,6 +197,12 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
           + Add Constraint
         </button>
       </div>
+
+      {errorMsg && (
+        <div style={{ padding: '12px', background: 'var(--status-red)', color: 'white', borderRadius: '4px', marginTop: '16px' }}>
+          <strong>Validation Error:</strong> {errorMsg}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', marginTop: '16px' }}>
         {onCancel && (

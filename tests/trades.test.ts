@@ -164,7 +164,7 @@ describe('Trade Proposal Generation', () => {
 
     expect(() =>
       generateTradeProposal(valuation, scenario.targetAllocation, scenario.priceSnapshot),
-    ).toThrow('Target allocation does not sum to 100%');
+    ).toThrow('Target allocation (assets + cash buffer) does not sum to 100%');
   });
 
   it('rejects negative cash balances when generating proposals', () => {
