@@ -1,4 +1,5 @@
 import { StdoutNotificationAdapter } from '../src/notifications/adapter';
+import { logger } from '../src/utils/logger';
 
 describe('StdoutNotificationAdapter', () => {
   let adapter: StdoutNotificationAdapter;
@@ -7,8 +8,8 @@ describe('StdoutNotificationAdapter', () => {
 
   beforeEach(() => {
     adapter = new StdoutNotificationAdapter();
-    logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    logSpy = jest.spyOn(logger, 'info').mockImplementation(() => {});
+    errorSpy = jest.spyOn(logger, 'error').mockImplementation(() => {});
     jest.useFakeTimers().setSystemTime(new Date('2026-06-14T00:00:00.000Z'));
   });
 

@@ -1,4 +1,5 @@
 export type NotificationLevel = 'info' | 'warning' | 'error';
+import { logger } from '../utils/logger';
 
 export interface NotificationAdapter {
   notify(level: NotificationLevel, message: string, context?: Record<string, unknown>): Promise<void>;
@@ -11,9 +12,9 @@ export class StdoutNotificationAdapter implements NotificationAdapter {
     const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}${contextStr}`;
 
     if (level === 'error') {
-      console.error(formattedMessage);
+      logger.error(formattedMessage);
     } else {
-      console.log(formattedMessage);
+      logger.info(formattedMessage);
     }
   }
 }

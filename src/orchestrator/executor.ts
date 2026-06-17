@@ -1,5 +1,6 @@
 import { BrokerAdapter } from '../broker/adapter';
 import { TradeProposal } from '../models/domain';
+import { logger } from '../utils/logger';
 
 export interface Executor {
   execute(accountId: string, proposal: TradeProposal, eventId: string): Promise<void>;
@@ -32,7 +33,7 @@ export class BrokerExecutor implements Executor {
       return;
     }
 
-    console.error(`[BrokerExecutor] Submitting ${proposal.trades.length} trades to broker for account ${accountId} on event: ${eventId}`);
+    logger.info(`[BrokerExecutor] Submitting ${proposal.trades.length} trades to broker for account ${accountId} on event: ${eventId}`);
     
     await this.adapter.submitTrades(accountId, proposal);
   }

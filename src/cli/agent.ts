@@ -18,6 +18,7 @@ import { validateTargetAllocation } from '../core/drift';
 import { MockOptimizerService } from '../optimizer';
 import { setupExpressApp } from '../api/server';
 import { startTickerSimulator } from '../simulator/ticker';
+import { logger } from '../utils/logger';
 
 export async function executeAgent(parsed: ParsedArgs, _context: CommandContext): Promise<CommandResult> {
   if (parsed.subcommand === 'seed') {
@@ -103,7 +104,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
 
       orchestrator.start();
       notifications.notify('info', 'Live Agent (Alpaca Broker API) Started.', { target: scenarioId });
-      console.error(`Press Ctrl+C to stop.\n`);
+      logger.info(`Press Ctrl+C to stop.\n`);
 
       const pollPrices = async () => {
         try {
@@ -179,11 +180,11 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
 
     orchestrator.start();
 
-    console.error(`Starting Live Agent in Dry-Run mode.`);
-    console.error(`Scenarios loaded from DB: ${allIds.length}`);
-    console.error(`Tick Interval: 1000ms`);
-    console.error(`Cooldown: 10000ms`);
-    console.error(`Press Ctrl+C to stop.\n`);
+    logger.info(`Starting Live Agent in Dry-Run mode.`);
+    logger.info(`Scenarios loaded from DB: ${allIds.length}`);
+    logger.info(`Tick Interval: 1000ms`);
+    logger.info(`Cooldown: 10000ms`);
+    logger.info(`Press Ctrl+C to stop.\n`);
 
     startTickerSimulator(stateManager, orchestrator, 1000);
   }

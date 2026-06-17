@@ -134,7 +134,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 43        | 2026-06-17 | Asynchronous Mock Optimizer (Tranche C) | Architecture Scale | Implemented an asynchronous `MockOptimizerService` that updates model targets and fans them out to all subscribed portfolios. Stored `cashBuffer` directly on the `Portfolios` SQLite table. Exposed a `/api/optimizer/run` endpoint and added a dashboard UI button. | `src/optimizer/index.ts`, `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `docs/plans/dynamic-targeting-plan.md` | Moving optimization math out of the high-speed evaluation loop proves the scale and isolation of the event-driven pub/sub architecture. | None. | Tranche 11 (B2B Broker Routing) or more execution overlays. |
 
 | 44        | 2026-06-17 | Architecture Mitigation Plan (Tranche 11 Prep) | Refactoring & Resilience | Implemented architecture mitigation plan: wrapped `orchestrator.onTick` execution in async global try/catch, decoupled CLI by moving express to `api/server.ts` and ticker to `simulator/ticker.ts`, and extracted raw SQL from `sqlite-state.ts` into `ModelRepository` and `PortfolioRepository`. | `src/orchestrator/loop.ts`, `src/orchestrator/executor.ts`, `src/cli/agent.ts`, `src/api/server.ts`, `src/simulator/ticker.ts`, `src/db/repositories/ModelRepository.ts`, `src/db/repositories/PortfolioRepository.ts`, `src/orchestrator/sqlite-state.ts`, `tests/cli.test.ts`, `tests/orchestrator.test.ts`, `tests/executor.test.ts`, `BUILD_JOURNEY.md` | `async/await` flows prevent unhandled promise rejections and try/catch barriers ensure no single malformed portfolio can halt the engine. Repositories drastically reduce clutter in state managers. | None. | Tranche 11 (B2B Broker Routing). |
-
+| 45        | 2026-06-17 | Security Review & Mitigation | MVP Hardening | Conducted IT Sec architecture review contextually scoped to the Live Agent MVP. Deferred heavy SaaS protections. Implemented immediate developer-hygiene mitigations: fixed `js-yaml` vulnerabilities and replaced `console.log` with `pino` logger configured to actively redact sensitive broker keys from terminal output. | `docs/plans/security-review-and-mitigation-plan.md`, `package.json`, `src/utils/logger.ts`, `src/cli/agent.ts`, `src/orchestrator/loop.ts`, `src/api/server.ts`, `tests/notifications.test.ts`, `tests/executor.test.ts` | Secure structured logging with active redaction prevents accidental credential leaks as the Live Agent starts transacting real capital via Alpaca APIs. | None. | Tranche 11 (B2B Broker Routing). |
 ### Iteration 44 Detail — 2026-06-17
 
 **Goal:** Execute Architecture Review & Mitigation Plan to fix God Objects, unhandled promise rejections, and raw SQL queries.
@@ -808,3 +808,37 @@ The offline CLI and fixtures remain the development and regression interface.
 - None.
 
 **Recommended next step:** Proceed to Tranche 11 (B2B Broker Routing) or implement more execution overlays (TLH).
+
+### Iteration 45 Detail — 2026-06-17
+
+**Goal:** Conduct IT Security Review and implement immediate MVP-focused mitigations.
+
+**Scope:** Project-level security, dependency hardening, and secure logging.
+
+**Materials reviewed:** `package.json`, `src/api/server.ts`, `src/cli/agent.ts`, `src/orchestrator/loop.ts`.
+
+**Decisions made:**
+1. Explicitly deferred heavy SaaS-level security features (JWT Auth, API Rate Limiting, Zod Schema validation) to avoid over-engineering the local MVP. Documented these gaps in `docs/plans/security-review-and-mitigation-plan.md`.
+2. Fixed moderate vulnerability in `js-yaml` by overriding dependency paths for `ts-jest`.
+3. Replaced all `console.log` and `console.error` usage in the Live Agent core with a structured `pino` logger.
+4. Configured `pino` to actively redact sensitive values (`authorization`, `APCA_API_SECRET_KEY`) to ensure broker keys are not leaked to terminal logs when transitioning to live Alpaca routing.
+
+**Files changed:**
+- `package.json`
+- `package-lock.json`
+- `src/utils/logger.ts`
+- `src/api/server.ts`
+- `src/optimizer/index.ts`
+- `src/cli/agent.ts`
+- `src/orchestrator/loop.ts`
+- `src/orchestrator/executor.ts`
+- `src/audit/storage.ts`
+- `src/notifications/adapter.ts`
+- `tests/executor.test.ts`
+- `tests/notifications.test.ts`
+- `docs/plans/security-review-and-mitigation-plan.md`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Tranche 11 (B2B Broker Routing).

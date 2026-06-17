@@ -1,5 +1,6 @@
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { TargetAllocation, TargetWeight } from '../models/domain';
+import { logger } from '../utils/logger';
 
 export class MockOptimizerService {
   constructor(private stateManager: SqliteStateManager) {}
@@ -53,7 +54,7 @@ export class MockOptimizerService {
         cashBuffer,
       };
 
-      console.log(`[Optimizer] Computed new targets for Model ${model.modelId} (${model.name}):`, newTargetAllocation);
+      logger.info({ newTargetAllocation }, `[Optimizer] Computed new targets for Model ${model.modelId} (${model.name})`);
 
       // Fan out to all portfolios
       this.stateManager.updateModelTargetAllocation(model.modelId, newTargetAllocation);

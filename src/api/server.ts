@@ -6,6 +6,7 @@ import { getDb } from '../db/sqlite';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { validateTargetAllocation } from '../core/drift';
 import { MockOptimizerService } from '../optimizer';
+import { logger } from '../utils/logger';
 
 export function setupExpressApp(stateManager: SqliteStateManager) {
   const app = express();
@@ -44,7 +45,7 @@ export function setupExpressApp(stateManager: SqliteStateManager) {
       optimizer.run();
       res.json({ message: 'Mock optimizer successfully ran for all dynamic models' });
     } catch (err: any) {
-      console.error(err);
+      logger.error({ err }, 'Error running mock optimizer');
       res.status(500).json({ error: err.message });
     }
   });
@@ -52,7 +53,7 @@ export function setupExpressApp(stateManager: SqliteStateManager) {
   app.post('/api/webhooks/alpaca', (req, res) => {
     // Simulated webhook endpoint for asynchronous trade fills from Alpaca
     const event = req.body;
-    console.log('[Webhook] Received Alpaca event:', event);
+    logger.info({ event }, '[Webhook] Received Alpaca event');
 
     if (event.event === 'fill') {
       const accountId = event.account_id;

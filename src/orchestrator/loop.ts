@@ -2,6 +2,7 @@ import { AuditStorageAdapter } from '../audit/storage';
 import { evaluateRebalance } from '../core/evaluation';
 import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
+import { logger } from '../utils/logger';
 import { LiveStateManager } from './state';
 
 export interface OrchestratorConfig {
@@ -77,7 +78,7 @@ export class Orchestrator {
               if (this.notifications) {
                 this.notifications.notify('error', `Failed to save audit record for ${accountId}`, { error: String(err) });
               } else {
-                console.error(`Failed to save audit record for ${accountId}:`, err);
+                logger.error({ err }, `Failed to save audit record for ${accountId}`);
               }
             });
           }
@@ -86,7 +87,7 @@ export class Orchestrator {
         if (this.notifications) {
           this.notifications.notify('error', `Evaluation loop crashed for ${accountId}`, { error: err.message, stack: err.stack });
         } else {
-          console.error(`[CRITICAL] Evaluation loop crashed for ${accountId}:`, err);
+          logger.error({ err }, `[CRITICAL] Evaluation loop crashed for ${accountId}`);
         }
         
         // Log a fatal failure to audit storage if possible

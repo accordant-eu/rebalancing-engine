@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { AuditRecord, roundAuditRecordOutputs } from './audit';
+import { logger } from '../utils/logger';
 
 export interface AuditStorageAdapter {
   saveAuditRecord(record: AuditRecord): Promise<void>;
@@ -37,7 +38,7 @@ export class FileAuditStorage implements AuditStorageAdapter {
       }
     } catch (e: any) {
       if (e.code !== 'ENOENT') {
-        console.error('Error rotating logs:', e);
+        logger.error({ err: e }, 'Error rotating logs');
       }
     }
   }
