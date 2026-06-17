@@ -36,6 +36,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       subscriptionType TEXT DEFAULT 'bespoke',
       cash REAL NOT NULL,
       policy TEXT NOT NULL,
+      cashBuffer REAL DEFAULT 0,
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE,
       FOREIGN KEY(modelId) REFERENCES Models(modelId) ON DELETE SET NULL
     );

@@ -60,7 +60,22 @@ function App() {
   const [models, setModels] = useState<ModelMandate[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
-  // new model form state removed, managed by MandateBuilderForm
+  const handleRunOptimizer = async () => {
+    try {
+      const headers = { 'Content-Type': 'application/json' } as any;
+      if (tenantToken) headers['Authorization'] = `Bearer ${tenantToken}`;
+      
+      const res = await fetch('/api/optimizer/run', {
+        method: 'POST',
+        headers
+      });
+      if (!res.ok) throw new Error(await res.text());
+      alert('Optimizer ran successfully! Portfolios are being re-evaluated.');
+      window.location.reload();
+    } catch (e: any) {
+      alert(`Failed to run optimizer: ${e.message}`);
+    }
+  };
 
   useEffect(() => {
     if (!tenantToken) return;
@@ -327,7 +342,15 @@ function App() {
     return (
       <div>
         <div className="panel" style={{ marginBottom: '24px' }}>
-          <div className="panelHeader">Create New Model Mandate</div>
+          <div className="panelHeader" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Create New Model Mandate</span>
+            <button 
+              onClick={handleRunOptimizer}
+              style={{ background: 'var(--accent-blue)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Run Optimizer (Tranche C Mock)
+            </button>
+          </div>
           <div className="panelBody">
             <MandateBuilderForm onSubmit={handleCreateModel} />
           </div>

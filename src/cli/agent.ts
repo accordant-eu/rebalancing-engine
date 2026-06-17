@@ -15,6 +15,7 @@ import { CommandContext, CommandResult } from './commands';
 import { UsageError } from './errors';
 import { ParsedArgs } from './options';
 import { validateTargetAllocation } from '../core/drift';
+import { MockOptimizerService } from '../optimizer';
 
 export function executeAgent(parsed: ParsedArgs, _context: CommandContext): CommandResult {
   if (parsed.subcommand === 'seed') {
@@ -243,6 +244,17 @@ function setupExpressApp(stateManager: SqliteStateManager) {
     if (!tenantId) return res.status(400).json({ error: 'tenantId required' });
     // In real app, we would verify tenant exists and return a signed JWT
     res.json({ token: tenantId });
+  });
+
+  app.post('/api/optimizer/run', (req, res) => {
+    try {
+      const optimizer = new MockOptimizerService(stateManager);
+      optimizer.run();
+      res.json({ message: 'Mock optimizer successfully ran for all dynamic models' });
+    } catch (err: any) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   app.post('/api/webhooks/alpaca', (req, res) => {

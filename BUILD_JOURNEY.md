@@ -131,6 +131,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 40        | 2026-06-15 | Event-Driven Orchestrator & Pub/Sub (Tranche 10) | Architecture Scale         | Added `EvaluationQueue` table, built reverse index `getPortfoliosAffectedByInstrument`, implemented pub/sub model cascading inside a SQLite transaction, and refactored orchestrator loop to pop from the queue instead of full-table scans. | `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/orchestrator/loop.ts`, `src/cli/agent.ts`, `BUILD_JOURNEY.md` | Event-driven dequeuing resolves the O(N) evaluation bottleneck across the fleet when central models update or prices stream. | SQLite in-memory mode investigation? | Tranche 11: B2B Broker Routing. |
 | 41        | 2026-06-15 | UX Mandate Builder (Tranche B) | UI & API MVP | Implemented bespoke MandateBuilderForm with dynamic conditional archetype fields, updated SQLite schema to support archetype/constraints, and decoupled Models UI with react-hook-form. | `src/cli/agent.ts`, `src/db/sqlite.ts`, `web/src/App.tsx`, `web/src/components/MandateBuilderForm.tsx`, `web/src/types.ts` | Abstracting models separately from portfolios using a pub/sub subscription model prepares the system for scalable generic strategy execution. React frontend scales well for testing multi-tenant configurations. | None. | Tranche C (Core Optimizer). |
 | 42        | 2026-06-17 | Target Sum Flexibility (Tranche C) | Core Evaluation Enhancement | Implemented explicit `cashBuffer` parameter in `TargetAllocation` schema. Updated `validateTargetAllocation` to allow `sum(targets) + cashBuffer == 1.0`. Added client-side UI validation in `MandateBuilderForm`. Updated unit test suites. Documented architectural logic in `target-sum-flexibility-plan.md`. | `src/models/domain.ts`, `src/core/drift.ts`, `tests/drift.test.ts`, `tests/edge-cases.test.ts`, `web/src/components/MandateBuilderForm.tsx`, `web/src/types.ts` | The core trading mathematics naturally support arbitrary target sums based on total portfolio value without generating synthetic `BUY CASH` orders, as long as explicit validation guardrails are defined. | None. | Continue with Tranche C (Core Optimizer). |
+| 43        | 2026-06-17 | Asynchronous Mock Optimizer (Tranche C) | Architecture Scale | Implemented an asynchronous `MockOptimizerService` that updates model targets and fans them out to all subscribed portfolios. Stored `cashBuffer` directly on the `Portfolios` SQLite table. Exposed a `/api/optimizer/run` endpoint and added a dashboard UI button. | `src/optimizer/index.ts`, `src/db/sqlite.ts`, `src/orchestrator/sqlite-state.ts`, `src/cli/agent.ts`, `web/src/App.tsx`, `docs/plans/dynamic-targeting-plan.md` | Moving optimization math out of the high-speed evaluation loop proves the scale and isolation of the event-driven pub/sub architecture. | None. | Tranche 11 (B2B Broker Routing) or more execution overlays. |
 
 ### Iteration 41 Detail — 2026-06-15
 
@@ -752,3 +753,29 @@ The offline CLI and fixtures remain the development and regression interface.
 - None.
 
 **Recommended next step:** Continue with Tranche C (Core Optimizer / Dynamic Targeting).
+
+### Iteration 43 Detail — 2026-06-17
+
+**Goal:** Implement Asynchronous Mock Optimizer for Dynamic Targeting (Tranche C).
+
+**Scope:** Architecture & UI.
+
+**Materials reviewed:** `docs/plans/dynamic-targeting-plan.md`, `src/orchestrator/sqlite-state.ts`.
+
+**Decisions made:**
+1. Confirmed the asynchronous service architecture: Optimizer runs via API, updates Model targets, and fans-out to portfolios, queueing them for evaluation.
+2. Added `cashBuffer` to the `Portfolios` SQLite schema to cleanly persist the buffer constraint alongside static weights.
+3. Used a simple mock target rotation in `MockOptimizerService` to prove the event-driven fan-out without needing a real quadratic programming solver.
+
+**Files changed:**
+- `src/optimizer/index.ts`
+- `src/db/sqlite.ts`
+- `src/orchestrator/sqlite-state.ts`
+- `src/cli/agent.ts`
+- `web/src/App.tsx`
+- `docs/plans/dynamic-targeting-plan.md`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Proceed to Tranche 11 (B2B Broker Routing) or implement more execution overlays (TLH).

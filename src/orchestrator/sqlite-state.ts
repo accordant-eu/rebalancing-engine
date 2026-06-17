@@ -69,16 +69,67 @@ export class SqliteStateManager implements LiveStateManager {
     }));
   }
 
+  public getAllModels(): ModelMandate[] {
+    const db = getDb();
+    const rows = db.prepare(`SELECT * FROM Models`).all() as any[];
+    return rows.map(r => ({
+      modelId: r.modelId,
+      tenantId: r.tenantId,
+      name: r.name,
+      archetype: r.archetype || 'StaticWeights',
+      evaluationFrequency: r.evaluationFrequency || 'realtime',
+      targetAllocation: JSON.parse(r.targetAllocation),
+      policy: JSON.parse(r.policy),
+      constraints: r.constraints ? JSON.parse(r.constraints) : undefined
+    }));
+  }
+
+  public updateModelTargetAllocation(modelId: string, newTarget: TargetAllocation): void {
+    const db = getDb();
+    const tx = db.transaction(() => {
+      // 1. Update the Model row
+      db.prepare(`UPDATE Models SET targetAllocation = ? WHERE modelId = ?`)
+        .run(JSON.stringify(newTarget), modelId);
+
+      // 2. Find all 'discretionary' portfolios subscribed to this model
+      const subscribedAccounts = db.prepare(`SELECT accountId FROM Portfolios WHERE modelId = ? AND subscriptionType = 'discretionary'`).all(modelId) as any[];
+
+      // 3. Update TargetAllocations for each portfolio
+      const deleteTargets = db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`);
+      const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
+      const updateCashBuffer = db.prepare(`UPDATE Portfolios SET cashBuffer = ? WHERE accountId = ?`);
+      
+      const now = Date.now();
+      const insertQueue = db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`);
+
+      for (const acc of subscribedAccounts) {
+        deleteTargets.run(acc.accountId);
+        for (const t of newTarget.targets) {
+          insertTarget.run(acc.accountId, t.instrumentId, t.weight);
+        }
+        
+        updateCashBuffer.run(newTarget.cashBuffer || 0, acc.accountId);
+        
+        // Enqueue the portfolio for re-evaluation
+        insertQueue.run(acc.accountId, now);
+      }
+    });
+    tx();
+  }
+
   public assignPortfolioToModel(accountId: string, modelId: string | null, subscriptionType: 'bespoke' | 'discretionary'): void {
     const db = getDb();
     const tx = db.transaction(() => {
       if (subscriptionType === 'discretionary' && modelId) {
         const modelRow = db.prepare(`SELECT targetAllocation, policy FROM Models WHERE modelId = ?`).get(modelId) as any;
         if (modelRow) {
-          db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ?, policy = ? WHERE accountId = ?`)
-            .run(modelId, subscriptionType, modelRow.policy, accountId);
+          const parsedTarget = JSON.parse(modelRow.targetAllocation);
+          const cashBuffer = parsedTarget.cashBuffer || 0;
+
+          db.prepare(`UPDATE Portfolios SET modelId = ?, subscriptionType = ?, policy = ?, cashBuffer = ? WHERE accountId = ?`)
+            .run(modelId, subscriptionType, modelRow.policy, cashBuffer, accountId);
             
-          const targets = JSON.parse(modelRow.targetAllocation).targets;
+          const targets = parsedTarget.targets;
           db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`).run(accountId);
           const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
           for (const t of targets) {
@@ -103,8 +154,8 @@ export class SqliteStateManager implements LiveStateManager {
     const db = getDb();
     
     const insertPortfolio = db.prepare(`
-      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertHolding = db.prepare(`
@@ -127,7 +178,8 @@ export class SqliteStateManager implements LiveStateManager {
         state.portfolioState.modelId || null, 
         state.portfolioState.subscriptionType || 'bespoke',
         state.portfolioState.cash, 
-        JSON.stringify(state.policy)
+        JSON.stringify(state.policy),
+        state.targetAllocation.cashBuffer || 0
       );
       
       deleteHoldings.run(accountId);
@@ -215,7 +267,7 @@ export class SqliteStateManager implements LiveStateManager {
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     
-    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
+    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
     if (!portRow) {
       throw new Error(`SqliteStateManager is not initialized for account ${accountId}`);
     }
@@ -245,7 +297,7 @@ export class SqliteStateManager implements LiveStateManager {
         holdings,
       },
       priceSnapshot: globalPrices,
-      targetAllocation: { targets },
+      targetAllocation: { targets, cashBuffer: portRow.cashBuffer || 0 },
       policy: JSON.parse(portRow.policy),
     };
   }
