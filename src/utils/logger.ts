@@ -1,19 +1,31 @@
 import pino from 'pino';
 
+// Base sensitive paths that should always be redacted
+const baseRedactPaths = [
+  'authorization',
+  'token',
+  'password',
+  'headers.authorization',
+  'req.headers.authorization',
+];
+
+// Dynamically scan environment variables for sensitive plugin keys at boot
+const sensitiveEnvKeys = Object.keys(process.env).filter((key) => {
+  const upperKey = key.toUpperCase();
+  return upperKey.includes('SECRET') || 
+         upperKey.includes('TOKEN') || 
+         upperKey.includes('KEY') || 
+         upperKey.includes('PASSWORD') ||
+         upperKey.includes('AUTH');
+});
+
+// Combine defaults with dynamic keys
+const redactPaths = [...new Set([...baseRedactPaths, ...sensitiveEnvKeys])];
+
 export const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
   redact: {
-    paths: [
-      'authorization',
-      'token',
-      'password',
-      'APCA_API_KEY_ID',
-      'APCA_API_SECRET_KEY',
-      'ALPACA_BROKER_API_SECRET',
-      'ALPACA_BROKER_API_KEY',
-      'headers.authorization',
-      'req.headers.authorization',
-    ],
+    paths: redactPaths,
     censor: '[REDACTED]',
   },
   transport: {

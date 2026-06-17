@@ -135,6 +135,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 
 | 44        | 2026-06-17 | Architecture Mitigation Plan (Tranche 11 Prep) | Refactoring & Resilience | Implemented architecture mitigation plan: wrapped `orchestrator.onTick` execution in async global try/catch, decoupled CLI by moving express to `api/server.ts` and ticker to `simulator/ticker.ts`, and extracted raw SQL from `sqlite-state.ts` into `ModelRepository` and `PortfolioRepository`. | `src/orchestrator/loop.ts`, `src/orchestrator/executor.ts`, `src/cli/agent.ts`, `src/api/server.ts`, `src/simulator/ticker.ts`, `src/db/repositories/ModelRepository.ts`, `src/db/repositories/PortfolioRepository.ts`, `src/orchestrator/sqlite-state.ts`, `tests/cli.test.ts`, `tests/orchestrator.test.ts`, `tests/executor.test.ts`, `BUILD_JOURNEY.md` | `async/await` flows prevent unhandled promise rejections and try/catch barriers ensure no single malformed portfolio can halt the engine. Repositories drastically reduce clutter in state managers. | None. | Tranche 11 (B2B Broker Routing). |
 | 45        | 2026-06-17 | Security Review & Mitigation | MVP Hardening | Conducted IT Sec architecture review contextually scoped to the Live Agent MVP. Deferred heavy SaaS protections. Implemented immediate developer-hygiene mitigations: fixed `js-yaml` vulnerabilities and replaced `console.log` with `pino` logger configured to actively redact sensitive broker keys from terminal output. | `docs/plans/security-review-and-mitigation-plan.md`, `package.json`, `src/utils/logger.ts`, `src/cli/agent.ts`, `src/orchestrator/loop.ts`, `src/api/server.ts`, `tests/notifications.test.ts`, `tests/executor.test.ts` | Secure structured logging with active redaction prevents accidental credential leaks as the Live Agent starts transacting real capital via Alpaca APIs. | None. | Tranche 11 (B2B Broker Routing). |
+| 46        | 2026-06-17 | Dynamic Plugin Redaction | MVP Hardening | Implemented dynamic secret redaction in Pino. At boot, `process.env` is scanned for keys containing `SECRET`, `TOKEN`, `KEY`, `PASSWORD`, or `AUTH`, and these keys are automatically appended to the redaction list. | `src/utils/logger.ts` | Dynamically redacting sensitive environment keys ensures broker plugin architectures scale securely without requiring hardcoded configuration updates. | None. | Tranche 11 (B2B Broker Routing). |
 ### Iteration 44 Detail — 2026-06-17
 
 **Goal:** Execute Architecture Review & Mitigation Plan to fix God Objects, unhandled promise rejections, and raw SQL queries.
@@ -837,6 +838,26 @@ The offline CLI and fixtures remain the development and regression interface.
 - `tests/executor.test.ts`
 - `tests/notifications.test.ts`
 - `docs/plans/security-review-and-mitigation-plan.md`
+
+**Open questions:**
+- None.
+
+**Recommended next step:** Tranche 11 (B2B Broker Routing).
+
+### Iteration 46 Detail — 2026-06-17
+
+**Goal:** Implement Dynamic Plugin Redaction.
+
+**Scope:** Project-level security and secure logging.
+
+**Materials reviewed:** `src/utils/logger.ts`, `docs/plans/security-review-and-mitigation-plan.md`.
+
+**Decisions made:**
+1. Dynamically scan `process.env` at startup to locate sensitive keys (`SECRET`, `TOKEN`, `KEY`, `PASSWORD`, `AUTH`).
+2. Add these dynamically identified keys to Pino's standard `redact.paths` array, ensuring that new broker plugins scale securely without needing hardcoded logic updates.
+
+**Files changed:**
+- `src/utils/logger.ts`
 
 **Open questions:**
 - None.
