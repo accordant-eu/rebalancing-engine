@@ -13,6 +13,8 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-06-18 | Added `docs/plans/tyr-agent-api-integration-plan.md` to map out the API enrichment for the Týr agent integration. |
 | 2026-06-17 | Added `docs/plans/architecture-review-and-mitigation-plan.md` to identify anti-patterns and sequence mitigations. |
 | 2026-06-17 | Added `docs/plans/dynamic-targeting-plan.md` to map out the asynchronous optimizer architecture. |
+| 2026-06-18 | Added | [Asset, Tenant API, and Broker Statistics Enhancements](./plans/asset-tenant-api-plan.md) | Detailed plan for expanding asset schemas to multi-exchange listings, tenant API keys, and grouping broker metrics. |
+| 2026-06-18 | Added | [Superadmin Dashboard UI](./plans/superadmin-dashboard-ui-plan.md) | Detailed plan for the superadmin dashboard React UI covering tenant, models, broker, and sysops management. |
 | 2026-06-17 | Added `docs/plans/target-sum-flexibility-plan.md` to analyze target sum logic for cash buffers and margin. |
 | 2026-06-14 | Restructured documentation into an OKF-compliant bundle with extracted Architecture Decision Records (ADRs). |
 | 2026-06-14 | Rewrote `README.md` to formally document the completed Live Agent v2.0 MVP capabilities, including the Orchestrator, live Alpaca polling, Circuit Breakers, and persistent JSONL audit trails. |

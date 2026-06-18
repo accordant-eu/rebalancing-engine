@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MandateBuilderForm } from '../MandateBuilderForm';
 import './Admin.css';
 
-export const RebalancingModelsTab: React.FC<{ token: string }> = ({ token: _token }) => {
+export const RebalancingModelsTab: React.FC<{ token: string }> = ({ token }) => {
   const [archetype, setArchetype] = useState('StaticWeights');
 
   return (
@@ -38,7 +38,30 @@ export const RebalancingModelsTab: React.FC<{ token: string }> = ({ token: _toke
           Define baseline models that any provisioned advisory firm can subscribe to, or inspect bespoke overrides.
         </p>
         <MandateBuilderForm 
-          onSubmit={() => alert('Baseline model saved globally.')} 
+          onSubmit={async (data) => {
+            const modelPayload = {
+              ...data,
+              modelId: `model-${Date.now()}`
+            };
+            try {
+              const res = await fetch('/api/models', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(modelPayload)
+              });
+              if (!res.ok) {
+                const err = await res.json();
+                alert(`Error: ${err.error}`);
+              } else {
+                alert('Model saved successfully!');
+              }
+            } catch (err: any) {
+              alert(`Error: ${err.message}`);
+            }
+          }}
         />
       </section>
     </div>

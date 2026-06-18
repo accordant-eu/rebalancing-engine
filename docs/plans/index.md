@@ -25,6 +25,7 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Target Sum Flexibility Plan](target-sum-flexibility-plan.md)** - Plan for target sum flexibility constraints for target sums < 100% and > 100%
 * **[Dynamic Targeting Plan](dynamic-targeting-plan.md)** - Architectural plan for introducing dynamic targeting (Efficient Frontier/VaR) via an asynchronous optimizer.
 * **[Architecture Review & Mitigation Plan](architecture-review-and-mitigation-plan.md)** - Independent assessment of anti-patterns and a sequenced mitigation plan.
+* **[Asset, Tenant API, and Broker Statistics Enhancements](asset-tenant-api-plan.md)** - Implementation plan for expanding the asset domain model and tenant API credentials.
 * **[Superadmin Dashboard UI Plan](superadmin-dashboard-ui-plan.md)** - Detailed design for exposing the Sysadmin Phase 1 architecture via the web dashboard.
 * **[Týr Agent API Integration Plan](tyr-agent-api-integration-plan.md)** - Implementation plan for the Týr agent API integration based on Issue #9
 
