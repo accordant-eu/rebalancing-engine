@@ -1,6 +1,8 @@
 import { PortfolioState, TradeProposal, ExecutionContext } from '../models/domain';
 import { BrokerAdapter } from './adapter';
 
+import { globalMetrics } from '../services/metrics';
+
 export class AlpacaBrokerAdapter implements BrokerAdapter {
   
   private async fetchApi(endpoint: string, context: ExecutionContext, options: RequestInit = {}): Promise<any> {
@@ -16,9 +18,22 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
       ...options.headers,
     };
 
-    const response = await fetch(url, { ...options, headers });
+    const startTime = Date.now();
+    let response: Response;
+    try {
+      response = await fetch(url, { ...options, headers });
+    } catch (e) {
+      globalMetrics.recordRateLimitError(context.tenantId);
+      throw e;
+    }
+    
+    const latency = Date.now() - startTime;
+    globalMetrics.recordApiCall(context.tenantId, latency);
     
     if (!response.ok) {
+      if (response.status === 429 || response.status >= 500) {
+        globalMetrics.recordRateLimitError(context.tenantId);
+      }
       const errText = await response.text();
       throw new Error(`Alpaca Broker API Error: ${response.status} ${response.statusText} - ${errText}`);
     }

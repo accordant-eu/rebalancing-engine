@@ -8,7 +8,10 @@ import { validateTargetAllocation } from '../core/drift';
 import { MockOptimizerService } from '../optimizer';
 import { logger } from '../utils/logger';
 
-export function setupExpressApp(stateManager: SqliteStateManager) {
+import { Orchestrator } from '../orchestrator/loop';
+import { globalMetrics } from '../services/metrics';
+
+export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?: Orchestrator) {
   const app = express();
   app.use(cors());
   app.use(express.json());
@@ -22,22 +25,90 @@ export function setupExpressApp(stateManager: SqliteStateManager) {
       return res.status(401).json({ error: 'Missing Authorization header' });
     }
     
-    // In our mock, the token IS the tenantId (e.g. "Bearer tenant-baseline")
     const token = authHeader.split(' ')[1];
     if (!token) {
       return res.status(401).json({ error: 'Invalid token format' });
     }
     
-    (req as any).tenantId = token;
+    try {
+      const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+      (req as any).tenantId = decoded.tenantId;
+      (req as any).userId = decoded.userId;
+      (req as any).role = decoded.role;
+    } catch (e) {
+      // Fallback for old tokens like "tenant-baseline"
+      (req as any).tenantId = token;
+      (req as any).role = token === 'superadmin' ? 'Admin' : 'Viewer';
+    }
     next();
   });
 
+  // Superadmin Guard Middleware
+  const requireSuperadmin = (req: any, res: any, next: any) => {
+    if (req.userId !== 'user-superadmin' && req.tenantId !== 'superadmin') {
+      return res.status(403).json({ error: 'Superadmin access required' });
+    }
+    next();
+  };
+
   app.post('/api/auth/login', (req, res) => {
-    const { tenantId } = req.body;
-    if (!tenantId) return res.status(400).json({ error: 'tenantId required' });
-    // In real app, we would verify tenant exists and return a signed JWT
-    res.json({ token: tenantId });
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+    
+    const user = stateManager.getUserByEmail(email);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role };
+    const token = Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
+    
+    res.json({ token, tenantId: user.tenantId, role: user.role });
   });
+
+  // --- Admin Endpoints ---
+  app.get('/api/admin/tenants', requireSuperadmin, (req, res) => {
+    res.json(stateManager.getAllTenants());
+  });
+
+  app.post('/api/admin/tenants', requireSuperadmin, (req, res) => {
+    const { tenantId, name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl } = req.body;
+    stateManager.createTenant(tenantId, name, { brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl });
+    res.json({ message: 'Tenant provisioned successfully' });
+  });
+
+  app.get('/api/admin/users', requireSuperadmin, (req, res) => {
+    const tenantId = req.query.tenantId as string;
+    if (tenantId) {
+      res.json(stateManager.getUsersByTenant(tenantId));
+    } else {
+      res.json([]);
+    }
+  });
+
+  app.post('/api/admin/users', requireSuperadmin, (req, res) => {
+    stateManager.createUser(req.body);
+    res.json({ message: 'User provisioned successfully' });
+  });
+
+  app.get('/api/admin/queue', requireSuperadmin, (req, res) => {
+    res.json({ depth: stateManager.getQueueDepth() });
+  });
+
+  app.get('/api/admin/metrics', requireSuperadmin, (req, res) => {
+    res.json(globalMetrics.getSnapshot());
+  });
+
+  app.post('/api/admin/system/pause', requireSuperadmin, (req, res) => {
+    if (orchestrator) orchestrator.pause();
+    res.json({ isPaused: true });
+  });
+
+  app.post('/api/admin/system/resume', requireSuperadmin, (req, res) => {
+    if (orchestrator) orchestrator.resume();
+    res.json({ isPaused: false });
+  });
+  // -----------------------
 
   app.post('/api/optimizer/run', (req, res) => {
     try {

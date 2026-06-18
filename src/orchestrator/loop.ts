@@ -12,6 +12,7 @@ export interface OrchestratorConfig {
 
 export class Orchestrator {
   private isRunning: boolean = false;
+  private isPaused: boolean = false;
 
   constructor(
     private stateManager: LiveStateManager,
@@ -30,15 +31,29 @@ export class Orchestrator {
     this.isRunning = false;
   }
 
+  public pause(): void {
+    this.isPaused = true;
+    logger.info('[Orchestrator] Global pause enabled');
+  }
+
+  public resume(): void {
+    this.isPaused = false;
+    logger.info('[Orchestrator] Global pause disabled');
+  }
+
   public getIsRunning(): boolean {
     return this.isRunning;
+  }
+
+  public getIsPaused(): boolean {
+    return this.isPaused;
   }
 
   /**
    * Called by the data feed or polling loop whenever prices or positions change.
    */
   public async onTick(timestampMs: number = Date.now()): Promise<void> {
-    if (!this.isRunning) {
+    if (!this.isRunning || this.isPaused) {
       return;
     }
 

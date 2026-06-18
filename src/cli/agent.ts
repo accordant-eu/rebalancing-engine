@@ -104,7 +104,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
         cooldownMs: 60000, // 1 minute cooldown for paper trading
       }, auditStorageAdapter, notifications);
 
-      const app = setupExpressApp(stateManager);
+      const app = setupExpressApp(stateManager, orchestrator);
 
       app.listen(4444, '127.0.0.1', () => {
         notifications.notify('info', 'Command Center API listening on http://127.0.0.1:4444');
@@ -188,7 +188,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
       cooldownMs: 10000,
     }, auditStorageAdapter, notifications);
 
-    const app = setupExpressApp(stateManager);
+    const app = setupExpressApp(stateManager, orchestrator);
 
     app.listen(4444, '127.0.0.1', () => {
       notifications.notify('info', 'Command Center API listening on http://127.0.0.1:4444');

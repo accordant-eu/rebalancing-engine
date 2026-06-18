@@ -83,6 +83,15 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       queuedAtMs INTEGER NOT NULL,
       FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS Users (
+      userId TEXT PRIMARY KEY,
+      tenantId TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      role TEXT DEFAULT 'Viewer',
+      status TEXT DEFAULT 'Active',
+      FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
+    );
   `);
 
   // Safe migrations for existing databases
@@ -99,6 +108,25 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiKey TEXT`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiSecret TEXT`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerBaseUrl TEXT`); } catch (e) { /* ignore if exists */ }
+
+  // Seed baseline tenant and superadmin user if they don't exist
+  const baselineTenant = db.prepare('SELECT tenantId FROM Tenants WHERE tenantId = ?').get('tenant-baseline');
+  if (!baselineTenant) {
+    db.prepare(`INSERT INTO Tenants (tenantId, name, brokerType) VALUES (?, ?, ?)`).run('tenant-baseline', 'Baseline Tenant', 'MOCK');
+  }
+
+  const superadminUser = db.prepare('SELECT userId FROM Users WHERE email = ?').get('admin@rebalancing.accordant.eu');
+  if (!superadminUser) {
+    // In a real system, password would be hashed (e.g. bcrypt). Here it's plaintext for MVP MVP auth.
+    db.prepare(`INSERT INTO Users (userId, tenantId, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)`).run(
+      'user-superadmin',
+      'tenant-baseline',
+      'admin@rebalancing.accordant.eu',
+      'superadmin123',
+      'Admin',
+      'Active'
+    );
+  }
 
   dbInstance = db;
   return dbInstance;

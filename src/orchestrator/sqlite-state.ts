@@ -48,6 +48,38 @@ export class SqliteStateManager implements LiveStateManager {
     };
   }
 
+  // --- Superadmin Operations ---
+  public getAllTenants(): any[] {
+    const db = getDb();
+    const rows = db.prepare(`SELECT tenantId, name, brokerType, brokerBaseUrl FROM Tenants`).all() as any[];
+    return rows;
+  }
+
+  public createUser(user: { userId: string; tenantId: string; email: string; password?: string; role?: string; status?: string }): void {
+    const db = getDb();
+    db.prepare(`
+      INSERT INTO Users (userId, tenantId, email, password, role, status) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(user.userId, user.tenantId, user.email, user.password || '', user.role || 'Viewer', user.status || 'Active');
+  }
+
+  public getUserByEmail(email: string): any | null {
+    const db = getDb();
+    return db.prepare(`SELECT * FROM Users WHERE email = ?`).get(email) || null;
+  }
+
+  public getUsersByTenant(tenantId: string): any[] {
+    const db = getDb();
+    return db.prepare(`SELECT userId, tenantId, email, role, status FROM Users WHERE tenantId = ?`).all(tenantId) as any[];
+  }
+
+  public getQueueDepth(): number {
+    const db = getDb();
+    const row = db.prepare(`SELECT COUNT(*) as count FROM EvaluationQueue`).get() as { count: number };
+    return row.count;
+  }
+  // -----------------------------
+
   public createModel(model: ModelMandate): string[] {
     const db = getDb();
     

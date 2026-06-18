@@ -3,6 +3,10 @@ import './App.css';
 
 import type { LiveState, ModelMandate, StatePayload } from './types';
 import { MandateBuilderForm } from './components/MandateBuilderForm';
+import { TenantManagementTab } from './components/admin/TenantManagementTab';
+import { BrokerIntegrationTab } from './components/admin/BrokerIntegrationTab';
+import { RebalancingModelsTab } from './components/admin/RebalancingModelsTab';
+import { SystemOpsTab } from './components/admin/SystemOpsTab';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -53,7 +57,8 @@ function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, 
 
 function App() {
   const [tenantToken, setTenantToken] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'fleet' | 'models'>('fleet');
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops'>('fleet');
   
   const [state, setState] = useState<StatePayload | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -128,11 +133,27 @@ function App() {
     return () => clearInterval(interval);
   }, [tenantToken]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const tenantId = formData.get('tenantId') as string;
-    if (tenantId) setTenantToken(tenantId);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!res.ok) {
+        alert('Login failed: Invalid credentials');
+        return;
+      }
+      const data = await res.json();
+      setTenantToken(data.token);
+      setUserRole(data.role);
+    } catch(err) {
+      alert('Login failed');
+    }
   };
 
   const handleCreateModel = async (mandateData: Partial<ModelMandate>) => {
@@ -169,12 +190,12 @@ function App() {
           <h2>SaaS Command Center</h2>
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Select Tenant Environment</label>
-              <select name="tenantId" style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}>
-                <option value="tenant-baseline">Baseline Tenant</option>
-                <option value="tenant-b">Tenant B (Empty Data Isolation)</option>
-                <option value="superadmin">System Superadmin (All Tenants)</option>
-              </select>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Email</label>
+              <input name="email" type="email" required style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Password</label>
+              <input name="password" type="password" required style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }} />
             </div>
             <button type="submit" style={{ padding: '12px', background: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
               Access Dashboard
@@ -410,6 +431,34 @@ function App() {
             >
               Model Mandates
             </button>
+            {userRole === 'Admin' && (
+              <>
+                <button 
+                  onClick={() => setCurrentTab('tenants')}
+                  style={{ background: currentTab === 'tenants' ? 'var(--border-subtle)' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Tenants
+                </button>
+                <button 
+                  onClick={() => setCurrentTab('broker')}
+                  style={{ background: currentTab === 'broker' ? 'var(--border-subtle)' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Broker Integrations
+                </button>
+                <button 
+                  onClick={() => setCurrentTab('adminModels')}
+                  style={{ background: currentTab === 'adminModels' ? 'var(--border-subtle)' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Global Models
+                </button>
+                <button 
+                  onClick={() => setCurrentTab('sysops')}
+                  style={{ background: currentTab === 'sysops' ? 'var(--border-subtle)' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  System Ops
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -425,7 +474,12 @@ function App() {
       </header>
 
       <main className="mainContent">
-        {currentTab === 'models' ? renderModelsTab() : (!selectedAccountId ? renderHeatmap() : renderDetailedView())}
+        {currentTab === 'models' && renderModelsTab()}
+        {currentTab === 'fleet' && (!selectedAccountId ? renderHeatmap() : renderDetailedView())}
+        {currentTab === 'tenants' && <TenantManagementTab token={tenantToken} />}
+        {currentTab === 'broker' && <BrokerIntegrationTab token={tenantToken} />}
+        {currentTab === 'adminModels' && <RebalancingModelsTab token={tenantToken} />}
+        {currentTab === 'sysops' && <SystemOpsTab token={tenantToken} />}
 
         <div className="panel" style={{ marginTop: '24px' }}>
           <div className="panelHeader">JSONL Audit Tail (Live) {selectedAccountId && `- Filtered: ${selectedAccountId}`}</div>
