@@ -1,0 +1,15 @@
+# Dev compose — standalone file for /srv/rebalancing-engine-dev.
+# Same network_mode: host; dev agent runs on port 4445 once source supports
+# PORT env var. Until then, only one instance (prod OR dev) can run at a time
+# on the same host. Run dev by stopping prod first, or use separate hosts.
+services:
+  rebalancing-engine:
+    build: .
+    container_name: rebalancing-engine-dev
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./web/dist:/app/web/dist:ro

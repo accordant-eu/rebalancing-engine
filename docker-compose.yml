@@ -1,0 +1,14 @@
+# Production compose — host networking so the hardcoded 127.0.0.1:4444 bind
+# is reachable from nginx on the host without modifying the source.
+# See docs/decisions/003-rebalancing-engine-deployment.md for rationale.
+services:
+  rebalancing-engine:
+    build: .
+    container_name: rebalancing-engine
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./web/dist:/app/web/dist:ro
