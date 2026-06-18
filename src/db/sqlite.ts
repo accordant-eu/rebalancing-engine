@@ -162,8 +162,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   const baselineAssets = [
     { instrumentId: 'AAPL', isin: 'US0378331005', ticker: 'AAPL', exchangeMic: 'XNAS', currency: 'USD' },
     { instrumentId: 'MSFT', isin: 'US5949181045', ticker: 'MSFT', exchangeMic: 'XNAS', currency: 'USD' },
-    { instrumentId: 'GOOG', isin: 'US38259P5089', ticker: 'GOOG', exchangeMic: 'XNAS', currency: 'USD' },
-    { instrumentId: 'CASH', isin: 'CASH-USD', ticker: 'CASH', exchangeMic: 'NONE', currency: 'USD' }
+    { instrumentId: 'GOOG', isin: 'US38259P5089', ticker: 'GOOG', exchangeMic: 'XNAS', currency: 'USD' }
   ];
   const insertAsset = db.prepare(`INSERT OR IGNORE INTO Assets (instrumentId, isin, ticker, exchangeMic, currency) VALUES (?, ?, ?, ?, ?)`);
   baselineAssets.forEach(a => insertAsset.run(a.instrumentId, a.isin, a.ticker, a.exchangeMic, a.currency));
