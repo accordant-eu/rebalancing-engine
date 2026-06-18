@@ -100,5 +100,15 @@ These rules govern AI-assisted development in this repository. The project is in
 - Provide a concise summary of changes, tests, and open questions after each iteration.
 - **MANDATORY**: After completing any significant task, you must update the `BUILD_JOURNEY.md` iteration log table before committing your changes.
 
+## 11. Release and Deployment Handoff
+
+- **Scope Boundary**: Your scope as an AI agent ends at the `main` branch. You do not manage tags, create releases, or trigger deployments. Infrastructure and production environments are strictly managed by human operators (e.g., Rufus).
+- **Signaling Readiness**: When a feature or version on `main` is production-ready, you must signal this by opening a GitHub Issue on this repository.
+- **Issue Format**:
+  - **Label**: `release-ready`
+  - **Title**: `Release ready: [brief description of what changed]`
+  - **Body**: Include any relevant notes, breaking changes, migration steps, and explicitly enumerate any new environment variables required (referencing `.env.example`).
+- **Deployment Feedback**: The operator will review, verify on staging, and trigger the deployment. If issues arise post-deployment, they will report them by opening an issue labelled `deployment-feedback`. Act on these issues when they appear.
+
 
 &copy; 2026 Johan Hellman. All rights reserved.
