@@ -21,21 +21,33 @@ This plan details the implementation of the "Superadmin Shell" outlined in Phase
 1. **Credentials Storage**: Since we are still using SQLite for this iteration, `brokerApiSecret` will be stored in plain text in the database. When we migrate to PostgreSQL (Tranche 12), we should encrypt these credentials at rest. Is storing them in plain text for this local MVP phase acceptable?
 2. **Aesthetics**: Do you have any specific design preferences for the System Operations "Pause" button, or should it follow the premium dark-mode aesthetic we currently have?
 
-## Proposed Architecture
+### 1. Database Schema Extensions (SQLite)
+To support real RBAC and broker metrics, we must extend the database schema:
+- **`Users` Table**: Add a new table mapping `userId` -> `tenantId`, including `email`, `password`, `role` (Admin/Viewer), and `status`.
+- **`BrokerMetrics` Table / Service**: Create a mechanism (either in-memory or SQLite-backed) to log critical integration statistics:
+  - Total API calls made (by endpoint and tenant).
+  - Rate limit errors or general API failures (HTTP 429, 403, 500).
+  - Webhooks received and processed.
+  - Latency averages.
 
-### 1. API Layer
-We will add a suite of `/api/admin/*` endpoints to the Express server, restricted to the `superadmin` token.
+### 2. API Layer
+We will add a suite of `/api/admin/*` endpoints to the Express server, restricted to the `superadmin` token, and update the auth logic.
 
+- `POST /api/auth/login`: Update to accept `email`, lookup the `User` record, and return a mock JWT containing `{ userId, tenantId, role }`.
 - `GET /api/admin/tenants`: Returns all tenants (masking the API secrets).
-- `POST /api/admin/tenants`: Provisions a new tenant, accepting `tenantId`, `name`, `brokerType`, `brokerApiKey`, `brokerApiSecret`, and `brokerBaseUrl`.
+- `POST /api/admin/tenants`: Provisions a new tenant.
+- `GET /api/admin/users`: Returns all users, or users for a specific tenant.
+- `POST /api/admin/users`: Provisions a new user, assigning RBAC roles.
 - `GET /api/admin/queue`: Returns the current size of the `EvaluationQueue`.
+- `GET /api/admin/metrics`: Returns the aggregated broker integration statistics.
 - `POST /api/admin/system/pause` and `POST /api/admin/system/resume`: Toggles a global pause flag on the orchestrator.
 
-### 2. Orchestrator Engine Modifications
-To support a global circuit-breaker/pause functionality:
+### 3. Orchestrator Engine Modifications
+To support a global circuit-breaker/pause functionality and metrics collection:
 - Add a global `isPaused: boolean` property to the `Orchestrator` class.
 - If `isPaused` is true, `onTick` will immediately return without popping from the queue.
 - Expose `pause()` and `resume()` methods on the `Orchestrator`.
+- Inject a `MetricsService` into the `BrokerAdapter` instances to log outgoing requests, failures, and latency.
 - Expose a raw query helper in `sqlite-state.ts` to count `EvaluationQueue` rows for the admin endpoint.
 
 ### 3. Web Dashboard (React/Vite)
