@@ -4,6 +4,7 @@ import './Admin.css';
 interface MetricsSnapshot {
   totalApiCalls: Record<string, number>;
   rateLimitErrors: Record<string, number>;
+  byBrokerType?: Record<string, { calls: number; errors: number }>;
   webhooksProcessed: number;
   averageLatencyMs: number;
 }
@@ -49,6 +50,34 @@ export const BrokerIntegrationTab: React.FC<{ token: string }> = ({ token }) => 
           </div>
         </div>
       </div>
+
+      {metrics.byBrokerType && (
+        <section className="admin-section" style={{ marginTop: '24px' }}>
+          <h2 className="admin-section-title">Aggregate Metrics by Broker Integration</h2>
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Broker Type</th>
+                  <th>Total API Calls</th>
+                  <th>Total Errors</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.keys(metrics.byBrokerType).map(bType => (
+                  <tr key={bType}>
+                    <td>{bType}</td>
+                    <td>{metrics.byBrokerType![bType].calls}</td>
+                    <td style={{ color: metrics.byBrokerType![bType].errors > 0 ? 'var(--status-red)' : 'inherit' }}>
+                      {metrics.byBrokerType![bType].errors}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="admin-section">
         <h2 className="admin-section-title">Per-Tenant Metrics</h2>

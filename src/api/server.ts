@@ -50,6 +50,20 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       (req as any).userId = decoded.userId;
       (req as any).role = decoded.role;
     } catch (e) {
+      // Check if it's a B2B API Key (starts with sk_live_)
+      if (token.startsWith('sk_live_')) {
+        const { createHash } = require('crypto');
+        const keyHash = createHash('sha256').update(token).digest('hex');
+        const db = getDb();
+        const keyRecord = db.prepare('SELECT tenantId FROM TenantApiKeys WHERE keyHash = ? AND status = ?').get(keyHash, 'Active') as any;
+        if (keyRecord) {
+          (req as any).tenantId = keyRecord.tenantId;
+          (req as any).userId = 'api-key';
+          (req as any).role = 'Admin';
+          return next();
+        }
+      }
+
       // Fallback for old tokens like "tenant-baseline"
       (req as any).tenantId = token;
       (req as any).role = token === 'superadmin' ? 'Admin' : 'Viewer';
@@ -91,6 +105,41 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     res.json({ message: 'Tenant provisioned successfully' });
   });
 
+  app.put('/api/admin/tenants/:tenantId', requireSuperadmin, (req, res) => {
+    const tenantId = req.params.tenantId;
+    const { name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl } = req.body;
+    stateManager.updateTenant(tenantId, name, { brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl });
+    res.json({ message: 'Tenant updated successfully' });
+  });
+
+  // --- API Key Management ---
+  app.get('/api/admin/tenants/:tenantId/keys', requireSuperadmin, (req, res) => {
+    const tenantId = req.params.tenantId;
+    res.json(stateManager.getTenantApiKeys(tenantId));
+  });
+
+  app.post('/api/admin/tenants/:tenantId/keys', requireSuperadmin, (req, res) => {
+    const tenantId = req.params.tenantId;
+    const keyData = stateManager.createTenantApiKey(tenantId);
+    res.json(keyData); // Note: Secret is returned only once
+  });
+
+  app.delete('/api/admin/tenants/:tenantId/keys/:keyId', requireSuperadmin, (req, res) => {
+    const keyId = req.params.keyId;
+    stateManager.revokeTenantApiKey(keyId);
+    res.json({ message: 'Key revoked successfully' });
+  });
+
+  // --- Assets Management ---
+  app.get('/api/admin/assets', requireSuperadmin, (req, res) => {
+    res.json(stateManager.getAssets());
+  });
+
+  app.post('/api/admin/assets', requireSuperadmin, (req, res) => {
+    stateManager.createAsset(req.body);
+    res.json({ message: 'Asset created successfully' });
+  });
+
   app.get('/api/admin/users', requireSuperadmin, (req, res) => {
     const tenantId = req.query.tenantId as string;
     if (tenantId) {
@@ -110,7 +159,25 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   });
 
   app.get('/api/admin/metrics', requireSuperadmin, (req, res) => {
-    res.json(globalMetrics.getSnapshot());
+    const snapshot = globalMetrics.getSnapshot();
+    const tenants = stateManager.getAllTenants();
+    const brokerTypeMap: Record<string, string> = {};
+    tenants.forEach(t => brokerTypeMap[t.tenantId] = t.brokerType);
+    
+    const byBrokerType: Record<string, { calls: number; errors: number }> = {};
+    
+    for (const [tenantId, calls] of Object.entries(snapshot.totalApiCalls)) {
+      const bType = brokerTypeMap[tenantId] || 'UNKNOWN';
+      if (!byBrokerType[bType]) byBrokerType[bType] = { calls: 0, errors: 0 };
+      byBrokerType[bType].calls += calls;
+    }
+    for (const [tenantId, errors] of Object.entries(snapshot.rateLimitErrors)) {
+      const bType = brokerTypeMap[tenantId] || 'UNKNOWN';
+      if (!byBrokerType[bType]) byBrokerType[bType] = { calls: 0, errors: 0 };
+      byBrokerType[bType].errors += errors;
+    }
+    
+    res.json({ ...snapshot, byBrokerType });
   });
 
   app.post('/api/admin/system/pause', requireSuperadmin, (req, res) => {

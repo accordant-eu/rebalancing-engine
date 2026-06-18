@@ -78,6 +78,57 @@ export class SqliteStateManager implements LiveStateManager {
     const row = db.prepare(`SELECT COUNT(*) as count FROM EvaluationQueue`).get() as { count: number };
     return row.count;
   }
+
+  // --- Tenant Settings & API Keys ---
+  public updateTenant(tenantId: string, name: string, brokerConfig: TenantBrokerConfig): void {
+    const db = getDb();
+    db.prepare(`
+      UPDATE Tenants 
+      SET name = ?, brokerType = ?, brokerApiKey = ?, brokerApiSecret = ?, brokerBaseUrl = ?
+      WHERE tenantId = ?
+    `).run(name, brokerConfig.brokerType, brokerConfig.brokerApiKey, brokerConfig.brokerApiSecret, brokerConfig.brokerBaseUrl, tenantId);
+  }
+
+  public createTenantApiKey(tenantId: string): { keyPrefix: string; secret: string } {
+    const db = getDb();
+    const { randomBytes, createHash } = require('crypto');
+    const secret = 'sk_live_' + randomBytes(24).toString('hex');
+    const keyPrefix = secret.substring(0, 14) + '...';
+    const keyHash = createHash('sha256').update(secret).digest('hex');
+    const keyId = 'key_' + randomBytes(8).toString('hex');
+
+    db.prepare(`
+      INSERT INTO TenantApiKeys (keyId, tenantId, keyPrefix, keyHash, createdAt, status)
+      VALUES (?, ?, ?, ?, ?, 'Active')
+    `).run(keyId, tenantId, keyPrefix, keyHash, new Date().toISOString());
+
+    return { keyPrefix, secret };
+  }
+
+  public revokeTenantApiKey(keyId: string): void {
+    const db = getDb();
+    db.prepare(`UPDATE TenantApiKeys SET status = 'Revoked' WHERE keyId = ?`).run(keyId);
+  }
+
+  public getTenantApiKeys(tenantId: string): any[] {
+    const db = getDb();
+    return db.prepare(`SELECT keyId, keyPrefix, createdAt, status FROM TenantApiKeys WHERE tenantId = ? ORDER BY createdAt DESC`).all(tenantId) as any[];
+  }
+
+  // --- Asset Universe ---
+  public createAsset(asset: any): void {
+    const db = getDb();
+    db.prepare(`
+      INSERT OR REPLACE INTO Assets (instrumentId, isin, ticker, exchangeMic, currency)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(asset.instrumentId, asset.isin, asset.ticker, asset.exchangeMic, asset.currency);
+  }
+
+  public getAssets(): any[] {
+    const db = getDb();
+    return db.prepare(`SELECT instrumentId, isin, ticker, exchangeMic, currency FROM Assets`).all() as any[];
+  }
+
   // -----------------------------
 
   public createModel(model: ModelMandate): string[] {

@@ -7,6 +7,7 @@ import { TenantManagementTab } from './components/admin/TenantManagementTab';
 import { BrokerIntegrationTab } from './components/admin/BrokerIntegrationTab';
 import { RebalancingModelsTab } from './components/admin/RebalancingModelsTab';
 import { SystemOpsTab } from './components/admin/SystemOpsTab';
+import { AssetUniverseTab } from './components/admin/AssetUniverseTab';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -58,7 +59,7 @@ function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, 
 function App() {
   const [tenantToken, setTenantToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops'>('fleet');
+  const [currentTab, setCurrentTab] = useState<'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops' | 'assets'>('fleet');
   
   const [state, setState] = useState<StatePayload | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -461,6 +462,12 @@ function App() {
                   Global Models
                 </button>
                 <button 
+                  onClick={() => setCurrentTab('assets')}
+                  style={{ background: currentTab === 'assets' ? 'var(--border-subtle)' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Asset Universe
+                </button>
+                <button 
                   onClick={() => setCurrentTab('sysops')}
                   style={{ background: currentTab === 'sysops' ? 'var(--border-subtle)' : 'transparent', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
                 >
@@ -488,6 +495,7 @@ function App() {
         {currentTab === 'tenants' && <div style={{ overflowY: 'auto' }}><TenantManagementTab token={tenantToken} /></div>}
         {currentTab === 'broker' && <div style={{ overflowY: 'auto' }}><BrokerIntegrationTab token={tenantToken} /></div>}
         {currentTab === 'adminModels' && <div style={{ overflowY: 'auto' }}><RebalancingModelsTab token={tenantToken} /></div>}
+        {currentTab === 'assets' && <div style={{ overflowY: 'auto' }}><AssetUniverseTab token={tenantToken} /></div>}
         {currentTab === 'sysops' && <div style={{ overflowY: 'auto' }}><SystemOpsTab token={tenantToken} /></div>}
 
         <div className="panel" style={{ marginTop: '24px' }}>

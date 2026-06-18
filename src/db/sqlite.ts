@@ -21,6 +21,24 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       brokerBaseUrl TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS TenantApiKeys (
+      keyId TEXT PRIMARY KEY,
+      tenantId TEXT NOT NULL,
+      keyPrefix TEXT NOT NULL,
+      keyHash TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      status TEXT DEFAULT 'Active',
+      FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS Assets (
+      instrumentId TEXT PRIMARY KEY,
+      isin TEXT NOT NULL,
+      ticker TEXT NOT NULL,
+      exchangeMic TEXT NOT NULL,
+      currency TEXT DEFAULT 'USD'
+    );
+
     CREATE TABLE IF NOT EXISTS Models (
       modelId TEXT PRIMARY KEY,
       tenantId TEXT NOT NULL,
@@ -120,7 +138,35 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       status TEXT DEFAULT 'Active',
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS TenantApiKeys (
+      keyId TEXT PRIMARY KEY,
+      tenantId TEXT NOT NULL,
+      keyPrefix TEXT NOT NULL,
+      keyHash TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      status TEXT DEFAULT 'Active',
+      FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS Assets (
+      instrumentId TEXT PRIMARY KEY,
+      isin TEXT NOT NULL,
+      ticker TEXT NOT NULL,
+      exchangeMic TEXT NOT NULL,
+      currency TEXT DEFAULT 'USD'
+    );
   `);
+
+  // Seed baseline assets
+  const baselineAssets = [
+    { instrumentId: 'AAPL', isin: 'US0378331005', ticker: 'AAPL', exchangeMic: 'XNAS', currency: 'USD' },
+    { instrumentId: 'MSFT', isin: 'US5949181045', ticker: 'MSFT', exchangeMic: 'XNAS', currency: 'USD' },
+    { instrumentId: 'GOOG', isin: 'US38259P5089', ticker: 'GOOG', exchangeMic: 'XNAS', currency: 'USD' },
+    { instrumentId: 'CASH', isin: 'CASH-USD', ticker: 'CASH', exchangeMic: 'NONE', currency: 'USD' }
+  ];
+  const insertAsset = db.prepare(`INSERT OR IGNORE INTO Assets (instrumentId, isin, ticker, exchangeMic, currency) VALUES (?, ?, ?, ?, ?)`);
+  baselineAssets.forEach(a => insertAsset.run(a.instrumentId, a.isin, a.ticker, a.exchangeMic, a.currency));
   // Seed baseline tenant and superadmin user if they don't exist
   const baselineTenant = db.prepare('SELECT tenantId FROM Tenants WHERE tenantId = ?').get('tenant-baseline');
   if (!baselineTenant) {

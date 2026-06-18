@@ -12,6 +12,23 @@ export interface TenantBrokerConfig {
   brokerBaseUrl?: string;
 }
 
+export interface TenantApiKey {
+  keyId: string;
+  tenantId: string;
+  keyPrefix: string;
+  keyHash: string;
+  createdAt: string;
+  status: 'Active' | 'Revoked';
+}
+
+export interface Asset {
+  instrumentId: string;
+  isin: string;
+  ticker: string;
+  exchangeMic: string;
+  currency: string;
+}
+
 export interface ExecutionContext {
   tenantId: string;
   brokerConfig: TenantBrokerConfig;
