@@ -6,10 +6,10 @@ export const openApiSpec = {
     description: `API for the generic portfolio rebalancing engine.
 
 ## Authentication
-Authentication is currently handled via a Mock JWT token.
+Authentication is handled via a JWT token.
 - Call \`POST /api/auth/login\` with \`{ "email": "...", "password": "..." }\`.
 - Include the returned token in the \`Authorization\` header as \`Bearer <token>\`.
-- **Note**: In the future, this mock auth will be replaced by a proper signed JWT or PKCE flow. Ensure your integration can adapt to token refresh cycles.
+- **Note**: The token is currently a Base64-encoded payload (unsigned) with no expiry window during the MVP phase. It will be upgraded to an RS256 signed token with a 1-hour expiry prior to public launch.
 
 ## Audit Trail Event Types
 - \`DRY_RUN_EXECUTION\`: A trade proposal was generated but not submitted to the broker.
@@ -302,7 +302,17 @@ Authentication is currently handled via a Mock JWT token.
           {
             name: 'type',
             in: 'query',
-            schema: { type: 'string' },
+            schema: { 
+              type: 'string',
+              enum: [
+                'DRY_RUN_EXECUTION',
+                'LIVE_EXECUTION',
+                'CIRCUIT_BREAKER_HALT',
+                'RECONCILIATION_PAUSE',
+                'THRESHOLD_BREACH',
+                'REBALANCE_NOT_DUE'
+              ]
+            },
           },
           {
             name: 'limit',
@@ -361,6 +371,16 @@ Authentication is currently handled via a Mock JWT token.
           },
         },
       },
+    },
+    '/api/webhooks/alpaca': {
+      post: {
+        summary: 'Alpaca webhook endpoint',
+        operationId: 'alpacaWebhook',
+        description: 'Receives asynchronous trade fills from Alpaca. This endpoint is auth-exempt.',
+        responses: {
+          '200': { description: 'Webhook received' }
+        }
+      }
     },
   },
   components: {
@@ -479,7 +499,17 @@ Authentication is currently handled via a Mock JWT token.
           eventId: { type: 'string' },
           createdAt: { type: 'string', format: 'date-time' },
           accountId: { type: 'string' },
-          type: { type: 'string' },
+          type: { 
+            type: 'string',
+            enum: [
+              'DRY_RUN_EXECUTION',
+              'LIVE_EXECUTION',
+              'CIRCUIT_BREAKER_HALT',
+              'RECONCILIATION_PAUSE',
+              'THRESHOLD_BREACH',
+              'REBALANCE_NOT_DUE'
+            ]
+          },
           inputs: { type: 'object' },
           outputs: { type: 'object' },
         },

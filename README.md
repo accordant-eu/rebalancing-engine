@@ -24,7 +24,8 @@ The project consists of an offline pure calculation core wrapped inside an auton
 Explicitly out of scope today:
 - Full transaction-cost optimizer (rule-based boundary targeting is sufficient for now).
 - Jurisdiction-specific tax advice or tax-loss harvesting optimization.
-- Production deployment infrastructure (e.g., Kubernetes/Docker setup).
+
+For production setup, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 See the roadmap in [docs/roadmap/rebalancing-engine-roadmap.md](docs/roadmap/rebalancing-engine-roadmap.md).
 
