@@ -1,0 +1,518 @@
+export const openApiSpec = {
+  openapi: '3.1.0',
+  info: {
+    title: 'Rebalancing Engine API',
+    version: '0.9.0',
+    description: `API for the generic portfolio rebalancing engine.
+
+## Authentication
+Authentication is currently handled via a Mock JWT token.
+- Call \`POST /api/auth/login\` with \`{ "email": "...", "password": "..." }\`.
+- Include the returned token in the \`Authorization\` header as \`Bearer <token>\`.
+- **Note**: In the future, this mock auth will be replaced by a proper signed JWT or PKCE flow. Ensure your integration can adapt to token refresh cycles.
+
+## Audit Trail Event Types
+- \`DRY_RUN_EXECUTION\`: A trade proposal was generated but not submitted to the broker.
+- \`LIVE_EXECUTION\`: Trades were generated and submitted to the live broker (e.g., Alpaca).
+- \`CIRCUIT_BREAKER_HALT\`: Evaluation was halted because a circuit breaker tripped.
+- \`RECONCILIATION_PAUSE\`: Evaluation paused awaiting order confirmation from the broker.
+- \`THRESHOLD_BREACH\`: Portfolio drift crossed the defined threshold limits.
+- \`REBALANCE_NOT_DUE\`: Evaluation ran, but no action was needed.
+`,
+  },
+  servers: [
+    {
+      url: '/',
+      description: 'Current Environment',
+    },
+  ],
+  paths: {
+    '/api/auth/login': {
+      post: {
+        summary: 'Login to obtain Mock JWT token',
+        operationId: 'login',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  email: { type: 'string' },
+                  password: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Successful login',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    token: { type: 'string' },
+                    tenantId: { type: 'string' },
+                    role: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+        },
+      },
+    },
+    '/api/portfolios': {
+      get: {
+        summary: 'List portfolios with drift summary',
+        operationId: 'listPortfolios',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'List of portfolios',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      accountId: { type: 'string' },
+                      tenantId: { type: 'string' },
+                      modelId: { type: 'string', nullable: true },
+                      totalValue: { type: 'number' },
+                      cash: { type: 'number' },
+                      lastEvaluatedAt: { type: 'string', format: 'date-time' },
+                      driftStatus: { type: 'string', enum: ['in_band', 'threshold_breach', 'not_evaluated'] },
+                      holdings: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            instrumentId: { type: 'string' },
+                            quantity: { type: 'number' },
+                            currentWeight: { type: 'number' },
+                            targetWeight: { type: 'number' },
+                            driftPct: { type: 'number' },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/portfolios/{id}': {
+      get: {
+        summary: 'Get single portfolio detail',
+        operationId: 'getPortfolio',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Portfolio detail',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    accountId: { type: 'string' },
+                    tenantId: { type: 'string' },
+                    modelId: { type: 'string', nullable: true },
+                    totalValue: { type: 'number' },
+                    cash: { type: 'number' },
+                    lastEvaluatedAt: { type: 'string', format: 'date-time' },
+                    driftStatus: { type: 'string', enum: ['in_band', 'threshold_breach', 'not_evaluated'] },
+                    holdings: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          instrumentId: { type: 'string' },
+                          quantity: { type: 'number' },
+                          currentWeight: { type: 'number' },
+                          targetWeight: { type: 'number' },
+                          driftPct: { type: 'number' },
+                        },
+                      },
+                    },
+                    pendingCashFlows: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/CashFlow' },
+                    },
+                    circuitBreakerStatus: { $ref: '#/components/schemas/CircuitBreakerState' },
+                    lastProposal: {
+                      oneOf: [
+                        { $ref: '#/components/schemas/TradeProposal' },
+                        { type: 'null' },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '404': { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/portfolios/{id}/drift': {
+      get: {
+        summary: 'Get portfolio drift breakdown',
+        operationId: 'getPortfolioDrift',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Drift detail',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    accountId: { type: 'string' },
+                    evaluatedAt: { type: 'string', format: 'date-time' },
+                    strategyType: { type: 'string', enum: ['threshold', 'calendar', 'manual'] },
+                    rebalanceDue: { type: 'boolean' },
+                    reason: { type: 'string', nullable: true },
+                    driftByInstrument: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          instrumentId: { type: 'string' },
+                          currentWeight: { type: 'number' },
+                          targetWeight: { type: 'number' },
+                          absoluteDrift: { type: 'number' },
+                          relativeDrift: { type: 'number' },
+                          thresholdBreach: { type: 'boolean' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '404': { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+    '/api/portfolios/{id}/proposals': {
+      get: {
+        summary: 'Get recent trade proposals for a portfolio',
+        operationId: 'getPortfolioProposals',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', default: 20 },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'List of recent proposals',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    accountId: { type: 'string' },
+                    proposals: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          proposedAt: { type: 'string', format: 'date-time' },
+                          executionMode: { type: 'string', enum: ['full_reset', 'boundary_band', 'dry_run'] },
+                          executed: { type: 'boolean' },
+                          trades: {
+                            type: 'array',
+                            items: {
+                              type: 'object',
+                              properties: {
+                                instrumentId: { type: 'string' },
+                                direction: { type: 'string', enum: ['BUY', 'SELL'] },
+                                quantity: { type: 'number' },
+                                estimatedPrice: { type: 'number' },
+                                estimatedValue: { type: 'number' },
+                              },
+                            },
+                          },
+                          warnings: {
+                            type: 'array',
+                            items: { type: 'string' },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/logs': {
+      get: {
+        summary: 'Get filtered and paginated audit logs',
+        operationId: 'getLogs',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          {
+            name: 'portfolioId',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'since',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', default: 50 },
+          },
+          {
+            name: 'offset',
+            in: 'query',
+            schema: { type: 'integer', default: 0 },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Paginated logs',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    total: { type: 'integer' },
+                    data: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/AuditRecord' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/prices': {
+      get: {
+        summary: 'Get current price snapshot',
+        operationId: 'getPrices',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Price data',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    prices: {
+                      type: 'object',
+                      additionalProperties: { type: 'number' },
+                    },
+                    asOf: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  components: {
+    securitySchemes: {
+      BearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+    responses: {
+      BadRequest: {
+        description: 'Bad Request',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+          },
+        },
+      },
+      Unauthorized: {
+        description: 'Unauthorized',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+          },
+        },
+      },
+      NotFound: {
+        description: 'Not Found',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+          },
+        },
+      },
+      InternalError: {
+        description: 'Internal Server Error',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+          },
+        },
+      },
+    },
+    schemas: {
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          error: {
+            type: 'object',
+            properties: {
+              code: { type: 'string' },
+              message: { type: 'string' },
+              details: { type: 'object', additionalProperties: true },
+            },
+          },
+        },
+      },
+      Portfolio: {
+        type: 'object',
+        properties: {
+          accountId: { type: 'string' },
+          tenantId: { type: 'string' },
+          modelId: { type: 'string' },
+          cash: { type: 'number' },
+          holdings: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/Position' },
+          },
+          cashFlows: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/CashFlow' },
+          },
+        },
+      },
+      Position: {
+        type: 'object',
+        properties: {
+          instrumentId: { type: 'string' },
+          quantity: { type: 'number' },
+        },
+      },
+      TradeProposal: {
+        type: 'object',
+        properties: {
+          trades: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                instrumentId: { type: 'string' },
+                direction: { type: 'string', enum: ['BUY', 'SELL'] },
+                quantity: { type: 'number' },
+                estimatedPrice: { type: 'number' },
+                estimatedValue: { type: 'number' },
+              },
+            },
+          },
+          estimatedPostTradeCash: { type: 'number' },
+          warnings: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' },
+              },
+            },
+          },
+          executionTargetMode: { type: 'string' },
+        },
+      },
+      AuditRecord: {
+        type: 'object',
+        properties: {
+          eventId: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+          accountId: { type: 'string' },
+          type: { type: 'string' },
+          inputs: { type: 'object' },
+          outputs: { type: 'object' },
+        },
+      },
+      Model: {
+        type: 'object',
+        properties: {
+          modelId: { type: 'string' },
+          tenantId: { type: 'string' },
+          name: { type: 'string' },
+          archetype: { type: 'string' },
+          targetAllocation: { type: 'object' },
+          policy: { type: 'object' },
+        },
+      },
+      CashFlow: {
+        type: 'object',
+        properties: {
+          cashFlowId: { type: 'string' },
+          direction: { type: 'string', enum: ['DEPOSIT', 'WITHDRAWAL'] },
+          status: { type: 'string', enum: ['PENDING', 'SETTLED'] },
+          amount: { type: 'number' },
+          effectiveDate: { type: 'string' },
+        },
+      },
+      CircuitBreakerState: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['OPEN', 'CLOSED', 'HALF_OPEN'] },
+          reason: { type: 'string', nullable: true },
+          lastTrippedAt: { type: 'string', format: 'date-time', nullable: true },
+        },
+      },
+    },
+  },
+};
