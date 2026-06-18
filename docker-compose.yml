@@ -11,4 +11,4 @@ services:
       - .env
     volumes:
       - ./data:/app/data
-      - ./web/dist:/app/web/dist:ro
+      # web/dist is built into the image — no host mount needed

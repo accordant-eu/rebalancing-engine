@@ -36,5 +36,7 @@ jobs:
             git checkout ${{ github.event.inputs.ref || 'main' }}
             git pull origin ${{ github.event.inputs.ref || 'main' }} 2>/dev/null || true
             docker compose build
-            docker compose up -d
+            docker compose up -d --force-recreate
+            # Extract built frontend from image to host path for nginx
+            docker cp rebalancing-engine:/app/web/dist/. ./web/dist/
             echo "Deployed: $(git rev-parse --short HEAD)"
