@@ -15,6 +15,7 @@ timestamp: 2026-06-14T00:00:00Z
 * [Cli](cli/index.md)
 * [Decisions](decisions/index.md)
 * [Guides](guides/index.md)
+* [Iterations](iterations/index.md)
 * [Plans](plans/index.md)
 * [Prd](prd/index.md)
 * [Refactoring](refactoring/index.md)
