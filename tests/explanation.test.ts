@@ -63,8 +63,8 @@ describe('Recommendation Explanation', () => {
 
     expect(explanation.summary).toContain('2 proposed trades');
     expect(explanation.triggerExplanation).toContain('Breached tolerance bands');
-    expect(explanation.tradeExplanation).toContain('SELL 20.000000 AAPL');
-    expect(explanation.tradeExplanation).toContain('BUY 20.000000 MSFT');
+    expect(explanation.tradeExplanation).toContain('SELL 20.000000 US0378331005:XNAS:USD');
+    expect(explanation.tradeExplanation).toContain('BUY 20.000000 US5949181045:XNAS:USD');
     expect(explanation.residualDriftExplanation).toContain(
       'Estimated sell-side turnover is 10.00%',
     );
@@ -77,8 +77,8 @@ describe('Recommendation Explanation', () => {
 
     expect(explanation.summary).toContain('all proposed trades were suppressed');
     expect(explanation.warningExplanation).toContain('below minimum trade size');
-    expect(explanation.residualDriftExplanation).toContain('AAPL (2.50%)');
-    expect(explanation.residualDriftExplanation).toContain('MSFT (-2.50%)');
+    expect(explanation.residualDriftExplanation).toContain('US0378331005:XNAS:USD (2.50%)');
+    expect(explanation.residualDriftExplanation).toContain('US5949181045:XNAS:USD (-2.50%)');
   });
 
   it('explains relative boundary trade sizing', () => {
@@ -90,7 +90,7 @@ describe('Recommendation Explanation', () => {
 
     expect(explanation.triggerExplanation).toContain('Relative tolerance: 20.00%');
     expect(explanation.tradeExplanation).toContain('Proposed boundary (relative bands) trades');
-    expect(explanation.tradeExplanation).toContain('SELL 30.000000 AAPL');
+    expect(explanation.tradeExplanation).toContain('SELL 30.000000 US0378331005:XNAS:USD');
     expect(explanation.residualDriftExplanation).toContain('all assets within tolerance');
   });
 });

@@ -23,9 +23,9 @@ describe('Numeric precision and rounding policy', () => {
     const state: PortfolioState = {
       accountId: 'precision-1',
       cash: 0.3,
-      holdings: [{ instrumentId: 'AAPL', quantity: 0.1 }],
+      holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 0.1 }],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 0.2 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 0.2 } };
 
     const valuation = calculateValuation(state, prices);
     const weights = calculateCurrentWeights(valuation);
@@ -40,15 +40,15 @@ describe('Numeric precision and rounding policy', () => {
       accountId: 'precision-2',
       cash: 0,
       holdings: [
-        { instrumentId: 'AAPL', quantity: 1 },
-        { instrumentId: 'MSFT', quantity: 2 },
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 1 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 2 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 0.1, MSFT: 0.1 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 0.1, 'US5949181045:XNAS:USD': 0.1 } };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
     const valuation = calculateValuation(state, prices);
@@ -67,15 +67,15 @@ describe('Numeric precision and rounding policy', () => {
       accountId: 'precision-audit',
       cash: 0,
       holdings: [
-        { instrumentId: 'AAPL', quantity: 1 },
-        { instrumentId: 'MSFT', quantity: 2 },
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 1 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 2 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 0.1, MSFT: 0.1 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 0.1, 'US5949181045:XNAS:USD': 0.1 } };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
     const valuation = calculateValuation(state, prices);

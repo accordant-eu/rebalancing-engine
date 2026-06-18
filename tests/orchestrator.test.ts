@@ -52,9 +52,9 @@ describe('Orchestrator', () => {
   it('triggers execution when prices drift out of bounds', async () => {
     orchestrator.start();
     
-    // Simulate AAPL price pumping by 50% to trigger drift
+    // Simulate US0378331005:XNAS:USD price pumping by 50% to trigger drift
     const currentPrices = stateManager.getGlobalPrices().prices;
-    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.0 });
 
     stateManager.enqueuePortfolio(accountId, 1000);
     await orchestrator.onTick(1000);
@@ -67,7 +67,7 @@ describe('Orchestrator', () => {
     orchestrator.start();
     
     const currentPrices = stateManager.getGlobalPrices().prices;
-    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.0 });
 
     // First tick triggers execution
     stateManager.enqueuePortfolio(accountId, 1000);
@@ -76,7 +76,7 @@ describe('Orchestrator', () => {
     expect(stateManager.getLastTradeTimeMs(accountId)).toBe(1000);
 
     // Second tick within cooldown ignores it
-    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.1 }); // still out of bounds
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.1 }); // still out of bounds
     stateManager.enqueuePortfolio(accountId, 2000);
     orchestrator.onTick(2000);
     expect(executor.execute).toHaveBeenCalledTimes(1); // STILL 1
@@ -90,7 +90,7 @@ describe('Orchestrator', () => {
 
   it('ignores ticks if not started', async () => {
     const currentPrices = stateManager.getGlobalPrices().prices;
-    stateManager.updateGlobalPrices({ AAPL: currentPrices['AAPL'] * 2.0 });
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.0 });
 
     // Orchestrator not started
     stateManager.enqueuePortfolio(accountId, 1000);

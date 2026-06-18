@@ -29,7 +29,7 @@ describe('CircuitBreaker', () => {
   const createProposal = (value: number): TradeProposal => ({
     trades: [
       {
-        instrumentId: 'AAPL',
+        instrumentId: 'US0378331005:XNAS:USD',
         direction: 'BUY',
         quantity: 1,
         estimatedPrice: value,

@@ -127,7 +127,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
             </div>
             {targetFields.map((field, index) => (
               <div key={field.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 50px', gap: '8px', marginBottom: '8px' }}>
-                <input required {...register(`targetAllocation.targets.${index}.instrumentId`)} placeholder="AAPL" className="formInput" />
+                <input required {...register(`targetAllocation.targets.${index}.instrumentId`)} placeholder="US0378331005:XNAS:USD" className="formInput" />
                 <input required type="number" step="0.01" max="1" min="0" {...register(`targetAllocation.targets.${index}.weight`)} placeholder="0.6" className="formInput" />
                 <button type="button" onClick={() => removeTarget(index)} style={{ background: 'var(--status-red)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>X</button>
               </div>

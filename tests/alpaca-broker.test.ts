@@ -36,7 +36,7 @@ describe('AlpacaBrokerAdapter', () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => [
-        { symbol: 'AAPL', qty: '10' },
+        { symbol: 'US0378331005:XNAS:USD', qty: '10' },
       ],
     });
 
@@ -55,7 +55,7 @@ describe('AlpacaBrokerAdapter', () => {
     expect(state.accountId).toBe('acc-123');
     expect(state.cash).toBe(1000.5);
     expect(state.holdings).toHaveLength(1);
-    expect(state.holdings[0]).toEqual({ instrumentId: 'AAPL', quantity: 10 });
+    expect(state.holdings[0]).toEqual({ instrumentId: 'US0378331005:XNAS:USD', quantity: 10 });
   });
 
   it('injects execution context credentials into submitTrades', async () => {
@@ -66,7 +66,7 @@ describe('AlpacaBrokerAdapter', () => {
 
     const proposal: TradeProposal = {
       trades: [
-        { instrumentId: 'AAPL', direction: 'BUY', quantity: 5, estimatedPrice: 150, estimatedValue: 750 },
+        { instrumentId: 'US0378331005:XNAS:USD', direction: 'BUY', quantity: 5, estimatedPrice: 150, estimatedValue: 750 },
       ],
       estimatedPostTradeCash: 250,
       warnings: [],
@@ -81,7 +81,7 @@ describe('AlpacaBrokerAdapter', () => {
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe(expectedAuthHeader);
     
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
-    expect(body.symbol).toBe('AAPL');
+    expect(body.symbol).toBe('US0378331005:XNAS:USD');
     expect(body.side).toBe('buy');
     expect(body.qty).toBe('5');
     expect(body.type).toBe('market');

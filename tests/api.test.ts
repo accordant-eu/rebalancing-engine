@@ -35,7 +35,7 @@ describe('API Endpoints (Týr Integration)', () => {
       name: 'Test Model',
       archetype: 'StaticWeights',
       evaluationFrequency: 'realtime',
-      targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] },
+      targetAllocation: { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }] },
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
       constraints: []
     });
@@ -46,14 +46,14 @@ describe('API Endpoints (Týr Integration)', () => {
         tenantId: 'tenant-1',
         modelId: 'model-1',
         cash: 1000,
-        holdings: [{ instrumentId: 'AAPL', quantity: 10 }]
+        holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 10 }]
       },
-      priceSnapshot: { prices: { AAPL: 150 } },
-      targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] },
+      priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 150 } },
+      targetAllocation: { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }] },
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 }
     });
 
-    stateManager.updateGlobalPrices({ AAPL: 150 });
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': 150 });
   });
 
   it('serves OpenAPI specification', async () => {
@@ -129,7 +129,7 @@ describe('API Endpoints (Týr Integration)', () => {
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.status).toBe(200);
-      expect(res.body.prices.AAPL).toBe(150);
+      expect(res.body.prices['US0378331005:XNAS:USD']).toBe(150);
     });
 
     it('GET /api/logs handles empty or missing log file safely', async () => {

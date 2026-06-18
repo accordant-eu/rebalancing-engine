@@ -22,7 +22,7 @@ export class MockOptimizerService {
 
       // Proof-of-Concept: Generate a mock TargetAllocation
       // We will just rotate weights between a predefined universe
-      const universe = ['AAPL', 'MSFT', 'GOOG', 'TSLA', 'SPY', 'BND'];
+      const universe = ['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD', 'US38259P5089:XNAS:USD', 'US88160R1014:XNAS:USD', 'SPY', 'BND'];
       
       // Determine how many assets to pick (e.g. 3)
       const numAssets = 3;

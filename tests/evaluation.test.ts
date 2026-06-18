@@ -32,8 +32,8 @@ describe('Rebalance Evaluation', () => {
     expect(evaluation.trigger.isTriggered).toBe(true);
     expect(evaluation.tradeProposal.executionTargetMode).toBe('full_reset');
     expect(evaluation.tradeProposal.trades.map((trade) => trade.instrumentId)).toEqual([
-      'AAPL',
-      'MSFT',
+      'US0378331005:XNAS:USD',
+      'US5949181045:XNAS:USD',
     ]);
     expect(evaluation.auditRecord.outputs.strategyType).toBe('threshold');
   });
@@ -105,8 +105,8 @@ describe('Rebalance Evaluation', () => {
         accountId: 'scheduled-deposit-account',
         cash: 0,
         holdings: [
-          { instrumentId: 'AAPL', quantity: 100 },
-          { instrumentId: 'MSFT', quantity: 100 },
+          { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+          { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
         ],
         cashFlowSchedules: [
           {
@@ -119,11 +119,11 @@ describe('Rebalance Evaluation', () => {
       },
       targetAllocation: {
         targets: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 },
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
         ],
       },
-      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } },
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 
@@ -143,8 +143,8 @@ describe('Rebalance Evaluation', () => {
         accountId: 'scheduled-withdrawal-account',
         cash: 0,
         holdings: [
-          { instrumentId: 'AAPL', quantity: 100 },
-          { instrumentId: 'MSFT', quantity: 100 },
+          { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+          { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
         ],
         cashFlowSchedules: [
           {
@@ -157,11 +157,11 @@ describe('Rebalance Evaluation', () => {
       },
       targetAllocation: {
         targets: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 },
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
         ],
       },
-      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } },
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 
@@ -181,8 +181,8 @@ describe('Rebalance Evaluation', () => {
         accountId: 'future-scheduled-account',
         cash: 0,
         holdings: [
-          { instrumentId: 'AAPL', quantity: 100 },
-          { instrumentId: 'MSFT', quantity: 100 },
+          { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+          { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
         ],
         cashFlowSchedules: [
           {
@@ -195,11 +195,11 @@ describe('Rebalance Evaluation', () => {
       },
       targetAllocation: {
         targets: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 },
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
         ],
       },
-      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } },
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 

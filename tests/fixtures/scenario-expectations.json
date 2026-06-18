@@ -18,7 +18,7 @@
     "min_trade_size_issue": { "status": "success" },
     "missing_price": {
       "status": "error",
-      "errorIncludes": "Missing price for instrument: MSFT"
+      "errorIncludes": "Missing price for instrument: US5949181045:XNAS:USD"
     },
     "multiple_assets_out_of_band": { "status": "success" },
     "on_target": { "status": "success" },

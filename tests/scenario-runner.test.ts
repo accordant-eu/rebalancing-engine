@@ -70,7 +70,7 @@ describe('Scenario Runner', () => {
     const missingPrice = errors.find((result) => result.scenarioId === 'missing_price');
     expect(missingPrice?.status).toBe('error');
     if (missingPrice?.status === 'error') {
-      expect(missingPrice.error).toBe('Missing price for instrument: MSFT');
+      expect(missingPrice.error).toBe('Missing price for instrument: US5949181045:XNAS:USD');
     }
 
     const invalidStrategy = errors.find((result) => result.scenarioId === 'invalid_strategy');
@@ -133,7 +133,7 @@ describe('Scenario Runner', () => {
     expect(taxLotSell?.status).toBe('success');
     if (taxLotSell?.status === 'success') {
       const aaplSell = taxLotSell.auditRecord.outputs.tradeProposal.trades.find(
-        (trade) => trade.instrumentId === 'AAPL',
+        (trade) => trade.instrumentId === 'US0378331005:XNAS:USD',
       );
       expect(aaplSell?.lotAllocations?.[0].lotId).toBe('aapl-older-lot');
       expect(taxLotSell.auditRecord.outputs.explanation.tradeExplanation).toContain(

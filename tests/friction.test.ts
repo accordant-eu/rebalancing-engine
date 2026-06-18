@@ -5,14 +5,14 @@ import { TradeProposal, ProposalWarningCode } from '../src/models/domain';
 describe('Friction Models', () => {
   it('FixedFeeModel calculates constant fee', () => {
     const model = new FixedFeeModel(1.00);
-    expect(model.estimateCost(10, 'AAPL')).toBe(1.00);
-    expect(model.estimateCost(1000, 'AAPL')).toBe(1.00);
+    expect(model.estimateCost(10, 'US0378331005:XNAS:USD')).toBe(1.00);
+    expect(model.estimateCost(1000, 'US0378331005:XNAS:USD')).toBe(1.00);
   });
 
   it('PercentageSlippageModel calculates bps slippage', () => {
     const model = new PercentageSlippageModel(5); // 5 bps = 0.05%
-    expect(model.estimateCost(1000, 'AAPL')).toBe(0.50);
-    expect(model.estimateCost(10000, 'AAPL')).toBe(5.00);
+    expect(model.estimateCost(1000, 'US0378331005:XNAS:USD')).toBe(0.50);
+    expect(model.estimateCost(10000, 'US0378331005:XNAS:USD')).toBe(5.00);
   });
 });
 

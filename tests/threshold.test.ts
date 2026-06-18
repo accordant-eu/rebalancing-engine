@@ -45,8 +45,8 @@ describe('Threshold Strategy', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(true);
-    expect(triggerResult.reason).toContain('AAPL (abs drift: 10.00%)');
-    expect(triggerResult.reason).toContain('MSFT (abs drift: -10.00%)');
+    expect(triggerResult.reason).toContain('US0378331005:XNAS:USD (abs drift: 10.00%)');
+    expect(triggerResult.reason).toContain('US5949181045:XNAS:USD (abs drift: -10.00%)');
     expect(triggerResult.reason).toContain('Policy absolute tolerance: 5.00%');
   });
 });

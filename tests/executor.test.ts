@@ -45,7 +45,7 @@ describe('BrokerExecutor', () => {
   };
 
   const validProposal: TradeProposal = {
-    trades: [{ instrumentId: 'AAPL', direction: 'BUY', quantity: 1, estimatedPrice: 100, estimatedValue: 100 }],
+    trades: [{ instrumentId: 'US0378331005:XNAS:USD', direction: 'BUY', quantity: 1, estimatedPrice: 100, estimatedValue: 100 }],
     estimatedPostTradeCash: 0,
     warnings: [],
     executionTargetMode: 'full_reset',
