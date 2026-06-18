@@ -51,7 +51,7 @@
     "typescript-eslint": "^8.59.1"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.1",
+    "better-sqlite3": "^12.11.1",
     "cors": "^2.8.6",
     "decimal.js": "^10.6.0",
     "dotenv": "^17.4.2",
