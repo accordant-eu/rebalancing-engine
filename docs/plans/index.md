@@ -25,6 +25,7 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Target Sum Flexibility Plan](target-sum-flexibility-plan.md)** - Plan for target sum flexibility constraints for target sums < 100% and > 100%
 * **[Dynamic Targeting Plan](dynamic-targeting-plan.md)** - Architectural plan for introducing dynamic targeting (Efficient Frontier/VaR) via an asynchronous optimizer.
 * **[Architecture Review & Mitigation Plan](architecture-review-and-mitigation-plan.md)** - Independent assessment of anti-patterns and a sequenced mitigation plan.
+* **[Superadmin Dashboard UI Plan](superadmin-dashboard-ui-plan.md)** - Detailed design for exposing the Sysadmin Phase 1 architecture via the web dashboard.
 
 ## Exploration Plans
 These documents detail how we intend to translate v3 exploration concepts into concrete tranches.
