@@ -48,6 +48,20 @@ See [ADR-003](https://github.com/accordant-eu/ops/blob/main/docs/decisions/003-r
 
 ---
 
+## Database Migrations & Seeding
+
+The application uses an embedded SQLite database (`data/state.db`) for state management. **No manual SQL migrations or database seeding scripts are required for production.**
+
+When the Express server boots up, the `initDb()` function is automatically called. This function natively handles:
+1. **Schema Initialization:** Running `CREATE TABLE IF NOT EXISTS` for all necessary tables (e.g. `Assets`, `Tenants`, `TenantApiKeys`).
+2. **Baseline Seeding:** Using `INSERT OR IGNORE` to automatically populate the global `Assets` universe with the necessary composite IDs (e.g. `US0378331005:XNAS:USD`).
+3. **Superadmin Creation:** Seeding the initial Superadmin user and the default `tenant-baseline` using the `SUPERADMIN_EMAIL` and `SUPERADMIN_PASSWORD` environment variables.
+
+> [!TIP]
+> The command `npm run cli agent seed` is strictly for generating thousands of synthetic test portfolios in the development environment and should **not** be run in production.
+
+---
+
 ## Release cycle
 
 ### 1. AntiGravity signals readiness

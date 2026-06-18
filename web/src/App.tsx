@@ -375,7 +375,7 @@ function App() {
             </button>
           </div>
           <div className="panelBody">
-            <MandateBuilderForm onSubmit={handleCreateModel} />
+            <MandateBuilderForm token={tenantToken || ''} onSubmit={handleCreateModel} />
           </div>
         </div>
 

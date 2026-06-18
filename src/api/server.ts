@@ -137,7 +137,12 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   app.post('/api/admin/assets', requireSuperadmin, (req, res) => {
     stateManager.createAsset(req.body);
-    res.json({ message: 'Asset created successfully' });
+    res.json({ success: true });
+  });
+
+  // Tenant API
+  app.get('/api/assets', requireTenant, (req, res) => {
+    res.json(stateManager.getAssets());
   });
 
   app.get('/api/admin/users', requireSuperadmin, (req, res) => {

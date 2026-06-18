@@ -38,6 +38,7 @@ export const RebalancingModelsTab: React.FC<{ token: string }> = ({ token }) => 
           Define baseline models that any provisioned advisory firm can subscribe to, or inspect bespoke overrides.
         </p>
         <MandateBuilderForm 
+          token={token}
           onSubmit={async (data) => {
             const modelPayload = {
               ...data,
