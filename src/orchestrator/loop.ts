@@ -4,6 +4,7 @@ import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
 import { logger } from '../utils/logger';
 import { LiveStateManager } from './state';
+import { ExecutionContext } from '../models/domain';
 
 export interface OrchestratorConfig {
   cooldownMs: number; // e.g. 10 * 60 * 1000 for 10 minutes
@@ -56,6 +57,11 @@ export class Orchestrator {
       try {
         const currentState = this.stateManager.getAccountState(accountId);
 
+        const brokerAccountId = currentState.portfolioState.brokerAccountId || accountId;
+        const tenantId = currentState.portfolioState.tenantId || 'default';
+        const brokerConfig = this.stateManager.getTenantBrokerConfig?.(tenantId) || { brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '' };
+        const context: ExecutionContext = { tenantId, brokerConfig };
+
         const evaluation = evaluateRebalance({
           eventId: `${accountId}:tick:${timestampMs}`,
           createdAt: new Date(timestampMs).toISOString(),
@@ -70,7 +76,7 @@ export class Orchestrator {
             this.notifications.notify('info', `Triggered rebalance for ${accountId}. Strategy: ${evaluation.trigger.strategyType}`, { eventId: evaluation.auditRecord.eventId, accountId });
           }
 
-          await this.executor.execute(accountId, evaluation.tradeProposal, evaluation.auditRecord.eventId);
+          await this.executor.execute(context, brokerAccountId, evaluation.tradeProposal, evaluation.auditRecord.eventId);
           this.stateManager.markTradeExecution(accountId, timestampMs);
 
           if (this.auditStorage) {

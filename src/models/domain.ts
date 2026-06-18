@@ -5,6 +5,18 @@
  * in `src/core/numeric.ts`, with rounding applied at output boundaries.
  */
 
+export interface TenantBrokerConfig {
+  brokerType: 'ALPACA' | 'MOCK' | string;
+  brokerApiKey: string;
+  brokerApiSecret: string;
+  brokerBaseUrl?: string;
+}
+
+export interface ExecutionContext {
+  tenantId: string;
+  brokerConfig: TenantBrokerConfig;
+}
+
 export interface Holding {
   instrumentId: string;
   quantity: number;
@@ -84,6 +96,7 @@ export interface PortfolioState {
   tenantId?: string;
   modelId?: string;
   subscriptionType?: SubscriptionType;
+  brokerAccountId?: string;
   cash: number;
   holdings: Holding[];
   cashFlows?: CashFlow[];

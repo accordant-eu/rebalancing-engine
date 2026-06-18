@@ -19,6 +19,8 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Rebalancing Engine Tax Lots Mvp Plan](rebalancing-engine-tax-lots-mvp-plan.md)** - Documentation for rebalancing engine tax lots mvp plan
 * **[Scheduled Recurring Cash Flow Mvp Plan](scheduled-recurring-cash-flow-mvp-plan.md)** - Documentation for scheduled recurring cash flow mvp plan
 * **[Architecture Review And Mitigation Plan](architecture-review-and-mitigation-plan.md)** - Architecture review and mitigation plan for system resilience
+* **[Saas Architecture Plan](saas-architecture-plan.md)**
+* **[Sysadmin & B2B Broker Routing Plan](sysadmin-and-b2b-routing-plan.md)**
 * **[Security Review And Mitigation Plan](security-review-and-mitigation-plan.md)** - IT security review and mitigation plan for the live agent
 * **[Target Sum Flexibility Plan](target-sum-flexibility-plan.md)** - Plan for target sum flexibility constraints for target sums < 100% and > 100%
 * **[Dynamic Targeting Plan](dynamic-targeting-plan.md)** - Architectural plan for introducing dynamic targeting (Efficient Frontier/VaR) via an asynchronous optimizer.

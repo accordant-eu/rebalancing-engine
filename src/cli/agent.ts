@@ -66,7 +66,15 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
       
       let initialPortfolioState = { ...scenario.portfolioState, accountId: accountIdToUse };
       if (isLive && adapter) {
-        initialPortfolioState = await adapter.getPortfolioState(accountIdToUse);
+        const context = {
+          tenantId: 'system',
+          brokerConfig: {
+            brokerType: 'ALPACA',
+            brokerApiKey: process.env.ALPACA_BROKER_API_KEY || '',
+            brokerApiSecret: process.env.ALPACA_BROKER_API_SECRET || ''
+          }
+        };
+        initialPortfolioState = await adapter.getPortfolioState(context, accountIdToUse);
       }
 
       stateManager.registerPortfolio(accountIdToUse, {
@@ -117,7 +125,15 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
           }
           
           if (allSymbols.size > 0) {
-            const prices = await adapter.getPrices(Array.from(allSymbols));
+            const context = {
+              tenantId: 'system',
+              brokerConfig: {
+                brokerType: 'ALPACA',
+                brokerApiKey: process.env.ALPACA_BROKER_API_KEY || '',
+                brokerApiSecret: process.env.ALPACA_BROKER_API_SECRET || ''
+              }
+            };
+            const prices = await adapter.getPrices(context, Array.from(allSymbols));
             stateManager.updateGlobalPrices(prices, new Date().toISOString());
             
             for (const id of allIds) {

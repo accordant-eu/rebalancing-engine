@@ -14,7 +14,11 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   db.exec(`
     CREATE TABLE IF NOT EXISTS Tenants (
       tenantId TEXT PRIMARY KEY,
-      name TEXT NOT NULL
+      name TEXT NOT NULL,
+      brokerType TEXT DEFAULT 'MOCK',
+      brokerApiKey TEXT,
+      brokerApiSecret TEXT,
+      brokerBaseUrl TEXT
     );
 
     CREATE TABLE IF NOT EXISTS Models (
@@ -37,6 +41,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       cash REAL NOT NULL,
       policy TEXT NOT NULL,
       cashBuffer REAL DEFAULT 0,
+      brokerAccountId TEXT,
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE,
       FOREIGN KEY(modelId) REFERENCES Models(modelId) ON DELETE SET NULL
     );
@@ -84,9 +89,16 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN tenantId TEXT REFERENCES Tenants(tenantId) ON DELETE CASCADE`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN modelId TEXT REFERENCES Models(modelId) ON DELETE SET NULL`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN subscriptionType TEXT DEFAULT 'bespoke'`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN brokerAccountId TEXT`); } catch (e) { /* ignore if exists */ }
+  
   try { db.exec(`ALTER TABLE Models ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Models ADD COLUMN evaluationFrequency TEXT DEFAULT 'realtime'`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Models ADD COLUMN constraints TEXT`); } catch (e) { /* ignore if exists */ }
+
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerType TEXT DEFAULT 'MOCK'`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiKey TEXT`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiSecret TEXT`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerBaseUrl TEXT`); } catch (e) { /* ignore if exists */ }
 
   dbInstance = db;
   return dbInstance;

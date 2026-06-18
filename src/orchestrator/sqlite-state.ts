@@ -7,6 +7,7 @@ import {
   Holding,
   Tenant,
   ModelMandate,
+  TenantBrokerConfig,
 } from '../models/domain';
 import { LiveState, LiveStateManager } from './state';
 
@@ -22,9 +23,29 @@ export class SqliteStateManager implements LiveStateManager {
   private portfolioRepo: PortfolioRepository = new PortfolioRepository();
 
   // Tenant & Model Management
-  public createTenant(tenantId: string, name: string): void {
+  public createTenant(tenantId: string, name: string, brokerConfig?: TenantBrokerConfig): void {
     const db = getDb();
-    db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name) VALUES (?, ?)`).run(tenantId, name);
+    const type = brokerConfig?.brokerType || 'MOCK';
+    const key = brokerConfig?.brokerApiKey || null;
+    const secret = brokerConfig?.brokerApiSecret || null;
+    const baseUrl = brokerConfig?.brokerBaseUrl || null;
+    
+    db.prepare(`
+      INSERT OR REPLACE INTO Tenants (tenantId, name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(tenantId, name, type, key, secret, baseUrl);
+  }
+
+  public getTenantBrokerConfig(tenantId: string): TenantBrokerConfig | null {
+    const db = getDb();
+    const row = db.prepare(`SELECT brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl FROM Tenants WHERE tenantId = ?`).get(tenantId) as any;
+    if (!row) return null;
+    return {
+      brokerType: row.brokerType,
+      brokerApiKey: row.brokerApiKey,
+      brokerApiSecret: row.brokerApiSecret,
+      brokerBaseUrl: row.brokerBaseUrl
+    };
   }
 
   public createModel(model: ModelMandate): string[] {
@@ -106,17 +127,21 @@ export class SqliteStateManager implements LiveStateManager {
     tx();
   }
 
-  public assignPortfolioToTenant(accountId: string, tenantId: string): void {
+  public assignPortfolioToTenant(accountId: string, tenantId: string, brokerAccountId?: string): void {
     const db = getDb();
-    db.prepare(`UPDATE Portfolios SET tenantId = ? WHERE accountId = ?`).run(tenantId, accountId);
+    if (brokerAccountId) {
+      db.prepare(`UPDATE Portfolios SET tenantId = ?, brokerAccountId = ? WHERE accountId = ?`).run(tenantId, brokerAccountId, accountId);
+    } else {
+      db.prepare(`UPDATE Portfolios SET tenantId = ? WHERE accountId = ?`).run(tenantId, accountId);
+    }
   }
 
   public registerPortfolio(accountId: string, state: LiveState): void {
     const db = getDb();
     
     const insertPortfolio = db.prepare(`
-      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertHolding = db.prepare(`
@@ -140,7 +165,8 @@ export class SqliteStateManager implements LiveStateManager {
         state.portfolioState.subscriptionType || 'bespoke',
         state.portfolioState.cash, 
         JSON.stringify(state.policy),
-        state.targetAllocation.cashBuffer || 0
+        state.targetAllocation.cashBuffer || 0,
+        state.portfolioState.brokerAccountId || null
       );
       
       deleteHoldings.run(accountId);
@@ -228,7 +254,7 @@ export class SqliteStateManager implements LiveStateManager {
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     
-    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
+    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
     if (!portRow) {
       throw new Error(`SqliteStateManager is not initialized for account ${accountId}`);
     }
@@ -278,9 +304,9 @@ export class SqliteStateManager implements LiveStateManager {
     // For efficiency, we load everything in a few queries instead of N queries
     let portfolios: any[];
     if (tenantId) {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
     } else {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType FROM Portfolios`).all() as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId FROM Portfolios`).all() as any[];
     }
     
     const accountIds = portfolios.map(p => p.accountId);
@@ -318,6 +344,7 @@ export class SqliteStateManager implements LiveStateManager {
           tenantId: p.tenantId,
           modelId: p.modelId,
           subscriptionType: p.subscriptionType,
+          brokerAccountId: p.brokerAccountId,
           cash: p.cash,
           holdings: holdingsByAcc[p.accountId] || [],
         },
