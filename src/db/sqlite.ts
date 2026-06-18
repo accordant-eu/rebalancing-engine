@@ -109,20 +109,35 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiSecret TEXT`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerBaseUrl TEXT`); } catch (e) { /* ignore if exists */ }
 
+  // Create Users table explicitly as part of migrations (since the initial block is skipped if db exists)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS Users (
+      userId TEXT PRIMARY KEY,
+      tenantId TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      role TEXT DEFAULT 'Viewer',
+      status TEXT DEFAULT 'Active',
+      FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
+    );
+  `);
   // Seed baseline tenant and superadmin user if they don't exist
   const baselineTenant = db.prepare('SELECT tenantId FROM Tenants WHERE tenantId = ?').get('tenant-baseline');
   if (!baselineTenant) {
     db.prepare(`INSERT INTO Tenants (tenantId, name, brokerType) VALUES (?, ?, ?)`).run('tenant-baseline', 'Baseline Tenant', 'MOCK');
   }
 
-  const superadminUser = db.prepare('SELECT userId FROM Users WHERE email = ?').get('admin@rebalancing.accordant.eu');
+  const superadminEmail = process.env.SUPERADMIN_EMAIL || 'admin@localhost';
+  const superadminPassword = process.env.SUPERADMIN_PASSWORD || 'changeme123';
+  
+  const superadminUser = db.prepare('SELECT userId FROM Users WHERE email = ?').get(superadminEmail);
   if (!superadminUser) {
-    // In a real system, password would be hashed (e.g. bcrypt). Here it's plaintext for MVP MVP auth.
+    // In a real system, password would be hashed (e.g. bcrypt). Here it's plaintext for MVP auth.
     db.prepare(`INSERT INTO Users (userId, tenantId, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)`).run(
       'user-superadmin',
       'tenant-baseline',
-      'admin@rebalancing.accordant.eu',
-      'superadmin123',
+      superadminEmail,
+      superadminPassword,
       'Admin',
       'Active'
     );
