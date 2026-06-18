@@ -23,6 +23,8 @@ Production is entirely Rufus's responsibility. AntiGravity's scope ends at `main
 Both hosted environments are behind HTTP basic auth while the app uses mock JWT
 authentication. Auth credentials are provided separately to authorised users.
 
+> [!WARNING]
+> **Known Gap:** The application currently relies on HTTP Basic Auth at the web server layer and mock JWTs internally. If a real authentication system (e.g., true JWTs, SSO, or database-backed users) is planned for the future, this is a known architectural gap that must be addressed, and this deployment model will need to be updated accordingly.
 ---
 
 ## Architecture
