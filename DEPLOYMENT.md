@@ -5,7 +5,7 @@
 | Scope | Owner |
 |---|---|
 | Feature development, `main` branch | AntiGravity |
-| Dev environment (`dev.rebalancing.accordant.eu`) | Rufus |
+| Dev environment (`ops.rebalancing.accordant.eu`) | Rufus |
 | Production environment (`rebalancing.accordant.eu`) | Rufus |
 
 Production is entirely Rufus's responsibility. AntiGravity's scope ends at `main`.
@@ -17,7 +17,7 @@ Production is entirely Rufus's responsibility. AntiGravity's scope ends at `main
 | Environment | Branch | URL | Auth |
 |---|---|---|---|
 | AntiGravity dev | local / AntiGravity sandbox | — | — |
-| Rufus dev | `dev` | `https://dev.rebalancing.accordant.eu` | HTTP basic auth |
+| Rufus dev | `dev` | `https://ops.rebalancing.accordant.eu` | HTTP basic auth |
 | Production | `main` (reviewed) | `https://rebalancing.accordant.eu` | HTTP basic auth |
 
 Both hosted environments are behind HTTP basic auth while the app uses mock JWT
@@ -109,9 +109,9 @@ Rufus will ensure they are set on the server before deploying.
 
 ## Rufus's dev branch
 
-Rufus maintains a `dev` branch for operational use: infrastructure changes, quick fixes,
+Rufus maintains a `ops` branch for operational use: infrastructure changes, quick fixes,
 and staging verification before production. This branch auto-deploys to
-`dev.rebalancing.accordant.eu` on push.
+`ops.rebalancing.accordant.eu` on push.
 
 If a change on `dev` is worth incorporating into `main`, Rufus opens a PR for
 AntiGravity to review before it enters the development cycle.
