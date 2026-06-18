@@ -103,8 +103,8 @@ function App() {
       try {
         const res = await fetch('/api/logs', { headers });
         if (res.ok) {
-          const data = await res.json();
-          setLogs(data);
+          const payload = await res.json();
+          setLogs(Array.isArray(payload) ? payload : (payload.data || []));
         }
       } catch (e) {
         console.error('Failed to fetch logs', e);
