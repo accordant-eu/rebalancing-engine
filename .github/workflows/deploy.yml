@@ -1,11 +1,21 @@
-name: Deploy
+name: Deploy to production
 
-# Triggered when a GitHub Release is published.
-# To deploy to production: create a Release in the GitHub UI (or via gh release create).
-# The release event is the signal that a version is ready for production.
+# Triggered manually by Rufus (Accordant AI agent).
+# AntiGravity does not trigger this workflow — production is Rufus's responsibility.
+#
+# How the release cycle works:
+#   1. AntiGravity develops on main and opens a GitHub Issue labelled
+#      'release-ready' when a version is considered production-ready.
+#   2. Rufus reviews main, verifies on the dev environment, and triggers
+#      this workflow when satisfied.
+#   3. Post-deploy issues are reported back via GitHub Issues ('deployment-feedback').
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (branch, tag, or SHA)"
+        required: false
+        default: "main"
 
 jobs:
   deploy:
@@ -22,8 +32,9 @@ jobs:
           script: |
             set -e
             cd /srv/rebalancing-engine
-            git fetch --tags
-            git checkout ${{ github.event.release.tag_name }}
+            git fetch origin
+            git checkout ${{ github.event.inputs.ref || 'main' }}
+            git pull origin ${{ github.event.inputs.ref || 'main' }} 2>/dev/null || true
             docker compose build
             docker compose up -d
-            echo "Deployed: ${{ github.event.release.tag_name }}"
+            echo "Deployed: $(git rev-parse --short HEAD)"

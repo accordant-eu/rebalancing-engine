@@ -1,29 +1,34 @@
 # Deployment
 
+## Ownership
+
+| Scope | Owner |
+|---|---|
+| Feature development, `main` branch | AntiGravity |
+| Dev environment (`dev.rebalancing.accordant.eu`) | Rufus |
+| Production environment (`rebalancing.accordant.eu`) | Rufus |
+
+Production is entirely Rufus's responsibility. AntiGravity's scope ends at `main`.
+
+---
+
 ## Environments
 
-Three environments exist for this project. Each has a distinct role and owner.
+| Environment | Branch | URL | Auth |
+|---|---|---|---|
+| AntiGravity dev | local / AntiGravity sandbox | — | — |
+| Rufus dev | `dev` | `https://dev.rebalancing.accordant.eu` | HTTP basic auth |
+| Production | `main` (reviewed) | `https://rebalancing.accordant.eu` | HTTP basic auth |
 
-| Environment | Owner | Branch / Ref | URL | Purpose |
-|---|---|---|---|---|
-| **AntiGravity dev** | AntiGravity | `main` (continuous) | local / AntiGravity sandbox | Primary development |
-| **Rufus dev** | Rufus (Accordant AI agent) | `dev` | `https://dev.rebalancing.accordant.eu` | Operational staging, quick fixes |
-| **Production** | Rufus | tagged release | `https://rebalancing.accordant.eu` | Live deployment |
-
-Both hosted environments are behind HTTP basic auth while the app uses mock JWT authentication. Auth credentials are provided separately to authorised users.
+Both hosted environments are behind HTTP basic auth while the app uses mock JWT
+authentication. Auth credentials are provided separately to authorised users.
 
 ---
 
 ## Architecture
 
 ```
-GitHub Release (tag)
-       │
-       ▼
-GitHub Actions (deploy.yml)
-       │  SSH
-       ▼
-/srv/rebalancing-engine/        ← git checkout <tag>
+/srv/rebalancing-engine/         ← git checkout of reviewed main commit
        │
        ├── docker compose up -d  (network_mode: host)
        │       └── Express API   →  127.0.0.1:4444
@@ -31,98 +36,82 @@ GitHub Actions (deploy.yml)
        └── web/dist/             ← built React frontend
                │
               nginx              →  rebalancing.accordant.eu (HTTPS)
-               ├── /             →  serves web/dist/
+               ├── /             →  serves web/dist/ (static)
                └── /api/         →  proxied to 127.0.0.1:4444
 ```
 
 The container runs with `network_mode: host` so the hardcoded `127.0.0.1:4444` bind
-in the Express server is reachable from nginx without source modifications.
-See [ADR-003](https://github.com/accordant-eu/ops/blob/main/docs/decisions/003-rebalancing-engine-deployment.md)
-for the full rationale.
+in the Express server is reachable from nginx on the host without source modifications.
+See [ADR-003](https://github.com/accordant-eu/ops/blob/main/docs/decisions/003-rebalancing-engine-deployment.md).
 
 ---
 
-## How to trigger a production deployment
+## Release cycle
 
-**Create a GitHub Release.** That is the signal.
+### 1. AntiGravity signals readiness
 
-```bash
-# Via gh CLI — run this when a version is ready for production
-gh release create v0.9.1 \
-  --title "v0.9.1" \
-  --notes "What changed in this release"
-```
+When a version on `main` is considered production-ready, open a GitHub Issue:
 
-Or use the GitHub web UI: Releases → Draft a new release → Publish.
+- **Label:** `release-ready`
+- **Title:** e.g. `Release ready: [brief description of what changed]`
+- **Body:** any relevant notes — breaking changes, new env vars needed, migration steps
 
-The `deploy.yml` workflow listens for `release: [published]` events. On publish, it SSHes
-into the production server, checks out the exact release tag, rebuilds the container,
-and brings it up with zero manual intervention.
+That's it. No releases to create, no tags to push, no CI to watch. Prod is Rufus's problem.
 
-Push to `main` does **not** trigger a production deploy. You can push freely to `main`
-without affecting the live environment.
+### 2. Rufus reviews and verifies
 
----
+Rufus pulls `main` to the dev environment and verifies the app runs correctly.
+If anything looks wrong, a `deployment-feedback` issue is opened (see below).
 
-## Required environment variables
+### 3. Rufus deploys to production
 
-The container reads from `/srv/rebalancing-engine/.env` on the server (not committed to the repo).
+Rufus triggers the `deploy.yml` workflow manually via `workflow_dispatch`, specifying
+the ref to deploy (defaults to `main`). The workflow SSHes into the server, checks out
+the ref, rebuilds the container, and brings it up.
 
-```
-# Alpaca paper trading (required for --live alpaca mode)
-APCA_API_KEY_ID=
-APCA_API_SECRET_KEY=
-
-# Alpaca Broker API (required for broker adapter)
-ALPACA_BROKER_API_KEY=
-ALPACA_BROKER_API_SECRET=
-APCA_BROKER_URL=https://broker-api.sandbox.alpaca.markets/v1
-
-# Logging
-LOG_LEVEL=info
-```
-
-See `.env.example` for the full template.
+An audit trail of every production deployment is in the Actions tab:
+`https://github.com/accordant-eu/rebalancing-engine/actions`
 
 ---
 
 ## How Rufus reports issues back
 
-If a deployment fails or the application becomes unhealthy post-deploy, Rufus opens a
-**GitHub Issue** on this repo, labelled `deployment-feedback`.
+If a deployment fails, or the app behaves incorrectly post-deploy, Rufus opens a
+**GitHub Issue** on this repo labelled `deployment-feedback`.
 
-Check open issues with that label for operational feedback without needing a human intermediary:
+Check that label when something seems off — no human relay needed:
 
 ```bash
 gh issue list --label deployment-feedback
 ```
 
-Rufus also monitors GitHub Actions run history. Failed deploy runs are visible at:
-`https://github.com/accordant-eu/rebalancing-engine/actions`
+Issues will include the deployed ref, the symptom, and any relevant logs.
 
 ---
 
-## Rufus dev environment
+## Required environment variables
 
-`https://dev.rebalancing.accordant.eu` tracks the `dev` branch and deploys automatically
-on push to `dev`. Rufus uses this for:
-- Verifying infrastructure changes before they affect production
-- Quick operational fixes that don't need to go through the full AntiGravity dev cycle
+The container reads from `.env` on the server (never committed to the repo).
+See `.env.example` for the full template. Key variables:
 
-If Rufus makes a `dev`-branch change that should be promoted to `main`, a PR is opened
-for AntiGravity to review before it enters the release cycle.
+```
+APCA_API_KEY_ID          # Alpaca paper trading key
+APCA_API_SECRET_KEY      # Alpaca paper trading secret
+ALPACA_BROKER_API_KEY    # Alpaca broker API key
+ALPACA_BROKER_API_SECRET # Alpaca broker API secret
+LOG_LEVEL                # defaults to info
+```
+
+If new environment variables are needed in a release, note them in the `release-ready` issue.
+Rufus will ensure they are set on the server before deploying.
 
 ---
 
-## Adding a new scenario or changing the start command
+## Rufus's dev branch
 
-The production container defaults to:
+Rufus maintains a `dev` branch for operational use: infrastructure changes, quick fixes,
+and staging verification before production. This branch auto-deploys to
+`dev.rebalancing.accordant.eu` on push.
 
-```
-node dist/cli/index.js agent start \
-  --scenarios tests/fixtures/scenarios.json \
-  --scenario-id on_target
-```
-
-To change the scenario or flags, update the `CMD` in `docker-compose.yml` and include it
-in the next release.
+If a change on `dev` is worth incorporating into `main`, Rufus opens a PR for
+AntiGravity to review before it enters the development cycle.
