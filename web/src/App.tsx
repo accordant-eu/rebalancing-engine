@@ -407,6 +407,14 @@ function App() {
     ? logs.filter(l => l.eventId?.startsWith(`${selectedAccountId}:`) || l.accountId === selectedAccountId)
     : logs;
 
+  let identityDisplay = tenantToken;
+  try {
+    if (tenantToken) {
+      const decoded = JSON.parse(atob(tenantToken));
+      identityDisplay = `${decoded.userId} (${decoded.tenantId})`;
+    }
+  } catch(e) {}
+
   return (
     <div className="appContainer">
       <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -463,9 +471,9 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Logged in as: <strong style={{ color: 'white' }}>{tenantToken}</strong></span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Logged in as: <strong style={{ color: 'white' }}>{identityDisplay}</strong></span>
           <button 
-            onClick={() => setTenantToken(null)}
+            onClick={() => { setTenantToken(null); setUserRole(null); }}
             style={{ background: 'transparent', color: 'var(--status-red)', border: '1px solid var(--status-red)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
           >
             Sign Out
