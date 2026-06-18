@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './Admin.css';
 
 interface MetricsSnapshot {
   totalApiCalls: Record<string, number>;
@@ -21,49 +22,53 @@ export const BrokerIntegrationTab: React.FC<{ token: string }> = ({ token }) => 
     return () => clearInterval(interval);
   }, []);
 
-  if (!metrics) return <div>Loading metrics...</div>;
+  if (!metrics) return <div style={{ padding: '24px' }}>Loading metrics...</div>;
 
   const totalCalls = Object.values(metrics.totalApiCalls).reduce((a, b) => a + b, 0);
   const totalErrors = Object.values(metrics.rateLimitErrors).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-[#1C1F26] p-6 rounded text-center border-t-4 border-blue-500">
-          <div className="text-gray-400 text-sm font-bold uppercase mb-2">Total API Calls</div>
-          <div className="text-4xl font-light">{totalCalls}</div>
+    <div className="admin-container">
+      <div className="admin-grid-4">
+        <div className="admin-metric-card">
+          <div className="admin-metric-title">Total API Calls</div>
+          <div className="admin-metric-value">{totalCalls}</div>
         </div>
-        <div className="bg-[#1C1F26] p-6 rounded text-center border-t-4 border-red-500">
-          <div className="text-gray-400 text-sm font-bold uppercase mb-2">Rate Limit / Errors</div>
-          <div className="text-4xl font-light">{totalErrors}</div>
+        <div className="admin-metric-card red">
+          <div className="admin-metric-title">Rate Limit / Errors</div>
+          <div className="admin-metric-value">{totalErrors}</div>
         </div>
-        <div className="bg-[#1C1F26] p-6 rounded text-center border-t-4 border-green-500">
-          <div className="text-gray-400 text-sm font-bold uppercase mb-2">Webhooks Processed</div>
-          <div className="text-4xl font-light">{metrics.webhooksProcessed}</div>
+        <div className="admin-metric-card green">
+          <div className="admin-metric-title">Webhooks Processed</div>
+          <div className="admin-metric-value">{metrics.webhooksProcessed}</div>
         </div>
-        <div className="bg-[#1C1F26] p-6 rounded text-center border-t-4 border-purple-500">
-          <div className="text-gray-400 text-sm font-bold uppercase mb-2">Avg Latency</div>
-          <div className="text-4xl font-light">{metrics.averageLatencyMs} <span className="text-xl text-gray-500">ms</span></div>
+        <div className="admin-metric-card purple">
+          <div className="admin-metric-title">Avg Latency</div>
+          <div className="admin-metric-value">
+            {metrics.averageLatencyMs} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>ms</span>
+          </div>
         </div>
       </div>
 
-      <section>
-        <h2 className="text-xl font-bold mb-4">Per-Tenant Metrics</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left bg-[#1C1F26] rounded">
+      <section className="admin-section">
+        <h2 className="admin-section-title">Per-Tenant Metrics</h2>
+        <div className="admin-table-container">
+          <table className="admin-table">
             <thead>
-              <tr className="border-b border-[#2A2F3A]">
-                <th className="p-3">Tenant ID</th>
-                <th className="p-3">API Calls</th>
-                <th className="p-3">Errors</th>
+              <tr>
+                <th>Tenant ID</th>
+                <th>API Calls</th>
+                <th>Errors</th>
               </tr>
             </thead>
             <tbody>
               {Object.keys(metrics.totalApiCalls).map(tenantId => (
-                <tr key={tenantId} className="border-b border-[#2A2F3A]">
-                  <td className="p-3">{tenantId}</td>
-                  <td className="p-3">{metrics.totalApiCalls[tenantId]}</td>
-                  <td className="p-3 text-red-400">{metrics.rateLimitErrors[tenantId] || 0}</td>
+                <tr key={tenantId}>
+                  <td>{tenantId}</td>
+                  <td>{metrics.totalApiCalls[tenantId]}</td>
+                  <td style={{ color: metrics.rateLimitErrors[tenantId] ? 'var(--status-red)' : 'inherit' }}>
+                    {metrics.rateLimitErrors[tenantId] || 0}
+                  </td>
                 </tr>
               ))}
             </tbody>

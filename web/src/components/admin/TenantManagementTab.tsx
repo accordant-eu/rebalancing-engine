@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import './Admin.css';
 
 interface Tenant {
   tenantId: string;
   name: string;
   brokerType: string;
-  brokerBaseUrl: string;
 }
 
 interface User {
   userId: string;
-  tenantId: string;
   email: string;
   role: string;
   status: string;
@@ -17,8 +16,11 @@ interface User {
 
 export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedTenant, setSelectedTenant] = useState<string>('');
+  
+  const [form, setForm] = useState({ tenantId: '', name: '', brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '', brokerBaseUrl: '' });
+  const [userForm, setUserForm] = useState({ userId: '', email: '', password: '', role: 'Viewer' });
 
   const fetchTenants = async () => {
     const res = await fetch('/api/admin/tenants', { headers: { Authorization: `Bearer ${token}` } });
@@ -30,130 +32,108 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
     if (res.ok) setUsers(await res.json());
   };
 
-  useEffect(() => {
-    fetchTenants();
-  }, []);
+  useEffect(() => { fetchTenants(); }, []);
 
-  useEffect(() => {
-    if (selectedTenant) fetchUsers(selectedTenant);
-    else setUsers([]);
-  }, [selectedTenant]);
-
-  const provisionTenant = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const body = Object.fromEntries(formData.entries());
-    const res = await fetch('/api/admin/tenants', {
+    await fetch('/api/admin/tenants', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(form)
     });
-    if (res.ok) fetchTenants();
+    fetchTenants();
   };
 
-  const provisionUser = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const body = Object.fromEntries(formData.entries());
-    body.tenantId = selectedTenant;
-    const res = await fetch('/api/admin/users', {
+    if (!selectedTenant) return;
+    await fetch('/api/admin/users', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ tenantId: selectedTenant, ...userForm })
     });
-    if (res.ok) fetchUsers(selectedTenant);
+    fetchUsers(selectedTenant);
   };
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-xl font-bold mb-4">Provisioned Tenants</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left bg-[#1C1F26] rounded">
-            <thead>
-              <tr className="border-b border-[#2A2F3A]">
-                <th className="p-3">Tenant ID</th>
-                <th className="p-3">Name</th>
-                <th className="p-3">Broker</th>
-                <th className="p-3">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tenants.map(t => (
-                <tr key={t.tenantId} className="border-b border-[#2A2F3A]">
-                  <td className="p-3">{t.tenantId}</td>
-                  <td className="p-3">{t.name}</td>
-                  <td className="p-3">{t.brokerType}</td>
-                  <td className="p-3">
-                    <button 
-                      className="text-blue-400 text-sm"
-                      onClick={() => setSelectedTenant(t.tenantId)}>
-                      Manage Users
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="bg-[#1C1F26] p-6 rounded">
-        <h2 className="text-xl font-bold mb-4">Provision New Tenant</h2>
-        <form onSubmit={provisionTenant} className="grid grid-cols-2 gap-4">
-          <input name="tenantId" placeholder="Tenant ID (e.g. org-123)" className="p-2 bg-[#0F1115] rounded" required />
-          <input name="name" placeholder="Organization Name" className="p-2 bg-[#0F1115] rounded" required />
-          <select name="brokerType" className="p-2 bg-[#0F1115] rounded">
-            <option value="MOCK">MOCK</option>
+    <div className="admin-container">
+      <section className="admin-section">
+        <h2 className="admin-section-title">Provision New Tenant</h2>
+        <form onSubmit={handleCreateTenant} className="admin-form-grid">
+          <input className="admin-input" placeholder="Tenant ID (e.g. firm-xyz)" value={form.tenantId} onChange={e => setForm({...form, tenantId: e.target.value})} required />
+          <input className="admin-input" placeholder="Firm Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+          <select className="admin-input" value={form.brokerType} onChange={e => setForm({...form, brokerType: e.target.value})}>
+            <option value="MOCK">MOCK (Paper Trading)</option>
             <option value="ALPACA">ALPACA</option>
           </select>
-          <input name="brokerBaseUrl" placeholder="Broker Base URL (Optional)" className="p-2 bg-[#0F1115] rounded" />
-          <input name="brokerApiKey" placeholder="Broker API Key" className="p-2 bg-[#0F1115] rounded" type="password" />
-          <input name="brokerApiSecret" placeholder="Broker API Secret" className="p-2 bg-[#0F1115] rounded" type="password" />
-          <button type="submit" className="col-span-2 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded">Provision Tenant</button>
+          <input className="admin-input" placeholder="Broker Base URL (Optional)" value={form.brokerBaseUrl} onChange={e => setForm({...form, brokerBaseUrl: e.target.value})} />
+          {form.brokerType === 'ALPACA' && (
+            <>
+              <input className="admin-input" placeholder="API Key" value={form.brokerApiKey} onChange={e => setForm({...form, brokerApiKey: e.target.value})} />
+              <input className="admin-input" type="password" placeholder="API Secret" value={form.brokerApiSecret} onChange={e => setForm({...form, brokerApiSecret: e.target.value})} />
+            </>
+          )}
+          <button className="admin-button" type="submit">Provision Tenant</button>
         </form>
       </section>
 
-      {selectedTenant && (
-        <section className="bg-[#1C1F26] p-6 rounded border border-blue-500/30">
-          <h2 className="text-xl font-bold mb-4">Users for {selectedTenant}</h2>
-          
-          {users.length > 0 && (
-            <table className="w-full text-left bg-[#0F1115] rounded mb-6">
-              <thead>
-                <tr className="border-b border-[#2A2F3A]">
-                  <th className="p-3">User ID</th>
-                  <th className="p-3">Email</th>
-                  <th className="p-3">Role</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+        <section className="admin-section">
+          <h2 className="admin-section-title">Active Tenants</h2>
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead><tr><th>Tenant</th><th>Broker</th><th>Action</th></tr></thead>
               <tbody>
-                {users.map(u => (
-                  <tr key={u.userId} className="border-b border-[#2A2F3A]">
-                    <td className="p-3">{u.userId}</td>
-                    <td className="p-3">{u.email}</td>
-                    <td className="p-3">{u.role}</td>
-                    <td className="p-3">{u.status}</td>
+                {tenants.map(t => (
+                  <tr key={t.tenantId}>
+                    <td>{t.name}</td>
+                    <td>{t.brokerType}</td>
+                    <td>
+                      <button 
+                        className="admin-link-button"
+                        onClick={() => { setSelectedTenant(t.tenantId); fetchUsers(t.tenantId); }}
+                      >
+                        Manage Users
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
-
-          <h3 className="font-bold mb-2">Provision User</h3>
-          <form onSubmit={provisionUser} className="grid grid-cols-2 gap-4">
-            <input name="userId" placeholder="User ID (e.g. u-123)" className="p-2 bg-[#0F1115] rounded" required />
-            <input name="email" placeholder="Email" type="email" className="p-2 bg-[#0F1115] rounded" required />
-            <input name="password" placeholder="Password" type="password" className="p-2 bg-[#0F1115] rounded" required />
-            <select name="role" className="p-2 bg-[#0F1115] rounded">
-              <option value="Viewer">Viewer</option>
-              <option value="Admin">Admin</option>
-            </select>
-            <button type="submit" className="col-span-2 bg-green-600 hover:bg-green-500 text-white p-2 rounded">Provision User</button>
-          </form>
+          </div>
         </section>
-      )}
+
+        {selectedTenant && (
+          <section className="admin-section" style={{ borderColor: 'var(--border-focus)' }}>
+            <h2 className="admin-section-title">Users for {selectedTenant}</h2>
+            <form onSubmit={handleCreateUser} className="admin-form-grid" style={{ marginBottom: '24px' }}>
+              <input className="admin-input" placeholder="User ID (e.g. u-123)" value={userForm.userId} onChange={e => setUserForm({...userForm, userId: e.target.value})} required />
+              <input className="admin-input" placeholder="Email" type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required />
+              <input className="admin-input" placeholder="Password" type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} required />
+              <select className="admin-input" value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})}>
+                <option value="Viewer">Viewer</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <button className="admin-button admin-button-green" type="submit">Provision User</button>
+            </form>
+
+            <div className="admin-table-container">
+              <table className="admin-table">
+                <thead><tr><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.userId}>
+                      <td>{u.email}</td>
+                      <td>{u.role}</td>
+                      <td>{u.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 };

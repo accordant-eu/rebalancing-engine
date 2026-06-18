@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './Admin.css';
 
 export const SystemOpsTab: React.FC<{ token: string }> = ({ token }) => {
   const [queueDepth, setQueueDepth] = useState<number>(0);
@@ -31,25 +32,21 @@ export const SystemOpsTab: React.FC<{ token: string }> = ({ token }) => {
   };
 
   return (
-    <div className="space-y-8">
-      <section className="bg-[#1C1F26] p-6 rounded text-center">
-        <h2 className="text-xl font-bold mb-2">Live Evaluation Queue Depth</h2>
-        <div className="text-6xl font-light text-blue-400 mb-4">{queueDepth}</div>
-        <p className="text-sm text-gray-400">Number of portfolios currently awaiting execution by the Orchestrator loop.</p>
+    <div className="admin-container">
+      <section className="admin-section admin-ops-queue">
+        <h2 className="admin-section-title">Live Evaluation Queue Depth</h2>
+        <div className="admin-ops-number">{queueDepth}</div>
+        <p className="admin-section-subtitle">Number of portfolios currently awaiting execution by the Orchestrator loop.</p>
       </section>
 
-      <section className="bg-[#1C1F26] p-6 rounded flex flex-col items-center border border-red-500/30">
-        <h2 className="text-xl font-bold mb-4 text-red-400">Emergency Circuit Breaker</h2>
-        <p className="text-gray-400 mb-6 text-center max-w-lg">
+      <section className="admin-section admin-pause-box">
+        <h2 className="admin-section-title" style={{ color: 'var(--status-red)' }}>Emergency Circuit Breaker</h2>
+        <p className="admin-section-subtitle" style={{ maxWidth: '600px', margin: '0 auto' }}>
           Toggling this switch will immediately pause the orchestrator. The queue will continue to fill with price/drift triggers, but no evaluations or trade executions will occur until resumed.
         </p>
         <button 
           onClick={togglePause}
-          className={`px-8 py-4 rounded font-bold text-xl transition-colors ${
-            isPaused 
-              ? 'bg-green-600 hover:bg-green-500 text-white' 
-              : 'bg-red-600 hover:bg-red-500 text-white'
-          }`}
+          className={`admin-pause-btn ${isPaused ? 'paused' : ''}`}
         >
           {isPaused ? 'RESUME ORCHESTRATOR' : 'PAUSE ORCHESTRATOR'}
         </button>

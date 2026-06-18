@@ -361,7 +361,8 @@ function App() {
 
   const renderModelsTab = () => {
     return (
-      <div>
+      <div style={{ padding: '24px', overflowY: 'auto', maxHeight: '100%' }}>
+        <h2 style={{ marginBottom: '24px' }}>Model Mandates</h2>
         <div className="panel" style={{ marginBottom: '24px' }}>
           <div className="panelHeader" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>Create New Model Mandate</span>
@@ -482,12 +483,12 @@ function App() {
       </header>
 
       <main className="mainContent">
-        {currentTab === 'models' && renderModelsTab()}
+        {currentTab === 'models' && <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>{renderModelsTab()}</div>}
         {currentTab === 'fleet' && (!selectedAccountId ? renderHeatmap() : renderDetailedView())}
-        {currentTab === 'tenants' && <TenantManagementTab token={tenantToken} />}
-        {currentTab === 'broker' && <BrokerIntegrationTab token={tenantToken} />}
-        {currentTab === 'adminModels' && <RebalancingModelsTab token={tenantToken} />}
-        {currentTab === 'sysops' && <SystemOpsTab token={tenantToken} />}
+        {currentTab === 'tenants' && <div style={{ overflowY: 'auto' }}><TenantManagementTab token={tenantToken} /></div>}
+        {currentTab === 'broker' && <div style={{ overflowY: 'auto' }}><BrokerIntegrationTab token={tenantToken} /></div>}
+        {currentTab === 'adminModels' && <div style={{ overflowY: 'auto' }}><RebalancingModelsTab token={tenantToken} /></div>}
+        {currentTab === 'sysops' && <div style={{ overflowY: 'auto' }}><SystemOpsTab token={tenantToken} /></div>}
 
         <div className="panel" style={{ marginTop: '24px' }}>
           <div className="panelHeader">JSONL Audit Tail (Live) {selectedAccountId && `- Filtered: ${selectedAccountId}`}</div>
