@@ -1,8 +1,11 @@
 name: Deploy
 
+# Triggered when a GitHub Release is published.
+# To deploy to production: create a Release in the GitHub UI (or via gh release create).
+# The release event is the signal that a version is ready for production.
 on:
-  push:
-    branches: [main]
+  release:
+    types: [published]
 
 jobs:
   deploy:
@@ -19,7 +22,8 @@ jobs:
           script: |
             set -e
             cd /srv/rebalancing-engine
-            git pull
+            git fetch --tags
+            git checkout ${{ github.event.release.tag_name }}
             docker compose build
             docker compose up -d
-            echo "Deployed: $(git rev-parse --short HEAD)"
+            echo "Deployed: ${{ github.event.release.tag_name }}"
