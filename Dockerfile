@@ -1,47 +1,46 @@
-# ── Stage 1: build ──────────────────────────────────────────────────────────
-FROM node:20-slim AS builder
+# ── Builder ───────────────────────────────────────────────────────────────────
+FROM node:20 AS builder
 
 WORKDIR /app
 
-# Install root dependencies
+# Install all deps (including dev) — needed to compile native modules + TS
 COPY package*.json ./
 RUN npm ci
 
-# Build TypeScript backend
+# Compile TypeScript backend
 COPY tsconfig.json ./
 COPY src ./src
 COPY tests ./tests
-RUN npm run build
+RUN npm run build 2>/dev/null || npx tsc
 
 # Build React frontend
-WORKDIR /app/web
-COPY web/package*.json ./
-RUN npm ci
-COPY web/ ./
-RUN npm run build
+COPY web/package*.json ./web/
+RUN cd web && npm ci
+COPY web ./web
+RUN cd web && npm run build
 
-# ── Stage 2: production image ────────────────────────────────────────────────
-FROM node:20-slim
+# Prune dev dependencies *after* compilation so native binaries are kept
+RUN npm prune --omit=dev
+
+# ── Production ────────────────────────────────────────────────────────────────
+FROM node:20-slim AS production
 
 WORKDIR /app
 
-# Production dependencies only
-COPY package*.json ./
-RUN npm ci --omit=dev
+# Copy compiled artefacts and pruned deps from builder
+COPY --from=builder /app/dist         ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/web/dist     ./web/dist
+COPY --from=builder /app/package.json ./package.json
 
-# Compiled backend
-COPY --from=builder /app/dist ./dist
+# Data dir for SQLite + audit JSONL
+RUN mkdir -p /app/data
 
-# Built frontend (nginx serves this; bind-mounted path in compose)
-COPY --from=builder /app/web/dist ./web/dist
+# Scenario fixtures (referenced at runtime)
+COPY --from=builder /app/tests ./tests
 
-# Runtime data directory
-RUN mkdir -p data
+ENV NODE_ENV=production
 
-# Scenario fixtures used to initialise the agent
-COPY tests/fixtures ./tests/fixtures
-
-ENTRYPOINT ["node", "dist/cli/index.js"]
-CMD ["agent", "start", \
-     "--scenarios", "tests/fixtures/scenarios.json", \
-     "--scenario-id", "on_target"]
+# Default: start Live Agent with on_target scenario.
+# Override CMD in docker-compose.yml for different scenarios.
+CMD ["node", "dist/cli/index.js", "agent", "start", "--scenarios", "tests/fixtures/scenarios.json", "--scenario-id", "on_target"]
