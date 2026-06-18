@@ -43,11 +43,22 @@ Modify `/web/src/App.tsx` and create new components for the `superadmin` view:
 
 - Add secondary navigation tabs when `tenantToken === 'superadmin'`: 
   - **Fleet View**: The existing multi-tenant heatmap.
-  - **Tenants**: A new tab for provisioning.
-  - **System Ops**: A new tab for observability.
-- **`TenantsTab` Component**: 
-  - A data table listing all provisioned tenants and their configured broker type.
-  - A "Provision Tenant" form to capture the necessary B2B routing keys (API Key, Secret, Base URL).
+  - **Tenant Management**: A new tab for provisioning and managing tenants.
+  - **Broker Integration Management**: A dedicated interface for monitoring system-level broker integrations and health.
+  - **Rebalancing Models Management**: A global view to manage all investment mandates and models.
+  - **System Ops**: A new tab for observability and emergency circuit breaking.
+
+#### Module Details
+- **`TenantManagementTab` Component**: 
+  - A data table listing all provisioned tenants.
+  - Controls to create new tenants, configure their specific B2B routing keys (API Key, Secret, Base URL, mapped broker type), and suspend or activate them.
+  - **User Access Management**: Controls to provision individual user accounts (e.g., financial advisors) mapped to specific `tenantId`s, handle their RBAC roles (Admin vs Viewer), and reset their mock-JWT credentials.
+- **`BrokerIntegrationTab` Component**:
+  - A global view of active broker plugins available to the system (e.g., `ALPACA`, `MOCK`).
+  - High-level system statistics such as API call volumes, webhook health, and rate limit monitoring across the fleet.
+- **`RebalancingModelsTab` Component**:
+  - **Global Mandate Library**: Expose the existing `MandateBuilderForm` at the global level to define "Baseline" models that any tenant can subscribe to, or to inspect bespoke tenant models.
+  - **Archetype Configuration Engine**: A dedicated sub-section to expose and manage advanced dynamic strategy parameters (e.g., Static Weights, Efficient Frontier / MPT, VaR Rebalancing, Black-Litterman) as detailed in the exploration plans.
 - **`SystemOpsTab` Component**: 
   - A real-time display of the `EvaluationQueue` depth.
   - A master "Pause Orchestrator" / "Resume Orchestrator" toggle switch to act as a global circuit breaker.
