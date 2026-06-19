@@ -50,9 +50,8 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
   const auditStorage = new FileAuditStorage('./data/audit-trail.jsonl');
 
   if (isLive) {
-    if (!process.env.APCA_API_KEY_ID || !process.env.APCA_API_SECRET_KEY) {
-      notifications.notify('error', 'Missing Alpaca API credentials. Please set APCA_API_KEY_ID and APCA_API_SECRET_KEY in the environment.');
-      process.exit(1);
+    if (!process.env.ALPACA_BROKER_API_KEY || !process.env.ALPACA_BROKER_API_SECRET) {
+      notifications.notify('warn', 'Missing Alpaca API credentials for the --live demo. The system tenant will not be able to execute trades.');
     }
     
     notifications.notify('info', 'Initializing live broker connection...');
