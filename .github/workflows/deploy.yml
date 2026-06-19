@@ -65,11 +65,7 @@ jobs:
 
           NOTES="${{ github.event.inputs.release_notes }}"
           if [ -z "$NOTES" ]; then
-            NOTES="Production deployment of \`${SHORT_SHA}\` on ${DATE}.
-
-Deployed by: ${{ github.actor }}
-Ref: \`${{ github.event.inputs.ref || 'main' }}\`
-Live at: https://app.rebalancing.accordant.eu"
+            NOTES="Production deployment of ${SHORT_SHA} on ${DATE}. Actor: ${{ github.actor }}. Ref: ${{ github.event.inputs.ref || 'main' }}. Live at: https://rebalancing.accordant.eu"
           fi
 
           git tag "$TAG"
