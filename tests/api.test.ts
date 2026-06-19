@@ -198,4 +198,5 @@ describe('API Endpoints (Týr Integration)', () => {
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBe(1);
     });
+  });
 });

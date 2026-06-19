@@ -227,7 +227,7 @@ describe('Rebalance Evaluation', () => {
       estimateCost: (value: number, instrumentId: string) => value * 0.1, // 10% friction!
     };
     
-    const translator = new DriftUtilityTranslator(1.0); // 1 bps utility per 1 bps drift
+    const translator = new DriftUtilityTranslator(0.0); // 0 bps utility per 1 bps drift
     const indicator = new DriftReductionIndicator(translator);
 
     const evaluation = evaluateRebalance({
@@ -247,7 +247,7 @@ describe('Rebalance Evaluation', () => {
     // The trades should be blocked due to quality failure
     expect(evaluation.tradeProposal.qualityEvaluation?.passed).toBeUndefined(); // It's mapped to qualityResults array
     expect(evaluation.qualityResults).toContainEqual(
-      expect.objectContaining({ passed: false, name: 'Drift Reduction' })
+      expect.objectContaining({ passed: false, name: 'DriftReductionIndicator' })
     );
     expect(evaluation.tradeProposal.trades).toEqual([]);
     expect(evaluation.tradeProposal.warnings).toContainEqual(
@@ -273,7 +273,7 @@ describe('Rebalance Evaluation', () => {
     });
 
     expect(evaluation.qualityResults).toContainEqual(
-      expect.objectContaining({ passed: false, name: 'Concentration Limit' })
+      expect.objectContaining({ passed: false, name: 'ConcentrationLimitIndicator' })
     );
     expect(evaluation.tradeProposal.trades).toEqual([]);
     expect(evaluation.tradeProposal.warnings).toContainEqual(

@@ -3,7 +3,7 @@ import { TargetAllocation, TargetWeight } from '../models/domain';
 import { logger } from '../utils/logger';
 
 export class MockOptimizerService {
-  constructor(private stateManager: SqliteStateManager) {}
+  constructor(private stateManager: SqliteStateManager, private clock: () => number = Date.now) {}
 
   /**
    * Runs the mock optimizer for all models that require dynamic targeting.
@@ -28,7 +28,7 @@ export class MockOptimizerService {
       const numAssets = 3;
       
       // Use the current day of the year to pseudo-randomly pick assets
-      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+      const dayOfYear = Math.floor((this.clock() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
       
       const targets: TargetWeight[] = [];
       const cashBuffer = 0.05; // 5% cash buffer

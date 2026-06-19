@@ -1,4 +1,6 @@
-import { DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../src/orchestrator';
+import { DryRunExecutor, Orchestrator } from '../src/orchestrator';
+import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
+import { initDb, getDb } from '../src/db/sqlite';
 import { loadScenarioFixture } from '../src/runner';
 import * as path from 'path';
 
@@ -11,13 +13,26 @@ describe('Orchestrator', () => {
     throw new Error('Test fixture missing');
   }
 
-  let stateManager: MultiPortfolioStateManager;
+  let stateManager: SqliteStateManager;
   let executor: DryRunExecutor;
   let orchestrator: Orchestrator;
   const accountId = 'on_target';
 
   beforeEach(() => {
-    stateManager = new MultiPortfolioStateManager();
+    initDb(':memory:');
+    const db = getDb();
+    db.exec(`
+      DELETE FROM TaxLots;
+      DELETE FROM Holdings;
+      DELETE FROM Portfolios;
+      DELETE FROM Models;
+      DELETE FROM Tenants;
+      DELETE FROM EvaluationQueue;
+    `);
+
+    stateManager = new SqliteStateManager();
+    stateManager.createTenant('tenant-1', 'Test Tenant');
+    scenario.portfolioState.tenantId = 'tenant-1';
     stateManager.registerPortfolio(accountId, {
       portfolioState: JSON.parse(JSON.stringify(scenario.portfolioState)),
       priceSnapshot: JSON.parse(JSON.stringify(scenario.priceSnapshot)),
