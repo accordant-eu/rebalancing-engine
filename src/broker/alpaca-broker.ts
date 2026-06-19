@@ -49,7 +49,7 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
       accountId: brokerAccountId,
       cash: parseFloat(account.cash),
       holdings: positions.map((p: any) => ({
-        instrumentId: p.symbol,
+        instrumentId: context.translateBrokerSymbolToInstrumentId ? context.translateBrokerSymbolToInstrumentId(p.symbol, 'Alpaca') : p.symbol,
         quantity: parseFloat(p.qty),
       })),
     };

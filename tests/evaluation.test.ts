@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { evaluateRebalance, selectStrategy, supportedStrategyTypes } from '../src/core';
+import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../src/core/quality';
 
 const scenariosPath = path.join(__dirname, 'fixtures', 'scenarios.json');
 const scenariosData = JSON.parse(fs.readFileSync(scenariosPath, 'utf8'));
@@ -214,6 +215,69 @@ describe('Rebalance Evaluation', () => {
   it('rejects unsupported strategy identifiers explicitly', () => {
     expect(() => selectStrategy('unsupported')).toThrow(
       'Unsupported rebalancing strategy: unsupported',
+    );
+  });
+
+  it('evaluateRebalance applies quality gate and suppresses low-utility trades', () => {
+    // Setup a scenario where drift reduction is minimal but friction is very high
+    const scenario = scenarioById('one_asset_out_of_band');
+    
+    // We add a friction model that estimates extremely high cost
+    const frictionModel = {
+      estimateCost: (value: number, instrumentId: string) => value * 0.1, // 10% friction!
+    };
+    
+    const translator = new DriftUtilityTranslator(1.0); // 1 bps utility per 1 bps drift
+    const indicator = new DriftReductionIndicator(translator);
+
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-quality-gate',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: scenario.portfolioState,
+      targetAllocation: scenario.targetAllocation,
+      priceSnapshot: scenario.priceSnapshot,
+      policy: {
+        ...scenario.policy,
+        driftUtilityConversionRate: 1.0,
+      },
+      frictionModel,
+      indicators: [indicator],
+    });
+
+    // The trades should be blocked due to quality failure
+    expect(evaluation.tradeProposal.qualityEvaluation?.passed).toBeUndefined(); // It's mapped to qualityResults array
+    expect(evaluation.qualityResults).toContainEqual(
+      expect.objectContaining({ passed: false, name: 'Drift Reduction' })
+    );
+    expect(evaluation.tradeProposal.trades).toEqual([]);
+    expect(evaluation.tradeProposal.warnings).toContainEqual(
+      expect.objectContaining({ code: 'QUALITY_CHECK_FAILED' })
+    );
+  });
+
+  it('ConcentrationLimitIndicator blocks trades that would breach limit in post-trade state', () => {
+    const scenario = scenarioById('one_asset_out_of_band');
+    
+    // The target allocation has weights 0.5 and 0.5. Let's set limit to 0.4.
+    // The trade would try to push it towards 0.5, which breaches 0.4 limit.
+    const indicator = new ConcentrationLimitIndicator(0.4);
+
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-concentration-limit',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: scenario.portfolioState,
+      targetAllocation: scenario.targetAllocation,
+      priceSnapshot: scenario.priceSnapshot,
+      policy: scenario.policy,
+      indicators: [indicator],
+    });
+
+    expect(evaluation.qualityResults).toContainEqual(
+      expect.objectContaining({ passed: false, name: 'Concentration Limit' })
+    );
+    expect(evaluation.tradeProposal.trades).toEqual([]);
+    expect(evaluation.tradeProposal.warnings).toContainEqual(
+      expect.objectContaining({ code: 'QUALITY_CHECK_FAILED' })
     );
   });
 });

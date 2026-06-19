@@ -1,5 +1,7 @@
 import { getDb } from '../db/sqlite';
 import {
+  MandateArchetype,
+  ConstraintIndicator,
   PortfolioState,
   PriceSnapshot,
   RebalancingPolicy,
@@ -210,8 +212,8 @@ export class SqliteStateManager implements LiveStateManager {
     const db = getDb();
     
     const insertPortfolio = db.prepare(`
-      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId, archetype, constraints)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertHolding = db.prepare(`
@@ -236,7 +238,9 @@ export class SqliteStateManager implements LiveStateManager {
         state.portfolioState.cash, 
         JSON.stringify(state.policy),
         state.targetAllocation.cashBuffer || 0,
-        state.portfolioState.brokerAccountId || null
+        state.portfolioState.brokerAccountId || null,
+        state.archetype || 'StaticWeights',
+        state.constraints ? JSON.stringify(state.constraints) : null
       );
       
       deleteHoldings.run(accountId);
@@ -313,6 +317,39 @@ export class SqliteStateManager implements LiveStateManager {
     db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`).run(JSON.stringify(policy), accountId);
   }
 
+  public updatePortfolioMandate(accountId: string, payload: { targetAllocation: TargetAllocation, policy: RebalancingPolicy, archetype: MandateArchetype, constraints?: ConstraintIndicator[] }): void {
+    const db = getDb();
+    const tx = db.transaction(() => {
+      // 1. Update Portfolio Table (policy, cashBuffer, archetype, constraints, subscriptionType)
+      db.prepare(`
+        UPDATE Portfolios 
+        SET policy = ?, 
+            cashBuffer = ?, 
+            archetype = ?, 
+            constraints = ?,
+            subscriptionType = 'bespoke'
+        WHERE accountId = ?
+      `).run(
+        JSON.stringify(payload.policy),
+        payload.targetAllocation.cashBuffer || 0,
+        payload.archetype,
+        payload.constraints ? JSON.stringify(payload.constraints) : null,
+        accountId
+      );
+
+      // 2. Update TargetAllocations
+      db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`).run(accountId);
+      const insertTarget = db.prepare(`
+        INSERT INTO TargetAllocations (accountId, instrumentId, weight)
+        VALUES (?, ?, ?)
+      `);
+      for (const t of payload.targetAllocation.targets) {
+        insertTarget.run(accountId, t.instrumentId, t.weight);
+      }
+    });
+    tx();
+  }
+
   public markTradeExecution(accountId: string, timestampMs: number): void {
     this.lastTradeTimes.set(accountId, timestampMs);
   }
@@ -324,7 +361,7 @@ export class SqliteStateManager implements LiveStateManager {
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     
-    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
+    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
     if (!portRow) {
       throw new Error(`SqliteStateManager is not initialized for account ${accountId}`);
     }
@@ -356,6 +393,8 @@ export class SqliteStateManager implements LiveStateManager {
       priceSnapshot: globalPrices,
       targetAllocation: { targets, cashBuffer: portRow.cashBuffer || 0 },
       policy: JSON.parse(portRow.policy),
+      archetype: portRow.archetype || 'StaticWeights',
+      constraints: portRow.constraints ? JSON.parse(portRow.constraints) : undefined
     };
   }
 
@@ -374,9 +413,9 @@ export class SqliteStateManager implements LiveStateManager {
     // For efficiency, we load everything in a few queries instead of N queries
     let portfolios: any[];
     if (tenantId) {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
     } else {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId FROM Portfolios`).all() as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints FROM Portfolios`).all() as any[];
     }
     
     const accountIds = portfolios.map(p => p.accountId);
@@ -421,6 +460,8 @@ export class SqliteStateManager implements LiveStateManager {
         priceSnapshot: globalPrices,
         targetAllocation: { targets: targetsByAcc[p.accountId] || [] },
         policy: JSON.parse(p.policy),
+        archetype: p.archetype || 'StaticWeights',
+        constraints: p.constraints ? JSON.parse(p.constraints) : undefined
       };
     }
 

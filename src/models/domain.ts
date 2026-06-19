@@ -33,6 +33,7 @@ export interface ExecutionContext {
   tenantId: string;
   brokerConfig: TenantBrokerConfig;
   translateBrokerSymbol?: (instrumentId: string, brokerType: string) => string;
+  translateBrokerSymbolToInstrumentId?: (brokerSymbol: string, brokerType: string) => string;
 }
 
 export interface Holding {

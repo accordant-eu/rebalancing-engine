@@ -73,6 +73,8 @@ export function executeSeed(parsed: ParsedArgs, _context: CommandContext): Comma
       priceSnapshot: scenario.priceSnapshot,
       targetAllocation: scenario.targetAllocation,
       policy: scenario.policy,
+      archetype: scenario.archetype || 'StaticWeights',
+      constraints: scenario.constraints || []
     };
 
     stateManager.registerPortfolio(accountId, clonedState);

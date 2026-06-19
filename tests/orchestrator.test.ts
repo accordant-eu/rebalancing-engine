@@ -23,6 +23,8 @@ describe('Orchestrator', () => {
       priceSnapshot: JSON.parse(JSON.stringify(scenario.priceSnapshot)),
       targetAllocation: JSON.parse(JSON.stringify(scenario.targetAllocation)),
       policy: JSON.parse(JSON.stringify(scenario.policy)),
+      archetype: scenario.archetype || 'StaticWeights',
+      constraints: scenario.constraints || []
     });
     // init global prices
     stateManager.updateGlobalPrices(scenario.priceSnapshot.prices);

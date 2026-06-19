@@ -514,16 +514,82 @@ Authentication is handled via a JWT token.
           outputs: { type: 'object' },
         },
       },
-      Model: {
+      ModelMandate: {
         type: 'object',
         properties: {
           modelId: { type: 'string' },
           tenantId: { type: 'string' },
           name: { type: 'string' },
-          archetype: { type: 'string' },
-          targetAllocation: { type: 'object' },
-          policy: { type: 'object' },
+          archetype: { type: 'string', enum: ['StaticWeights', 'EfficientFrontier', 'MinimumVariance'] },
+          evaluationFrequency: { type: 'string', enum: ['realtime', 'daily', 'weekly', 'monthly'] },
+          targetAllocation: { $ref: '#/components/schemas/TargetAllocation' },
+          policy: { $ref: '#/components/schemas/RebalancingPolicy' },
+          constraints: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/ConstraintIndicator' }
+          }
         },
+      },
+      PortfolioMandateOverride: {
+        type: 'object',
+        properties: {
+          archetype: { type: 'string', enum: ['StaticWeights', 'EfficientFrontier', 'MinimumVariance'] },
+          targetAllocation: { $ref: '#/components/schemas/TargetAllocation' },
+          policy: { $ref: '#/components/schemas/RebalancingPolicy' },
+          constraints: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/ConstraintIndicator' }
+          }
+        },
+        required: ['archetype', 'targetAllocation', 'policy']
+      },
+      TargetAllocation: {
+        type: 'object',
+        properties: {
+          targets: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                instrumentId: { type: 'string' },
+                weight: { type: 'number' }
+              }
+            }
+          },
+          cashBuffer: { type: 'number' }
+        }
+      },
+      RebalancingPolicy: {
+        type: 'object',
+        properties: {
+          evaluationDate: { type: 'string', format: 'date' },
+          strategyType: { type: 'string', enum: ['threshold', 'manual', 'calendar'] },
+          executionTargetMode: { type: 'string', enum: ['full_reset', 'boundary'] },
+          boundaryBandMode: { type: 'string', enum: ['absolute', 'relative'] },
+          sellSelectionMode: { type: 'string', enum: ['FIFO', 'LIFO', 'HIGHEST_COST', 'LOWEST_COST'] },
+          depositAllocationMode: { type: 'string', enum: ['REBALANCING', 'CURRENT_WEIGHT', 'FIXED_TARGET'] },
+          absoluteDriftThreshold: { type: 'number' },
+          relativeDriftThreshold: { type: 'number' },
+          minimumTradeSize: { type: 'number' },
+          calendarConfig: {
+            type: 'object',
+            properties: {
+              evaluationDate: { type: 'string' },
+              nextRebalanceDate: { type: 'string' },
+              frequency: { type: 'string', enum: ['monthly', 'quarterly', 'annually', 'explicit'] }
+            }
+          }
+        }
+      },
+      ConstraintIndicator: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['concentration_limit', 'wash_sale_lockout'] },
+          parameters: {
+            type: 'object',
+            additionalProperties: true
+          }
+        }
       },
       CashFlow: {
         type: 'object',

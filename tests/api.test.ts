@@ -27,6 +27,24 @@ describe('API Endpoints (Týr Integration)', () => {
 
     // Setup basic mock data
     stateManager.createTenant('tenant-1', 'Test Tenant');
+    stateManager.createTenant('tenant-2', 'Tenant Two');
+    stateManager.createUser({ userId: 'user-2', tenantId: 'tenant-2', email: 'test2@example.com', password: require('bcrypt').hashSync('password', 10), role: 'Admin' });
+    stateManager.createModel({
+      modelId: 'tenant-2-model',
+      tenantId: 'tenant-2',
+      name: 'Model 2',
+      archetype: 'StaticWeights',
+      evaluationFrequency: 'realtime',
+      targetAllocation: { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }] },
+      policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
+    });
+    stateManager.registerPortfolio('acc-other', {
+      portfolioState: { accountId: 'acc-other', tenantId: 'tenant-2', cash: 1000, holdings: [] },
+      priceSnapshot: { prices: {} },
+      targetAllocation: { targets: [] },
+      policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
+      archetype: 'StaticWeights',
+    });
     stateManager.createUser({ userId: 'user-1', tenantId: 'tenant-1', email: 'test@example.com', password: require('bcrypt').hashSync('password', 10), role: 'Admin' });
     
     stateManager.createModel({
@@ -46,11 +64,13 @@ describe('API Endpoints (Týr Integration)', () => {
         tenantId: 'tenant-1',
         modelId: 'model-1',
         cash: 1000,
-        holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 10 }]
+        holdings: [ { instrumentId: 'US0378331005:XNAS:USD', quantity: 10 } ]
       },
       priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 150 } },
       targetAllocation: { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }] },
-      policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 }
+      policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
+      archetype: 'StaticWeights',
+      constraints: []
     });
 
     stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': 150 });
@@ -142,5 +162,40 @@ describe('API Endpoints (Týr Integration)', () => {
       expect(res.body.total).toBeDefined();
       expect(Array.isArray(res.body.data)).toBe(true);
     });
+
+    it('cannot read another tenant portfolio with own token', async () => {
+      const res = await request(app)
+        .get('/api/portfolios/acc-other')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('cannot list models from another tenant', async () => {
+      const res = await request(app)
+        .get('/api/models')
+        .set('Authorization', `Bearer ${token}`);
+      const ids = res.body.map((m: any) => m.modelId);
+      expect(ids).not.toContain('tenant-2-model');
+    });
+
+    it('rejects regular tenant admin from admin endpoints', async () => {
+      const res = await request(app)
+        .get('/api/admin/tenants')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(403);
+    });
   });
+
+  describe('B2B API Key Authentication', () => {
+    it('authenticates with sk_live_ key', async () => {
+      const keyResult = stateManager.createTenantApiKey('tenant-1');
+      
+      const res = await request(app)
+        .get('/api/portfolios')
+        .set('Authorization', `Bearer ${keyResult.secret}`);
+      
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBe(1);
+    });
 });

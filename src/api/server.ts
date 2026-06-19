@@ -11,6 +11,7 @@ import { logger } from '../utils/logger';
 import swaggerUi from 'swagger-ui-express';
 import { openApiSpec } from './openapi';
 import { evaluateRebalance } from '../core/evaluation';
+import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
 
 
 import { Orchestrator } from '../orchestrator/loop';
@@ -77,7 +78,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   // Superadmin Guard Middleware
   const requireSuperadmin = (req: any, res: any, next: any) => {
-    if (req.role !== 'Admin' || req.tenantId !== 'tenant-baseline') {
+    if (req.role !== 'Admin' || !process.env.SUPERADMIN_TENANT_ID || req.tenantId !== process.env.SUPERADMIN_TENANT_ID) {
       return sendError(res, 403, 'FORBIDDEN', 'Superadmin access required');
     }
     next();
@@ -254,17 +255,40 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     res.json(stateManager.getModels(tenantId));
   });
 
+  function validateModelMandate(model: any) {
+    if (model.archetype === 'EfficientFrontier' || model.archetype === 'MinimumVariance') {
+      throw new Error(`Archetype ${model.archetype} is not yet supported`);
+    }
+    if (model.archetype === 'StaticWeights' && model.targetAllocation) {
+      validateTargetAllocation(model.targetAllocation);
+      const totalWeight = model.targetAllocation.targets.reduce((acc: number, t: any) => acc + t.weight, 0);
+      const cashBuffer = model.targetAllocation.cashBuffer || 0;
+      if (Math.abs(totalWeight + cashBuffer - 1.0) > 0.0001) {
+        throw new Error(`Target allocation weights (${totalWeight}) + cashBuffer (${cashBuffer}) must sum to exactly 1.0`);
+      }
+    }
+  }
+
+  app.get('/api/models/:id', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const modelId = req.params.id;
+    const models = tenantId === 'superadmin' ? stateManager.getAllTenants().flatMap(t => stateManager.getModels(t.tenantId)) : stateManager.getModels(tenantId);
+    const model = models.find((m: any) => m.modelId === modelId);
+    if (!model || (tenantId !== 'superadmin' && model.tenantId !== tenantId)) {
+      return sendError(res, 404, 'MODEL_NOT_FOUND', `Model '${modelId}' not found`);
+    }
+    res.json(model);
+  });
+
   app.post('/api/models', (req, res) => {
     const tenantId = (req as any).tenantId;
     const model = { ...req.body, tenantId };
     try {
-      if (model.archetype === 'StaticWeights' && model.targetAllocation) {
-        validateTargetAllocation(model.targetAllocation);
-      }
+      validateModelMandate(model);
       const affectedAccounts = stateManager.updateModel(model);
       res.json({ success: true, model, affectedAccounts });
-    } catch (e) {
-      res.status(500).json({ error: String(e) });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
     }
   });
 
@@ -273,13 +297,11 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const modelId = req.params.id;
     const model = { ...req.body, modelId, tenantId };
     try {
-      if (model.archetype === 'StaticWeights' && model.targetAllocation) {
-        validateTargetAllocation(model.targetAllocation);
-      }
+      validateModelMandate(model);
       const affectedAccounts = stateManager.updateModel(model);
       res.json({ success: true, model, affectedAccounts });
-    } catch (e) {
-      res.status(500).json({ error: String(e) });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
     }
   });
 
@@ -292,6 +314,26 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: String(e) });
+    }
+  });
+
+  app.put('/api/portfolios/:id/mandate', (req, res) => {
+    const accountId = req.params.id;
+    const tenantId = (req as any).tenantId;
+    const state = stateManager.getAccountState(accountId);
+    
+    if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+      return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
+    }
+
+    try {
+      const payload = req.body;
+      validateModelMandate(payload);
+      stateManager.updatePortfolioMandate(accountId, payload);
+      stateManager.enqueuePortfolio(accountId, Date.now());
+      res.json({ success: true, mandate: payload });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
     }
   });
 
@@ -360,22 +402,34 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       let totalValue = state.portfolioState.cash;
       
       const models = stateManager.getModels(state.portfolioState.tenantId || '');
-      const model = state.portfolioState.modelId ? models.find(m => m.modelId === state.portfolioState.modelId) : null;
-      if (model) {
-        try {
-          const evalResult = evaluateRebalance({
-            eventId: `api-eval-${Date.now()}`,
-            portfolioState: state.portfolioState,
-            targetAllocation: model.targetAllocation,
-            priceSnapshot: prices,
-            policy: model.policy,
-            createdAt: new Date().toISOString()
-          });
-          driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
-          driftMeasurements = evalResult.driftMeasurements;
-        } catch (e) {
-          // intentional empty catch
+      const modelName = state.portfolioState.modelId ? models.find(m => m.modelId === state.portfolioState.modelId)?.name : 'Bespoke';
+      
+      try {
+        const indicators: any[] = [];
+        if (state.archetype === 'StaticWeights') {
+          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
+          if (state.constraints) {
+            for (const c of state.constraints) {
+              if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
+                indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
+              }
+            }
+          }
         }
+        
+        const evalResult = evaluateRebalance({
+          eventId: `api-eval-${Date.now()}`,
+          portfolioState: state.portfolioState,
+          targetAllocation: state.targetAllocation,
+          priceSnapshot: prices,
+          policy: state.policy,
+          indicators,
+          createdAt: new Date().toISOString()
+        });
+        driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
+        driftMeasurements = evalResult.driftMeasurements;
+      } catch (e) {
+        // intentional empty catch
       }
       
       const holdings = state.portfolioState.holdings.map(h => {
@@ -396,6 +450,11 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
         accountId: state.portfolioState.accountId,
         tenantId: state.portfolioState.tenantId,
         modelId: state.portfolioState.modelId || null,
+        modelName,
+        subscriptionType: state.portfolioState.subscriptionType || 'bespoke',
+        archetype: state.archetype,
+        constraints: state.constraints,
+        targetAllocation: state.targetAllocation,
         totalValue,
         cash: state.portfolioState.cash,
         lastEvaluatedAt: new Date().toISOString(),
@@ -422,22 +481,35 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     let totalValue = state.portfolioState.cash;
     let lastProposal = null;
     
-    const model = state.portfolioState.modelId ? stateManager.getModels(state.portfolioState.tenantId || '').find(m => m.modelId === state.portfolioState.modelId) : null;
-    if (model) {
-      try {
-        const evalResult = evaluateRebalance({
-          eventId: `api-eval-${Date.now()}`,
-          portfolioState: state.portfolioState,
-          targetAllocation: model.targetAllocation,
-          priceSnapshot: prices,
-          policy: model.policy,
-          createdAt: new Date().toISOString()
-        });
-        driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
-        driftMeasurements = evalResult.driftMeasurements;
-      } catch (e) {
-        // intentional empty catch
+    const models = stateManager.getModels(state.portfolioState.tenantId || '');
+    const modelName = state.portfolioState.modelId ? models.find(m => m.modelId === state.portfolioState.modelId)?.name : 'Bespoke';
+
+    try {
+      const indicators: any[] = [];
+      if (state.archetype === 'StaticWeights') {
+        indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
+        if (state.constraints) {
+          for (const c of state.constraints) {
+            if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
+              indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
+            }
+          }
+        }
       }
+
+      const evalResult = evaluateRebalance({
+        eventId: `api-eval-${Date.now()}`,
+        portfolioState: state.portfolioState,
+        targetAllocation: state.targetAllocation,
+        priceSnapshot: prices,
+        policy: state.policy,
+        indicators,
+        createdAt: new Date().toISOString()
+      });
+      driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
+      driftMeasurements = evalResult.driftMeasurements;
+    } catch (e) {
+      // intentional empty catch
     }
     
     const holdings = state.portfolioState.holdings.map(h => {
@@ -474,6 +546,12 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       accountId: state.portfolioState.accountId,
       tenantId: state.portfolioState.tenantId,
       modelId: state.portfolioState.modelId || null,
+      modelName,
+      subscriptionType: state.portfolioState.subscriptionType || 'bespoke',
+      archetype: state.archetype,
+      constraints: state.constraints,
+      targetAllocation: state.targetAllocation,
+      policy: state.policy,
       totalValue,
       cash: state.portfolioState.cash,
       lastEvaluatedAt: new Date().toISOString(),

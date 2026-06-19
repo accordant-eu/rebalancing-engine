@@ -51,7 +51,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
 
   if (isLive) {
     if (!process.env.ALPACA_BROKER_API_KEY || !process.env.ALPACA_BROKER_API_SECRET) {
-      notifications.notify('warn', 'Missing Alpaca API credentials for the --live demo. The system tenant will not be able to execute trades.');
+      notifications.notify('warning', 'Missing Alpaca API credentials for the --live demo. The system tenant will not be able to execute trades.');
     }
     
     notifications.notify('info', 'Initializing live broker connection...');
@@ -81,6 +81,8 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
         priceSnapshot: { prices: {} },
         targetAllocation: scenario.targetAllocation,
         policy: scenario.policy,
+        archetype: 'StaticWeights',
+        constraints: []
       });
 
       const executor = new CircuitBreaker(new BrokerExecutor(adapter), {
@@ -165,6 +167,8 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
           priceSnapshot: s.priceSnapshot,
           targetAllocation: s.targetAllocation,
           policy: s.policy,
+          archetype: s.archetype || 'StaticWeights',
+          constraints: s.constraints || []
         });
         stateManager.updateGlobalPrices(s.priceSnapshot.prices, s.priceSnapshot.asOf);
       }

@@ -92,22 +92,17 @@ export class Orchestrator {
         const context: ExecutionContext = { tenantId, brokerConfig, translateBrokerSymbol };
 
         const indicators: any[] = [];
-        if ((this.stateManager as any).getModels) {
-          const models = (this.stateManager as any).getModels(tenantId);
-          const model = models.find((m: any) => m.modelId === currentState.portfolioState.modelId);
-          if (model && model.archetype === 'StaticWeights') {
-            indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
-            
-            if (model.constraints) {
-              for (const c of model.constraints) {
-                if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
-                  indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
-                }
+        if (currentState.archetype === 'StaticWeights') {
+          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
+          
+          if (currentState.constraints) {
+            for (const c of currentState.constraints) {
+              if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
+                indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
               }
             }
           }
         }
-
         const evaluation = evaluateRebalance({
           eventId: `${accountId}:tick:${timestampMs}`,
           createdAt: new Date(timestampMs).toISOString(),
