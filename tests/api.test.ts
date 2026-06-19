@@ -3,6 +3,7 @@ import { setupExpressApp } from '../src/api/server';
 import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 import express from 'express';
+import bcrypt from 'bcrypt';
 
 describe('API Endpoints (Týr Integration)', () => {
   let app: express.Express;
@@ -28,7 +29,7 @@ describe('API Endpoints (Týr Integration)', () => {
     // Setup basic mock data
     stateManager.createTenant('tenant-1', 'Test Tenant');
     stateManager.createTenant('tenant-2', 'Tenant Two');
-    stateManager.createUser({ userId: 'user-2', tenantId: 'tenant-2', email: 'test2@example.com', password: require('bcrypt').hashSync('password', 10), role: 'Admin' });
+    stateManager.createUser({ userId: 'user-2', tenantId: 'tenant-2', email: 'test2@example.com', password: bcrypt.hashSync('password', 10), role: 'Admin' });
     stateManager.createModel({
       modelId: 'tenant-2-model',
       tenantId: 'tenant-2',
@@ -45,7 +46,7 @@ describe('API Endpoints (Týr Integration)', () => {
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
       archetype: 'StaticWeights',
     });
-    stateManager.createUser({ userId: 'user-1', tenantId: 'tenant-1', email: 'test@example.com', password: require('bcrypt').hashSync('password', 10), role: 'Admin' });
+    stateManager.createUser({ userId: 'user-1', tenantId: 'tenant-1', email: 'test@example.com', password: bcrypt.hashSync('password', 10), role: 'Admin' });
     
     stateManager.createModel({
       modelId: 'model-1',
@@ -183,6 +184,36 @@ describe('API Endpoints (Týr Integration)', () => {
         .get('/api/admin/tenants')
         .set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe('Superadmin Endpoints', () => {
+    let superadminToken: string;
+    const ORIGINAL_SUPERADMIN = process.env.SUPERADMIN_TENANT_ID;
+
+    beforeAll(async () => {
+      process.env.SUPERADMIN_TENANT_ID = 'tenant-2';
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test2@example.com', password: 'password' });
+      superadminToken = res.body.token;
+    });
+
+    afterAll(() => {
+      process.env.SUPERADMIN_TENANT_ID = ORIGINAL_SUPERADMIN;
+    });
+
+    it('GET /api/admin/tenants returns all tenants for superadmin', async () => {
+      const res = await request(app)
+        .get('/api/admin/tenants')
+        .set('Authorization', `Bearer ${superadminToken}`);
+      
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(2);
+      const tenantIds = res.body.map((t: any) => t.tenantId);
+      expect(tenantIds).toContain('tenant-1');
+      expect(tenantIds).toContain('tenant-2');
     });
   });
 

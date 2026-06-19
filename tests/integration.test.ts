@@ -4,6 +4,7 @@ import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { Orchestrator } from '../src/orchestrator/loop';
 import { initDb, getDb } from '../src/db/sqlite';
 import express from 'express';
+import bcrypt from 'bcrypt';
 import { BrokerAdapter } from '../src/broker';
 import { TradeProposal, ExecutionContext, PortfolioState } from '../src/models/domain';
 
@@ -47,7 +48,7 @@ describe('Integration Tests (End-to-End)', () => {
     });
 
     stateManager.createTenant('tenant-1', 'Integration Tenant');
-    stateManager.createUser({ userId: 'admin-1', tenantId: 'tenant-1', email: 'admin@tenant.com', password: require('bcrypt').hashSync('password', 10), role: 'Admin' });
+    stateManager.createUser({ userId: 'admin-1', tenantId: 'tenant-1', email: 'admin@tenant.com', password: bcrypt.hashSync('password', 10), role: 'Admin' });
 
     const res = await request(app)
       .post('/api/auth/login')
