@@ -57,7 +57,7 @@ export class MockOptimizerService {
       logger.info({ newTargetAllocation }, `[Optimizer] Computed new targets for Model ${model.modelId} (${model.name})`);
 
       // Fan out to all portfolios
-      this.stateManager.updateModelTargetAllocation(model.modelId, newTargetAllocation);
+      this.stateManager.updateModel({ ...model, targetAllocation: newTargetAllocation });
     }
   }
 }

@@ -27,7 +27,7 @@ describe('API Endpoints (Týr Integration)', () => {
 
     // Setup basic mock data
     stateManager.createTenant('tenant-1', 'Test Tenant');
-    stateManager.createUser({ userId: 'user-1', tenantId: 'tenant-1', email: 'test@example.com', password: 'password', role: 'Admin' });
+    stateManager.createUser({ userId: 'user-1', tenantId: 'tenant-1', email: 'test@example.com', password: require('bcrypt').hashSync('password', 10), role: 'Admin' });
     
     stateManager.createModel({
       modelId: 'model-1',
@@ -54,6 +54,7 @@ describe('API Endpoints (Týr Integration)', () => {
     });
 
     stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': 150 });
+    stateManager.getTenantBrokerConfig = jest.fn().mockReturnValue({ brokerType: 'MOCK', brokerApiKey: 'mock', brokerApiSecret: 'mock' });
   });
 
   it('serves OpenAPI specification', async () => {

@@ -11,6 +11,7 @@ timestamp: 2026-06-14T00:00:00Z
 | Date | Change |
 |------|--------|
 | 2026-06-18 | Added `docs/plans/tyr-agent-api-integration-plan.md` to map out the API enrichment for the Týr agent integration. |
+| 2026-06-19 | Added `docs/api/mandate-schema.md` to formally document the Model Mandate JSON payload for external B2B agents. |
 | 2026-06-17 | Added `docs/plans/architecture-review-and-mitigation-plan.md` to identify anti-patterns and sequence mitigations. |
 | 2026-06-17 | Added `docs/plans/dynamic-targeting-plan.md` to map out the asynchronous optimizer architecture. |
 | 2026-06-18 | Added | [Asset, Tenant API, and Broker Statistics Enhancements](./plans/asset-tenant-api-plan.md) | Detailed plan for expanding asset schemas to multi-exchange listings, tenant API keys, and grouping broker metrics. |

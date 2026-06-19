@@ -9,6 +9,7 @@ import {
   ModelMandate,
   TenantBrokerConfig,
 } from '../models/domain';
+import { randomBytes, createHash } from 'crypto';
 import { LiveState, LiveStateManager } from './state';
 
 import { ModelRepository } from '../db/repositories/ModelRepository';
@@ -91,7 +92,7 @@ export class SqliteStateManager implements LiveStateManager {
 
   public createTenantApiKey(tenantId: string): { keyPrefix: string; secret: string } {
     const db = getDb();
-    const { randomBytes, createHash } = require('crypto');
+    // crypto imported at the top
     const secret = 'sk_live_' + randomBytes(24).toString('hex');
     const keyPrefix = secret.substring(0, 14) + '...';
     const keyHash = createHash('sha256').update(secret).digest('hex');
@@ -132,33 +133,13 @@ export class SqliteStateManager implements LiveStateManager {
   // -----------------------------
 
   public createModel(model: ModelMandate): string[] {
+    return this.updateModel(model);
+  }
+
+  public getBrokerSymbol(instrumentId: string, brokerType: string): string {
     const db = getDb();
-    
-    // Save model
-    this.modelRepo.save(model);
-    
-    // Cascade to all subscribed portfolios
-    const affectedAccounts = this.portfolioRepo.getSubscribedAccounts(model.modelId, 'discretionary');
-    
-    if (affectedAccounts.length > 0) {
-      const db = getDb();
-      const tx = db.transaction(() => {
-        const updatePolicy = db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`);
-        const delTargets = db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`);
-        const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
-        
-        for (const accountId of affectedAccounts) {
-          updatePolicy.run(JSON.stringify(model.policy), accountId);
-          delTargets.run(accountId);
-          for (const t of model.targetAllocation.targets) {
-            insertTarget.run(accountId, t.instrumentId, t.weight);
-          }
-        }
-      });
-      tx();
-    }
-    
-    return affectedAccounts;
+    const row = db.prepare(`SELECT brokerSymbol FROM BrokerSymbolMappings WHERE instrumentId = ? AND brokerType = ?`).get(instrumentId, brokerType) as { brokerSymbol: string } | undefined;
+    return row ? row.brokerSymbol : instrumentId.split(':')[0]; // Fallback to ISIN or short ticker if no mapping exists
   }
 
   public getModels(tenantId: string): ModelMandate[] {
@@ -169,27 +150,33 @@ export class SqliteStateManager implements LiveStateManager {
     return this.modelRepo.findAll();
   }
 
-  public updateModelTargetAllocation(modelId: string, newTarget: TargetAllocation): void {
+  public updateModel(model: ModelMandate): string[] {
+    let subscribedAccounts: string[] = [];
     const db = getDb();
     const tx = db.transaction(() => {
       // 1. Update the Model row via repo
-      this.modelRepo.updateTargetAllocation(modelId, newTarget);
+      this.modelRepo.save(model);
 
       // 2. Find all 'discretionary' portfolios subscribed to this model
-      const subscribedAccounts = this.portfolioRepo.getSubscribedAccounts(modelId, 'discretionary');
+      subscribedAccounts = this.portfolioRepo.getSubscribedAccounts(model.modelId, 'discretionary');
 
-      // 3. Update TargetAllocations for each portfolio
-      this.portfolioRepo.updateTargetsAndCashBuffer(subscribedAccounts, newTarget);
-      
-      const now = Date.now();
-      const insertQueue = db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`);
+      if (subscribedAccounts.length > 0) {
+        // 3. Update TargetAllocations and Policy for each portfolio
+        this.portfolioRepo.updateTargetsAndCashBuffer(subscribedAccounts, model.targetAllocation);
+        const updatePolicy = db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`);
+        
+        const now = Date.now();
+        const insertQueue = db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`);
 
-      for (const accountId of subscribedAccounts) {
-        // Enqueue the portfolio for re-evaluation
-        insertQueue.run(accountId, now);
+        for (const accountId of subscribedAccounts) {
+          updatePolicy.run(JSON.stringify(model.policy), accountId);
+          // Enqueue the portfolio for re-evaluation
+          insertQueue.run(accountId, now);
+        }
       }
     });
     tx();
+    return subscribedAccounts;
   }
 
   public assignPortfolioToModel(accountId: string, modelId: string | null, subscriptionType: 'bespoke' | 'discretionary'): void {

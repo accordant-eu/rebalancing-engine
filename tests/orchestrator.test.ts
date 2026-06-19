@@ -26,6 +26,7 @@ describe('Orchestrator', () => {
     });
     // init global prices
     stateManager.updateGlobalPrices(scenario.priceSnapshot.prices);
+    (stateManager as any).getTenantBrokerConfig = jest.fn().mockReturnValue({ brokerType: 'MOCK', brokerApiKey: 'mock', brokerApiSecret: 'mock' });
 
     executor = new DryRunExecutor();
     jest.spyOn(executor, 'execute');

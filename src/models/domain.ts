@@ -32,6 +32,7 @@ export interface Asset {
 export interface ExecutionContext {
   tenantId: string;
   brokerConfig: TenantBrokerConfig;
+  translateBrokerSymbol?: (instrumentId: string, brokerType: string) => string;
 }
 
 export interface Holding {
@@ -215,6 +216,12 @@ export interface ProposedLotAllocation {
 }
 
 export type ProposalWarningCode =
+  | 'ZERO_PRICE'
+  | 'CASH_DEFICIT'
+  | 'WASH_SALE_LOCKOUT'
+  | 'ROUNDING_PRECISION_LIMIT'
+  | 'NEGATIVE_CASH_POST_TRADE'
+  | 'QUALITY_CHECK_FAILED'
   | 'MINIMUM_TRADE_SIZE'
   | 'PENDING_CASH_FLOW_EXCLUDED'
   | 'FUTURE_CASH_FLOW_SCHEDULED'

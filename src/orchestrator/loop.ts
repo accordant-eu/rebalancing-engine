@@ -1,5 +1,6 @@
 import { AuditStorageAdapter } from '../audit/storage';
 import { evaluateRebalance } from '../core/evaluation';
+import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
 import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
 import { logger } from '../utils/logger';
@@ -74,8 +75,38 @@ export class Orchestrator {
 
         const brokerAccountId = currentState.portfolioState.brokerAccountId || accountId;
         const tenantId = currentState.portfolioState.tenantId || 'default';
-        const brokerConfig = this.stateManager.getTenantBrokerConfig?.(tenantId) || { brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '' };
-        const context: ExecutionContext = { tenantId, brokerConfig };
+        const brokerConfig = this.stateManager.getTenantBrokerConfig?.(tenantId);
+        
+        if (!brokerConfig) {
+          logger.error(`[Orchestrator] Missing broker config for tenant ${tenantId}. Circuit breaking execution for portfolio ${accountId}.`);
+          continue; // Circuit break execution
+        }
+
+        const translateBrokerSymbol = (instrumentId: string, brokerType: string) => {
+          if ((this.stateManager as any).getBrokerSymbol) {
+            return (this.stateManager as any).getBrokerSymbol(instrumentId, brokerType);
+          }
+          return instrumentId.split(':')[0];
+        };
+
+        const context: ExecutionContext = { tenantId, brokerConfig, translateBrokerSymbol };
+
+        const indicators: any[] = [];
+        if ((this.stateManager as any).getModels) {
+          const models = (this.stateManager as any).getModels(tenantId);
+          const model = models.find((m: any) => m.modelId === currentState.portfolioState.modelId);
+          if (model && model.archetype === 'StaticWeights') {
+            indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
+            
+            if (model.constraints) {
+              for (const c of model.constraints) {
+                if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
+                  indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
+                }
+              }
+            }
+          }
+        }
 
         const evaluation = evaluateRebalance({
           eventId: `${accountId}:tick:${timestampMs}`,
@@ -84,6 +115,7 @@ export class Orchestrator {
           targetAllocation: currentState.targetAllocation,
           priceSnapshot: currentState.priceSnapshot,
           policy: currentState.policy,
+          indicators
         });
 
         if (evaluation.trigger.isTriggered && evaluation.tradeProposal.trades.length > 0) {

@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 ## Categories
 
+* [Api](api/index.md)
 * [Architecture](architecture/index.md)
 * [Audits](audits/index.md)
 * [Cli](cli/index.md)
