@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import bcrypt from 'bcrypt';
 
 let dbInstance: Database.Database | null = null;
 
@@ -156,16 +157,28 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       exchangeMic TEXT NOT NULL,
       currency TEXT DEFAULT 'USD'
     );
+    CREATE TABLE IF NOT EXISTS BrokerSymbolMappings (
+      instrumentId TEXT NOT NULL,
+      brokerType TEXT NOT NULL,
+      brokerSymbol TEXT NOT NULL,
+      PRIMARY KEY (instrumentId, brokerType),
+      FOREIGN KEY(instrumentId) REFERENCES Assets(instrumentId) ON DELETE CASCADE
+    );
   `);
 
   // Seed baseline assets
   const baselineAssets = [
-    { instrumentId: 'US0378331005:XNAS:USD', isin: 'US0378331005', ticker: 'US0378331005:XNAS:USD', exchangeMic: 'XNAS', currency: 'USD' },
-    { instrumentId: 'US5949181045:XNAS:USD', isin: 'US5949181045', ticker: 'US5949181045:XNAS:USD', exchangeMic: 'XNAS', currency: 'USD' },
-    { instrumentId: 'US38259P5089:XNAS:USD', isin: 'US38259P5089', ticker: 'US38259P5089:XNAS:USD', exchangeMic: 'XNAS', currency: 'USD' }
+    { instrumentId: 'US0378331005:XNAS:USD', isin: 'US0378331005', ticker: 'AAPL', exchangeMic: 'XNAS', currency: 'USD' },
+    { instrumentId: 'US5949181045:XNAS:USD', isin: 'US5949181045', ticker: 'MSFT', exchangeMic: 'XNAS', currency: 'USD' },
+    { instrumentId: 'US38259P5089:XNAS:USD', isin: 'US38259P5089', ticker: 'GOOG', exchangeMic: 'XNAS', currency: 'USD' }
   ];
   const insertAsset = db.prepare(`INSERT OR IGNORE INTO Assets (instrumentId, isin, ticker, exchangeMic, currency) VALUES (?, ?, ?, ?, ?)`);
   baselineAssets.forEach(a => insertAsset.run(a.instrumentId, a.isin, a.ticker, a.exchangeMic, a.currency));
+
+  // Seed broker mappings for Alpaca
+  const insertMapping = db.prepare(`INSERT OR IGNORE INTO BrokerSymbolMappings (instrumentId, brokerType, brokerSymbol) VALUES (?, ?, ?)`);
+  baselineAssets.forEach(a => insertMapping.run(a.instrumentId, 'Alpaca', a.ticker));
+
   // Seed baseline tenant and superadmin user if they don't exist
   const baselineTenant = db.prepare('SELECT tenantId FROM Tenants WHERE tenantId = ?').get('tenant-baseline');
   if (!baselineTenant) {
@@ -177,12 +190,12 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   
   const superadminUser = db.prepare('SELECT userId FROM Users WHERE email = ?').get(superadminEmail);
   if (!superadminUser) {
-    // In a real system, password would be hashed (e.g. bcrypt). Here it's plaintext for MVP auth.
+    const hashedPassword = bcrypt.hashSync(superadminPassword, 10);
     db.prepare(`INSERT INTO Users (userId, tenantId, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)`).run(
       'user-superadmin',
       'tenant-baseline',
       superadminEmail,
-      superadminPassword,
+      hashedPassword,
       'Admin',
       'Active'
     );
