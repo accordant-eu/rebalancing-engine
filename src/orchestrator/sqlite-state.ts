@@ -171,6 +171,13 @@ export class SqliteStateManager implements LiveStateManager {
     return row ? row.brokerSymbol : instrumentId.split(':')[0]; // Fallback to ISIN or short ticker if no mapping exists
   }
 
+  public getInstrumentId(brokerSymbol: string, brokerType: string): string {
+    const db = getDb();
+    const row = db.prepare(`SELECT instrumentId FROM BrokerSymbolMappings WHERE brokerSymbol = ? AND brokerType = ?`).get(brokerSymbol, brokerType) as { instrumentId: string } | undefined;
+    return row ? row.instrumentId : brokerSymbol; // Fallback to broker symbol if no mapping exists
+  }
+
+
   public getModels(tenantId: string): ModelMandate[] {
     return this.modelRepo.findByTenant(tenantId);
   }

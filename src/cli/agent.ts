@@ -5,6 +5,7 @@ import fs from 'fs';
 import readline from 'readline';
 import { FileAuditStorage } from '../audit/storage';
 import { AlpacaBrokerAdapter } from '../broker/alpaca-broker';
+import { BrokerSyncService } from '../broker/sync';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../orchestrator';
 import { StdoutNotificationAdapter } from '../notifications';
 import { loadScenarioFixture } from '../runner';
@@ -115,41 +116,9 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
       notifications.notify('info', 'Live Agent (Alpaca Broker API) Started.', { target: scenarioId });
       logger.info(`Press Ctrl+C to stop.\n`);
 
-      const pollPrices = async () => {
-        try {
-          const allIds = stateManager.getAllAccountIds();
-          const allSymbols = new Set<string>();
-          for (const id of allIds) {
-            const state = stateManager.getAccountState(id);
-            state.targetAllocation.targets.forEach((t: any) => allSymbols.add(t.instrumentId));
-            state.portfolioState.holdings.forEach((h: any) => allSymbols.add(h.instrumentId));
-          }
-          
-          if (allSymbols.size > 0) {
-            const context = {
-              tenantId: 'system',
-              brokerConfig: {
-                brokerType: 'ALPACA',
-                brokerApiKey: process.env.ALPACA_BROKER_API_KEY || '',
-                brokerApiSecret: process.env.ALPACA_BROKER_API_SECRET || ''
-              }
-            };
-            const prices = await adapter.getPrices(context, Array.from(allSymbols));
-            stateManager.updateGlobalPrices(prices, new Date().toISOString());
-            
-            for (const id of allIds) {
-              stateManager.enqueuePortfolio(id, Date.now());
-            }
-          }
+      const syncService = new BrokerSyncService(stateManager, orchestrator);
+      syncService.start(10000); // 10 second poll for testing/live feedback
 
-          orchestrator.onTick(Date.now());
-        } catch (e) {
-          notifications.notify('error', 'Poll Error', { error: String(e) });
-        }
-      };
-
-      await pollPrices();
-      setInterval(pollPrices, 10000);
     } catch (e) {
       notifications.notify('error', 'Init Error', { error: String(e) });
       process.exit(1);

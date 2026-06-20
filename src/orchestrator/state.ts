@@ -32,6 +32,8 @@ export interface LiveStateManager {
   getGlobalPrices(): PriceSnapshot;
   isReady(accountId: string): boolean;
   getTenantBrokerConfig?(tenantId: string): any;
+  getBrokerSymbol?(instrumentId: string, brokerType: string): string;
+  getInstrumentId?(brokerSymbol: string, brokerType: string): string;
   
   // Event-Driven Queueing
   enqueuePortfolio(accountId: string, timestampMs: number): void;

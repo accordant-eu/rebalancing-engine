@@ -57,10 +57,10 @@ Introduce the stateful orchestrator layer, but keep it disconnected from a real 
 
 Connect the orchestrator to a live broker API, utilizing their simulated/paper-trading environment. (Target broker to be confirmed, likely Alpaca).
 
-- [ ] **Market Data Sync:** Connect to the broker's real-time or delayed price feed. The orchestrator must handle stale feed detection.
-- [ ] **Position & Cash Sync:** Query the broker for factual ledger balances, replacing manual JSON inputs.
-- [ ] **Execution Routing:** Translate engine `TradeProposal` objects into actual broker API order submissions (e.g., Market Orders).
-- [x] **Safety Limits:** Implement a hard kill-switch and a "max trades per period" limit to prevent runaway execution bugs in the paper environment.
+- [x] **Market Data Sync:** Connect to the broker's real-time or delayed price feed. The orchestrator must handle stale feed detection.
+- [x] **Position & Cash Sync:** Periodically fetch the true state of the sub-account from the broker to reconcile against the local State Manager cache.
+- [x] **Execution Routing:** Map our internal `TradeProposal` object to the broker's specific Order API schemas.
+- [x] **Trade Lifecycle Monitoring:** Track pending, partially filled, and fully executed orders to prevent submitting duplicate trades for the same threshold breach.
 
 ### Tranche 4: Production Hardening (The "Live Trading" Agent)
 

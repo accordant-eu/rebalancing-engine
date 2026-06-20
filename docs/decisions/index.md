@@ -62,5 +62,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0052: Use Tenant API Keys for B2B Authentication](0052-use-tenant-api-keys-for-b2b-authentication.md) - Accepted
 * [ADR-0053: Defer API Rate Limiting, Granular Scopes, and Standardized Error Backoffs](0053-defer-api-rate-limiting-and-granular-scopes.md) - Deferred
 * [ADR-0054: Use Mocked Percentage Slippage Model for TCO Optimization](0054-mocked-friction-model-for-tco-optimization.md) - Accepted
+* [ADR-0055: Continuous Broker State Synchronization](0055-continuous-broker-state-sync.md) - Accepted
 
 &copy; 2026 Johan Hellman. All rights reserved.
