@@ -83,17 +83,19 @@ export class SqliteStateManager implements LiveStateManager {
 
   public createRefreshToken(userId: string, token: string, ttlMs: number): void {
     const db = getDb();
+    const hash = createHash('sha256').update(token).digest('hex');
     db.prepare(`INSERT INTO RefreshTokens (token, userId, expiresAtMs) VALUES (?, ?, ?)`).run(
-      token, userId, Date.now() + ttlMs
+      hash, userId, Date.now() + ttlMs
     );
   }
 
   public validateAndRevokeRefreshToken(token: string): string | null {
     const db = getDb();
-    const row = db.prepare(`SELECT userId, expiresAtMs FROM RefreshTokens WHERE token = ?`).get(token) as any;
+    const hash = createHash('sha256').update(token).digest('hex');
+    const row = db.prepare(`SELECT userId, expiresAtMs FROM RefreshTokens WHERE token = ?`).get(hash) as any;
     
     if (row) {
-      db.prepare(`DELETE FROM RefreshTokens WHERE token = ?`).run(token);
+      db.prepare(`DELETE FROM RefreshTokens WHERE token = ?`).run(hash);
       if (row.expiresAtMs > Date.now()) {
         return row.userId;
       }
@@ -392,6 +394,7 @@ export class SqliteStateManager implements LiveStateManager {
       new Date().toISOString(),
       submittedBy
     );
+    this.enqueuePortfolio(accountId, Date.now());
   }
 
   public updateCircuitBreakerStatus(accountId: string, status: 'open' | 'closed'): void {

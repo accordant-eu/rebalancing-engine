@@ -30,6 +30,7 @@ export class CircuitBreaker implements Executor {
       systemEventBus.emitEvent({
         type: 'CIRCUIT_BREAKER_HALT',
         accountId: brokerAccountId,
+        tenantId: context.tenantId,
         timestamp: new Date().toISOString(),
         eventId,
         reason: 'MAX_TRADES_PER_SESSION_EXCEEDED',
@@ -51,6 +52,7 @@ export class CircuitBreaker implements Executor {
       systemEventBus.emitEvent({
         type: 'CIRCUIT_BREAKER_HALT',
         accountId: brokerAccountId,
+        tenantId: context.tenantId,
         timestamp: new Date().toISOString(),
         eventId,
         reason: 'MAX_GROSS_NOTIONAL_PER_TRADE_EXCEEDED',

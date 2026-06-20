@@ -9,6 +9,7 @@ export type EventType =
 export interface BaseEvent {
   type: EventType;
   accountId: string;
+  tenantId?: string;
   timestamp: string;
   eventId: string;
 }

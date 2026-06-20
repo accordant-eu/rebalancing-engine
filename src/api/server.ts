@@ -94,6 +94,10 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid credentials');
     }
     
+    if (user.status !== 'Active') {
+      return sendError(res, 403, 'FORBIDDEN', 'User account is not active');
+    }
+    
     const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role };
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
     
@@ -112,6 +116,10 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
     const user = stateManager.getUserById(userId);
     if (!user) return sendError(res, 401, 'UNAUTHORIZED', 'User not found');
+
+    if (user.status !== 'Active') {
+      return sendError(res, 403, 'FORBIDDEN', 'User account is not active');
+    }
 
     const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role };
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
@@ -434,15 +442,8 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }, 30000);
 
     const onSystemEvent = (event: SystemEvent) => {
-      if (tenantId !== 'superadmin') {
-        try {
-          const state = stateManager.getAccountState(event.accountId);
-          if (!state || state.portfolioState.tenantId !== tenantId) {
-            return;
-          }
-        } catch (e) {
-          return;
-        }
+      if (tenantId !== 'superadmin' && event.tenantId !== tenantId) {
+        return;
       }
 
       if (portfolios && !portfolios.includes(event.accountId)) {
@@ -491,41 +492,26 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
         openCircuitBreakers++;
       }
 
-      // Rebalance eval for drift
+      // Rebalance eval for drift (lightweight)
       try {
-        const indicators: any[] = [];
-        if (state.archetype === 'StaticWeights') {
-          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
-          if (state.constraints) {
-            for (const c of state.constraints) {
-              if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
-                indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
-              }
-            }
-          }
-        }
-        
-        const evalResult = evaluateRebalance({
-          eventId: `api-eval-${Date.now()}`,
-          portfolioState: state.portfolioState,
-          targetAllocation: state.targetAllocation,
-          priceSnapshot: prices,
-          policy: state.policy,
-          indicators,
-          createdAt: new Date().toISOString()
+        let maxDrift = 0;
+        const targets = state.targetAllocation?.targets || [];
+        targets.forEach(t => {
+          const value = (state.portfolioState.holdings?.find((h: any) => h.instrumentId === t.instrumentId)?.quantity || 0) * (prices.prices[t.instrumentId] || 0);
+          const weight = portfolioValue > 0 ? value / portfolioValue : 0;
+          const drift = Math.abs(weight - t.weight);
+          if (drift > maxDrift) maxDrift = drift;
         });
-        
-        if (evalResult.trigger.isTriggered) {
+
+        const tolerance = state.policy.absoluteDriftTolerance || 0.05;
+        if (maxDrift > tolerance) {
           thresholdBreach++;
         } else {
           inBand++;
         }
 
-        const evalTime = new Date(evalResult.auditRecord.createdAt).getTime();
-        if (!lastEvaluatedAt || evalTime > lastEvaluatedAt) {
-          lastEvaluatedAt = evalTime;
-        }
-
+        // Use current time to represent real-time HUD freshness
+        lastEvaluatedAt = Date.now();
       } catch (e) {
         notEvaluated++;
       }
@@ -816,6 +802,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       systemEventBus.emitEvent({
         type: 'CIRCUIT_BREAKER_RESET',
         accountId,
+        tenantId: state.portfolioState.tenantId,
         timestamp: new Date().toISOString(),
         eventId: `reset-${Date.now()}`
       });

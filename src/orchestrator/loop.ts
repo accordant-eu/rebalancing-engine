@@ -118,6 +118,7 @@ export class Orchestrator {
           systemEventBus.emitEvent({
             type: 'THRESHOLD_BREACH',
             accountId,
+            tenantId: currentState.portfolioState.tenantId,
             timestamp: new Date().toISOString(),
             eventId: evaluation.auditRecord.eventId,
             trigger: evaluation.trigger,
@@ -135,6 +136,7 @@ export class Orchestrator {
           systemEventBus.emitEvent({
             type: 'REBALANCE_EXECUTED',
             accountId,
+            tenantId: currentState.portfolioState.tenantId,
             timestamp: new Date().toISOString(),
             eventId: evaluation.auditRecord.eventId,
             tradeProposal: evaluation.tradeProposal
@@ -159,6 +161,12 @@ export class Orchestrator {
           logger.error({ err }, `[CRITICAL] Evaluation loop crashed for ${accountId}`);
         }
         
+        if (err.message && err.message.includes('CIRCUIT BREAKER')) {
+          if (this.stateManager.updateCircuitBreakerStatus) {
+            this.stateManager.updateCircuitBreakerStatus(accountId, 'open');
+          }
+        }
+
         // Log a fatal failure to audit storage if possible
         if (this.auditStorage) {
           this.auditStorage.saveAuditRecord({

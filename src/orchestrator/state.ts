@@ -23,6 +23,7 @@ export interface LiveStateManager {
   updateTarget(accountId: string, target: TargetAllocation): void;
   updatePolicy(accountId: string, policy: RebalancingPolicy): void;
   updatePortfolioMandate(accountId: string, payload: { targetAllocation: TargetAllocation, policy: RebalancingPolicy, archetype: MandateArchetype, constraints?: ConstraintIndicator[] }): void;
+  updateCircuitBreakerStatus?(accountId: string, status: 'open' | 'closed'): void;
   markTradeExecution(accountId: string, timestampMs: number): void;
   getLastTradeTimeMs(accountId: string): number;
   getAccountState(accountId: string): LiveState;
