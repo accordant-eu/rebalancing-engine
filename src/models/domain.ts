@@ -116,6 +116,7 @@ export interface PortfolioState {
   modelId?: string;
   subscriptionType?: SubscriptionType;
   brokerAccountId?: string;
+  circuitBreakerStatus?: 'open' | 'closed';
   cash: number;
   holdings: Holding[];
   cashFlows?: CashFlow[];

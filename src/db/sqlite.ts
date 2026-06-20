@@ -61,6 +61,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       policy TEXT NOT NULL,
       cashBuffer REAL DEFAULT 0,
       brokerAccountId TEXT,
+      circuitBreakerStatus TEXT DEFAULT 'closed',
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE,
       FOREIGN KEY(modelId) REFERENCES Models(modelId) ON DELETE SET NULL
     );
@@ -111,6 +112,18 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       status TEXT DEFAULT 'Active',
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS CashFlows (
+      cashflowId TEXT PRIMARY KEY,
+      accountId TEXT NOT NULL,
+      amount REAL NOT NULL,
+      direction TEXT NOT NULL,
+      currency TEXT DEFAULT 'USD',
+      expectedSettlementDate TEXT,
+      status TEXT DEFAULT 'PENDING',
+      submittedAt TEXT NOT NULL,
+      submittedBy TEXT NOT NULL,
+      FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
+    );
   `);
 
   // Safe migrations for existing databases
@@ -120,6 +133,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN brokerAccountId TEXT`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN constraints TEXT`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN circuitBreakerStatus TEXT DEFAULT 'closed'`); } catch (e) { /* ignore if exists */ }
   
   try { db.exec(`ALTER TABLE Models ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Models ADD COLUMN evaluationFrequency TEXT DEFAULT 'realtime'`); } catch (e) { /* ignore if exists */ }

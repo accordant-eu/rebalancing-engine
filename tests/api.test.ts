@@ -185,6 +185,54 @@ describe('API Endpoints (Týr Integration)', () => {
         .set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(403);
     });
+    it('GET /api/portfolios/summary returns aggregate data', async () => {
+      const res = await request(app)
+        .get('/api/portfolios/summary')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.asOf).toBeDefined();
+      expect(res.body.meta.total).toBe(1);
+      expect(res.body.totalAum).toBeGreaterThan(0);
+      expect(res.body.driftSummary).toBeDefined();
+      expect(res.body.recentExecutions).toBeDefined();
+    });
+
+    it('POST /api/portfolios/:id/trigger-rebalance with dryRun returns proposal', async () => {
+      const res = await request(app)
+        .post('/api/portfolios/acc-1/trigger-rebalance')
+        .send({ dryRun: true })
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.dryRun).toBe(true);
+      expect(res.body.trigger).toBeDefined();
+    });
+
+    it('POST /api/portfolios/:id/trigger-rebalance enqueues for live run', async () => {
+      const res = await request(app)
+        .post('/api/portfolios/acc-1/trigger-rebalance')
+        .send({ dryRun: false })
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('enqueued');
+    });
+
+    it('POST /api/portfolios/:id/circuit-breaker/reset resets status and enqueues', async () => {
+      const res = await request(app)
+        .post('/api/portfolios/acc-1/circuit-breaker/reset')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('reset');
+    });
+
+    it('POST /api/portfolios/:id/cashflows adds pending cashflow', async () => {
+      const res = await request(app)
+        .post('/api/portfolios/acc-1/cashflows')
+        .send({ amount: 5000, direction: 'DEPOSIT' })
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('PENDING');
+      expect(res.body.amount).toBe(5000);
+    });
   });
 
   describe('Superadmin Endpoints', () => {

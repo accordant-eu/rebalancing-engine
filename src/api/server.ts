@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { createHash } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import fs from 'fs';
 import readline from 'readline';
 import { getDb } from '../db/sqlite';
@@ -389,7 +389,122 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
+  app.get('/api/portfolios/summary', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const targetTenant = tenantId === 'superadmin' ? null : tenantId;
+    const portfolios = stateManager.getStatesFilteredByTenant(targetTenant);
+    const prices = stateManager.getGlobalPrices();
 
+    let totalAum = 0;
+    let inBand = 0;
+    let thresholdBreach = 0;
+    let notEvaluated = 0;
+    let openCircuitBreakers = 0;
+
+    let lastEvaluatedAt: number | null = null;
+
+    Object.values(portfolios).forEach((state) => {
+      // Aggregate AUM
+      let portfolioValue = state.portfolioState.cash;
+      state.portfolioState.holdings.forEach(h => {
+        portfolioValue += h.quantity * (prices.prices[h.instrumentId] || 0);
+      });
+      totalAum += portfolioValue;
+
+      // Circuit Breakers
+      if (state.portfolioState.circuitBreakerStatus === 'open') {
+        openCircuitBreakers++;
+      }
+
+      // Rebalance eval for drift
+      try {
+        const indicators: any[] = [];
+        if (state.archetype === 'StaticWeights') {
+          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
+          if (state.constraints) {
+            for (const c of state.constraints) {
+              if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
+                indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
+              }
+            }
+          }
+        }
+        
+        const evalResult = evaluateRebalance({
+          eventId: `api-eval-${Date.now()}`,
+          portfolioState: state.portfolioState,
+          targetAllocation: state.targetAllocation,
+          priceSnapshot: prices,
+          policy: state.policy,
+          indicators,
+          createdAt: new Date().toISOString()
+        });
+        
+        if (evalResult.trigger.isTriggered) {
+          thresholdBreach++;
+        } else {
+          inBand++;
+        }
+
+        const evalTime = new Date(evalResult.auditRecord.createdAt).getTime();
+        if (!lastEvaluatedAt || evalTime > lastEvaluatedAt) {
+          lastEvaluatedAt = evalTime;
+        }
+
+      } catch (e) {
+        notEvaluated++;
+      }
+    });
+
+    // Recent executions from Audit logs
+    let executions24h = 0;
+    let executions7d = 0;
+
+    try {
+      if (fs.existsSync('./data/audit-trail.jsonl')) {
+        const fileContent = fs.readFileSync('./data/audit-trail.jsonl', 'utf-8');
+        const lines = fileContent.split('\n').filter(l => l.trim().length > 0);
+        
+        const now = Date.now();
+        const ms24h = 24 * 60 * 60 * 1000;
+        const ms7d = 7 * 24 * 60 * 60 * 1000;
+
+        for (let i = lines.length - 1; i >= 0; i--) {
+          try {
+            const log = JSON.parse(lines[i]);
+            if (log.type === 'LIVE_EXECUTION') {
+              const accId = log.accountId || (log.eventId && log.eventId.split(':')[0]);
+              // Tenant filter
+              if (tenantId === 'superadmin' || (accId && portfolios[accId])) {
+                const logTime = new Date(log.createdAt).getTime();
+                if (now - logTime <= ms24h) executions24h++;
+                if (now - logTime <= ms7d) executions7d++;
+              }
+            }
+          } catch(err) { }
+        }
+      }
+    } catch (e) { }
+
+    res.json({
+      asOf: new Date().toISOString(),
+      meta: {
+        total: Object.keys(portfolios).length,
+        lastEvaluatedAt: lastEvaluatedAt ? new Date(lastEvaluatedAt).toISOString() : null
+      },
+      driftSummary: {
+        inBand,
+        thresholdBreach,
+        notEvaluated
+      },
+      totalAum,
+      openCircuitBreakers,
+      recentExecutions: {
+        last24h: executions24h,
+        last7d: executions7d
+      }
+    });
+  });
   app.get('/api/portfolios', (req, res) => {
     const tenantId = (req as any).tenantId;
     const targetTenant = tenantId === 'superadmin' ? null : tenantId;
@@ -558,9 +673,107 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       driftStatus,
       holdings,
       pendingCashFlows: state.portfolioState.cashFlows?.filter((c: any) => c.status === 'PENDING') || [],
-      circuitBreakerStatus: { status: 'CLOSED' }, // Mock default if not accessible
+      circuitBreakerStatus: state.portfolioState.circuitBreakerStatus || 'closed',
       lastProposal
     });
+  });
+
+  app.post('/api/portfolios/:id/trigger-rebalance', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const accountId = req.params.id;
+    const { dryRun } = req.body;
+    
+    try {
+      const state = stateManager.getAccountState(accountId);
+      if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+        return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
+      }
+
+      if (dryRun) {
+        const prices = stateManager.getGlobalPrices();
+        const indicators: any[] = [];
+        if (state.archetype === 'StaticWeights') {
+          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
+          if (state.constraints) {
+            for (const c of state.constraints) {
+              if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
+                indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
+              }
+            }
+          }
+        }
+        
+        const evalResult = evaluateRebalance({
+          eventId: `api-eval-dry-${Date.now()}`,
+          portfolioState: state.portfolioState,
+          targetAllocation: state.targetAllocation,
+          priceSnapshot: prices,
+          policy: state.policy,
+          indicators,
+          createdAt: new Date().toISOString()
+        });
+        
+        return res.json({ dryRun: true, ...evalResult });
+      } else {
+        const db = getDb();
+        db.prepare(`INSERT OR REPLACE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`).run(accountId, Date.now());
+        return res.json({ message: 'Portfolio enqueued for rebalancing', accountId });
+      }
+    } catch (e: any) {
+      return sendError(res, 500, 'INTERNAL_ERROR', e.message);
+    }
+  });
+
+  app.post('/api/portfolios/:id/circuit-breaker/reset', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const accountId = req.params.id;
+    
+    try {
+      const state = stateManager.getAccountState(accountId);
+      if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+        return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
+      }
+
+      stateManager.updateCircuitBreakerStatus(accountId, 'closed');
+      const db = getDb();
+      db.prepare(`INSERT OR REPLACE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`).run(accountId, Date.now());
+      
+      res.json({ message: 'Circuit breaker reset and portfolio enqueued for re-evaluation', accountId });
+    } catch (e: any) {
+      return sendError(res, 500, 'INTERNAL_ERROR', e.message);
+    }
+  });
+
+  app.post('/api/portfolios/:id/cashflows', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const accountId = req.params.id;
+    const { amount, direction, currency, expectedSettlementDate, note } = req.body;
+    
+    if (!amount || !direction) {
+      return sendError(res, 400, 'BAD_REQUEST', 'amount and direction are required');
+    }
+
+    try {
+      const state = stateManager.getAccountState(accountId);
+      if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+        return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
+      }
+
+      const cashflowId = 'cf_' + randomBytes(8).toString('hex');
+      const cashflow = {
+        cashFlowId: cashflowId,
+        amount,
+        direction,
+        currency,
+        expectedSettlementDate,
+        status: 'PENDING'
+      };
+      
+      stateManager.submitCashFlow(accountId, cashflow, (req as any).userId);
+      res.json(cashflow);
+    } catch (e: any) {
+      return sendError(res, 500, 'INTERNAL_ERROR', e.message);
+    }
   });
 
   app.get('/api/portfolios/:id/drift', (req, res) => {

@@ -66,6 +66,52 @@ Authentication is handled via a JWT token.
         },
       },
     },
+    '/api/portfolios/summary': {
+      get: {
+        summary: 'Aggregate summary across all portfolios',
+        operationId: 'getPortfolioSummary',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Portfolio aggregate summary',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    asOf: { type: 'string', format: 'date-time' },
+                    meta: {
+                      type: 'object',
+                      properties: {
+                        total: { type: 'integer' },
+                        lastEvaluatedAt: { type: 'string', format: 'date-time', nullable: true },
+                      }
+                    },
+                    driftSummary: {
+                      type: 'object',
+                      properties: {
+                        inBand: { type: 'integer' },
+                        thresholdBreach: { type: 'integer' },
+                        notEvaluated: { type: 'integer' },
+                      }
+                    },
+                    totalAum: { type: 'number' },
+                    openCircuitBreakers: { type: 'integer' },
+                    recentExecutions: {
+                      type: 'object',
+                      properties: {
+                        last24h: { type: 'integer' },
+                        last7d: { type: 'integer' },
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     '/api/portfolios': {
       get: {
         summary: 'List portfolios with drift summary',
@@ -170,6 +216,73 @@ Authentication is handled via a JWT token.
           '404': { $ref: '#/components/responses/NotFound' },
         },
       },
+    },
+    '/api/portfolios/{id}/trigger-rebalance': {
+      post: {
+        summary: 'Trigger a rebalance evaluation',
+        operationId: 'triggerRebalance',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  dryRun: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Rebalance proposal or success message' }
+        }
+      }
+    },
+    '/api/portfolios/{id}/circuit-breaker/reset': {
+      post: {
+        summary: 'Reset circuit breaker',
+        operationId: 'resetCircuitBreaker',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        responses: {
+          '200': { description: 'Circuit breaker reset successfully' }
+        }
+      }
+    },
+    '/api/portfolios/{id}/cashflows': {
+      post: {
+        summary: 'Submit pending cashflow',
+        operationId: 'submitCashflow',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['amount', 'direction'],
+                properties: {
+                  amount: { type: 'number' },
+                  direction: { type: 'string', enum: ['DEPOSIT', 'WITHDRAWAL'] },
+                  currency: { type: 'string', default: 'USD' },
+                  expectedSettlementDate: { type: 'string' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Cashflow submitted' }
+        }
+      }
     },
     '/api/portfolios/{id}/drift': {
       get: {

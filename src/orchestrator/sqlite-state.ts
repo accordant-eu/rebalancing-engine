@@ -212,8 +212,8 @@ export class SqliteStateManager implements LiveStateManager {
     const db = getDb();
     
     const insertPortfolio = db.prepare(`
-      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId, archetype, constraints)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertHolding = db.prepare(`
@@ -240,7 +240,8 @@ export class SqliteStateManager implements LiveStateManager {
         state.targetAllocation.cashBuffer || 0,
         state.portfolioState.brokerAccountId || null,
         state.archetype || 'StaticWeights',
-        state.constraints ? JSON.stringify(state.constraints) : null
+        state.constraints ? JSON.stringify(state.constraints) : null,
+        state.portfolioState.circuitBreakerStatus || 'closed'
       );
       
       deleteHoldings.run(accountId);
@@ -350,6 +351,29 @@ export class SqliteStateManager implements LiveStateManager {
     tx();
   }
 
+  public submitCashFlow(accountId: string, cashflow: any, submittedBy: string): void {
+    const db = getDb();
+    db.prepare(`
+      INSERT INTO CashFlows (cashflowId, accountId, amount, direction, currency, expectedSettlementDate, status, submittedAt, submittedBy)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      cashflow.cashFlowId,
+      accountId,
+      cashflow.amount,
+      cashflow.direction,
+      cashflow.currency || 'USD',
+      cashflow.expectedSettlementDate || null,
+      cashflow.status || 'PENDING',
+      new Date().toISOString(),
+      submittedBy
+    );
+  }
+
+  public updateCircuitBreakerStatus(accountId: string, status: 'open' | 'closed'): void {
+    const db = getDb();
+    db.prepare(`UPDATE Portfolios SET circuitBreakerStatus = ? WHERE accountId = ?`).run(status, accountId);
+  }
+
   public markTradeExecution(accountId: string, timestampMs: number): void {
     this.lastTradeTimes.set(accountId, timestampMs);
   }
@@ -361,13 +385,14 @@ export class SqliteStateManager implements LiveStateManager {
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     
-    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
+    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
     if (!portRow) {
       throw new Error(`SqliteStateManager is not initialized for account ${accountId}`);
     }
 
     const holdingsRows = db.prepare(`SELECT instrumentId, quantity FROM Holdings WHERE accountId = ?`).all(accountId) as any[];
     const targetsRows = db.prepare(`SELECT instrumentId, weight FROM TargetAllocations WHERE accountId = ?`).all(accountId) as any[];
+    const cashFlowsRows = db.prepare(`SELECT * FROM CashFlows WHERE accountId = ? AND status = 'PENDING'`).all(accountId) as any[];
 
     const holdings: Holding[] = holdingsRows.map(r => ({
       instrumentId: r.instrumentId,
@@ -379,6 +404,15 @@ export class SqliteStateManager implements LiveStateManager {
       weight: r.weight,
     }));
 
+    const cashFlows = cashFlowsRows.map(r => ({
+      cashFlowId: r.cashflowId,
+      direction: r.direction,
+      amount: r.amount,
+      currency: r.currency,
+      expectedSettlementDate: r.expectedSettlementDate,
+      status: r.status,
+    }));
+
     const globalPrices = this.getGlobalPrices();
 
     return {
@@ -387,8 +421,10 @@ export class SqliteStateManager implements LiveStateManager {
         tenantId: portRow.tenantId,
         modelId: portRow.modelId,
         subscriptionType: portRow.subscriptionType,
+        circuitBreakerStatus: portRow.circuitBreakerStatus,
         cash: portRow.cash,
         holdings,
+        cashFlows,
       },
       priceSnapshot: globalPrices,
       targetAllocation: { targets, cashBuffer: portRow.cashBuffer || 0 },
