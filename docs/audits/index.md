@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 ## Documents
 
+* **[Vidar Release Review 6d4bd3d](vidar-release-review-6d4bd3d.md)** - Security and architecture review of the Týr API additions, SSE, and Token Refresh release
 * **[Cash Flows Audit](cash-flows-audit.md)** - Documentation for cash flows audit
 * **[Deferred Capabilities Audit](deferred-capabilities-audit.md)** - Documentation for deferred capabilities audit
 * **[Final Mvp Audit](final-mvp-audit.md)** - Documentation for final mvp audit
