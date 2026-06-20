@@ -8,6 +8,7 @@ import { BrokerIntegrationTab } from './components/admin/BrokerIntegrationTab';
 import { RebalancingModelsTab } from './components/admin/RebalancingModelsTab';
 import { SystemOpsTab } from './components/admin/SystemOpsTab';
 import { AssetUniverseTab } from './components/admin/AssetUniverseTab';
+import { CommandCenterDashboard } from './components/CommandCenterDashboard';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -209,52 +210,7 @@ function App() {
 
   const renderHeatmap = () => {
     if (!state) return <div className="metricLabel">Waiting for state...</div>;
-    const accountIds = Object.keys(state.portfolios);
-    if (accountIds.length === 0) return <div className="metricLabel" style={{ padding: '24px' }}>No portfolios loaded in this tenant.</div>;
-
-    return (
-      <div className="heatmapGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
-        {accountIds.map(accountId => {
-          const portfolio = state.portfolios[accountId];
-          const metrics = getPortfolioMetrics(portfolio, state.globalPrices.prices);
-          
-          return (
-            <div 
-              key={accountId} 
-              className="panel" 
-              style={{ cursor: 'pointer', borderColor: metrics.isBreached ? 'var(--status-red)' : 'var(--border-subtle)', transition: 'border-color 0.2s' }}
-              onClick={() => setSelectedAccountId(accountId)}
-            >
-              <div className="panelHeader" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                {accountId}
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                  {tenantToken === 'superadmin' && portfolio.portfolioState.tenantId && (
-                    <span style={{ fontSize: '0.6rem', background: 'var(--border-subtle)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)' }}>
-                      {portfolio.portfolioState.tenantId}
-                    </span>
-                  )}
-                  {portfolio.portfolioState.subscriptionType === 'discretionary' && (
-                    <span style={{ fontSize: '0.7rem', background: 'var(--accent-blue)', padding: '2px 6px', borderRadius: '4px' }}>MODEL</span>
-                  )}
-                </div>
-              </div>
-              <div className="panelBody">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span className="metricLabel">Total Equity</span>
-                  <span className="metricValue">${metrics.totalEquity.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span className="metricLabel">Max Drift</span>
-                  <span className="metricValue" style={{ color: Math.abs(metrics.maxDrift) > (portfolio.policy.absoluteDriftTolerance || 0.05) ? 'var(--status-red)' : 'var(--status-green)' }}>
-                    {(metrics.maxDrift * 100).toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+    return <CommandCenterDashboard state={state} setSelectedAccountId={setSelectedAccountId} logs={logs} />;
   };
 
   const renderDetailedView = () => {

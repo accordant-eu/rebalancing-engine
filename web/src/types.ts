@@ -59,7 +59,8 @@ export interface LiveState {
     modelId?: string; 
     subscriptionType?: string; 
     cash: number; 
-    holdings: Position[] 
+    holdings: Position[];
+    circuitBreakerStatus?: string;
   };
   priceSnapshot: { prices: Record<string, number> };
   targetAllocation: { targets: Target[]; cashBuffer?: number };

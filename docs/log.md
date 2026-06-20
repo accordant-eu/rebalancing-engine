@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-06-20 | Added `docs/architecture/personas.md` to formally document user personas, RBAC rules, and Command Center UX logic. |
 | 2026-06-18 | Added `docs/plans/tyr-agent-api-integration-plan.md` to map out the API enrichment for the Týr agent integration. |
 | 2026-06-19 | Added `docs/api/mandate-schema.md` to formally document the Model Mandate JSON payload for external B2B agents. |
 | 2026-06-17 | Added `docs/plans/architecture-review-and-mitigation-plan.md` to identify anti-patterns and sequence mitigations. |

@@ -111,5 +111,11 @@ These rules govern AI-assisted development in this repository. The project is in
   - **Body**: Include any relevant notes, breaking changes, migration steps, and explicitly enumerate any new environment variables required (referencing `.env.example`).
 - **Deployment Feedback**: The operator will review, verify on staging, and trigger the deployment. If issues arise post-deployment, they will report them by opening an issue labelled `deployment-feedback`. Act on these issues when they appear.
 
+## 12. UI/UX and Access Control
+
+- **Persona Driven Design**: All UI/UX enhancements and Role-Based Access Control (RBAC) restrictions must adhere to the persona boundaries established in `docs/architecture/personas.md`.
+- **Progressive Disclosure**: Only surface metrics and actions that are relevant to the user's role. Avoid displaying universal/global statistics to tenant-level or advisor-level users unless strictly required.
+- **Reference Document**: Always consult `docs/architecture/personas.md` before adding new dashboards, metrics, or administrative actions. Expand the document if new roles or access tiers are introduced.
+
 
 &copy; 2026 Johan Hellman. All rights reserved.
