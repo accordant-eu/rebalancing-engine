@@ -6,6 +6,7 @@ import { Executor } from './executor';
 import { logger } from '../utils/logger';
 import { LiveStateManager } from './state';
 import { ExecutionContext } from '../models/domain';
+import { systemEventBus } from '../events/bus';
 
 export interface OrchestratorConfig {
   cooldownMs: number; // e.g. 10 * 60 * 1000 for 10 minutes
@@ -113,12 +114,32 @@ export class Orchestrator {
           indicators
         });
 
+        if (evaluation.trigger.isTriggered) {
+          systemEventBus.emitEvent({
+            type: 'THRESHOLD_BREACH',
+            accountId,
+            timestamp: new Date().toISOString(),
+            eventId: evaluation.auditRecord.eventId,
+            trigger: evaluation.trigger,
+            auditRecord: evaluation.auditRecord
+          });
+        }
+
         if (evaluation.trigger.isTriggered && evaluation.tradeProposal.trades.length > 0) {
           if (this.notifications) {
             this.notifications.notify('info', `Triggered rebalance for ${accountId}. Strategy: ${evaluation.trigger.strategyType}`, { eventId: evaluation.auditRecord.eventId, accountId });
           }
 
           await this.executor.execute(context, brokerAccountId, evaluation.tradeProposal, evaluation.auditRecord.eventId);
+          
+          systemEventBus.emitEvent({
+            type: 'REBALANCE_EXECUTED',
+            accountId,
+            timestamp: new Date().toISOString(),
+            eventId: evaluation.auditRecord.eventId,
+            tradeProposal: evaluation.tradeProposal
+          });
+
           this.stateManager.markTradeExecution(accountId, timestampMs);
 
           if (this.auditStorage) {

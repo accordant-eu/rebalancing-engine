@@ -233,6 +233,67 @@ describe('API Endpoints (Týr Integration)', () => {
       expect(res.body.status).toBe('PENDING');
       expect(res.body.amount).toBe(5000);
     });
+
+    it('GET /api/events/stream connects and receives keepalive', (done) => {
+      let isDone = false;
+      const finish = (err?: any) => {
+        if (!isDone) {
+          isDone = true;
+          done(err);
+        }
+      };
+
+      const server = app.listen(0, () => {
+        const port = (server.address() as any).port;
+        const http = require('http');
+        const req = http.get(`http://localhost:${port}/api/events/stream`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }, (res: any) => {
+          expect(res.statusCode).toBe(200);
+          expect(res.headers['content-type']).toBe('text/event-stream');
+          
+          res.on('data', (chunk: Buffer) => {
+            if (chunk.toString().includes(': keepalive')) {
+              req.destroy();
+              server.close();
+              finish();
+            }
+          });
+        });
+      });
+    });
+
+    it('SSE stream receives events for the tenant', (done) => {
+      let isDone = false;
+      const finish = (err?: any) => {
+        if (!isDone) {
+          isDone = true;
+          done(err);
+        }
+      };
+
+      const server = app.listen(0, () => {
+        const port = (server.address() as any).port;
+        const http = require('http');
+        const req = http.get(`http://localhost:${port}/api/events/stream`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }, (res: any) => {
+          res.on('data', (chunk: Buffer) => {
+            if (chunk.toString().includes('CIRCUIT_BREAKER_RESET')) {
+              req.destroy();
+              server.close();
+              finish();
+            }
+          });
+        });
+
+        setTimeout(async () => {
+          await request(app)
+            .post('/api/portfolios/acc-1/circuit-breaker/reset')
+            .set('Authorization', `Bearer ${token}`);
+        }, 50);
+      });
+    });
   });
 
   describe('Superadmin Endpoints', () => {

@@ -1,6 +1,7 @@
 import { TradeProposal, ExecutionContext } from '../models/domain';
 import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
+import { systemEventBus } from '../events/bus';
 
 export interface CircuitBreakerLimits {
   maxTradesPerSession: number;
@@ -26,6 +27,14 @@ export class CircuitBreaker implements Executor {
       if (this.notifications) {
         this.notifications.notify('error', msg, { eventId, accountId: brokerAccountId, tradesCount: proposal.trades.length });
       }
+      systemEventBus.emitEvent({
+        type: 'CIRCUIT_BREAKER_HALT',
+        accountId: brokerAccountId,
+        timestamp: new Date().toISOString(),
+        eventId,
+        reason: 'MAX_TRADES_PER_SESSION_EXCEEDED',
+        tradesCount: proposal.trades.length
+      });
       throw new Error(msg);
     }
 
@@ -39,6 +48,14 @@ export class CircuitBreaker implements Executor {
       if (this.notifications) {
         this.notifications.notify('error', msg, { eventId, accountId: brokerAccountId, grossNotional });
       }
+      systemEventBus.emitEvent({
+        type: 'CIRCUIT_BREAKER_HALT',
+        accountId: brokerAccountId,
+        timestamp: new Date().toISOString(),
+        eventId,
+        reason: 'MAX_GROSS_NOTIONAL_PER_TRADE_EXCEEDED',
+        grossNotional
+      });
       throw new Error(msg);
     }
 

@@ -12,6 +12,7 @@ import swaggerUi from 'swagger-ui-express';
 import { openApiSpec } from './openapi';
 import { evaluateRebalance } from '../core/evaluation';
 import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
+import { systemEventBus, SystemEvent } from '../events/bus';
 
 
 import { Orchestrator } from '../orchestrator/loop';
@@ -389,6 +390,58 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
+  app.get('/api/events/stream', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const portfoliosQuery = (req.query.portfolios as string) || 'all';
+    const typesQuery = (req.query.types as string) || 'all';
+
+    const portfolios = portfoliosQuery !== 'all' ? portfoliosQuery.split(',').map(s => s.trim()) : null;
+    const types = typesQuery !== 'all' ? typesQuery.split(',').map(s => s.trim()) : null;
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+
+    res.write(': keepalive\n\n');
+
+    const keepAliveInterval = setInterval(() => {
+      res.write(': keepalive\n\n');
+    }, 30000);
+
+    const onSystemEvent = (event: SystemEvent) => {
+      if (tenantId !== 'superadmin') {
+        try {
+          const state = stateManager.getAccountState(event.accountId);
+          if (!state || state.portfolioState.tenantId !== tenantId) {
+            return;
+          }
+        } catch (e) {
+          return;
+        }
+      }
+
+      if (portfolios && !portfolios.includes(event.accountId)) {
+        return;
+      }
+
+      if (types && !types.includes(event.type)) {
+        return;
+      }
+
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    };
+
+    systemEventBus.on('system_event', onSystemEvent);
+
+    req.on('close', () => {
+      clearInterval(keepAliveInterval);
+      systemEventBus.off('system_event', onSystemEvent);
+    });
+  });
+
   app.get('/api/portfolios/summary', (req, res) => {
     const tenantId = (req as any).tenantId;
     const targetTenant = tenantId === 'superadmin' ? null : tenantId;
@@ -738,6 +791,13 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       const db = getDb();
       db.prepare(`INSERT OR REPLACE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`).run(accountId, Date.now());
       
+      systemEventBus.emitEvent({
+        type: 'CIRCUIT_BREAKER_RESET',
+        accountId,
+        timestamp: new Date().toISOString(),
+        eventId: `reset-${Date.now()}`
+      });
+
       res.json({ message: 'Circuit breaker reset and portfolio enqueued for re-evaluation', accountId });
     } catch (e: any) {
       return sendError(res, 500, 'INTERNAL_ERROR', e.message);

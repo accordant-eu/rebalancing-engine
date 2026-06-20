@@ -66,6 +66,27 @@ Authentication is handled via a JWT token.
         },
       },
     },
+    '/api/events/stream': {
+      get: {
+        summary: 'Server-Sent Events (SSE) stream for real-time portfolio updates',
+        operationId: 'getEventsStream',
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'portfolios', in: 'query', schema: { type: 'string' }, description: 'Comma-separated list of account IDs, or "all"' },
+          { name: 'types', in: 'query', schema: { type: 'string' }, description: 'Comma-separated list of event types, or "all"' }
+        ],
+        responses: {
+          '200': {
+            description: 'SSE Event Stream',
+            content: {
+              'text/event-stream': {
+                schema: { type: 'string' }
+              }
+            }
+          }
+        }
+      }
+    },
     '/api/portfolios/summary': {
       get: {
         summary: 'Aggregate summary across all portfolios',
