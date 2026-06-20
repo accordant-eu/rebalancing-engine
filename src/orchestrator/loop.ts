@@ -1,6 +1,7 @@
 import { AuditStorageAdapter } from '../audit/storage';
 import { evaluateRebalance } from '../core/evaluation';
 import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
+import { PercentageSlippageModel } from '../core/friction';
 import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
 import { logger } from '../utils/logger';
@@ -94,7 +95,8 @@ export class Orchestrator {
 
         const indicators: any[] = [];
         if (currentState.archetype === 'StaticWeights') {
-          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator()));
+          const conversionRate = currentState.policy.driftUtilityConversionRate ?? 1.0;
+          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator(conversionRate)));
           
           if (currentState.constraints) {
             for (const c of currentState.constraints) {
@@ -104,6 +106,10 @@ export class Orchestrator {
             }
           }
         }
+
+        // Mocked slippage model for Friction Optimization MVP
+        const frictionModel = new PercentageSlippageModel(5); // 5 bps standard slippage
+
         const evaluation = evaluateRebalance({
           eventId: `${accountId}:tick:${timestampMs}`,
           createdAt: new Date(timestampMs).toISOString(),
@@ -111,6 +117,7 @@ export class Orchestrator {
           targetAllocation: currentState.targetAllocation,
           priceSnapshot: currentState.priceSnapshot,
           policy: currentState.policy,
+          frictionModel,
           indicators
         });
 
