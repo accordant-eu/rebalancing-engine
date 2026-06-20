@@ -112,6 +112,12 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       status TEXT DEFAULT 'Active',
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS RefreshTokens (
+      token TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      expiresAtMs INTEGER NOT NULL,
+      FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE CASCADE
+    );
     CREATE TABLE IF NOT EXISTS CashFlows (
       cashflowId TEXT PRIMARY KEY,
       accountId TEXT NOT NULL,
@@ -154,6 +160,13 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       role TEXT DEFAULT 'Viewer',
       status TEXT DEFAULT 'Active',
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS RefreshTokens (
+      token TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      expiresAtMs INTEGER NOT NULL,
+      FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS TenantApiKeys (

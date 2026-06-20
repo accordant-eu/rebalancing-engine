@@ -54,8 +54,46 @@ Authentication is handled via a JWT token.
                   type: 'object',
                   properties: {
                     token: { type: 'string' },
+                    refreshToken: { type: 'string' },
                     tenantId: { type: 'string' },
                     role: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+        },
+      },
+    },
+    '/api/auth/refresh': {
+      post: {
+        summary: 'Exchange a valid refresh token for a new access token',
+        operationId: 'refreshToken',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  refreshToken: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Successful token refresh',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    token: { type: 'string' },
+                    refreshToken: { type: 'string' },
                   },
                 },
               },

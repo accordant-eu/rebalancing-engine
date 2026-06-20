@@ -101,6 +101,46 @@ describe('API Endpoints (Týr Integration)', () => {
     expect(res.body.error.code).toBe('UNAUTHORIZED');
   });
 
+  describe('Token Refresh', () => {
+    it('exchanges a valid refresh token for a new access and refresh token', async () => {
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@example.com', password: 'password' });
+      const validRefreshToken = loginRes.body.refreshToken;
+
+      const res = await request(app)
+        .post('/api/auth/refresh')
+        .send({ refreshToken: validRefreshToken });
+      
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeDefined();
+      expect(res.body.refreshToken).toBeDefined();
+      expect(res.body.refreshToken).not.toBe(validRefreshToken);
+    });
+
+    it('rejects a consumed refresh token', async () => {
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test2@example.com', password: 'password' });
+      const token1 = loginRes.body.refreshToken;
+      
+      await request(app).post('/api/auth/refresh').send({ refreshToken: token1 });
+      
+      const res3 = await request(app).post('/api/auth/refresh').send({ refreshToken: token1 });
+      expect(res3.status).toBe(401);
+      expect(res3.body.error.message).toContain('Invalid or expired refresh token');
+    });
+
+    it('rejects an invalid refresh token', async () => {
+      const res = await request(app)
+        .post('/api/auth/refresh')
+        .send({ refreshToken: 'fake-token' });
+      
+      expect(res.status).toBe(401);
+      expect(res.body.error.message).toContain('Invalid or expired refresh token');
+    });
+  });
+
   describe('Authenticated endpoints', () => {
     let token: string;
 

@@ -40,7 +40,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   // Auth Middleware
   app.use((req, res, next) => {
-    if (req.path === '/api/auth/login' || req.path === '/api/webhooks/alpaca') return next();
+    if (req.path === '/api/auth/login' || req.path === '/api/auth/refresh' || req.path === '/api/webhooks/alpaca') return next();
     
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -97,7 +97,29 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role };
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
     
-    res.json({ token, tenantId: user.tenantId, role: user.role });
+    const refreshToken = randomBytes(32).toString('hex');
+    stateManager.createRefreshToken(user.userId, refreshToken, 7 * 24 * 60 * 60 * 1000);
+    
+    res.json({ token, refreshToken, tenantId: user.tenantId, role: user.role });
+  });
+
+  app.post('/api/auth/refresh', (req, res) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return sendError(res, 400, 'BAD_REQUEST', 'refreshToken required');
+
+    const userId = stateManager.validateAndRevokeRefreshToken(refreshToken);
+    if (!userId) return sendError(res, 401, 'UNAUTHORIZED', 'Invalid or expired refresh token');
+
+    const user = stateManager.getUserById(userId);
+    if (!user) return sendError(res, 401, 'UNAUTHORIZED', 'User not found');
+
+    const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role };
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
+    
+    const newRefreshToken = randomBytes(32).toString('hex');
+    stateManager.createRefreshToken(user.userId, newRefreshToken, 7 * 24 * 60 * 60 * 1000);
+
+    res.json({ token, refreshToken: newRefreshToken });
   });
 
   // --- Admin Endpoints ---

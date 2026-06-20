@@ -71,9 +71,34 @@ export class SqliteStateManager implements LiveStateManager {
     return db.prepare(`SELECT * FROM Users WHERE email = ?`).get(email) || null;
   }
 
+  public getUserById(userId: string): any | null {
+    const db = getDb();
+    return db.prepare(`SELECT * FROM Users WHERE userId = ?`).get(userId) || null;
+  }
+
   public getUsersByTenant(tenantId: string): any[] {
     const db = getDb();
     return db.prepare(`SELECT userId, tenantId, email, role, status FROM Users WHERE tenantId = ?`).all(tenantId) as any[];
+  }
+
+  public createRefreshToken(userId: string, token: string, ttlMs: number): void {
+    const db = getDb();
+    db.prepare(`INSERT INTO RefreshTokens (token, userId, expiresAtMs) VALUES (?, ?, ?)`).run(
+      token, userId, Date.now() + ttlMs
+    );
+  }
+
+  public validateAndRevokeRefreshToken(token: string): string | null {
+    const db = getDb();
+    const row = db.prepare(`SELECT userId, expiresAtMs FROM RefreshTokens WHERE token = ?`).get(token) as any;
+    
+    if (row) {
+      db.prepare(`DELETE FROM RefreshTokens WHERE token = ?`).run(token);
+      if (row.expiresAtMs > Date.now()) {
+        return row.userId;
+      }
+    }
+    return null;
   }
 
   public getQueueDepth(): number {
