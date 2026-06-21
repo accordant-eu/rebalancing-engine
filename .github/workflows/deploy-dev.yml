@@ -1,6 +1,6 @@
-name: Deploy (dev)
+name: Deploy (ops/staging)
 
-# Auto-deploys to dev.rebalancing.accordant.eu on every push to dev.
+# Auto-deploys to ops.rebalancing.accordant.eu on every push to ops.
 # This is Rufus's staging environment — not used by AntiGravity.
 on:
   push:
@@ -8,11 +8,11 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to dev
+    name: Deploy to staging (ops)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to dev server
+      - name: Deploy to staging server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -20,8 +20,10 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -e
-            cd /srv/rebalancing-engine-ops
-            git pull
+            cd /srv/rebalancing-engine
+            git fetch origin
+            git checkout ops
+            git pull origin ops
             docker compose -f docker-compose.dev.yml build
             docker compose -f docker-compose.dev.yml up -d
-            echo "Dev deployed: $(git rev-parse --short HEAD)"
+            echo "Staging (ops) deployed: $(git rev-parse --short HEAD)"
