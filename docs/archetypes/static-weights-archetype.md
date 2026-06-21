@@ -22,7 +22,7 @@ Unlike dynamic models (like Minimum Variance) that recalculate allocations based
   evaluationFrequency: 'daily', // or 'realtime', 'weekly', 'monthly'
   targetAllocation: {
     targets: [
-      { instrumentId: 'AAPL', weight: 0.60 },
+      { instrumentId: 'US0378331005:XNAS:USD', weight: 0.60 },
       { instrumentId: 'TLT', weight: 0.40 }
     ]
   },
@@ -44,7 +44,7 @@ The `EvaluationFrequency` determines how often the engine checks the portfolio a
 ## 4. Trade Sizing (Execution Modes)
 If an asset drifts beyond its band, the `generateTradeProposal` function calculates the required trades. This archetype natively supports two modes derived from optimal control theory:
 
-1. **Full Reset**: Trades the portfolio entirely back to the original static target (e.g., if AAPL drifts to 66%, sell it back to exactly 60%). This maximizes tracking-error control but generates higher TCO.
+1. **Full Reset**: Trades the portfolio entirely back to the original static target (e.g., if US0378331005:XNAS:USD drifts to 66%, sell it back to exactly 60%). This maximizes tracking-error control but generates higher TCO.
 2. **Boundary**: Trades the portfolio only to the edge of the acceptable band (e.g., if the band is 65% and it drifts to 66%, sell it back to 64.9%). Institutional math dictates this minimizes transaction friction while maintaining acceptable risk parameters, preserving capital inside the "no-trade region".
 
 ## 5. Quality Evaluation (Cost-Benefit)

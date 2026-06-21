@@ -1,5 +1,7 @@
 import { getDb } from '../db/sqlite';
 import {
+  MandateArchetype,
+  ConstraintIndicator,
   PortfolioState,
   PriceSnapshot,
   RebalancingPolicy,
@@ -7,7 +9,9 @@ import {
   Holding,
   Tenant,
   ModelMandate,
+  TenantBrokerConfig,
 } from '../models/domain';
+import { randomBytes, createHash } from 'crypto';
 import { LiveState, LiveStateManager } from './state';
 
 import { ModelRepository } from '../db/repositories/ModelRepository';
@@ -22,40 +26,157 @@ export class SqliteStateManager implements LiveStateManager {
   private portfolioRepo: PortfolioRepository = new PortfolioRepository();
 
   // Tenant & Model Management
-  public createTenant(tenantId: string, name: string): void {
+  public createTenant(tenantId: string, name: string, brokerConfig?: TenantBrokerConfig): void {
     const db = getDb();
-    db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name) VALUES (?, ?)`).run(tenantId, name);
+    const type = brokerConfig?.brokerType || 'MOCK';
+    const key = brokerConfig?.brokerApiKey || null;
+    const secret = brokerConfig?.brokerApiSecret || null;
+    const baseUrl = brokerConfig?.brokerBaseUrl || null;
+    
+    db.prepare(`
+      INSERT OR REPLACE INTO Tenants (tenantId, name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(tenantId, name, type, key, secret, baseUrl);
   }
 
-  public createModel(model: ModelMandate): string[] {
+  public getTenantBrokerConfig(tenantId: string): TenantBrokerConfig | null {
     const db = getDb();
-    
-    // Save model
-    this.modelRepo.save(model);
-    
-    // Cascade to all subscribed portfolios
-    const affectedAccounts = this.portfolioRepo.getSubscribedAccounts(model.modelId, 'discretionary');
-    
-    if (affectedAccounts.length > 0) {
-      const db = getDb();
-      const tx = db.transaction(() => {
-        const updatePolicy = db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`);
-        const delTargets = db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`);
-        const insertTarget = db.prepare(`INSERT INTO TargetAllocations (accountId, instrumentId, weight) VALUES (?, ?, ?)`);
-        
-        for (const accountId of affectedAccounts) {
-          updatePolicy.run(JSON.stringify(model.policy), accountId);
-          delTargets.run(accountId);
-          for (const t of model.targetAllocation.targets) {
-            insertTarget.run(accountId, t.instrumentId, t.weight);
-          }
-        }
-      });
-      tx();
-    }
-    
-    return affectedAccounts;
+    const row = db.prepare(`SELECT brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl FROM Tenants WHERE tenantId = ?`).get(tenantId) as any;
+    if (!row) return null;
+    return {
+      brokerType: row.brokerType,
+      brokerApiKey: row.brokerApiKey,
+      brokerApiSecret: row.brokerApiSecret,
+      brokerBaseUrl: row.brokerBaseUrl
+    };
   }
+
+  // --- Superadmin Operations ---
+  public getAllTenants(): any[] {
+    const db = getDb();
+    const rows = db.prepare(`SELECT tenantId, name, brokerType, brokerBaseUrl FROM Tenants`).all() as any[];
+    return rows;
+  }
+
+  public createUser(user: { userId: string; tenantId: string; email: string; password?: string; role?: string; status?: string }): void {
+    const db = getDb();
+    db.prepare(`
+      INSERT INTO Users (userId, tenantId, email, password, role, status) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(user.userId, user.tenantId, user.email, user.password || '', user.role || 'Viewer', user.status || 'Active');
+  }
+
+  public getUserByEmail(email: string): any | null {
+    const db = getDb();
+    return db.prepare(`SELECT * FROM Users WHERE email = ?`).get(email) || null;
+  }
+
+  public getUserById(userId: string): any | null {
+    const db = getDb();
+    return db.prepare(`SELECT * FROM Users WHERE userId = ?`).get(userId) || null;
+  }
+
+  public getUsersByTenant(tenantId: string): any[] {
+    const db = getDb();
+    return db.prepare(`SELECT userId, tenantId, email, role, status FROM Users WHERE tenantId = ?`).all(tenantId) as any[];
+  }
+
+  public createRefreshToken(userId: string, token: string, ttlMs: number): void {
+    const db = getDb();
+    const hash = createHash('sha256').update(token).digest('hex');
+    db.prepare(`INSERT INTO RefreshTokens (token, userId, expiresAtMs) VALUES (?, ?, ?)`).run(
+      hash, userId, Date.now() + ttlMs
+    );
+  }
+
+  public validateAndRevokeRefreshToken(token: string): string | null {
+    const db = getDb();
+    const hash = createHash('sha256').update(token).digest('hex');
+    const row = db.prepare(`SELECT userId, expiresAtMs FROM RefreshTokens WHERE token = ?`).get(hash) as any;
+    
+    if (row) {
+      db.prepare(`DELETE FROM RefreshTokens WHERE token = ?`).run(hash);
+      if (row.expiresAtMs > Date.now()) {
+        return row.userId;
+      }
+    }
+    return null;
+  }
+
+  public getQueueDepth(): number {
+    const db = getDb();
+    const row = db.prepare(`SELECT COUNT(*) as count FROM EvaluationQueue`).get() as { count: number };
+    return row.count;
+  }
+
+  // --- Tenant Settings & API Keys ---
+  public updateTenant(tenantId: string, name: string, brokerConfig: TenantBrokerConfig): void {
+    const db = getDb();
+    db.prepare(`
+      UPDATE Tenants 
+      SET name = ?, brokerType = ?, brokerApiKey = ?, brokerApiSecret = ?, brokerBaseUrl = ?
+      WHERE tenantId = ?
+    `).run(name, brokerConfig.brokerType, brokerConfig.brokerApiKey, brokerConfig.brokerApiSecret, brokerConfig.brokerBaseUrl, tenantId);
+  }
+
+  public createTenantApiKey(tenantId: string): { keyPrefix: string; secret: string } {
+    const db = getDb();
+    // crypto imported at the top
+    const secret = 'sk_live_' + randomBytes(24).toString('hex');
+    const keyPrefix = secret.substring(0, 14) + '...';
+    const keyHash = createHash('sha256').update(secret).digest('hex');
+    const keyId = 'key_' + randomBytes(8).toString('hex');
+
+    db.prepare(`
+      INSERT INTO TenantApiKeys (keyId, tenantId, keyPrefix, keyHash, createdAt, status)
+      VALUES (?, ?, ?, ?, ?, 'Active')
+    `).run(keyId, tenantId, keyPrefix, keyHash, new Date().toISOString());
+
+    return { keyPrefix, secret };
+  }
+
+  public revokeTenantApiKey(keyId: string): void {
+    const db = getDb();
+    db.prepare(`UPDATE TenantApiKeys SET status = 'Revoked' WHERE keyId = ?`).run(keyId);
+  }
+
+  public getTenantApiKeys(tenantId: string): any[] {
+    const db = getDb();
+    return db.prepare(`SELECT keyId, keyPrefix, createdAt, status FROM TenantApiKeys WHERE tenantId = ? ORDER BY createdAt DESC`).all(tenantId) as any[];
+  }
+
+  // --- Asset Universe ---
+  public createAsset(asset: any): void {
+    const db = getDb();
+    db.prepare(`
+      INSERT OR REPLACE INTO Assets (instrumentId, isin, ticker, exchangeMic, currency)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(asset.instrumentId, asset.isin, asset.ticker, asset.exchangeMic, asset.currency);
+  }
+
+  public getAssets(): any[] {
+    const db = getDb();
+    return db.prepare(`SELECT instrumentId, isin, ticker, exchangeMic, currency FROM Assets`).all() as any[];
+  }
+
+  // -----------------------------
+
+  public createModel(model: ModelMandate): string[] {
+    return this.updateModel(model);
+  }
+
+  public getBrokerSymbol(instrumentId: string, brokerType: string): string {
+    const db = getDb();
+    const row = db.prepare(`SELECT brokerSymbol FROM BrokerSymbolMappings WHERE instrumentId = ? AND brokerType = ?`).get(instrumentId, brokerType) as { brokerSymbol: string } | undefined;
+    return row ? row.brokerSymbol : instrumentId.split(':')[0]; // Fallback to ISIN or short ticker if no mapping exists
+  }
+
+  public getInstrumentId(brokerSymbol: string, brokerType: string): string {
+    const db = getDb();
+    const row = db.prepare(`SELECT instrumentId FROM BrokerSymbolMappings WHERE brokerSymbol = ? AND brokerType = ?`).get(brokerSymbol, brokerType) as { instrumentId: string } | undefined;
+    return row ? row.instrumentId : brokerSymbol; // Fallback to broker symbol if no mapping exists
+  }
+
 
   public getModels(tenantId: string): ModelMandate[] {
     return this.modelRepo.findByTenant(tenantId);
@@ -65,27 +186,33 @@ export class SqliteStateManager implements LiveStateManager {
     return this.modelRepo.findAll();
   }
 
-  public updateModelTargetAllocation(modelId: string, newTarget: TargetAllocation): void {
+  public updateModel(model: ModelMandate): string[] {
+    let subscribedAccounts: string[] = [];
     const db = getDb();
     const tx = db.transaction(() => {
       // 1. Update the Model row via repo
-      this.modelRepo.updateTargetAllocation(modelId, newTarget);
+      this.modelRepo.save(model);
 
       // 2. Find all 'discretionary' portfolios subscribed to this model
-      const subscribedAccounts = this.portfolioRepo.getSubscribedAccounts(modelId, 'discretionary');
+      subscribedAccounts = this.portfolioRepo.getSubscribedAccounts(model.modelId, 'discretionary');
 
-      // 3. Update TargetAllocations for each portfolio
-      this.portfolioRepo.updateTargetsAndCashBuffer(subscribedAccounts, newTarget);
-      
-      const now = Date.now();
-      const insertQueue = db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`);
+      if (subscribedAccounts.length > 0) {
+        // 3. Update TargetAllocations and Policy for each portfolio
+        this.portfolioRepo.updateTargetsAndCashBuffer(subscribedAccounts, model.targetAllocation);
+        const updatePolicy = db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`);
+        
+        const now = Date.now();
+        const insertQueue = db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`);
 
-      for (const accountId of subscribedAccounts) {
-        // Enqueue the portfolio for re-evaluation
-        insertQueue.run(accountId, now);
+        for (const accountId of subscribedAccounts) {
+          updatePolicy.run(JSON.stringify(model.policy), accountId);
+          // Enqueue the portfolio for re-evaluation
+          insertQueue.run(accountId, now);
+        }
       }
     });
     tx();
+    return subscribedAccounts;
   }
 
   public assignPortfolioToModel(accountId: string, modelId: string | null, subscriptionType: 'bespoke' | 'discretionary'): void {
@@ -106,17 +233,21 @@ export class SqliteStateManager implements LiveStateManager {
     tx();
   }
 
-  public assignPortfolioToTenant(accountId: string, tenantId: string): void {
+  public assignPortfolioToTenant(accountId: string, tenantId: string, brokerAccountId?: string): void {
     const db = getDb();
-    db.prepare(`UPDATE Portfolios SET tenantId = ? WHERE accountId = ?`).run(tenantId, accountId);
+    if (brokerAccountId) {
+      db.prepare(`UPDATE Portfolios SET tenantId = ?, brokerAccountId = ? WHERE accountId = ?`).run(tenantId, brokerAccountId, accountId);
+    } else {
+      db.prepare(`UPDATE Portfolios SET tenantId = ? WHERE accountId = ?`).run(tenantId, accountId);
+    }
   }
 
   public registerPortfolio(accountId: string, state: LiveState): void {
     const db = getDb();
     
     const insertPortfolio = db.prepare(`
-      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertHolding = db.prepare(`
@@ -140,7 +271,11 @@ export class SqliteStateManager implements LiveStateManager {
         state.portfolioState.subscriptionType || 'bespoke',
         state.portfolioState.cash, 
         JSON.stringify(state.policy),
-        state.targetAllocation.cashBuffer || 0
+        state.targetAllocation.cashBuffer || 0,
+        state.portfolioState.brokerAccountId || null,
+        state.archetype || 'StaticWeights',
+        state.constraints ? JSON.stringify(state.constraints) : null,
+        state.portfolioState.circuitBreakerStatus || 'closed'
       );
       
       deleteHoldings.run(accountId);
@@ -217,6 +352,63 @@ export class SqliteStateManager implements LiveStateManager {
     db.prepare(`UPDATE Portfolios SET policy = ? WHERE accountId = ?`).run(JSON.stringify(policy), accountId);
   }
 
+  public updatePortfolioMandate(accountId: string, payload: { targetAllocation: TargetAllocation, policy: RebalancingPolicy, archetype: MandateArchetype, constraints?: ConstraintIndicator[] }): void {
+    const db = getDb();
+    const tx = db.transaction(() => {
+      // 1. Update Portfolio Table (policy, cashBuffer, archetype, constraints, subscriptionType)
+      db.prepare(`
+        UPDATE Portfolios 
+        SET policy = ?, 
+            cashBuffer = ?, 
+            archetype = ?, 
+            constraints = ?,
+            subscriptionType = 'bespoke'
+        WHERE accountId = ?
+      `).run(
+        JSON.stringify(payload.policy),
+        payload.targetAllocation.cashBuffer || 0,
+        payload.archetype,
+        payload.constraints ? JSON.stringify(payload.constraints) : null,
+        accountId
+      );
+
+      // 2. Update TargetAllocations
+      db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`).run(accountId);
+      const insertTarget = db.prepare(`
+        INSERT INTO TargetAllocations (accountId, instrumentId, weight)
+        VALUES (?, ?, ?)
+      `);
+      for (const t of payload.targetAllocation.targets) {
+        insertTarget.run(accountId, t.instrumentId, t.weight);
+      }
+    });
+    tx();
+  }
+
+  public submitCashFlow(accountId: string, cashflow: any, submittedBy: string): void {
+    const db = getDb();
+    db.prepare(`
+      INSERT INTO CashFlows (cashflowId, accountId, amount, direction, currency, expectedSettlementDate, status, submittedAt, submittedBy)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      cashflow.cashFlowId,
+      accountId,
+      cashflow.amount,
+      cashflow.direction,
+      cashflow.currency || 'USD',
+      cashflow.expectedSettlementDate || null,
+      cashflow.status || 'PENDING',
+      new Date().toISOString(),
+      submittedBy
+    );
+    this.enqueuePortfolio(accountId, Date.now());
+  }
+
+  public updateCircuitBreakerStatus(accountId: string, status: 'open' | 'closed'): void {
+    const db = getDb();
+    db.prepare(`UPDATE Portfolios SET circuitBreakerStatus = ? WHERE accountId = ?`).run(status, accountId);
+  }
+
   public markTradeExecution(accountId: string, timestampMs: number): void {
     this.lastTradeTimes.set(accountId, timestampMs);
   }
@@ -228,13 +420,14 @@ export class SqliteStateManager implements LiveStateManager {
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     
-    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
+    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
     if (!portRow) {
       throw new Error(`SqliteStateManager is not initialized for account ${accountId}`);
     }
 
     const holdingsRows = db.prepare(`SELECT instrumentId, quantity FROM Holdings WHERE accountId = ?`).all(accountId) as any[];
     const targetsRows = db.prepare(`SELECT instrumentId, weight FROM TargetAllocations WHERE accountId = ?`).all(accountId) as any[];
+    const cashFlowsRows = db.prepare(`SELECT * FROM CashFlows WHERE accountId = ? AND status = 'PENDING'`).all(accountId) as any[];
 
     const holdings: Holding[] = holdingsRows.map(r => ({
       instrumentId: r.instrumentId,
@@ -246,6 +439,15 @@ export class SqliteStateManager implements LiveStateManager {
       weight: r.weight,
     }));
 
+    const cashFlows = cashFlowsRows.map(r => ({
+      cashFlowId: r.cashflowId,
+      direction: r.direction,
+      amount: r.amount,
+      currency: r.currency,
+      expectedSettlementDate: r.expectedSettlementDate,
+      status: r.status,
+    }));
+
     const globalPrices = this.getGlobalPrices();
 
     return {
@@ -254,12 +456,16 @@ export class SqliteStateManager implements LiveStateManager {
         tenantId: portRow.tenantId,
         modelId: portRow.modelId,
         subscriptionType: portRow.subscriptionType,
+        circuitBreakerStatus: portRow.circuitBreakerStatus,
         cash: portRow.cash,
         holdings,
+        cashFlows,
       },
       priceSnapshot: globalPrices,
       targetAllocation: { targets, cashBuffer: portRow.cashBuffer || 0 },
       policy: JSON.parse(portRow.policy),
+      archetype: portRow.archetype || 'StaticWeights',
+      constraints: portRow.constraints ? JSON.parse(portRow.constraints) : undefined
     };
   }
 
@@ -278,9 +484,9 @@ export class SqliteStateManager implements LiveStateManager {
     // For efficiency, we load everything in a few queries instead of N queries
     let portfolios: any[];
     if (tenantId) {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
     } else {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType FROM Portfolios`).all() as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints FROM Portfolios`).all() as any[];
     }
     
     const accountIds = portfolios.map(p => p.accountId);
@@ -318,12 +524,15 @@ export class SqliteStateManager implements LiveStateManager {
           tenantId: p.tenantId,
           modelId: p.modelId,
           subscriptionType: p.subscriptionType,
+          brokerAccountId: p.brokerAccountId,
           cash: p.cash,
           holdings: holdingsByAcc[p.accountId] || [],
         },
         priceSnapshot: globalPrices,
         targetAllocation: { targets: targetsByAcc[p.accountId] || [] },
         policy: JSON.parse(p.policy),
+        archetype: p.archetype || 'StaticWeights',
+        constraints: p.constraints ? JSON.parse(p.constraints) : undefined
       };
     }
 

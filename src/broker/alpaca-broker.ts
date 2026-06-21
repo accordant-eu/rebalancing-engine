@@ -1,23 +1,16 @@
-import { PortfolioState, TradeProposal } from '../models/domain';
+import { PortfolioState, TradeProposal, ExecutionContext } from '../models/domain';
 import { BrokerAdapter } from './adapter';
 
+import { globalMetrics } from '../services/metrics';
+
 export class AlpacaBrokerAdapter implements BrokerAdapter {
-  private baseUrl: string;
-  private keyId: string;
-  private secretKey: string;
-
-  constructor() {
-    this.keyId = process.env.ALPACA_BROKER_API_KEY || '';
-    this.secretKey = process.env.ALPACA_BROKER_API_SECRET || '';
-    // Broker API sandbox URL by default
-    this.baseUrl = process.env.APCA_BROKER_URL || 'https://broker-api.sandbox.alpaca.markets/v1';
-  }
-
-  private async fetchApi(endpoint: string, options: RequestInit = {}): Promise<any> {
-    const url = `${this.baseUrl}${endpoint}`;
+  
+  private async fetchApi(endpoint: string, context: ExecutionContext, options: RequestInit = {}): Promise<any> {
+    const baseUrl = context.brokerConfig.brokerBaseUrl || 'https://broker-api.sandbox.alpaca.markets/v1';
+    const url = `${baseUrl}${endpoint}`;
     
     // Alpaca Broker API uses Basic Auth with keyId and secretKey
-    const authHeader = 'Basic ' + Buffer.from(`${this.keyId}:${this.secretKey}`).toString('base64');
+    const authHeader = 'Basic ' + Buffer.from(`${context.brokerConfig.brokerApiKey}:${context.brokerConfig.brokerApiSecret}`).toString('base64');
     
     const headers = {
       'Authorization': authHeader,
@@ -25,9 +18,22 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
       ...options.headers,
     };
 
-    const response = await fetch(url, { ...options, headers });
+    const startTime = Date.now();
+    let response: Response;
+    try {
+      response = await fetch(url, { ...options, headers });
+    } catch (e) {
+      globalMetrics.recordRateLimitError(context.tenantId);
+      throw e;
+    }
+    
+    const latency = Date.now() - startTime;
+    globalMetrics.recordApiCall(context.tenantId, latency);
     
     if (!response.ok) {
+      if (response.status === 429 || response.status >= 500) {
+        globalMetrics.recordRateLimitError(context.tenantId);
+      }
       const errText = await response.text();
       throw new Error(`Alpaca Broker API Error: ${response.status} ${response.statusText} - ${errText}`);
     }
@@ -35,30 +41,33 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
     return response.json();
   }
 
-  public async getPortfolioState(brokerAccountId: string): Promise<PortfolioState> {
-    const account = await this.fetchApi(`/trading/accounts/${brokerAccountId}/account`);
-    const positions = await this.fetchApi(`/trading/accounts/${brokerAccountId}/positions`);
+  public async getPortfolioState(context: ExecutionContext, brokerAccountId: string): Promise<PortfolioState> {
+    const account = await this.fetchApi(`/trading/accounts/${brokerAccountId}/account`, context);
+    const positions = await this.fetchApi(`/trading/accounts/${brokerAccountId}/positions`, context);
 
     return {
       accountId: brokerAccountId,
       cash: parseFloat(account.cash),
       holdings: positions.map((p: any) => ({
-        instrumentId: p.symbol,
+        instrumentId: context.translateBrokerSymbolToInstrumentId ? context.translateBrokerSymbolToInstrumentId(p.symbol, 'Alpaca') : p.symbol,
         quantity: parseFloat(p.qty),
       })),
     };
   }
 
-  public async getPrices(symbols: string[]): Promise<Record<string, number>> {
+  public async getPrices(context: ExecutionContext, symbols: string[]): Promise<Record<string, number>> {
     if (symbols.length === 0) {
       return {};
     }
 
-    const dataUrl = 'https://data.alpaca.markets/v2/stocks/snapshots?symbols=' + symbols.join(',');
+    // Translate our internal instrumentIds to broker symbols
+    const translatedSymbols = symbols.map(sym => context.translateBrokerSymbol ? context.translateBrokerSymbol(sym, 'Alpaca') : sym);
+
+    const dataUrl = 'https://data.alpaca.markets/v2/stocks/snapshots?symbols=' + translatedSymbols.join(',');
     
-    // For Market Data, use the standard paper keys to avoid the complex OAuth flow required for Broker keys
-    const dataKey = process.env.APCA_API_KEY_ID || '';
-    const dataSecret = process.env.APCA_API_SECRET_KEY || '';
+    // Strict tenant isolation: do not fallback to process.env.
+    const dataKey = context.brokerConfig.brokerApiKey;
+    const dataSecret = context.brokerConfig.brokerApiSecret;
 
     const response = await fetch(dataUrl, {
       headers: {
@@ -76,29 +85,34 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
     const data = await response.json();
     const prices: Record<string, number> = {};
 
-    for (const [symbol, snapshot] of Object.entries(data as Record<string, any>)) {
-      if (snapshot.latestTrade && snapshot.latestTrade.p) {
-        prices[symbol] = snapshot.latestTrade.p;
-      } else if (snapshot.dailyBar && snapshot.dailyBar.c) {
-        prices[symbol] = snapshot.dailyBar.c;
+    for (let i = 0; i < symbols.length; i++) {
+      const originalSymbol = symbols[i];
+      const translatedSymbol = translatedSymbols[i];
+      const snapshot = data[translatedSymbol];
+      if (snapshot) {
+        if (snapshot.latestTrade && snapshot.latestTrade.p) {
+          prices[originalSymbol] = snapshot.latestTrade.p;
+        } else if (snapshot.dailyBar && snapshot.dailyBar.c) {
+          prices[originalSymbol] = snapshot.dailyBar.c;
+        }
       }
     }
 
     return prices;
   }
 
-  public async submitTrades(brokerAccountId: string, proposal: TradeProposal): Promise<void> {
+  public async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<void> {
     for (const trade of proposal.trades) {
       if (trade.quantity <= 0) continue;
 
-      const orderSide = trade.direction.toLowerCase() as 'buy' | 'sell';
+      const brokerSymbol = context.translateBrokerSymbol ? context.translateBrokerSymbol(trade.instrumentId, 'Alpaca') : trade.instrumentId;
 
-      await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders`, {
+      await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders`, context, {
         method: 'POST',
         body: JSON.stringify({
-          symbol: trade.instrumentId,
+          symbol: brokerSymbol,
           qty: trade.quantity.toString(),
-          side: orderSide,
+          side: trade.direction.toLowerCase() as 'buy' | 'sell',
           type: 'market',
           time_in_force: 'day',
         })
@@ -106,8 +120,8 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
     }
   }
 
-  public async hasOpenOrders(brokerAccountId: string): Promise<boolean> {
-    const orders = await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders?status=open`);
+  public async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> {
+    const orders = await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders?status=open`, context);
     return orders.length > 0;
   }
 }

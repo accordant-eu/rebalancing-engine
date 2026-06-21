@@ -22,11 +22,11 @@ const scenariosPath = path.join(__dirname, 'fixtures', 'scenarios.json');
 const scenariosData = JSON.parse(fs.readFileSync(scenariosPath, 'utf8'));
 
 // ─── min_trade_size_issue ────────────────────────────────────────────────────
-// Fixture: AAPL qty=105, MSFT qty=95, price=10 each.
+// Fixture: US0378331005:XNAS:USD qty=105, US5949181045:XNAS:USD qty=95, price=10 each.
 // Total value: 2000. Tolerance: 1%. Min trade size: 1000.
-// AAPL weight: 1050/2000 = 0.525 → drift +0.025 → out of band (>0.01).
-// MSFT weight:  950/2000 = 0.475 → drift −0.025 → out of band (>0.01).
-// Required rebalance trade: ~5 shares of AAPL ($50 value) < $1000 min.
+// US0378331005:XNAS:USD weight: 1050/2000 = 0.525 → drift +0.025 → out of band (>0.01).
+// US5949181045:XNAS:USD weight:  950/2000 = 0.475 → drift −0.025 → out of band (>0.01).
+// Required rebalance trade: ~5 shares of US0378331005:XNAS:USD ($50 value) < $1000 min.
 // Trade proposal should suppress below-minimum trades and emit warnings.
 describe('Edge Cases — min_trade_size_issue fixture', () => {
   const strategy = new ThresholdStrategy();
@@ -43,14 +43,14 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
     expect(valuation.totalPortfolioValue).toBe(2000);
 
     const weights = calculateCurrentWeights(valuation);
-    const aapl = weights.find((w) => w.instrumentId === 'AAPL')!;
-    const msft = weights.find((w) => w.instrumentId === 'MSFT')!;
+    const aapl = weights.find((w) => w.instrumentId === 'US0378331005:XNAS:USD')!;
+    const msft = weights.find((w) => w.instrumentId === 'US5949181045:XNAS:USD')!;
     expect(aapl.weight).toBeCloseTo(0.525, 4);
     expect(msft.weight).toBeCloseTo(0.475, 4);
 
     const drift = calculateDrift(weights, target, policy);
-    const aaplDrift = drift.find((d) => d.instrumentId === 'AAPL')!;
-    const msftDrift = drift.find((d) => d.instrumentId === 'MSFT')!;
+    const aaplDrift = drift.find((d) => d.instrumentId === 'US0378331005:XNAS:USD')!;
+    const msftDrift = drift.find((d) => d.instrumentId === 'US5949181045:XNAS:USD')!;
     // Drift exceeds the tight 1% tolerance — trigger is warranted despite small size.
     expect(aaplDrift.absoluteDrift).toBeCloseTo(0.025, 4);
     expect(aaplDrift.isOutOfBand).toBe(true);
@@ -73,8 +73,8 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(true);
-    expect(triggerResult.reason).toContain('AAPL');
-    expect(triggerResult.reason).toContain('MSFT');
+    expect(triggerResult.reason).toContain('US0378331005:XNAS:USD');
+    expect(triggerResult.reason).toContain('US5949181045:XNAS:USD');
   });
 
   it('suppresses below-minimum proposal trades with explicit warnings', () => {
@@ -90,7 +90,7 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
     expect(proposal.trades).toEqual([]);
     expect(proposal.estimatedPostTradeCash).toBe(0);
     expect(proposal.warnings).toHaveLength(2);
-    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
     for (const warning of proposal.warnings) {
       expect(warning.code).toBe('MINIMUM_TRADE_SIZE');
       expect(warning.estimatedValue).toBeCloseTo(50, 8);
@@ -100,9 +100,9 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
 });
 
 // ─── positive_cash — drift and trigger validation ────────────────────────────
-// Fixture: cash=5000, AAPL qty=50 ($5000), MSFT qty=50 ($5000), total=15000.
-// AAPL weight: 5000/15000 ≈ 0.333, target 0.5 → drift ≈ −0.167 → out of band.
-// MSFT weight: 5000/15000 ≈ 0.333, target 0.5 → drift ≈ −0.167 → out of band.
+// Fixture: cash=5000, US0378331005:XNAS:USD qty=50 ($5000), US5949181045:XNAS:USD qty=50 ($5000), total=15000.
+// US0378331005:XNAS:USD weight: 5000/15000 ≈ 0.333, target 0.5 → drift ≈ −0.167 → out of band.
+// US5949181045:XNAS:USD weight: 5000/15000 ≈ 0.333, target 0.5 → drift ≈ −0.167 → out of band.
 // Both underweight because cash dilutes the instrument weights.
 describe('Edge Cases — positive_cash drift and trigger', () => {
   const strategy = new ThresholdStrategy();
@@ -118,14 +118,14 @@ describe('Edge Cases — positive_cash drift and trigger', () => {
     expect(valuation.totalPortfolioValue).toBe(15000);
 
     const weights = calculateCurrentWeights(valuation);
-    const aapl = weights.find((w) => w.instrumentId === 'AAPL')!;
-    const msft = weights.find((w) => w.instrumentId === 'MSFT')!;
+    const aapl = weights.find((w) => w.instrumentId === 'US0378331005:XNAS:USD')!;
+    const msft = weights.find((w) => w.instrumentId === 'US5949181045:XNAS:USD')!;
     expect(aapl.weight).toBeCloseTo(1 / 3, 4);
     expect(msft.weight).toBeCloseTo(1 / 3, 4);
 
     const drift = calculateDrift(weights, target, policy);
-    const aaplDrift = drift.find((d) => d.instrumentId === 'AAPL')!;
-    const msftDrift = drift.find((d) => d.instrumentId === 'MSFT')!;
+    const aaplDrift = drift.find((d) => d.instrumentId === 'US0378331005:XNAS:USD')!;
+    const msftDrift = drift.find((d) => d.instrumentId === 'US5949181045:XNAS:USD')!;
 
     // Both instruments are underweight by ~16.7% — well outside the 5% tolerance.
     expect(aaplDrift.absoluteDrift).toBeCloseTo(-1 / 6, 4);
@@ -160,7 +160,7 @@ describe('Edge Cases — positive_cash drift and trigger', () => {
 
     expect(proposal.trades).toHaveLength(2);
     expect(proposal.trades.map((trade) => trade.direction)).toEqual(['BUY', 'BUY']);
-    expect(proposal.trades.map((trade) => trade.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.trades.map((trade) => trade.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
     expect(proposal.estimatedPostTradeCash).toBeCloseTo(0, 8);
   });
 });
@@ -207,13 +207,13 @@ describe('Edge Cases — no-op rebalance for on_target portfolio', () => {
 
 // ─── cash-only portfolio ─────────────────────────────────────────────────────
 // Holdings are empty but there is $10 000 cash. All instrument weights are 0.
-// With a target allocation of 100% AAPL, drift = -100%, trigger should fire.
+// With a target allocation of 100% US0378331005:XNAS:USD, drift = -100%, trigger should fire.
 describe('Edge Cases — cash-only portfolio', () => {
   it('treats all target instruments as fully underweight', () => {
     const state: PortfolioState = { accountId: 'cash-only-1', cash: 10000, holdings: [] };
-    const target: TargetAllocation = { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] };
+    const target: TargetAllocation = { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }] };
     const policy: RebalancingPolicy = { absoluteDriftTolerance: 0.05, minimumTradeSize: 0 };
-    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100 } };
 
     const valuation = calculateValuation(state, prices);
     expect(valuation.totalPortfolioValue).toBe(10000);
@@ -224,7 +224,7 @@ describe('Edge Cases — cash-only portfolio', () => {
     expect(weights.length).toBe(0);
 
     const drift = calculateDrift(weights, target, policy);
-    const aapl = drift.find((d) => d.instrumentId === 'AAPL')!;
+    const aapl = drift.find((d) => d.instrumentId === 'US0378331005:XNAS:USD')!;
     expect(aapl).toBeDefined();
     expect(aapl.currentWeight).toBe(0);
     expect(aapl.targetWeight).toBe(1.0);
@@ -284,20 +284,20 @@ describe('Edge Cases — determinism of drift output ordering', () => {
   it('returns instruments sorted alphabetically regardless of input order', () => {
     // Supply weights in reverse-alphabetical order.
     const weights = [
-      { instrumentId: 'MSFT', weight: 0.4 },
-      { instrumentId: 'GOOG', weight: 0.2 },
-      { instrumentId: 'AAPL', weight: 0.4 },
+      { instrumentId: 'US5949181045:XNAS:USD', weight: 0.4 },
+      { instrumentId: 'US38259P5089:XNAS:USD', weight: 0.2 },
+      { instrumentId: 'US0378331005:XNAS:USD', weight: 0.4 },
     ];
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.4 },
-        { instrumentId: 'GOOG', weight: 0.2 },
-        { instrumentId: 'MSFT', weight: 0.4 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.4 },
+        { instrumentId: 'US38259P5089:XNAS:USD', weight: 0.2 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.4 },
       ],
     };
     const policy: RebalancingPolicy = { absoluteDriftTolerance: 0.05, minimumTradeSize: 0 };
 
     const drift = calculateDrift(weights, target, policy);
-    expect(drift.map((d) => d.instrumentId)).toEqual(['AAPL', 'GOOG', 'MSFT']);
+    expect(drift.map((d) => d.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US38259P5089:XNAS:USD', 'US5949181045:XNAS:USD']);
   });
 });

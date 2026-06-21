@@ -19,10 +19,15 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Rebalancing Engine Tax Lots Mvp Plan](rebalancing-engine-tax-lots-mvp-plan.md)** - Documentation for rebalancing engine tax lots mvp plan
 * **[Scheduled Recurring Cash Flow Mvp Plan](scheduled-recurring-cash-flow-mvp-plan.md)** - Documentation for scheduled recurring cash flow mvp plan
 * **[Architecture Review And Mitigation Plan](architecture-review-and-mitigation-plan.md)** - Architecture review and mitigation plan for system resilience
+* **[Saas Architecture Plan](saas-architecture-plan.md)**
+* **[Sysadmin & B2B Broker Routing Plan](sysadmin-and-b2b-routing-plan.md)**
 * **[Security Review And Mitigation Plan](security-review-and-mitigation-plan.md)** - IT security review and mitigation plan for the live agent
 * **[Target Sum Flexibility Plan](target-sum-flexibility-plan.md)** - Plan for target sum flexibility constraints for target sums < 100% and > 100%
 * **[Dynamic Targeting Plan](dynamic-targeting-plan.md)** - Architectural plan for introducing dynamic targeting (Efficient Frontier/VaR) via an asynchronous optimizer.
 * **[Architecture Review & Mitigation Plan](architecture-review-and-mitigation-plan.md)** - Independent assessment of anti-patterns and a sequenced mitigation plan.
+* **[Asset, Tenant API, and Broker Statistics Enhancements](asset-tenant-api-plan.md)** - Implementation plan for expanding the asset domain model and tenant API credentials.
+* **[Superadmin Dashboard UI Plan](superadmin-dashboard-ui-plan.md)** - Detailed design for exposing the Sysadmin Phase 1 architecture via the web dashboard.
+* **[Týr Agent API Integration Plan](tyr-agent-api-integration-plan.md)** - Implementation plan for the Týr agent API integration based on Issue #9
 
 ## Exploration Plans
 These documents detail how we intend to translate v3 exploration concepts into concrete tranches.

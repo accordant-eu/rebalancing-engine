@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { evaluateRebalance, selectStrategy, supportedStrategyTypes } from '../src/core';
+import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../src/core/quality';
 
 const scenariosPath = path.join(__dirname, 'fixtures', 'scenarios.json');
 const scenariosData = JSON.parse(fs.readFileSync(scenariosPath, 'utf8'));
@@ -32,8 +33,8 @@ describe('Rebalance Evaluation', () => {
     expect(evaluation.trigger.isTriggered).toBe(true);
     expect(evaluation.tradeProposal.executionTargetMode).toBe('full_reset');
     expect(evaluation.tradeProposal.trades.map((trade) => trade.instrumentId)).toEqual([
-      'AAPL',
-      'MSFT',
+      'US0378331005:XNAS:USD',
+      'US5949181045:XNAS:USD',
     ]);
     expect(evaluation.auditRecord.outputs.strategyType).toBe('threshold');
   });
@@ -105,8 +106,8 @@ describe('Rebalance Evaluation', () => {
         accountId: 'scheduled-deposit-account',
         cash: 0,
         holdings: [
-          { instrumentId: 'AAPL', quantity: 100 },
-          { instrumentId: 'MSFT', quantity: 100 },
+          { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+          { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
         ],
         cashFlowSchedules: [
           {
@@ -119,11 +120,11 @@ describe('Rebalance Evaluation', () => {
       },
       targetAllocation: {
         targets: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 },
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
         ],
       },
-      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } },
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 
@@ -143,8 +144,8 @@ describe('Rebalance Evaluation', () => {
         accountId: 'scheduled-withdrawal-account',
         cash: 0,
         holdings: [
-          { instrumentId: 'AAPL', quantity: 100 },
-          { instrumentId: 'MSFT', quantity: 100 },
+          { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+          { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
         ],
         cashFlowSchedules: [
           {
@@ -157,11 +158,11 @@ describe('Rebalance Evaluation', () => {
       },
       targetAllocation: {
         targets: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 },
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
         ],
       },
-      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } },
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 
@@ -181,8 +182,8 @@ describe('Rebalance Evaluation', () => {
         accountId: 'future-scheduled-account',
         cash: 0,
         holdings: [
-          { instrumentId: 'AAPL', quantity: 100 },
-          { instrumentId: 'MSFT', quantity: 100 },
+          { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+          { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
         ],
         cashFlowSchedules: [
           {
@@ -195,11 +196,11 @@ describe('Rebalance Evaluation', () => {
       },
       targetAllocation: {
         targets: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 },
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
         ],
       },
-      priceSnapshot: { prices: { AAPL: 100, MSFT: 100 } },
+      priceSnapshot: { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } },
       policy: { evaluationDate: '2026-05-02', absoluteDriftTolerance: 0.01, minimumTradeSize: 0 },
     });
 
@@ -214,6 +215,69 @@ describe('Rebalance Evaluation', () => {
   it('rejects unsupported strategy identifiers explicitly', () => {
     expect(() => selectStrategy('unsupported')).toThrow(
       'Unsupported rebalancing strategy: unsupported',
+    );
+  });
+
+  it('evaluateRebalance applies quality gate and suppresses low-utility trades', () => {
+    // Setup a scenario where drift reduction is minimal but friction is very high
+    const scenario = scenarioById('one_asset_out_of_band');
+    
+    // We add a friction model that estimates extremely high cost
+    const frictionModel = {
+      estimateCost: (value: number, instrumentId: string) => value * 0.1, // 10% friction!
+    };
+    
+    const translator = new DriftUtilityTranslator(0.0); // 0 bps utility per 1 bps drift
+    const indicator = new DriftReductionIndicator(translator);
+
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-quality-gate',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: scenario.portfolioState,
+      targetAllocation: scenario.targetAllocation,
+      priceSnapshot: scenario.priceSnapshot,
+      policy: {
+        ...scenario.policy,
+        driftUtilityConversionRate: 1.0,
+      },
+      frictionModel,
+      indicators: [indicator],
+    });
+
+    // The trades should be blocked due to quality failure
+    expect(evaluation.tradeProposal.qualityEvaluation?.passed).toBeUndefined(); // It's mapped to qualityResults array
+    expect(evaluation.qualityResults).toContainEqual(
+      expect.objectContaining({ passed: false, name: 'DriftReductionIndicator' })
+    );
+    expect(evaluation.tradeProposal.trades).toEqual([]);
+    expect(evaluation.tradeProposal.warnings).toContainEqual(
+      expect.objectContaining({ code: 'QUALITY_CHECK_FAILED' })
+    );
+  });
+
+  it('ConcentrationLimitIndicator blocks trades that would breach limit in post-trade state', () => {
+    const scenario = scenarioById('one_asset_out_of_band');
+    
+    // The target allocation has weights 0.5 and 0.5. Let's set limit to 0.4.
+    // The trade would try to push it towards 0.5, which breaches 0.4 limit.
+    const indicator = new ConcentrationLimitIndicator(0.4);
+
+    const evaluation = evaluateRebalance({
+      eventId: 'evaluation-concentration-limit',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: scenario.portfolioState,
+      targetAllocation: scenario.targetAllocation,
+      priceSnapshot: scenario.priceSnapshot,
+      policy: scenario.policy,
+      indicators: [indicator],
+    });
+
+    expect(evaluation.qualityResults).toContainEqual(
+      expect.objectContaining({ passed: false, name: 'ConcentrationLimitIndicator' })
+    );
+    expect(evaluation.tradeProposal.trades).toEqual([]);
+    expect(evaluation.tradeProposal.warnings).toContainEqual(
+      expect.objectContaining({ code: 'QUALITY_CHECK_FAILED' })
     );
   });
 });

@@ -7,18 +7,18 @@
         "accountId": "acc-1",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -32,18 +32,18 @@
         "accountId": "acc-2",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 120 },
-          { "instrumentId": "MSFT", "quantity": 80 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 120 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 80 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -52,25 +52,25 @@
     },
     {
       "id": "multiple_assets_out_of_band",
-      "description": "Portfolio with two assets out of band (AAPL +20%, MSFT -20%) and one on target (GOOG 0%)",
+      "description": "Portfolio with two assets out of band (US0378331005:XNAS:USD +20%, US5949181045:XNAS:USD -20%) and one on target (US38259P5089:XNAS:USD 0%)",
       "portfolioState": {
         "accountId": "acc-3",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 150 },
-          { "instrumentId": "MSFT", "quantity": 50 },
-          { "instrumentId": "GOOG", "quantity": 50 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 150 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 50 },
+          { "instrumentId": "US38259P5089:XNAS:USD", "quantity": 50 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.4 },
-          { "instrumentId": "MSFT", "weight": 0.4 },
-          { "instrumentId": "GOOG", "weight": 0.2 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.4 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.4 },
+          { "instrumentId": "US38259P5089:XNAS:USD", "weight": 0.2 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100, "GOOG": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100, "US38259P5089:XNAS:USD": 100 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -84,18 +84,18 @@
         "accountId": "acc-4",
         "cash": 5000,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 50 },
-          { "instrumentId": "MSFT", "quantity": 50 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 50 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 50 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -109,18 +109,18 @@
         "accountId": "acc-5",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 105 },
-          { "instrumentId": "MSFT", "quantity": 95 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 105 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 95 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 10, "MSFT": 10 }
+        "prices": { "US0378331005:XNAS:USD": 10, "US5949181045:XNAS:USD": 10 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.01,
@@ -134,18 +134,18 @@
         "accountId": "acc-6",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -159,18 +159,18 @@
         "accountId": "acc-7",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.6 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.6 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -184,18 +184,18 @@
         "accountId": "acc-12",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "strategyType": "unsupported_strategy",
@@ -220,10 +220,10 @@
         ]
       },
       "targetAllocation": {
-        "targets": [{ "instrumentId": "AAPL", "weight": 1.0 }]
+        "targets": [{ "instrumentId": "US0378331005:XNAS:USD", "weight": 1.0 }]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -237,15 +237,15 @@
         "accountId": "acc-8",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "TSLA", "quantity": 50 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US88160R1014:XNAS:USD", "quantity": 50 }
         ]
       },
       "targetAllocation": {
-        "targets": [{ "instrumentId": "AAPL", "weight": 1.0 }]
+        "targets": [{ "instrumentId": "US0378331005:XNAS:USD", "weight": 1.0 }]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "TSLA": 200 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US88160R1014:XNAS:USD": 200 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -259,8 +259,8 @@
         "accountId": "acc-14",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 50 },
-          { "instrumentId": "MSFT", "quantity": 50 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 50 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 50 }
         ],
         "cashFlows": [
           {
@@ -273,12 +273,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.01,
@@ -292,8 +292,8 @@
         "accountId": "acc-15",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 50 },
-          { "instrumentId": "MSFT", "quantity": 50 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 50 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 50 }
         ],
         "cashFlows": [
           {
@@ -306,12 +306,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.01,
@@ -325,8 +325,8 @@
         "accountId": "acc-16",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlows": [
           {
@@ -339,12 +339,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -358,18 +358,18 @@
         "accountId": "acc-9",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 120 },
-          { "instrumentId": "MSFT", "quantity": 80 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 120 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 80 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "strategyType": "calendar",
@@ -389,18 +389,18 @@
         "accountId": "acc-10",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 120 },
-          { "instrumentId": "MSFT", "quantity": 80 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 120 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 80 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "strategyType": "calendar",
@@ -420,18 +420,18 @@
         "accountId": "acc-11",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 120 },
-          { "instrumentId": "MSFT", "quantity": 80 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 120 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 80 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "strategyType": "threshold",
@@ -447,18 +447,18 @@
         "accountId": "acc-13",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 150 },
-          { "instrumentId": "MSFT", "quantity": 850 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 150 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 850 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.1 },
-          { "instrumentId": "MSFT", "weight": 0.9 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.1 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.9 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 10, "MSFT": 10 }
+        "prices": { "US0378331005:XNAS:USD": 10, "US5949181045:XNAS:USD": 10 }
       },
       "policy": {
         "strategyType": "threshold",
@@ -477,7 +477,7 @@
         "cash": 0,
         "holdings": [
           {
-            "instrumentId": "AAPL",
+            "instrumentId": "US0378331005:XNAS:USD",
             "quantity": 120,
             "taxLots": [
               {
@@ -494,17 +494,17 @@
               }
             ]
           },
-          { "instrumentId": "MSFT", "quantity": 80 }
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 80 }
         ]
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 150, "MSFT": 150 }
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
       },
       "policy": {
         "absoluteDriftTolerance": 0.05,
@@ -519,8 +519,8 @@
         "accountId": "acc-19",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlowSchedules": [
           {
@@ -533,12 +533,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",
@@ -553,8 +553,8 @@
         "accountId": "acc-20",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlowSchedules": [
           {
@@ -567,12 +567,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",
@@ -587,8 +587,8 @@
         "accountId": "acc-21",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlowSchedules": [
           {
@@ -601,12 +601,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",
@@ -621,8 +621,8 @@
         "accountId": "acc-22",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlowSchedules": [
           {
@@ -635,12 +635,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",
@@ -655,8 +655,8 @@
         "accountId": "acc-23",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlowSchedules": [
           {
@@ -670,12 +670,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",
@@ -690,8 +690,8 @@
         "accountId": "acc-24",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlowSchedules": [
           {
@@ -705,12 +705,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",
@@ -736,10 +736,10 @@
         ]
       },
       "targetAllocation": {
-        "targets": [{ "instrumentId": "AAPL", "weight": 1.0 }]
+        "targets": [{ "instrumentId": "US0378331005:XNAS:USD", "weight": 1.0 }]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",
@@ -754,8 +754,8 @@
         "accountId": "acc-26",
         "cash": 0,
         "holdings": [
-          { "instrumentId": "AAPL", "quantity": 100 },
-          { "instrumentId": "MSFT", "quantity": 100 }
+          { "instrumentId": "US0378331005:XNAS:USD", "quantity": 100 },
+          { "instrumentId": "US5949181045:XNAS:USD", "quantity": 100 }
         ],
         "cashFlows": [
           {
@@ -777,12 +777,12 @@
       },
       "targetAllocation": {
         "targets": [
-          { "instrumentId": "AAPL", "weight": 0.5 },
-          { "instrumentId": "MSFT", "weight": 0.5 }
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
         ]
       },
       "priceSnapshot": {
-        "prices": { "AAPL": 100, "MSFT": 100 }
+        "prices": { "US0378331005:XNAS:USD": 100, "US5949181045:XNAS:USD": 100 }
       },
       "policy": {
         "evaluationDate": "2026-05-02",

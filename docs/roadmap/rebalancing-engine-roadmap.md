@@ -39,28 +39,28 @@ This roadmap outlines the exact tranches required to wrap the pure engine inside
 
 Before building the live loop, the calculation core must be adapted to support live semantics without losing its deterministic nature.
 
-- [ ] **Timestamp Traceability:** Add optional `asOf` timestamp metadata to prices.
-- [ ] **Fix Audit Timestamps:** Replace hardcoded audit timestamps (Audit finding H-01) with live ones to ensure chronological audit trails.
-- [ ] **Cash Flow Realism:** Change scheduled cash flow behavior so they are strictly for *projection/planning* and no longer inflate `availableCash` for actionable trade generation.
-- [ ] **CI Pipeline:** Setup GitHub Actions (Audit finding H-02) to ensure the core remains stable as the orchestrator is built around it.
+- [x] **Timestamp Traceability:** Add optional `asOf` timestamp metadata to prices.
+- [x] **Fix Audit Timestamps:** Replace hardcoded audit timestamps (Audit finding H-01) with live ones to ensure chronological audit trails.
+- [x] **Cash Flow Realism:** Change scheduled cash flow behavior so they are strictly for *projection/planning* and no longer inflate `availableCash` for actionable trade generation.
+- [x] **CI Pipeline:** Setup GitHub Actions (Audit finding H-02) to ensure the core remains stable as the orchestrator is built around it.
 
 ### Tranche 2: Orchestrator Skeleton & Simulation Loop (The "Dry Run" Agent)
 
 Introduce the stateful orchestrator layer, but keep it disconnected from a real broker. It will run in a continuous loop against synthetic streaming data.
 
-- [ ] **Live State Manager:** Build an in-memory store holding current prices, positions, cash, and active cooldown timers.
-- [ ] **The Autonomous Loop:** Build a polling or event-driven mechanism that continuously checks for price/position updates and triggers the engine's `evaluateRebalance`.
-- [ ] **Debounce & Cooldown Controls:** Implement logic to prevent the engine from re-triggering repeatedly on every tick when a portfolio is oscillating around a threshold boundary.
-- [ ] **Dry-Run Execution:** Ensure the agent generates real trade proposals but only logs them or writes them to a file instead of executing.
+- [x] **Live State Manager:** Build an in-memory store holding current prices, positions, cash, and active cooldown timers.
+- [x] **The Autonomous Loop:** Build a polling or event-driven mechanism that continuously checks for price/position updates and triggers the engine's `evaluateRebalance`.
+- [x] **Debounce & Cooldown Controls:** Implement logic to prevent the engine from re-triggering repeatedly on every tick when a portfolio is oscillating around a threshold boundary.
+- [x] **Dry-Run Execution:** Ensure the agent generates real trade proposals but only logs them or writes them to a file instead of executing.
 
 ### Tranche 3: Broker Integration (The "Paper Trading" Agent)
 
 Connect the orchestrator to a live broker API, utilizing their simulated/paper-trading environment. (Target broker to be confirmed, likely Alpaca).
 
-- [ ] **Market Data Sync:** Connect to the broker's real-time or delayed price feed. The orchestrator must handle stale feed detection.
-- [ ] **Position & Cash Sync:** Query the broker for factual ledger balances, replacing manual JSON inputs.
-- [ ] **Execution Routing:** Translate engine `TradeProposal` objects into actual broker API order submissions (e.g., Market Orders).
-- [ ] **Safety Limits:** Implement a hard kill-switch and a "max trades per period" limit to prevent runaway execution bugs in the paper environment.
+- [x] **Market Data Sync:** Connect to the broker's real-time or delayed price feed. The orchestrator must handle stale feed detection.
+- [x] **Position & Cash Sync:** Periodically fetch the true state of the sub-account from the broker to reconcile against the local State Manager cache.
+- [x] **Execution Routing:** Map our internal `TradeProposal` object to the broker's specific Order API schemas.
+- [x] **Trade Lifecycle Monitoring:** Track pending, partially filled, and fully executed orders to prevent submitting duplicate trades for the same threshold breach.
 
 ### Tranche 4: Production Hardening (The "Live Trading" Agent)
 

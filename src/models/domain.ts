@@ -5,6 +5,37 @@
  * in `src/core/numeric.ts`, with rounding applied at output boundaries.
  */
 
+export interface TenantBrokerConfig {
+  brokerType: 'ALPACA' | 'MOCK' | string;
+  brokerApiKey: string;
+  brokerApiSecret: string;
+  brokerBaseUrl?: string;
+}
+
+export interface TenantApiKey {
+  keyId: string;
+  tenantId: string;
+  keyPrefix: string;
+  keyHash: string;
+  createdAt: string;
+  status: 'Active' | 'Revoked';
+}
+
+export interface Asset {
+  instrumentId: string;
+  isin: string;
+  ticker: string;
+  exchangeMic: string;
+  currency: string;
+}
+
+export interface ExecutionContext {
+  tenantId: string;
+  brokerConfig: TenantBrokerConfig;
+  translateBrokerSymbol?: (instrumentId: string, brokerType: string) => string;
+  translateBrokerSymbolToInstrumentId?: (brokerSymbol: string, brokerType: string) => string;
+}
+
 export interface Holding {
   instrumentId: string;
   quantity: number;
@@ -84,6 +115,8 @@ export interface PortfolioState {
   tenantId?: string;
   modelId?: string;
   subscriptionType?: SubscriptionType;
+  brokerAccountId?: string;
+  circuitBreakerStatus?: 'open' | 'closed';
   cash: number;
   holdings: Holding[];
   cashFlows?: CashFlow[];
@@ -185,6 +218,12 @@ export interface ProposedLotAllocation {
 }
 
 export type ProposalWarningCode =
+  | 'ZERO_PRICE'
+  | 'CASH_DEFICIT'
+  | 'WASH_SALE_LOCKOUT'
+  | 'ROUNDING_PRECISION_LIMIT'
+  | 'NEGATIVE_CASH_POST_TRADE'
+  | 'QUALITY_CHECK_FAILED'
   | 'MINIMUM_TRADE_SIZE'
   | 'PENDING_CASH_FLOW_EXCLUDED'
   | 'FUTURE_CASH_FLOW_SCHEDULED'

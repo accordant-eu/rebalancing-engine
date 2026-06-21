@@ -118,6 +118,14 @@ This document is a scratchpad to map out the goals, interdependencies, and seque
 - **Implementation Complexity:** Allowing a negative cash target means evaluating margin requirements, maintenance excess, and broker-specific borrowing power. If a portfolio uses $10,000 in equity to buy $15,000 of assets, a 10% market dip could trigger an automated broker liquidation that the agent would aggressively try to "fix" by re-leveraging, causing an infinite liquidation spiral.
 - **Future Integration:** To support leverage, the engine will need a dedicated `MarginConstraint` interface that queries the broker's real-time maintenance margin API before committing any buy orders that dip into negative cash.
 
+## 12. Asynchronous Broker Fills (WebSockets)
+
+**Goal:** Process trade execution confirmations instantly via WebSockets instead of synchronous API polling.
+**Discussion:**
+- **Current Approach:** The MVP uses synchronous polling (e.g., `hasOpenOrders` loop) to ensure safety before deploying more capital.
+- **Scaling Complexity:** Relying on HTTP polling across thousands of portfolios will trigger rate limits and introduce massive latency.
+- **Future Integration:** To achieve real-time reconciliation at scale, the engine must implement a robust WebSocket or Webhook ingestion pipeline that receives execution fills, calculates partial executions, and asynchronously updates the internal `Holdings` and `Portfolios` tables. This requires managing disconnected streams, re-connection logic, and handling out-of-order execution events.
+
 ---
 
 ## Proposed Sequencing (For Discussion)

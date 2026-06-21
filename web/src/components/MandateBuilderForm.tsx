@@ -1,14 +1,16 @@
 import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import type { ModelMandate } from '../types';
+import { AssetPicker } from './AssetPicker';
 
 interface MandateBuilderFormProps {
   initialData?: Partial<ModelMandate>;
+  token?: string;
   onSubmit: (data: Partial<ModelMandate>) => void;
   onCancel?: () => void;
 }
 
-export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialData, onSubmit, onCancel }) => {
+export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialData, token, onSubmit, onCancel }) => {
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   const { register, control, handleSubmit, watch } = useForm<Partial<ModelMandate>>({
@@ -127,7 +129,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
             </div>
             {targetFields.map((field, index) => (
               <div key={field.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 50px', gap: '8px', marginBottom: '8px' }}>
-                <input required {...register(`targetAllocation.targets.${index}.instrumentId`)} placeholder="AAPL" className="formInput" />
+                <AssetPicker required {...register(`targetAllocation.targets.${index}.instrumentId`)} token={token || ''} />
                 <input required type="number" step="0.01" max="1" min="0" {...register(`targetAllocation.targets.${index}.weight`)} placeholder="0.6" className="formInput" />
                 <button type="button" onClick={() => removeTarget(index)} style={{ background: 'var(--status-red)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>X</button>
               </div>

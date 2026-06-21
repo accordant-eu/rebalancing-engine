@@ -40,6 +40,8 @@ const STRATEGY_REGISTRY: Record<RebalancingStrategyType, StrategyInterface> = {
   calendar: new CalendarRebalanceStrategy(),
 };
 
+import { QualityIndicator, EvaluationState } from './quality';
+
 export interface RebalanceEvaluationInput {
   eventId: string;
   createdAt: string;
@@ -49,6 +51,7 @@ export interface RebalanceEvaluationInput {
   priceSnapshot: PriceSnapshot;
   policy: RebalancingPolicy;
   frictionModel?: FrictionModel;
+  indicators?: QualityIndicator[];
 }
 
 export interface RebalanceEvaluation {
@@ -61,6 +64,7 @@ export interface RebalanceEvaluation {
   explanation: RecommendationExplanation;
   auditRecord: AuditRecord;
   cashFlowScheduleSummary?: CashFlowScheduleSummary;
+  qualityResults?: Array<{ name: string; passed: boolean; reason?: string }>;
 }
 
 export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEvaluation {
@@ -73,7 +77,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
   const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
   const strategy = selectStrategy(input.policy.strategyType);
   const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
-  const tradeProposal = trigger.isTriggered
+  let tradeProposal = trigger.isTriggered
     ? generateTradeProposal(
         valuation,
         input.targetAllocation,
@@ -95,13 +99,73 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
             ? (input.policy.boundaryBandMode ?? 'absolute')
             : undefined,
       };
-  const postTradeSimulation = simulatePostTrade(
+
+  let postTradeSimulation = simulatePostTrade(
     effectivePortfolioState,
     input.priceSnapshot,
     input.targetAllocation,
     input.policy,
     tradeProposal,
   );
+
+  const qualityResults: Array<{ name: string; passed: boolean; reason?: string }> = [];
+
+  // Evaluate quality indicators if trades are proposed
+  if (input.indicators && input.indicators.length > 0 && tradeProposal.trades.length > 0) {
+    const preTradeState: EvaluationState = {
+      valuation,
+      weightResults: weights,
+      target: input.targetAllocation,
+      policy: input.policy,
+      proposedTrades: [],
+      estimatedTco: 0
+    };
+
+    let estimatedTco = 0;
+    if (input.frictionModel) {
+      for (const t of tradeProposal.trades) {
+        estimatedTco += input.frictionModel.estimateCost(t.quantity * input.priceSnapshot.prices[t.instrumentId], t.instrumentId);
+      }
+    }
+
+    const postTradeState: EvaluationState = {
+      valuation: postTradeSimulation.postTradeValuation,
+      weightResults: postTradeSimulation.postTradeWeights,
+      target: input.targetAllocation,
+      policy: input.policy,
+      proposedTrades: tradeProposal.trades,
+      estimatedTco
+    };
+
+    let allPassed = true;
+    for (const indicator of input.indicators) {
+      const result = indicator.evaluate(preTradeState, postTradeState);
+      qualityResults.push({ name: indicator.name, passed: result.passed, reason: result.reason });
+      if (!result.passed) {
+        allPassed = false;
+      }
+    }
+
+    // If any quality indicator fails, we reject the trades
+    if (!allPassed) {
+      const failureReasons = qualityResults.filter(q => !q.passed).map(q => `${q.name}: ${q.reason}`).join(' | ');
+      tradeProposal = {
+        ...tradeProposal,
+        trades: [],
+        warnings: [...tradeProposal.warnings, { code: 'QUALITY_CHECK_FAILED', message: failureReasons }]
+      };
+      
+      // Re-simulate post-trade with 0 trades
+      postTradeSimulation = simulatePostTrade(
+        effectivePortfolioState,
+        input.priceSnapshot,
+        input.targetAllocation,
+        input.policy,
+        tradeProposal,
+      );
+    }
+  }
+
   const explanation = generateExplanation(
     trigger,
     tradeProposal,
@@ -134,6 +198,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
     explanation,
     auditRecord,
     cashFlowScheduleSummary,
+    qualityResults
   };
 }
 

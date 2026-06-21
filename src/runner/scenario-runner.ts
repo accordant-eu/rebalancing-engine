@@ -7,15 +7,19 @@ import {
   PriceSnapshot,
   RebalancingPolicy,
   TargetAllocation,
+  MandateArchetype,
+  ConstraintIndicator,
 } from '../models/domain';
 
 export interface ScenarioFixture {
   id: string;
   description: string;
   portfolioState: PortfolioState;
-  targetAllocation: TargetAllocation;
   priceSnapshot: PriceSnapshot;
+  targetAllocation: TargetAllocation;
   policy: RebalancingPolicy;
+  archetype?: MandateArchetype;
+  constraints?: ConstraintIndicator[];
 }
 
 export interface ScenarioRunnerInput {

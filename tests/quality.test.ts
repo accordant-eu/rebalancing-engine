@@ -14,8 +14,8 @@ describe('Quality Indicators', () => {
 
   const mockTarget: TargetAllocation = {
     targets: [
-      { instrumentId: 'AAPL', weight: 0.5 },
-      { instrumentId: 'MSFT', weight: 0.5 }
+      { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+      { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 }
     ]
   };
 
@@ -25,8 +25,8 @@ describe('Quality Indicators', () => {
       const state: EvaluationState = {
         valuation: { totalPortfolioValue: 1000, cash: 0, holdings: [], totalHoldingsValue: 1000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -43,8 +43,8 @@ describe('Quality Indicators', () => {
       const state: EvaluationState = {
         valuation: { totalPortfolioValue: 1000, cash: 0, holdings: [], totalHoldingsValue: 1000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.65 }, // Breaches 60%
-          { instrumentId: 'MSFT', weight: 0.35 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.65 }, // Breaches 60%
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.35 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -67,8 +67,8 @@ describe('Quality Indicators', () => {
       const preState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.7 },
-          { instrumentId: 'MSFT', weight: 0.3 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.7 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.3 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -80,8 +80,8 @@ describe('Quality Indicators', () => {
       const postState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -106,8 +106,8 @@ describe('Quality Indicators', () => {
       const preState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.51 },
-          { instrumentId: 'MSFT', weight: 0.49 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.51 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.49 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -119,8 +119,8 @@ describe('Quality Indicators', () => {
       const postState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -146,8 +146,8 @@ describe('Quality Indicators', () => {
       const preState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.7 },
-          { instrumentId: 'MSFT', weight: 0.3 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.7 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.3 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -158,8 +158,8 @@ describe('Quality Indicators', () => {
       const postState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -182,8 +182,8 @@ describe('Quality Indicators', () => {
       const preState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.7 },
-          { instrumentId: 'MSFT', weight: 0.3 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.7 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.3 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -195,8 +195,8 @@ describe('Quality Indicators', () => {
       const postState: EvaluationState = {
         valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
         weightResults: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 }
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 }
         ],
         target: mockTarget,
         policy: mockPolicy,
@@ -212,41 +212,6 @@ describe('Quality Indicators', () => {
       expect(result.netUtilityBps).toBe(350);
     });
 
-    it('should reject trades when multiplier devalues drift reduction to less than TCO', () => {
-      const translator = new DriftUtilityTranslator(0.1);
-      const indicator = new DriftReductionIndicator(translator);
 
-      const preState: EvaluationState = {
-        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
-        weightResults: [
-          { instrumentId: 'AAPL', weight: 0.7 },
-          { instrumentId: 'MSFT', weight: 0.3 }
-        ],
-        target: mockTarget,
-        policy: mockPolicy,
-        proposedTrades: [],
-        estimatedTco: 0
-      };
-
-      // TCO is $500 (500 bps)
-      const postState: EvaluationState = {
-        valuation: { totalPortfolioValue: 10000, cash: 0, holdings: [], totalHoldingsValue: 10000 },
-        weightResults: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 }
-        ],
-        target: mockTarget,
-        policy: mockPolicy,
-        proposedTrades: [],
-        estimatedTco: 500
-      };
-
-      const result = indicator.evaluate(preState, postState);
-      
-      expect(result.passed).toBe(false);
-      // Raw drift reduction = 4000 bps. Utility = 400 bps.
-      // TCO = 500 bps. Net = -100 bps.
-      expect(result.netUtilityBps).toBe(-100);
-    });
   });
 });

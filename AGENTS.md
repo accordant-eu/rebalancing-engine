@@ -99,6 +99,23 @@ These rules govern AI-assisted development in this repository. The project is in
 - Keep changes scoped to the current task.
 - Provide a concise summary of changes, tests, and open questions after each iteration.
 - **MANDATORY**: After completing any significant task, you must update the `BUILD_JOURNEY.md` iteration log table before committing your changes.
+- **MANDATORY**: Never use `git add .` or `git commit -a`. When committing changes, you must explicitly pass the specific file paths you modified to `git add` (e.g., `git add src/file1.ts src/file2.ts`) to ensure parallel chat sessions do not accidentally commit each other's work.
+
+## 11. Release and Deployment Handoff
+
+- **Scope Boundary**: Your scope as an AI agent ends at the `main` branch. You do not manage tags, create releases, or trigger deployments. Infrastructure and production environments are strictly managed by human operators (e.g., Rufus).
+- **Signaling Readiness**: When a feature or version on `main` is production-ready, you must signal this by opening a GitHub Issue on this repository.
+- **Issue Format**:
+  - **Label**: `release-ready`
+  - **Title**: `Release ready: [brief description of what changed]`
+  - **Body**: Include any relevant notes, breaking changes, migration steps, and explicitly enumerate any new environment variables required (referencing `.env.example`).
+- **Deployment Feedback**: The operator will review, verify on staging, and trigger the deployment. If issues arise post-deployment, they will report them by opening an issue labelled `deployment-feedback`. Act on these issues when they appear.
+
+## 12. UI/UX and Access Control
+
+- **Persona Driven Design**: All UI/UX enhancements and Role-Based Access Control (RBAC) restrictions must adhere to the persona boundaries established in `docs/architecture/personas.md`.
+- **Progressive Disclosure**: Only surface metrics and actions that are relevant to the user's role. Avoid displaying universal/global statistics to tenant-level or advisor-level users unless strictly required.
+- **Reference Document**: Always consult `docs/architecture/personas.md` before adding new dashboards, metrics, or administrative actions. Expand the document if new roles or access tiers are introduced.
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

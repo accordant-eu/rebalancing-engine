@@ -86,20 +86,20 @@ describe('Drift Calculation', () => {
     const drift = calculateDrift(weights, target, policy);
 
     // Total value: 120*150 + 80*150 = 18000 + 12000 = 30000
-    // AAPL current weight: 18000/30000 = 0.6
-    // MSFT current weight: 12000/30000 = 0.4
-    // AAPL absolute drift: 0.6 - 0.5 = +0.1
-    // MSFT absolute drift: 0.4 - 0.5 = -0.1
+    // US0378331005:XNAS:USD current weight: 18000/30000 = 0.6
+    // US5949181045:XNAS:USD current weight: 12000/30000 = 0.4
+    // US0378331005:XNAS:USD absolute drift: 0.6 - 0.5 = +0.1
+    // US5949181045:XNAS:USD absolute drift: 0.4 - 0.5 = -0.1
     // Policy tolerance: 0.05
     // Both should be out of band.
 
     expect(drift.length).toBe(2);
 
-    const aapl = drift.find((d) => d.instrumentId === 'AAPL')!;
+    const aapl = drift.find((d) => d.instrumentId === 'US0378331005:XNAS:USD')!;
     expect(aapl.absoluteDrift).toBeCloseTo(0.1, 4);
     expect(aapl.isOutOfBand).toBe(true);
 
-    const msft = drift.find((d) => d.instrumentId === 'MSFT')!;
+    const msft = drift.find((d) => d.instrumentId === 'US5949181045:XNAS:USD')!;
     expect(msft.absoluteDrift).toBeCloseTo(-0.1, 4);
     expect(msft.isOutOfBand).toBe(true);
   });
@@ -115,22 +115,22 @@ describe('Drift Calculation', () => {
     const weights = calculateCurrentWeights(valuation);
     const drift = calculateDrift(weights, target, policy);
 
-    // Value: AAPL 100*150 = 15000, TSLA 50*200 = 10000. Total 25000.
-    // AAPL weight = 15000/25000 = 0.6
-    // TSLA weight = 10000/25000 = 0.4
-    // TSLA is not in target, so target weight = 0
-    // TSLA abs drift = +0.4 (out of band)
+    // Value: US0378331005:XNAS:USD 100*150 = 15000, US88160R1014:XNAS:USD 50*200 = 10000. Total 25000.
+    // US0378331005:XNAS:USD weight = 15000/25000 = 0.6
+    // US88160R1014:XNAS:USD weight = 10000/25000 = 0.4
+    // US88160R1014:XNAS:USD is not in target, so target weight = 0
+    // US88160R1014:XNAS:USD abs drift = +0.4 (out of band)
 
-    const tsla = drift.find((d) => d.instrumentId === 'TSLA')!;
+    const tsla = drift.find((d) => d.instrumentId === 'US88160R1014:XNAS:USD')!;
     expect(tsla.targetWeight).toBe(0);
     expect(tsla.currentWeight).toBe(0.4);
     expect(tsla.absoluteDrift).toBe(0.4);
     expect(tsla.isOutOfBand).toBe(true);
 
-    // AAPL is in the target (weight 1.0) but currently only 0.6 — severely underweight.
-    // Value: AAPL 100*150=15000, TSLA 50*200=10000, total=25000.
-    // AAPL current weight = 15000/25000 = 0.6, target = 1.0, drift = −0.4.
-    const aapl = drift.find((d) => d.instrumentId === 'AAPL')!;
+    // US0378331005:XNAS:USD is in the target (weight 1.0) but currently only 0.6 — severely underweight.
+    // Value: US0378331005:XNAS:USD 100*150=15000, US88160R1014:XNAS:USD 50*200=10000, total=25000.
+    // US0378331005:XNAS:USD current weight = 15000/25000 = 0.6, target = 1.0, drift = −0.4.
+    const aapl = drift.find((d) => d.instrumentId === 'US0378331005:XNAS:USD')!;
     expect(aapl.targetWeight).toBe(1.0);
     expect(aapl.currentWeight).toBeCloseTo(0.6, 4);
     expect(aapl.absoluteDrift).toBeCloseTo(-0.4, 4);
@@ -140,15 +140,15 @@ describe('Drift Calculation', () => {
   it('handles target not in holdings', () => {
     // Create a scenario where we have a target but hold 0
     const state: PortfolioState = { accountId: '1', cash: 10000, holdings: [] };
-    const target: TargetAllocation = { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] };
+    const target: TargetAllocation = { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }] };
     const policy: RebalancingPolicy = { absoluteDriftTolerance: 0.05, minimumTradeSize: 0 };
-    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100 } };
 
     const valuation = calculateValuation(state, prices);
     const weights = calculateCurrentWeights(valuation);
     const drift = calculateDrift(weights, target, policy);
 
-    const aapl = drift.find((d) => d.instrumentId === 'AAPL')!;
+    const aapl = drift.find((d) => d.instrumentId === 'US0378331005:XNAS:USD')!;
     expect(aapl.currentWeight).toBe(0);
     expect(aapl.targetWeight).toBe(1.0);
     expect(aapl.absoluteDrift).toBe(-1.0);
@@ -156,11 +156,11 @@ describe('Drift Calculation', () => {
   });
 
   it('reports correct per-asset drift for multiple_assets_out_of_band scenario', () => {
-    // Fixture: AAPL qty=150, MSFT qty=50, GOOG qty=50 — all at price 100.
+    // Fixture: US0378331005:XNAS:USD qty=150, US5949181045:XNAS:USD qty=50, US38259P5089:XNAS:USD qty=50 — all at price 100.
     // Total value: 150*100 + 50*100 + 50*100 = 25000.
-    // AAPL current weight: 15000/25000 = 0.60, target 0.40 → drift +0.20 (out of band).
-    // MSFT current weight:  5000/25000 = 0.20, target 0.40 → drift −0.20 (out of band).
-    // GOOG current weight:  5000/25000 = 0.20, target 0.20 → drift  0.00 (in band).
+    // US0378331005:XNAS:USD current weight: 15000/25000 = 0.60, target 0.40 → drift +0.20 (out of band).
+    // US5949181045:XNAS:USD current weight:  5000/25000 = 0.20, target 0.40 → drift −0.20 (out of band).
+    // US38259P5089:XNAS:USD current weight:  5000/25000 = 0.20, target 0.20 → drift  0.00 (in band).
     const scenario = scenariosData.scenarios.find(
       (s: any) => s.id === 'multiple_assets_out_of_band',
     );
@@ -175,19 +175,19 @@ describe('Drift Calculation', () => {
 
     expect(drift.length).toBe(3);
 
-    const aapl = drift.find((d) => d.instrumentId === 'AAPL')!;
+    const aapl = drift.find((d) => d.instrumentId === 'US0378331005:XNAS:USD')!;
     expect(aapl.currentWeight).toBeCloseTo(0.6, 4);
     expect(aapl.targetWeight).toBe(0.4);
     expect(aapl.absoluteDrift).toBeCloseTo(0.2, 4);
     expect(aapl.isOutOfBand).toBe(true);
 
-    const msft = drift.find((d) => d.instrumentId === 'MSFT')!;
+    const msft = drift.find((d) => d.instrumentId === 'US5949181045:XNAS:USD')!;
     expect(msft.currentWeight).toBeCloseTo(0.2, 4);
     expect(msft.targetWeight).toBe(0.4);
     expect(msft.absoluteDrift).toBeCloseTo(-0.2, 4);
     expect(msft.isOutOfBand).toBe(true);
 
-    const goog = drift.find((d) => d.instrumentId === 'GOOG')!;
+    const goog = drift.find((d) => d.instrumentId === 'US38259P5089:XNAS:USD')!;
     expect(goog.currentWeight).toBeCloseTo(0.2, 4);
     expect(goog.targetWeight).toBe(0.2);
     expect(goog.absoluteDrift).toBeCloseTo(0.0, 4);

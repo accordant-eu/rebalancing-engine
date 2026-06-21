@@ -73,7 +73,7 @@ describe('CLI', () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('Validation: invalid');
-    expect(result.stdout).toContain('Missing price for instrument: MSFT');
+    expect(result.stdout).toContain('Missing price for instrument: US5949181045:XNAS:USD');
   });
 
   it('validates scenario input from stdin', async () => {
@@ -207,7 +207,7 @@ describe('CLI', () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Trades:');
     expect(result.stdout).toContain('Explanation:');
-    expect(result.stdout).toContain('SELL AAPL');
+    expect(result.stdout).toContain('SELL US0378331005:XNAS:USD');
   });
 
   it('returns non-zero for strict warning handling', async () => {
@@ -320,7 +320,7 @@ describe('CLI', () => {
     expect(result.exitCode).toBe(1);
     const parsed = JSON.parse(fs.readFileSync(path.join(tempDir, 'missing_price.json'), 'utf8'));
     expect(parsed.status).toBe('error');
-    expect(parsed.result.error).toContain('Missing price for instrument: MSFT');
+    expect(parsed.result.error).toContain('Missing price for instrument: US5949181045:XNAS:USD');
   });
 
   it('returns non-zero for batch errors without expectations', async () => {
@@ -396,18 +396,18 @@ describe('CLI', () => {
         accountId: 'explicit-account',
         cash: 0,
         holdings: [
-          { instrumentId: 'AAPL', quantity: 100 },
-          { instrumentId: 'MSFT', quantity: 100 },
+          { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+          { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
         ],
       }),
     );
-    fs.writeFileSync(pricesPath, JSON.stringify({ prices: { AAPL: 100, MSFT: 100 } }));
+    fs.writeFileSync(pricesPath, JSON.stringify({ prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } }));
     fs.writeFileSync(
       targetPath,
       JSON.stringify({
         targets: [
-          { instrumentId: 'AAPL', weight: 0.5 },
-          { instrumentId: 'MSFT', weight: 0.5 },
+          { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+          { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
         ],
       }),
     );

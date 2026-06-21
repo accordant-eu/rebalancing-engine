@@ -1,6 +1,7 @@
-import { TradeProposal } from '../models/domain';
+import { TradeProposal, ExecutionContext } from '../models/domain';
 import { NotificationAdapter } from '../notifications';
 import { Executor } from './executor';
+import { systemEventBus } from '../events/bus';
 
 export interface CircuitBreakerLimits {
   maxTradesPerSession: number;
@@ -16,7 +17,7 @@ export class CircuitBreaker implements Executor {
     private notifications?: NotificationAdapter,
   ) {}
 
-  public async execute(accountId: string, proposal: TradeProposal, eventId: string): Promise<void> {
+  public async execute(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal, eventId: string): Promise<void> {
     if (proposal.trades.length === 0) {
       return;
     }
@@ -24,8 +25,17 @@ export class CircuitBreaker implements Executor {
     if (this.executedTradesCount >= this.limits.maxTradesPerSession) {
       const msg = `CIRCUIT BREAKER: Max trades per session (${this.limits.maxTradesPerSession}) reached. Blocking execution.`;
       if (this.notifications) {
-        this.notifications.notify('error', msg, { eventId, accountId, tradesCount: proposal.trades.length });
+        this.notifications.notify('error', msg, { eventId, accountId: brokerAccountId, tradesCount: proposal.trades.length });
       }
+      systemEventBus.emitEvent({
+        type: 'CIRCUIT_BREAKER_HALT',
+        accountId: brokerAccountId,
+        tenantId: context.tenantId,
+        timestamp: new Date().toISOString(),
+        eventId,
+        reason: 'MAX_TRADES_PER_SESSION_EXCEEDED',
+        tradesCount: proposal.trades.length
+      });
       throw new Error(msg);
     }
 
@@ -37,12 +47,21 @@ export class CircuitBreaker implements Executor {
     if (grossNotional > this.limits.maxGrossNotionalPerTrade) {
       const msg = `CIRCUIT BREAKER: Gross notional value (${grossNotional}) exceeds limit (${this.limits.maxGrossNotionalPerTrade}). Blocking execution.`;
       if (this.notifications) {
-        this.notifications.notify('error', msg, { eventId, accountId, grossNotional });
+        this.notifications.notify('error', msg, { eventId, accountId: brokerAccountId, grossNotional });
       }
+      systemEventBus.emitEvent({
+        type: 'CIRCUIT_BREAKER_HALT',
+        accountId: brokerAccountId,
+        tenantId: context.tenantId,
+        timestamp: new Date().toISOString(),
+        eventId,
+        reason: 'MAX_GROSS_NOTIONAL_PER_TRADE_EXCEEDED',
+        grossNotional
+      });
       throw new Error(msg);
     }
 
-    await this.targetExecutor.execute(accountId, proposal, eventId);
+    await this.targetExecutor.execute(context, brokerAccountId, proposal, eventId);
     this.executedTradesCount++;
   }
 

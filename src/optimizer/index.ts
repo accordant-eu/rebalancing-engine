@@ -3,7 +3,7 @@ import { TargetAllocation, TargetWeight } from '../models/domain';
 import { logger } from '../utils/logger';
 
 export class MockOptimizerService {
-  constructor(private stateManager: SqliteStateManager) {}
+  constructor(private stateManager: SqliteStateManager, private clock: () => number = Date.now) {}
 
   /**
    * Runs the mock optimizer for all models that require dynamic targeting.
@@ -22,13 +22,13 @@ export class MockOptimizerService {
 
       // Proof-of-Concept: Generate a mock TargetAllocation
       // We will just rotate weights between a predefined universe
-      const universe = ['AAPL', 'MSFT', 'GOOG', 'TSLA', 'SPY', 'BND'];
+      const universe = ['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD', 'US38259P5089:XNAS:USD', 'US88160R1014:XNAS:USD', 'SPY', 'BND'];
       
       // Determine how many assets to pick (e.g. 3)
       const numAssets = 3;
       
       // Use the current day of the year to pseudo-randomly pick assets
-      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+      const dayOfYear = Math.floor((this.clock() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
       
       const targets: TargetWeight[] = [];
       const cashBuffer = 0.05; // 5% cash buffer
@@ -57,7 +57,7 @@ export class MockOptimizerService {
       logger.info({ newTargetAllocation }, `[Optimizer] Computed new targets for Model ${model.modelId} (${model.name})`);
 
       // Fan out to all portfolios
-      this.stateManager.updateModelTargetAllocation(model.modelId, newTargetAllocation);
+      this.stateManager.updateModel({ ...model, targetAllocation: newTargetAllocation });
     }
   }
 }

@@ -50,15 +50,15 @@ describe('Trade Proposal Generation', () => {
       scenario.priceSnapshot,
     );
 
-    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
 
-    const aapl = findTrade(proposal.trades, 'AAPL');
+    const aapl = findTrade(proposal.trades, 'US0378331005:XNAS:USD');
     expect(aapl.direction).toBe('SELL');
     expect(aapl.estimatedValue).toBeCloseTo(3000, 8);
     expect(aapl.quantity).toBeCloseTo(20, 8);
     expect(aapl.estimatedPrice).toBe(150);
 
-    const msft = findTrade(proposal.trades, 'MSFT');
+    const msft = findTrade(proposal.trades, 'US5949181045:XNAS:USD');
     expect(msft.direction).toBe('BUY');
     expect(msft.estimatedValue).toBeCloseTo(3000, 8);
     expect(msft.quantity).toBeCloseTo(20, 8);
@@ -78,7 +78,7 @@ describe('Trade Proposal Generation', () => {
       scenario.priceSnapshot,
     );
 
-    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
     for (const trade of proposal.trades) {
       expect(trade.direction).toBe('BUY');
       expect(trade.estimatedValue).toBeCloseTo(2500, 8);
@@ -99,14 +99,14 @@ describe('Trade Proposal Generation', () => {
       scenario.priceSnapshot,
     );
 
-    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'TSLA']);
+    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US88160R1014:XNAS:USD']);
 
-    const aapl = findTrade(proposal.trades, 'AAPL');
+    const aapl = findTrade(proposal.trades, 'US0378331005:XNAS:USD');
     expect(aapl.direction).toBe('BUY');
     expect(aapl.estimatedValue).toBeCloseTo(10000, 8);
     expect(aapl.quantity).toBeCloseTo(10000 / 150, 8);
 
-    const tsla = findTrade(proposal.trades, 'TSLA');
+    const tsla = findTrade(proposal.trades, 'US88160R1014:XNAS:USD');
     expect(tsla.direction).toBe('SELL');
     expect(tsla.estimatedValue).toBeCloseTo(10000, 8);
     expect(tsla.quantity).toBeCloseTo(50, 8);
@@ -120,24 +120,24 @@ describe('Trade Proposal Generation', () => {
       accountId: 'ordering-1',
       cash: 0,
       holdings: [
-        { instrumentId: 'MSFT', quantity: 50 },
-        { instrumentId: 'AAPL', quantity: 150 },
-        { instrumentId: 'GOOG', quantity: 50 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 50 },
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 150 },
+        { instrumentId: 'US38259P5089:XNAS:USD', quantity: 50 },
       ],
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'GOOG', weight: 0.2 },
-        { instrumentId: 'MSFT', weight: 0.4 },
-        { instrumentId: 'AAPL', weight: 0.4 },
+        { instrumentId: 'US38259P5089:XNAS:USD', weight: 0.2 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.4 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.4 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 100, GOOG: 100, MSFT: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100, 'US38259P5089:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } };
     const valuation = calculateValuation(state, prices);
 
     const proposal = generateTradeProposal(valuation, target, prices);
 
-    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
     expect(proposal.warnings).toEqual([]);
   });
 
@@ -148,13 +148,13 @@ describe('Trade Proposal Generation', () => {
       holdings: [],
     };
     const target: TargetAllocation = {
-      targets: [{ instrumentId: 'AAPL', weight: 1.0 }],
+      targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }],
     };
     const prices: PriceSnapshot = { prices: {} };
     const valuation = calculateValuation(state, prices);
 
     expect(() => generateTradeProposal(valuation, target, prices)).toThrow(
-      'Missing price for trade proposal instrument: AAPL',
+      'Missing price for trade proposal instrument: US0378331005:XNAS:USD',
     );
   });
 
@@ -171,12 +171,12 @@ describe('Trade Proposal Generation', () => {
     const state: PortfolioState = {
       accountId: 'negative-cash-1',
       cash: -100,
-      holdings: [{ instrumentId: 'AAPL', quantity: 101 }],
+      holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 101 }],
     };
     const target: TargetAllocation = {
-      targets: [{ instrumentId: 'AAPL', weight: 1.0 }],
+      targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1.0 }],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100 } };
     const valuation = calculateValuation(state, prices);
 
     expect(() => generateTradeProposal(valuation, target, prices)).toThrow(
@@ -189,8 +189,8 @@ describe('Trade Proposal Generation', () => {
       accountId: 'withdrawal-deficit-1',
       cash: 0,
       holdings: [
-        { instrumentId: 'AAPL', quantity: 50 },
-        { instrumentId: 'MSFT', quantity: 50 },
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 50 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 50 },
       ],
       cashFlows: [
         {
@@ -203,11 +203,11 @@ describe('Trade Proposal Generation', () => {
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 100, MSFT: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } };
     const valuation = calculateValuation(state, prices);
 
     const proposal = generateTradeProposal(valuation, target, prices, {
@@ -230,8 +230,8 @@ describe('Trade Proposal Generation', () => {
       accountId: 'pending-cash-flow-1',
       cash: 500,
       holdings: [
-        { instrumentId: 'AAPL', quantity: 50 },
-        { instrumentId: 'MSFT', quantity: 50 },
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 50 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 50 },
       ],
       cashFlows: [
         {
@@ -244,11 +244,11 @@ describe('Trade Proposal Generation', () => {
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 100, MSFT: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } };
     const valuation = calculateValuation(state, prices);
 
     const proposal = generateTradeProposal(valuation, target, prices, {
@@ -280,7 +280,7 @@ describe('Trade Proposal Generation', () => {
     expect(proposal.trades).toEqual([]);
     expect(proposal.estimatedPostTradeCash).toBe(0);
     expect(proposal.warnings).toHaveLength(2);
-    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
     for (const warning of proposal.warnings) {
       expect(warning.code).toBe('MINIMUM_TRADE_SIZE');
       expect(warning.estimatedValue).toBeCloseTo(50, 8);
@@ -302,14 +302,14 @@ describe('Trade Proposal Generation', () => {
 
     expect(proposal.executionTargetMode).toBe('boundary');
     expect(proposal.boundaryBandMode).toBe('absolute');
-    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['AAPL', 'MSFT']);
+    expect(proposal.trades.map((t) => t.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
 
-    const aapl = findTrade(proposal.trades, 'AAPL');
+    const aapl = findTrade(proposal.trades, 'US0378331005:XNAS:USD');
     expect(aapl.direction).toBe('SELL');
     expect(aapl.estimatedValue).toBeCloseTo(1500, 8);
     expect(aapl.quantity).toBeCloseTo(10, 8);
 
-    const msft = findTrade(proposal.trades, 'MSFT');
+    const msft = findTrade(proposal.trades, 'US5949181045:XNAS:USD');
     expect(msft.direction).toBe('BUY');
     expect(msft.estimatedValue).toBeCloseTo(1500, 8);
     expect(msft.quantity).toBeCloseTo(10, 8);
@@ -323,17 +323,17 @@ describe('Trade Proposal Generation', () => {
       accountId: 'relative-boundary-1',
       cash: 0,
       holdings: [
-        { instrumentId: 'AAPL', quantity: 150 },
-        { instrumentId: 'MSFT', quantity: 850 },
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 150 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 850 },
       ],
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.1 },
-        { instrumentId: 'MSFT', weight: 0.9 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.1 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.9 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 10, MSFT: 10 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 10, 'US5949181045:XNAS:USD': 10 } };
     const valuation = calculateValuation(state, prices);
 
     const proposal = generateTradeProposal(valuation, target, prices, {
@@ -349,7 +349,7 @@ describe('Trade Proposal Generation', () => {
     expect(proposal.boundaryBandMode).toBe('relative');
     expect(proposal.trades).toHaveLength(1);
 
-    const aapl = findTrade(proposal.trades, 'AAPL');
+    const aapl = findTrade(proposal.trades, 'US0378331005:XNAS:USD');
     expect(aapl.direction).toBe('SELL');
     expect(aapl.estimatedValue).toBeCloseTo(300, 8);
     expect(aapl.quantity).toBeCloseTo(30, 8);
@@ -393,23 +393,23 @@ describe('Trade Proposal Generation', () => {
       cash: 0,
       holdings: [
         {
-          instrumentId: 'AAPL',
+          instrumentId: 'US0378331005:XNAS:USD',
           quantity: 120,
           taxLots: [
             { lotId: 'older-lot', quantity: 70, acquisitionDate: '2024-01-01', unitCost: 90 },
             { lotId: 'newer-lot', quantity: 50, acquisitionDate: '2025-01-01', unitCost: 110 },
           ],
         },
-        { instrumentId: 'MSFT', quantity: 80 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 80 },
       ],
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 150, 'US5949181045:XNAS:USD': 150 } };
     const valuation = calculateValuation(state, prices);
 
     const proposal = generateTradeProposal(valuation, target, prices, {
@@ -417,7 +417,7 @@ describe('Trade Proposal Generation', () => {
       minimumTradeSize: 0,
     });
 
-    const aapl = findTrade(proposal.trades, 'AAPL');
+    const aapl = findTrade(proposal.trades, 'US0378331005:XNAS:USD');
     expect(aapl.quantity).toBeCloseTo(20, 8);
     expect(aapl.lotAllocations).toEqual([
       {
@@ -436,23 +436,23 @@ describe('Trade Proposal Generation', () => {
       cash: 0,
       holdings: [
         {
-          instrumentId: 'AAPL',
+          instrumentId: 'US0378331005:XNAS:USD',
           quantity: 120,
           taxLots: [
             { lotId: 'older-lot', quantity: 70, acquisitionDate: '2024-01-01' },
             { lotId: 'newer-lot', quantity: 50, acquisitionDate: '2025-01-01' },
           ],
         },
-        { instrumentId: 'MSFT', quantity: 80 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 80 },
       ],
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 150, 'US5949181045:XNAS:USD': 150 } };
     const valuation = calculateValuation(state, prices);
 
     const proposal = generateTradeProposal(valuation, target, prices, {
@@ -461,7 +461,7 @@ describe('Trade Proposal Generation', () => {
       sellSelectionMode: 'LIFO',
     });
 
-    const aapl = findTrade(proposal.trades, 'AAPL');
+    const aapl = findTrade(proposal.trades, 'US0378331005:XNAS:USD');
     expect(aapl.lotAllocations?.map((allocation) => allocation.lotId)).toEqual(['newer-lot']);
   });
 
@@ -471,23 +471,23 @@ describe('Trade Proposal Generation', () => {
       cash: 0,
       holdings: [
         {
-          instrumentId: 'AAPL',
+          instrumentId: 'US0378331005:XNAS:USD',
           quantity: 120,
           taxLots: [
             { lotId: 'low-cost', quantity: 70, acquisitionDate: '2024-01-01', unitCost: 80 },
             { lotId: 'high-cost', quantity: 50, acquisitionDate: '2025-01-01', unitCost: 120 },
           ],
         },
-        { instrumentId: 'MSFT', quantity: 80 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 80 },
       ],
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 150, 'US5949181045:XNAS:USD': 150 } };
     const valuation = calculateValuation(state, prices);
 
     const highestCostProposal = generateTradeProposal(valuation, target, prices, {
@@ -501,10 +501,10 @@ describe('Trade Proposal Generation', () => {
       sellSelectionMode: 'LOWEST_COST',
     });
 
-    expect(findTrade(highestCostProposal.trades, 'AAPL').lotAllocations?.[0].lotId).toBe(
+    expect(findTrade(highestCostProposal.trades, 'US0378331005:XNAS:USD').lotAllocations?.[0].lotId).toBe(
       'high-cost',
     );
-    expect(findTrade(lowestCostProposal.trades, 'AAPL').lotAllocations?.[0].lotId).toBe('low-cost');
+    expect(findTrade(lowestCostProposal.trades, 'US0378331005:XNAS:USD').lotAllocations?.[0].lotId).toBe('low-cost');
   });
 
   it('requires unit costs for cost-based sell selection modes', () => {
@@ -513,20 +513,20 @@ describe('Trade Proposal Generation', () => {
       cash: 0,
       holdings: [
         {
-          instrumentId: 'AAPL',
+          instrumentId: 'US0378331005:XNAS:USD',
           quantity: 120,
           taxLots: [{ lotId: 'missing-cost', quantity: 120, acquisitionDate: '2024-01-01' }],
         },
-        { instrumentId: 'MSFT', quantity: 80 },
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 80 },
       ],
     };
     const target: TargetAllocation = {
       targets: [
-        { instrumentId: 'AAPL', weight: 0.5 },
-        { instrumentId: 'MSFT', weight: 0.5 },
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 150, MSFT: 150 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 150, 'US5949181045:XNAS:USD': 150 } };
     const valuation = calculateValuation(state, prices);
 
     expect(() =>

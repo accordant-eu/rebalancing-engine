@@ -3,6 +3,8 @@ import {
   PriceSnapshot,
   RebalancingPolicy,
   TargetAllocation,
+  MandateArchetype,
+  ConstraintIndicator
 } from '../models/domain';
 
 export interface LiveState {
@@ -10,6 +12,8 @@ export interface LiveState {
   priceSnapshot: PriceSnapshot;
   targetAllocation: TargetAllocation;
   policy: RebalancingPolicy;
+  archetype: MandateArchetype;
+  constraints?: ConstraintIndicator[];
 }
 
 export interface LiveStateManager {
@@ -18,6 +22,8 @@ export interface LiveStateManager {
   updatePortfolio(accountId: string, portfolioUpdate: Partial<PortfolioState>): void;
   updateTarget(accountId: string, target: TargetAllocation): void;
   updatePolicy(accountId: string, policy: RebalancingPolicy): void;
+  updatePortfolioMandate(accountId: string, payload: { targetAllocation: TargetAllocation, policy: RebalancingPolicy, archetype: MandateArchetype, constraints?: ConstraintIndicator[] }): void;
+  updateCircuitBreakerStatus?(accountId: string, status: 'open' | 'closed'): void;
   markTradeExecution(accountId: string, timestampMs: number): void;
   getLastTradeTimeMs(accountId: string): number;
   getAccountState(accountId: string): LiveState;
@@ -25,6 +31,9 @@ export interface LiveStateManager {
   getAllStates(): Record<string, LiveState>;
   getGlobalPrices(): PriceSnapshot;
   isReady(accountId: string): boolean;
+  getTenantBrokerConfig?(tenantId: string): any;
+  getBrokerSymbol?(instrumentId: string, brokerType: string): string;
+  getInstrumentId?(brokerSymbol: string, brokerType: string): string;
   
   // Event-Driven Queueing
   enqueuePortfolio(accountId: string, timestampMs: number): void;
@@ -75,6 +84,15 @@ export class MultiPortfolioStateManager implements LiveStateManager {
   public updatePolicy(accountId: string, policy: RebalancingPolicy): void {
     const state = this.ensureInitialized(accountId);
     state.policy = policy;
+  }
+
+  public updatePortfolioMandate(accountId: string, payload: { targetAllocation: TargetAllocation, policy: RebalancingPolicy, archetype: MandateArchetype, constraints?: ConstraintIndicator[] }): void {
+    const state = this.ensureInitialized(accountId);
+    state.targetAllocation = payload.targetAllocation;
+    state.policy = payload.policy;
+    state.archetype = payload.archetype;
+    state.constraints = payload.constraints;
+    state.portfolioState.subscriptionType = 'bespoke';
   }
 
   public markTradeExecution(accountId: string, timestampMs: number): void {

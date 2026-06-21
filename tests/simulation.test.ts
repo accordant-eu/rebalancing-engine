@@ -41,8 +41,8 @@ describe('Post-Trade Simulation', () => {
 
     expect(simulation.postTradeState.cash).toBeCloseTo(0, 8);
     expect(simulation.postTradeState.holdings).toEqual([
-      { instrumentId: 'AAPL', quantity: 100 },
-      { instrumentId: 'MSFT', quantity: 100 },
+      { instrumentId: 'US0378331005:XNAS:USD', quantity: 100 },
+      { instrumentId: 'US5949181045:XNAS:USD', quantity: 100 },
     ]);
     for (const drift of simulation.residualDrift) {
       expect(drift.absoluteDrift).toBeCloseTo(0, 8);
@@ -71,8 +71,8 @@ describe('Post-Trade Simulation', () => {
 
     expect(simulation.postTradeState.cash).toBeCloseTo(0, 8);
     expect(simulation.postTradeState.holdings).toEqual([
-      { instrumentId: 'AAPL', quantity: 75 },
-      { instrumentId: 'MSFT', quantity: 75 },
+      { instrumentId: 'US0378331005:XNAS:USD', quantity: 75 },
+      { instrumentId: 'US5949181045:XNAS:USD', quantity: 75 },
     ]);
     expect(simulation.turnover).toBe(0);
   });
@@ -100,8 +100,8 @@ describe('Post-Trade Simulation', () => {
     expect(simulation.postTradeState).toEqual(scenario.portfolioState);
     expect(simulation.turnover).toBe(0);
 
-    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'AAPL')!;
-    const msft = simulation.residualDrift.find((drift) => drift.instrumentId === 'MSFT')!;
+    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'US0378331005:XNAS:USD')!;
+    const msft = simulation.residualDrift.find((drift) => drift.instrumentId === 'US5949181045:XNAS:USD')!;
     expect(aapl.absoluteDrift).toBeCloseTo(0.025, 8);
     expect(aapl.isOutOfBand).toBe(true);
     expect(msft.absoluteDrift).toBeCloseTo(-0.025, 8);
@@ -112,15 +112,15 @@ describe('Post-Trade Simulation', () => {
     const state: PortfolioState = {
       accountId: 'oversell-1',
       cash: 0,
-      holdings: [{ instrumentId: 'AAPL', quantity: 1 }],
+      holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 1 }],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
-    const target: TargetAllocation = { targets: [{ instrumentId: 'AAPL', weight: 1 }] };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100 } };
+    const target: TargetAllocation = { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1 }] };
     const policy: RebalancingPolicy = { absoluteDriftTolerance: 0.05, minimumTradeSize: 0 };
     const proposal: TradeProposal = {
       trades: [
         {
-          instrumentId: 'AAPL',
+          instrumentId: 'US0378331005:XNAS:USD',
           direction: 'SELL',
           quantity: 2,
           estimatedPrice: 100,
@@ -133,7 +133,7 @@ describe('Post-Trade Simulation', () => {
     };
 
     expect(() => simulatePostTrade(state, prices, target, policy, proposal)).toThrow(
-      'Cannot sell more than current holding for instrument: AAPL',
+      'Cannot sell more than current holding for instrument: US0378331005:XNAS:USD',
     );
   });
 
@@ -176,8 +176,8 @@ describe('Post-Trade Simulation', () => {
       proposal,
     );
 
-    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'AAPL');
-    const msft = simulation.residualDrift.find((drift) => drift.instrumentId === 'MSFT');
+    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'US0378331005:XNAS:USD');
+    const msft = simulation.residualDrift.find((drift) => drift.instrumentId === 'US5949181045:XNAS:USD');
 
     expect(aapl?.currentWeight).toBeCloseTo(0.55, 8);
     expect(aapl?.isOutOfBand).toBe(false);
@@ -204,7 +204,7 @@ describe('Post-Trade Simulation', () => {
       proposal,
     );
 
-    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'AAPL');
+    const aapl = simulation.residualDrift.find((drift) => drift.instrumentId === 'US0378331005:XNAS:USD');
 
     expect(proposal.boundaryBandMode).toBe('relative');
     expect(aapl?.currentWeight).toBeCloseTo(0.12, 8);

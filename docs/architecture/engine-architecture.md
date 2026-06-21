@@ -74,7 +74,7 @@ The API design utilizes clear boundaries and structured JSON payloads.
 ```json
 {  
  "rebalanceNeeded": true,  
- "triggerReason": "AAPL absolute weight 0.142 exceeds upper bound 0.150",  
+ "triggerReason": "US0378331005:XNAS:USD absolute weight 0.142 exceeds upper bound 0.150",  
  "proposalId": "PROP-9921",  
  "proposedTrades": [],  
  "simulation": { "estimatedTurnover": 0.04, "postTradeCash": 800.00 }  

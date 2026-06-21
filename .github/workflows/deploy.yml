@@ -1,0 +1,77 @@
+name: Deploy to production
+
+# Triggered manually by Rufus (Accordant AI agent).
+# AntiGravity does not trigger this workflow — production is Rufus's responsibility.
+#
+# How the release cycle works:
+#   1. AntiGravity develops on main and opens a GitHub Issue labelled
+#      'release-ready' when a version is considered production-ready.
+#   2. Rufus reviews main, verifies on the dev environment, and triggers
+#      this workflow when satisfied.
+#   3. Post-deploy issues are reported back via GitHub Issues ('deployment-feedback').
+#   4. This workflow creates a GitHub Release after every successful deploy
+#      so there is a versioned record of every production change.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (branch, tag, or SHA)"
+        required: false
+        default: "main"
+      release_notes:
+        description: "Release notes — summarise what changed (optional)"
+        required: false
+        default: ""
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required to push tags and create releases
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+          fetch-depth: 0
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /srv/rebalancing-engine
+            git fetch origin
+            git checkout ${{ github.event.inputs.ref || 'main' }}
+            git pull origin ${{ github.event.inputs.ref || 'main' }} 2>/dev/null || true
+            docker compose build
+            docker compose up -d --force-recreate
+            # Extract built frontend from image to host path for nginx
+            docker cp rebalancing-engine:/app/web/dist/. ./web/dist/
+            echo "Deployed: $(git rev-parse --short HEAD)"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date -u +%Y-%m-%d)
+          TAG="deploy/${DATE}-${SHORT_SHA}"
+
+          NOTES="${{ github.event.inputs.release_notes }}"
+          if [ -z "$NOTES" ]; then
+            NOTES="Production deployment of ${SHORT_SHA} on ${DATE}. Actor: ${{ github.actor }}. Ref: ${{ github.event.inputs.ref || 'main' }}. Live at: https://rebalancing.accordant.eu"
+          fi
+
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          gh release create "$TAG" \
+            --title "Deploy ${DATE} · ${SHORT_SHA}" \
+            --notes "$NOTES" \
+            --latest=false

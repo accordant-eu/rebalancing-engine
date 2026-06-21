@@ -5,9 +5,17 @@ export class ModelRepository {
   public save(model: ModelMandate): void {
     const db = getDb();
     db.prepare(`
-      INSERT OR REPLACE INTO Models 
+      INSERT INTO Models 
       (modelId, tenantId, name, archetype, evaluationFrequency, targetAllocation, policy, constraints) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(modelId) DO UPDATE SET
+        tenantId = excluded.tenantId,
+        name = excluded.name,
+        archetype = excluded.archetype,
+        evaluationFrequency = excluded.evaluationFrequency,
+        targetAllocation = excluded.targetAllocation,
+        policy = excluded.policy,
+        constraints = excluded.constraints
     `).run(
       model.modelId,
       model.tenantId,

@@ -21,8 +21,8 @@ describe('Valuation and Weight Calculation', () => {
 
     const weights = calculateCurrentWeights(valuation);
     expect(weights.length).toBe(2);
-    expect(weights.find((w) => w.instrumentId === 'AAPL')?.weight).toBe(0.5);
-    expect(weights.find((w) => w.instrumentId === 'MSFT')?.weight).toBe(0.5);
+    expect(weights.find((w) => w.instrumentId === 'US0378331005:XNAS:USD')?.weight).toBe(0.5);
+    expect(weights.find((w) => w.instrumentId === 'US5949181045:XNAS:USD')?.weight).toBe(0.5);
   });
 
   it('calculates valuation and weights correctly for positive cash scenario', () => {
@@ -37,8 +37,8 @@ describe('Valuation and Weight Calculation', () => {
 
     const weights = calculateCurrentWeights(valuation);
     // Weights are calculated relative to total portfolio value (15000)
-    // AAPL: 5000 / 15000 = 0.3333...
-    const aaplWeight = weights.find((w) => w.instrumentId === 'AAPL')?.weight;
+    // 'US0378331005:XNAS:USD': 5000 / 15000 = 0.3333...
+    const aaplWeight = weights.find((w) => w.instrumentId === 'US0378331005:XNAS:USD')?.weight;
     expect(aaplWeight).toBeCloseTo(0.3333, 4);
   });
 
@@ -47,7 +47,7 @@ describe('Valuation and Weight Calculation', () => {
     const state: PortfolioState = scenario.portfolioState;
     const prices: PriceSnapshot = scenario.priceSnapshot;
 
-    expect(() => calculateValuation(state, prices)).toThrow('Missing price for instrument: MSFT');
+    expect(() => calculateValuation(state, prices)).toThrow('Missing price for instrument: US5949181045:XNAS:USD');
   });
 
   it('handles empty portfolio gracefully', () => {
@@ -69,9 +69,9 @@ describe('Valuation and Weight Calculation', () => {
     const zeroState: PortfolioState = {
       accountId: 'zero-1',
       cash: 0,
-      holdings: [{ instrumentId: 'AAPL', quantity: 0 }],
+      holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 0 }],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 150 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 150 } };
 
     const valuation = calculateValuation(zeroState, prices);
     expect(valuation.totalPortfolioValue).toBe(0);
@@ -84,7 +84,7 @@ describe('Valuation and Weight Calculation', () => {
     const state: PortfolioState = {
       accountId: 'cash-flow-valuation-1',
       cash: 100,
-      holdings: [{ instrumentId: 'AAPL', quantity: 10 }],
+      holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 10 }],
       cashFlows: [
         {
           cashFlowId: 'deposit-1',
@@ -106,7 +106,7 @@ describe('Valuation and Weight Calculation', () => {
         },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100 } };
 
     const valuation = calculateValuation(state, prices);
 
@@ -133,7 +133,7 @@ describe('Valuation and Weight Calculation', () => {
     const state: PortfolioState = {
       accountId: 'cash-flow-valuation-2',
       cash: 100,
-      holdings: [{ instrumentId: 'AAPL', quantity: 10 }],
+      holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 10 }],
       cashFlows: [
         {
           cashFlowId: 'withdrawal-1',
@@ -143,7 +143,7 @@ describe('Valuation and Weight Calculation', () => {
         },
       ],
     };
-    const prices: PriceSnapshot = { prices: { AAPL: 100 } };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100 } };
 
     const valuation = calculateValuation(state, prices);
 
@@ -176,7 +176,7 @@ describe('Valuation and Weight Calculation', () => {
     const state: PortfolioState = {
       accountId: 'cash-flow-invalid-2',
       cash: 0,
-      holdings: [{ instrumentId: 'AAPL', quantity: 1 }],
+      holdings: [{ instrumentId: 'US0378331005:XNAS:USD', quantity: 1 }],
       cashFlows: [
         {
           cashFlowId: 'too-large-withdrawal',
@@ -187,7 +187,7 @@ describe('Valuation and Weight Calculation', () => {
       ],
     };
 
-    expect(() => calculateValuation(state, { prices: { AAPL: 100 } })).toThrow(
+    expect(() => calculateValuation(state, { prices: { 'US0378331005:XNAS:USD': 100 } })).toThrow(
       'Cash flows exceed total portfolio value',
     );
   });
@@ -198,7 +198,7 @@ describe('Valuation and Weight Calculation', () => {
       cash: 0,
       holdings: [
         {
-          instrumentId: 'AAPL',
+          instrumentId: 'US0378331005:XNAS:USD',
           quantity: 10,
           taxLots: [
             { lotId: 'lot-1', quantity: 4, acquisitionDate: '2024-01-01', unitCost: 90 },
@@ -208,7 +208,7 @@ describe('Valuation and Weight Calculation', () => {
       ],
     };
 
-    const valuation = calculateValuation(state, { prices: { AAPL: 100 } });
+    const valuation = calculateValuation(state, { prices: { 'US0378331005:XNAS:USD': 100 } });
 
     expect(valuation.totalHoldingsValue).toBe(1000);
   });
@@ -219,7 +219,7 @@ describe('Valuation and Weight Calculation', () => {
       cash: 0,
       holdings: [
         {
-          instrumentId: 'AAPL',
+          instrumentId: 'US0378331005:XNAS:USD',
           quantity: 10,
           taxLots: [
             { lotId: 'lot-1', quantity: 4 },
@@ -229,8 +229,8 @@ describe('Valuation and Weight Calculation', () => {
       ],
     };
 
-    expect(() => calculateValuation(state, { prices: { AAPL: 100 } })).toThrow(
-      'Tax lot quantities do not sum to holding quantity for instrument: AAPL',
+    expect(() => calculateValuation(state, { prices: { 'US0378331005:XNAS:USD': 100 } })).toThrow(
+      'Tax lot quantities do not sum to holding quantity for instrument: US0378331005:XNAS:USD',
     );
   });
 });
