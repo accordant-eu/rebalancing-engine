@@ -283,9 +283,9 @@ describe('API Endpoints (Týr Integration)', () => {
         }
       };
 
-      const server = app.listen(0, () => {
+      const server = app.listen(0, async () => {
         const port = (server.address() as any).port;
-        const http = require('http');
+        const http = await import('http');
         const req = http.get(`http://localhost:${port}/api/events/stream`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }, (res: any) => {
@@ -312,9 +312,9 @@ describe('API Endpoints (Týr Integration)', () => {
         }
       };
 
-      const server = app.listen(0, () => {
+      const server = app.listen(0, async () => {
         const port = (server.address() as any).port;
-        const http = require('http');
+        const http = await import('http');
         const req = http.get(`http://localhost:${port}/api/events/stream`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }, (res: any) => {
