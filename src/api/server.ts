@@ -246,6 +246,45 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   app.use('/api/webhooks', setupBrokerWebhooks(stateManager));
 
+  // --- Audit Explorer (Compliance) ---
+  app.get('/api/logs', (req: any, res: any) => {
+    const { accountId, type, limit = '100', offset = '0' } = req.query;
+    // Tenants can only see their own logs, Superadmin sees all
+    const db = getDb();
+    
+    let query = `SELECT eventId, accountId, tenantId, type, inputs, outputs, timestampMs, createdAt FROM AuditTrails WHERE 1=1`;
+    const params: any[] = [];
+    
+    if (req.role !== 'Admin' || (process.env.SUPERADMIN_TENANT_ID && req.tenantId !== process.env.SUPERADMIN_TENANT_ID)) {
+      query += ` AND tenantId = ?`;
+      params.push(req.tenantId);
+    }
+    
+    if (accountId) {
+      query += ` AND accountId = ?`;
+      params.push(accountId);
+    }
+    
+    if (type) {
+      query += ` AND type = ?`;
+      params.push(type);
+    }
+    
+    query += ` ORDER BY timestampMs DESC LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit, 10));
+    params.push(parseInt(offset, 10));
+    
+    const logs = db.prepare(query).all(...params);
+    // Parse JSON fields
+    const parsedLogs = logs.map((l: any) => ({
+      ...l,
+      inputs: JSON.parse(l.inputs || '{}'),
+      outputs: JSON.parse(l.outputs || '{}')
+    }));
+    
+    res.json(parsedLogs);
+  });
+
   app.get('/api/state', (req, res) => {
     const tenantId = (req as any).tenantId;
     const targetTenant = tenantId === 'superadmin' ? null : tenantId;

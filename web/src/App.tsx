@@ -10,6 +10,8 @@ import { SystemOpsTab } from './components/admin/SystemOpsTab';
 import { AssetUniverseTab } from './components/admin/AssetUniverseTab';
 import { CommandCenterDashboard } from './components/CommandCenterDashboard';
 import { AdvisorLayout } from './components/AdvisorLayout';
+import { ComplianceLayout } from './components/ComplianceLayout';
+import { ComplianceDashboard } from './components/ComplianceDashboard';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -362,10 +364,6 @@ function App() {
     );
   };
 
-  const accountLogs = selectedAccountId 
-    ? logs.filter(l => l.eventId?.startsWith(`${selectedAccountId}:`) || l.accountId === selectedAccountId)
-    : logs;
-
   let identityDisplay = tenantToken;
   try {
     if (tenantToken) {
@@ -379,6 +377,14 @@ function App() {
       <AdvisorLayout identityDisplay={identityDisplay || ''} onSignOut={() => { setTenantToken(null); setUserRole(null); }}>
         {currentTab === 'fleet' && (!selectedAccountId ? renderHeatmap() : renderDetailedView())}
       </AdvisorLayout>
+    );
+  }
+
+  if (userRole === 'Viewer') {
+    return (
+      <ComplianceLayout identityDisplay={identityDisplay || ''} onSignOut={() => { setTenantToken(null); setUserRole(null); }}>
+        <ComplianceDashboard token={tenantToken} />
+      </ComplianceLayout>
     );
   }
 
@@ -462,34 +468,6 @@ function App() {
         {currentTab === 'adminModels' && <div style={{ overflowY: 'auto' }}><RebalancingModelsTab token={tenantToken} /></div>}
         {currentTab === 'assets' && <div style={{ overflowY: 'auto' }}><AssetUniverseTab token={tenantToken} /></div>}
         {currentTab === 'sysops' && <div style={{ overflowY: 'auto' }}><SystemOpsTab token={tenantToken} /></div>}
-
-        <div className="panel" style={{ marginTop: '24px' }}>
-          <div className="panelHeader">JSONL Audit Tail (Live) {selectedAccountId && `- Filtered: ${selectedAccountId}`}</div>
-          <div className="panelBody logContainer">
-            {accountLogs.length === 0 && <div>Waiting for logs...</div>}
-            {accountLogs.slice().reverse().map((log, i) => (
-              <div className="logEntry" key={i}>
-                <span className="logTime">{new Date(log.timestamp || log.createdAt).toLocaleTimeString()}</span>
-                <span className="logEvent">[{log.type || 'EVALUATION'}]</span>
-                <div className="logData">
-                  <strong style={{ color: 'var(--accent-blue)' }}>{log.eventId ? log.eventId.split(':')[0] : 'SYSTEM'}: </strong>
-                  {log.outputs?.tradeProposal ? `Proposed ${log.outputs.tradeProposal.trades.length} trades` : 'Event Data'}
-                  {log.outputs?.tradeProposal?.warnings?.length > 0 && (
-                    <div style={{ color: 'var(--status-yellow)', marginTop: '4px', fontSize: '0.7rem' }}>
-                      {log.outputs.tradeProposal.warnings.map((w: any, idx: number) => (
-                        <div key={idx}>⚠️ {w.message}</div>
-                      ))}
-                    </div>
-                  )}
-                  <details className="logDetails">
-                    <summary>View Full JSON</summary>
-                    <pre>{JSON.stringify(log, null, 2)}</pre>
-                  </details>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </main>
     </div>
   );
