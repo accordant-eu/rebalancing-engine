@@ -99,6 +99,7 @@ These rules govern AI-assisted development in this repository. The project is in
 - Keep changes scoped to the current task.
 - Provide a concise summary of changes, tests, and open questions after each iteration.
 - **MANDATORY**: After completing any significant task, you must update the `BUILD_JOURNEY.md` iteration log table before committing your changes.
+- **MANDATORY**: When updating `BUILD_JOURNEY.md`, you must extract detailed logs (Files touched, decisions, open questions, etc.) into a daily file in `docs/iterations/` (e.g., `docs/iterations/YYYY-MM-DD.md`) and only place a high-level summary row in `BUILD_JOURNEY.md` with a link to the detailed log.
 - **MANDATORY**: Never use `git add .` or `git commit -a`. When committing changes, you must explicitly pass the specific file paths you modified to `git add` (e.g., `git add src/file1.ts src/file2.ts`) to ensure parallel chat sessions do not accidentally commit each other's work.
 
 ## 11. Release and Deployment Handoff
