@@ -28,6 +28,7 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Asset, Tenant API, and Broker Statistics Enhancements](asset-tenant-api-plan.md)** - Implementation plan for expanding the asset domain model and tenant API credentials.
 * **[Superadmin Dashboard UI Plan](superadmin-dashboard-ui-plan.md)** - Detailed design for exposing the Sysadmin Phase 1 architecture via the web dashboard.
 * **[Týr Agent API Integration Plan](tyr-agent-api-integration-plan.md)** - Implementation plan for the Týr agent API integration based on Issue #9
+* **[Tranche 4 Production Hardening Plan](tranche-4-production-hardening-plan.md)** - Implementation plan for transitioning to a Live Trading Agent
 
 ## Exploration Plans
 These documents detail how we intend to translate v3 exploration concepts into concrete tranches.
