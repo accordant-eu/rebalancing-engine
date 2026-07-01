@@ -285,6 +285,43 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     res.json(parsedLogs);
   });
 
+  // --- Tenant Admin Endpoints ---
+  app.get('/api/users', (req: any, res: any) => {
+    if (req.role !== 'Admin') {
+      return res.status(403).json({ error: 'Requires Admin role' });
+    }
+    const users = stateManager.getUsersByTenant(req.tenantId);
+    res.json(users);
+  });
+
+  app.post('/api/users', express.json(), (req: any, res: any) => {
+    if (req.role !== 'Admin') {
+      return res.status(403).json({ error: 'Requires Admin role' });
+    }
+    const { email, password, role } = req.body;
+    if (!email || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    try {
+      const existing = stateManager.getUserByEmail(email);
+      if (existing) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+      const userId = 'usr_' + Date.now().toString(36);
+      stateManager.createUser({
+        userId,
+        tenantId: req.tenantId,
+        email,
+        password, // Not hashed in MVP per architecture docs, but would be in prod
+        role
+      });
+      res.status(201).json({ message: 'User created', userId });
+    } catch (err: any) {
+      logger.error({ err }, 'Error creating user');
+      res.status(500).json({ error: 'Internal error' });
+    }
+  });
+
   app.get('/api/state', (req, res) => {
     const tenantId = (req as any).tenantId;
     const targetTenant = tenantId === 'superadmin' ? null : tenantId;

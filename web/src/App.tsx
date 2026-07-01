@@ -12,6 +12,9 @@ import { CommandCenterDashboard } from './components/CommandCenterDashboard';
 import { AdvisorLayout } from './components/AdvisorLayout';
 import { ComplianceLayout } from './components/ComplianceLayout';
 import { ComplianceDashboard } from './components/ComplianceDashboard';
+import { TenantAdminLayout } from './components/TenantAdminLayout';
+import { FirmOverviewDashboard } from './components/FirmOverviewDashboard';
+import { UserManagementDashboard } from './components/UserManagementDashboard';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -63,7 +66,7 @@ function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, 
 function App() {
   const [tenantToken, setTenantToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops' | 'assets'>('fleet');
+  const [currentTab, setCurrentTab] = useState<'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops' | 'assets' | 'users'>('fleet');
   
   const [state, setState] = useState<StatePayload | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -388,6 +391,38 @@ function App() {
     );
   }
 
+  if (userRole === 'Admin') {
+    // We map 'adminModels' and 'assets' to the layout tabs
+    // Note: The App component state 'currentTab' can be re-used, but let's use a local mapping
+    const getAdminTab = () => {
+      switch (currentTab) {
+        case 'adminModels': return <RebalancingModelsTab token={tenantToken} />;
+        case 'assets': return <AssetUniverseTab token={tenantToken} />;
+        case 'users': return <UserManagementDashboard token={tenantToken} />;
+        default: return <FirmOverviewDashboard portfolios={Object.values(state?.portfolios || {})} />;
+      }
+    };
+    
+    // Map currentTab to the layout's activeTab type
+    const layoutTab = (['overview', 'users', 'models', 'assets'].includes(currentTab) ? currentTab : 'overview') as any;
+
+    return (
+      <TenantAdminLayout 
+        identityDisplay={identityDisplay || ''} 
+        onSignOut={() => { setTenantToken(null); setUserRole(null); }}
+        activeTab={layoutTab}
+        onTabChange={(tab) => {
+          if (tab === 'models') setCurrentTab('adminModels');
+          else if (tab === 'overview') setCurrentTab('fleet'); // or just 'overview'
+          else setCurrentTab(tab);
+        }}
+      >
+        {getAdminTab()}
+      </TenantAdminLayout>
+    );
+  }
+
+  // Fallback for Superadmin or unhandled roles
   return (
     <div className="appContainer">
       <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
