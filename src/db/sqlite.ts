@@ -141,6 +141,16 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       createdAt TEXT NOT NULL,
       FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS AuditTrails (
+      eventId TEXT PRIMARY KEY,
+      accountId TEXT,
+      tenantId TEXT,
+      type TEXT NOT NULL,
+      inputs TEXT NOT NULL,
+      outputs TEXT,
+      timestampMs INTEGER NOT NULL,
+      createdAt TEXT NOT NULL
+    );
   `);
 
   // Safe migrations for existing databases
@@ -162,6 +172,17 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       status TEXT DEFAULT 'PENDING',
       createdAt TEXT NOT NULL,
       FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
+  )`); } catch (e) { /* ignore if exists */ }
+
+  try { db.exec(`CREATE TABLE IF NOT EXISTS AuditTrails (
+      eventId TEXT PRIMARY KEY,
+      accountId TEXT,
+      tenantId TEXT,
+      type TEXT NOT NULL,
+      inputs TEXT NOT NULL,
+      outputs TEXT,
+      timestampMs INTEGER NOT NULL,
+      createdAt TEXT NOT NULL
   )`); } catch (e) { /* ignore if exists */ }
 
   try { db.exec(`ALTER TABLE Models ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (e) { /* ignore if exists */ }

@@ -18,13 +18,14 @@ Transition the rebalancing engine from a "Paper Trading" agent (Tranche 3) to a 
   - [x] Implement `src/api/webhooks/broker-reports.ts`
   - [x] Update `LiveStateManager` for partial fill parsing
   - [x] Add `Orders` table to SQLite schema
-- [ ] **Slice 2: Persistent Audit & Compliance Sink**
-  - [ ] Add `AuditTrails` table to SQLite schema
-  - [ ] Refactor `DefaultAuditSink`
-  - [ ] Update API endpoints to query database
-- [ ] **Slice 3: Alerting & Safety Notifications**
-  - [ ] Create `src/notifications/webhook-notifier.ts`
-  - [ ] Connect `systemEventBus` to dispatcher
+- [x] **Slice 2: Persistent Audit & Compliance Sink**
+  - [x] Add `AuditTrails` table to SQLite schema
+  - [x] Refactor `SqliteAuditStorage` to insert records
+  - [x] Update UI metrics API to query SQLite instead of JSON lines
+- [x] **Slice 3: Alerting & Safety Notifications**
+  - [x] Create `WebhookNotifier` (e.g. Slack/Discord)
+  - [x] Hook `systemEventBus` (Circuit Breaker halts, errors) to the dispatcher
+  - [x] Update `.env.example`
 - [ ] **Slice 4: TCO Optimizer Un-Mocking (Stretch)**
   - [ ] Connect `PercentageSlippageModel` to live data
 

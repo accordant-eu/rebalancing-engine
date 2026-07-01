@@ -3,11 +3,11 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import readline from 'readline';
-import { FileAuditStorage } from '../audit/storage';
+import { FileAuditStorage, SqliteAuditStorage } from '../audit/storage';
 import { AlpacaBrokerAdapter } from '../broker/alpaca-broker';
 import { BrokerSyncService } from '../broker/sync';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, MultiPortfolioStateManager, Orchestrator } from '../orchestrator';
-import { StdoutNotificationAdapter } from '../notifications';
+import { StdoutNotificationAdapter, WebhookNotifier, MultiNotifier } from '../notifications';
 import { loadScenarioFixture } from '../runner';
 import { initDb, getDb } from '../db/sqlite';
 import { executeSeed } from './seed';
@@ -47,8 +47,13 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
     throw new UsageError(`Scenario ${scenarioId} not found in fixture ${scenarioFile}`);
   }
 
-  const notifications = new StdoutNotificationAdapter();
-  const auditStorage = new FileAuditStorage('./data/audit-trail.jsonl');
+  const stdNotifier = new StdoutNotificationAdapter();
+  const notifiers = [stdNotifier];
+  if (process.env.ALERT_WEBHOOK_URL) {
+    notifiers.push(new WebhookNotifier(process.env.ALERT_WEBHOOK_URL));
+  }
+  const notifications = new MultiNotifier(notifiers);
+  const auditStorage = new SqliteAuditStorage();
 
   if (isLive) {
     if (!process.env.ALPACA_BROKER_API_KEY || !process.env.ALPACA_BROKER_API_SECRET) {

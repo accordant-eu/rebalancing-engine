@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AuditRecord, roundAuditRecordOutputs } from './audit';
 import { logger } from '../utils/logger';
+import { getDb } from '../db/sqlite';
 
 export interface AuditStorageAdapter {
   saveAuditRecord(record: AuditRecord): Promise<void>;
@@ -49,5 +50,32 @@ export class FileAuditStorage implements AuditStorageAdapter {
     const jsonl = JSON.stringify(rounded) + '\n';
     await this.rotateLogsIfNeeded(Buffer.byteLength(jsonl, 'utf-8'));
     await fs.promises.appendFile(this.filePath, jsonl, 'utf-8');
+  }
+}
+
+export class SqliteAuditStorage implements AuditStorageAdapter {
+  public async saveAuditRecord(record: any): Promise<void> {
+    const rounded = roundAuditRecordOutputs(record);
+    const db = getDb();
+    
+    // Some records are purely system evaluations without an explicit accountId at top level, 
+    // but have an eventId like accountId:timestamp
+    const accountId = record.accountId || (record.eventId ? record.eventId.split(':')[0] : null);
+    const tenantId = record.inputs?.portfolioState?.tenantId || record.tenantId || null;
+    const type = record.type || 'UNKNOWN';
+    
+    db.prepare(`
+      INSERT OR REPLACE INTO AuditTrails (eventId, accountId, tenantId, type, inputs, outputs, timestampMs, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      record.eventId,
+      accountId,
+      tenantId,
+      type,
+      JSON.stringify(rounded.inputs || {}),
+      JSON.stringify(rounded.outputs || {}),
+      Date.now(),
+      record.createdAt || new Date().toISOString()
+    );
   }
 }

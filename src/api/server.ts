@@ -3,7 +3,6 @@ import cors from 'cors';
 import { createHash, randomBytes } from 'crypto';
 import fs from 'fs';
 import readline from 'readline';
-import { readLinesBackwards } from '../utils/fs';
 import { getDb } from '../db/sqlite';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { validateTargetAllocation } from '../core/drift';
@@ -366,49 +365,56 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    // NOTE: Uses readLinesBackwards to avoid memory exhaustion on large log files.
     try {
-      if (!fs.existsSync('./data/audit-trail.jsonl')) {
-        return res.json({ total: 0, data: [] });
-      }
-      
-      let allLogs: any[] = [];
-      const tenantStates = tenantId !== 'superadmin' ? stateManager.getStatesFilteredByTenant(tenantId || '') : null;
-      let count = 0;
-      
-      for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
-        if (!line.trim()) continue;
-        try {
-          const log = JSON.parse(line);
-          
-          if (tenantStates) {
-            const accId = log.accountId || (log.eventId && log.eventId.split(':')[0]);
-            if (!accId || !tenantStates[accId]) continue;
-          }
+      const db = getDb();
+      let query = `SELECT * FROM AuditTrails WHERE 1=1`;
+      const params: any[] = [];
 
-          if (portfolioId && log.accountId !== portfolioId) continue;
-          if (type && log.type !== type) continue;
-          
-          if (since) {
-            const sinceTime = new Date(since).getTime();
-            if (new Date(log.createdAt).getTime() < sinceTime) {
-               // Logs are chronologically appended, so if we hit one older than 'since', we can break
-               break; 
-            }
-          }
-          
-          allLogs.push(log);
-          count++;
-          if (count >= offset + limit) {
-             break;
-          }
-        } catch(e) {}
+      if (tenantId !== 'superadmin') {
+        query += ` AND tenantId = ?`;
+        params.push(tenantId);
       }
+      if (portfolioId) {
+        query += ` AND accountId = ?`;
+        params.push(portfolioId);
+      }
+      if (type) {
+        query += ` AND type = ?`;
+        params.push(type);
+      }
+      if (since) {
+        const sinceTime = new Date(since).getTime();
+        query += ` AND timestampMs >= ?`;
+        params.push(sinceTime);
+      }
+      query += ` ORDER BY timestampMs DESC LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
 
-      const data = allLogs.slice(offset, offset + limit);
-      res.json({ total: offset + data.length, data });
-    } catch (e: any) {
-      sendError(res, 500, 'INTERNAL_ERROR', e.message);
+      const rows = db.prepare(query).all(...params) as any[];
+      const allLogs = rows.map(r => ({
+        eventId: r.eventId,
+        accountId: r.accountId,
+        type: r.type,
+        inputs: JSON.parse(r.inputs),
+        outputs: r.outputs ? JSON.parse(r.outputs) : undefined,
+        createdAt: r.createdAt
+      }));
+
+      // For total count
+      let countQuery = `SELECT count(*) as count FROM AuditTrails WHERE 1=1`;
+      const countParams = params.slice(0, -2); // Remove limit and offset
+      if (tenantId !== 'superadmin') countQuery += ` AND tenantId = ?`;
+      if (portfolioId) countQuery += ` AND accountId = ?`;
+      if (type) countQuery += ` AND type = ?`;
+      if (since) countQuery += ` AND timestampMs >= ?`;
+      
+      const countRes = db.prepare(countQuery).get(...countParams) as { count: number };
+      const totalCount = countRes?.count || 0;
+
+      res.json({ total: totalCount, data: allLogs });
+    } catch (e) {
+      logger.error({ err: e }, 'Error fetching logs');
+      res.json({ total: 0, data: [] });
     }
   });
 
@@ -514,32 +520,30 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     let executions7d = 0;
 
     try {
-      if (fs.existsSync('./data/audit-trail.jsonl')) {
-        const now = Date.now();
-        const ms24h = 24 * 60 * 60 * 1000;
-        const ms7d = 7 * 24 * 60 * 60 * 1000;
+      const db = getDb();
+      const now = Date.now();
+      const ms24h = 24 * 60 * 60 * 1000;
+      const ms7d = 7 * 24 * 60 * 60 * 1000;
+      const limit7d = now - ms7d;
+      const limit24h = now - ms24h;
 
-        for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
-          if (!line.trim()) continue;
-          try {
-            const log = JSON.parse(line);
-            const logTime = new Date(log.createdAt).getTime();
-            
-            if (now - logTime > ms7d) {
-               break; // Stop reading further back than 7 days
-            }
+      let q7d = `SELECT count(*) as count FROM AuditTrails WHERE type = 'LIVE_EXECUTION' AND timestampMs >= ?`;
+      let params7d: any[] = [limit7d];
+      let q24h = `SELECT count(*) as count FROM AuditTrails WHERE type = 'LIVE_EXECUTION' AND timestampMs >= ?`;
+      let params24h: any[] = [limit24h];
 
-            if (log.type === 'LIVE_EXECUTION') {
-              const accId = log.accountId || (log.eventId && log.eventId.split(':')[0]);
-              // Tenant filter
-              if (tenantId === 'superadmin' || (accId && portfolios[accId])) {
-                if (now - logTime <= ms24h) executions24h++;
-                executions7d++;
-              }
-            }
-          } catch(err) { }
-        }
+      if (tenantId !== 'superadmin') {
+        q7d += ` AND tenantId = ?`;
+        params7d.push(tenantId);
+        q24h += ` AND tenantId = ?`;
+        params24h.push(tenantId);
       }
+
+      const res7d = db.prepare(q7d).get(...params7d) as { count: number };
+      executions7d = res7d?.count || 0;
+
+      const res24h = db.prepare(q24h).get(...params24h) as { count: number };
+      executions24h = res24h?.count || 0;
     } catch (e) { }
 
     res.json({
@@ -698,14 +702,12 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     });
 
     try {
-      if (fs.existsSync('./data/audit-trail.jsonl')) {
-        for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
-          if (!line.trim()) continue;
-          const parsed = JSON.parse(line);
-          if (parsed.accountId === accountId && parsed.outputs && parsed.outputs.tradeProposal) {
-            lastProposal = parsed.outputs.tradeProposal;
-            break;
-          }
+      const db = getDb();
+      const row = db.prepare(`SELECT outputs FROM AuditTrails WHERE accountId = ? AND outputs LIKE '%tradeProposal%' ORDER BY timestampMs DESC LIMIT 1`).get(accountId) as any;
+      if (row && row.outputs) {
+        const parsedOutputs = JSON.parse(row.outputs);
+        if (parsedOutputs && parsedOutputs.tradeProposal) {
+          lastProposal = parsedOutputs.tradeProposal;
         }
       }
     } catch(e) {
@@ -897,19 +899,19 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const proposals: any[] = [];
     
     try {
-      if (fs.existsSync('./data/audit-trail.jsonl')) {
-        for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
-          if (!line.trim()) continue;
-          const parsed = JSON.parse(line);
-          if (parsed.accountId === accountId && parsed.outputs && parsed.outputs.tradeProposal) {
+      const db = getDb();
+      const rows = db.prepare(`SELECT * FROM AuditTrails WHERE accountId = ? AND outputs LIKE '%tradeProposal%' ORDER BY timestampMs DESC LIMIT ?`).all(accountId, limit) as any[];
+      for (const row of rows) {
+        if (row.outputs) {
+          const parsedOutputs = JSON.parse(row.outputs);
+          if (parsedOutputs && parsedOutputs.tradeProposal) {
             proposals.push({
-              proposedAt: parsed.createdAt,
-              executionMode: parsed.outputs.executionTargetMode,
-              executed: parsed.type === 'LIVE_EXECUTION', // basic assumption based on type
-              trades: parsed.outputs.tradeProposal.trades,
-              warnings: parsed.outputs.tradeProposal.warnings.map((w: any) => w.message)
+              proposedAt: row.createdAt,
+              executionMode: parsedOutputs.executionTargetMode,
+              executed: row.type === 'LIVE_EXECUTION',
+              trades: parsedOutputs.tradeProposal.trades,
+              warnings: parsedOutputs.tradeProposal.warnings.map((w: any) => w.message)
             });
-            if (proposals.length >= limit) break;
           }
         }
       }

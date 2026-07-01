@@ -18,3 +18,11 @@ export class StdoutNotificationAdapter implements NotificationAdapter {
     }
   }
 }
+
+export class MultiNotifier implements NotificationAdapter {
+  constructor(private notifiers: NotificationAdapter[]) {}
+
+  public async notify(level: NotificationLevel, message: string, context?: Record<string, unknown>): Promise<void> {
+    await Promise.allSettled(this.notifiers.map(n => n.notify(level, message, context)));
+  }
+}

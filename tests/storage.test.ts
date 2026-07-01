@@ -3,15 +3,20 @@ import * as path from 'path';
 import { FileAuditStorage } from '../src/audit/storage';
 import { AuditRecord } from '../src/audit/audit';
 
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  mkdirSync: jest.fn(),
-  promises: {
-    appendFile: jest.fn(),
-    stat: jest.fn().mockRejectedValue({ code: 'ENOENT' }),
-    rename: jest.fn(),
-  },
-}));
+jest.mock('fs', () => {
+  const actualFs = jest.requireActual('fs');
+  return {
+    ...actualFs,
+    existsSync: jest.fn(),
+    mkdirSync: jest.fn(),
+    promises: {
+      ...actualFs.promises,
+      appendFile: jest.fn(),
+      stat: jest.fn().mockRejectedValue({ code: 'ENOENT' }),
+      rename: jest.fn(),
+    },
+  };
+});
 
 describe('FileAuditStorage', () => {
   const mockFilePath = '/mock/path/audit.jsonl';
