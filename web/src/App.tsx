@@ -9,6 +9,7 @@ import { RebalancingModelsTab } from './components/admin/RebalancingModelsTab';
 import { SystemOpsTab } from './components/admin/SystemOpsTab';
 import { AssetUniverseTab } from './components/admin/AssetUniverseTab';
 import { CommandCenterDashboard } from './components/CommandCenterDashboard';
+import { AdvisorLayout } from './components/AdvisorLayout';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -372,6 +373,14 @@ function App() {
       identityDisplay = `${decoded.userId} (${decoded.tenantId})`;
     }
   } catch(e) {}
+
+  if (userRole === 'Advisor') {
+    return (
+      <AdvisorLayout identityDisplay={identityDisplay || ''} onSignOut={() => { setTenantToken(null); setUserRole(null); }}>
+        {currentTab === 'fleet' && (!selectedAccountId ? renderHeatmap() : renderDetailedView())}
+      </AdvisorLayout>
+    );
+  }
 
   return (
     <div className="appContainer">

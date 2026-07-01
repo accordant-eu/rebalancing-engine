@@ -274,6 +274,23 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
     );
   }
 
+  // Seed default persona users for testing
+  const defaultUsers = [
+    { id: 'user-tenant-admin', email: 'admin@tenant.com', role: 'Admin' },
+    { id: 'user-advisor', email: 'advisor@tenant.com', role: 'Advisor' },
+    { id: 'user-compliance', email: 'compliance@tenant.com', role: 'Viewer' }
+  ];
+  
+  const insertUser = db.prepare(`INSERT INTO Users (userId, tenantId, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)`);
+  
+  defaultUsers.forEach(u => {
+    const existing = db.prepare('SELECT userId FROM Users WHERE email = ?').get(u.email);
+    if (!existing) {
+      const hashedPassword = bcrypt.hashSync('changeme123', 10);
+      insertUser.run(u.id, 'tenant-baseline', u.email, hashedPassword, u.role, 'Active');
+    }
+  });
+
   dbInstance = db;
   return dbInstance;
 }

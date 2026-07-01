@@ -49,7 +49,7 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
   }, [state, accountIds]);
 
   if (accountIds.length === 0) {
-    return <div className="metricLabel" style={{ padding: '24px' }}>No portfolios loaded in this tenant.</div>;
+    return <div className="p-6 text-gray-400">No portfolios loaded in this tenant.</div>;
   }
 
   // 2. Action Queues
@@ -58,50 +58,53 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
   const halted = aggregates.portfoliosWithMetrics.filter(p => p.isHalted);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', overflowY: 'auto' }}>
+    <div className="flex flex-col gap-6 p-6 h-full font-sans text-gray-100">
       
       {/* Top Layer: HUD */}
-      <div style={{ display: 'flex', gap: '16px' }}>
-        <div className="panel" style={{ flex: 1, padding: '16px', background: 'var(--bg-dark)' }}>
-          <div className="metricLabel">Total Fleet AUM</div>
-          <div className="metricValue" style={{ fontSize: '1.5rem', marginTop: '8px' }}>
+      <div className="flex gap-4">
+        <div className="flex-1 p-5 rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm">
+          <div className="text-sm text-gray-400 font-semibold tracking-wide uppercase">Total Fleet AUM</div>
+          <div className="text-3xl font-light mt-2 text-white">
             ${aggregates.totalAum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
-        <div className="panel" style={{ flex: 1, padding: '16px', background: 'var(--bg-dark)' }}>
-          <div className="metricLabel">Fleet Health</div>
-          <div className="metricValue" style={{ fontSize: '1.5rem', marginTop: '8px', color: aggregates.breachedCount > 0 ? 'var(--status-yellow)' : 'var(--status-green)' }}>
-            {accountIds.length - aggregates.breachedCount} In-Band / {aggregates.breachedCount} Breached
+        <div className="flex-1 p-5 rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm">
+          <div className="text-sm text-gray-400 font-semibold tracking-wide uppercase">Fleet Health</div>
+          <div className={`text-3xl font-light mt-2 ${aggregates.breachedCount > 0 ? 'text-yellow-500' : 'text-green-500'}`}>
+            {accountIds.length - aggregates.breachedCount} In-Band <span className="text-gray-500 text-lg mx-2">/</span> {aggregates.breachedCount} Breached
           </div>
         </div>
-        <div className="panel" style={{ flex: 1, padding: '16px', background: 'var(--bg-dark)', borderColor: aggregates.haltedCount > 0 ? 'var(--status-red)' : '' }}>
-          <div className="metricLabel">Circuit Breaker Halts</div>
-          <div className="metricValue" style={{ fontSize: '1.5rem', marginTop: '8px', color: aggregates.haltedCount > 0 ? 'var(--status-red)' : 'var(--status-green)' }}>
+        <div className={`flex-1 p-5 rounded-xl border ${aggregates.haltedCount > 0 ? 'border-red-500/50 bg-red-500/10' : 'border-gray-800 bg-[#1a1d24]'} shadow-sm`}>
+          <div className="text-sm text-gray-400 font-semibold tracking-wide uppercase">Circuit Breaker Halts</div>
+          <div className={`text-3xl font-light mt-2 ${aggregates.haltedCount > 0 ? 'text-red-500 font-medium' : 'text-green-500'}`}>
             {aggregates.haltedCount} Halted
           </div>
         </div>
       </div>
 
       {/* Middle Layer: Action Queues */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        <div className="panel">
-          <div className="panelHeader" style={{ color: 'var(--status-red)' }}>Action Required: Breached Drift</div>
-          <div className="panelBody">
-            {criticalDrift.length === 0 ? <div className="metricLabel">No critical drifts.</div> : (
-              <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <th style={{ padding: '8px 0' }}>Account</th>
-                    <th>Max Drift</th>
-                    <th>Tolerance</th>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-800 bg-red-500/5 text-red-400 font-semibold flex justify-between items-center">
+            Action Required: Breached Drift
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{criticalDrift.length}</span>
+          </div>
+          <div className="p-0 overflow-auto max-h-96">
+            {criticalDrift.length === 0 ? <div className="p-5 text-gray-500 text-sm">No critical drifts. All good! 🎉</div> : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[#0f1115] text-gray-400 sticky top-0">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Account</th>
+                    <th className="px-5 py-3 font-semibold">Max Drift</th>
+                    <th className="px-5 py-3 font-semibold">Tolerance</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-800">
                   {criticalDrift.map(p => (
-                    <tr key={p.accountId} style={{ cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)' }} onClick={() => setSelectedAccountId(p.accountId)}>
-                      <td style={{ padding: '8px 0', color: 'var(--accent-blue)' }}>{p.accountId}</td>
-                      <td style={{ color: 'var(--status-red)' }}>{(p.maxDrift * 100).toFixed(2)}%</td>
-                      <td>{(p.tolerance * 100).toFixed(1)}%</td>
+                    <tr key={p.accountId} className="hover:bg-[#252830] cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
+                      <td className="px-5 py-3 text-blue-400 font-medium">{p.accountId}</td>
+                      <td className="px-5 py-3 text-red-400 font-semibold">{(p.maxDrift * 100).toFixed(2)}%</td>
+                      <td className="px-5 py-3 text-gray-400">{(p.tolerance * 100).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -110,24 +113,27 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
           </div>
         </div>
 
-        <div className="panel">
-          <div className="panelHeader" style={{ color: 'var(--status-yellow)' }}>Watchlist: Near-Misses</div>
-          <div className="panelBody">
-            {nearMisses.length === 0 ? <div className="metricLabel">No near-misses.</div> : (
-              <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <th style={{ padding: '8px 0' }}>Account</th>
-                    <th>Max Drift</th>
-                    <th>Tolerance</th>
+        <div className="rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-800 bg-yellow-500/5 text-yellow-500 font-semibold flex justify-between items-center">
+            Watchlist: Near-Misses
+            <span className="bg-yellow-500 text-black text-xs px-2 py-1 rounded-full">{nearMisses.length}</span>
+          </div>
+          <div className="p-0 overflow-auto max-h-96">
+            {nearMisses.length === 0 ? <div className="p-5 text-gray-500 text-sm">No near-misses.</div> : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[#0f1115] text-gray-400 sticky top-0">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Account</th>
+                    <th className="px-5 py-3 font-semibold">Max Drift</th>
+                    <th className="px-5 py-3 font-semibold">Tolerance</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-800">
                   {nearMisses.map(p => (
-                    <tr key={p.accountId} style={{ cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)' }} onClick={() => setSelectedAccountId(p.accountId)}>
-                      <td style={{ padding: '8px 0', color: 'var(--accent-blue)' }}>{p.accountId}</td>
-                      <td style={{ color: 'var(--status-yellow)' }}>{(p.maxDrift * 100).toFixed(2)}%</td>
-                      <td>{(p.tolerance * 100).toFixed(1)}%</td>
+                    <tr key={p.accountId} className="hover:bg-[#252830] cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
+                      <td className="px-5 py-3 text-blue-400 font-medium">{p.accountId}</td>
+                      <td className="px-5 py-3 text-yellow-500 font-semibold">{(p.maxDrift * 100).toFixed(2)}%</td>
+                      <td className="px-5 py-3 text-gray-400">{(p.tolerance * 100).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -139,25 +145,27 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
 
       {/* Circuit Breakers (if any) */}
       {halted.length > 0 && (
-        <div className="panel" style={{ borderColor: 'var(--status-red)' }}>
-          <div className="panelHeader" style={{ background: 'var(--status-red)', color: 'white' }}>CRITICAL: Halted Portfolios</div>
-          <div className="panelBody">
-            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <th style={{ padding: '8px 0' }}>Account</th>
-                  <th>Equity</th>
-                  <th>Action</th>
+        <div className="rounded-xl border border-red-500/50 bg-[#1a1d24] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-red-500/50 bg-red-600 text-white font-bold tracking-wide uppercase flex justify-between items-center">
+            CRITICAL: Halted Portfolios
+          </div>
+          <div className="p-0">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-[#0f1115] text-gray-400">
+                <tr>
+                  <th className="px-5 py-3 font-semibold">Account</th>
+                  <th className="px-5 py-3 font-semibold">Equity</th>
+                  <th className="px-5 py-3 font-semibold text-right">Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-800">
                 {halted.map(p => (
-                  <tr key={p.accountId} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td style={{ padding: '8px 0', color: 'var(--status-red)', fontWeight: 'bold' }}>{p.accountId}</td>
-                    <td>${p.equity.toFixed(2)}</td>
-                    <td>
+                  <tr key={p.accountId}>
+                    <td className="px-5 py-3 text-red-500 font-bold">{p.accountId}</td>
+                    <td className="px-5 py-3 text-gray-300">${p.equity.toFixed(2)}</td>
+                    <td className="px-5 py-3 text-right">
                       <button 
-                        style={{ padding: '4px 8px', background: 'var(--border-subtle)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 rounded shadow-sm transition-colors text-xs font-semibold uppercase tracking-wider"
                         onClick={() => setSelectedAccountId(p.accountId)}
                       >
                         Inspect
