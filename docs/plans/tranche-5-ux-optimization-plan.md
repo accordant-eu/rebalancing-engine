@@ -16,36 +16,33 @@ This document outlines the proposed roadmap for Tranche 5, which focuses heavily
 
 ---
 
-## Proposed Roadmap (Slices)
+## Proposed Roadmap (Vertical MVP Slices)
 
-- [ ] **Slice 0: Foundation (Tailwind & Users Table)**
-  - [ ] Initialize Tailwind CSS within the `web` Vite project.
-  - [ ] Add the `Users` table to `src/db/sqlite.ts` schema and update `/api/auth/login` to query real credentials.
-  - [ ] Seed default persona users (Superadmin, Tenant Admin, Advisor, Compliance Officer) for immediate testing.
+*Instead of horizontal technical layers (e.g., doing all layouts first, then all data), we will build end-to-end vertical slices focused on delivering immediate value to one persona at a time.*
 
-- [ ] **Slice 1: Persona-Specific Layouts & Navigation**
-  - [ ] Physically separate the UX based on the user's logged-in persona, adhering to "Progressive Disclosure".
-  - [ ] **Advisors:** Remove all Admin tabs and the docked JSONL Audit Tail. Create a clean, focused sidebar navigation.
-  - [ ] **Compliance Officers:** Introduce a dedicated read-only role that defaults to a new "Audit & Compliance" view, hiding execution buttons.
-  - [ ] **Tenant Admins / Superadmins:** Move system operations (Tenant Management, Global Models, Broker Integrations) into a dedicated "Settings / Administration" nested layout, rather than cluttering the primary top navigation.
+- [ ] **Slice 1: The Advisor Workspace MVP (Highest Value)**
+  - *Goal:* Deliver a focused, distraction-free environment for the person actually managing the portfolios.
+  - Initialize Tailwind CSS (technical enabler).
+  - Implement the `Users` table and wire up a real `Advisor` login.
+  - Build the Advisor Layout (sidebar, no sysadmin tabs).
+  - Build the "Action Required" Inbox (surfacing portfolios that are breached or halted).
 
-- [ ] **Slice 2: The Advisor "Action Inbox" (Fleet Dashboard Revamp)**
-  - [ ] Rebuild the Fleet Dashboard from a generic grid into two distinct views:
-    - [ ] **Action Required Inbox:** Surfacing portfolios currently breached, halted by circuit breakers, or with pending cash deposits.
-    - [ ] **Near-Misses:** Portfolios approaching drift limits.
-  - [ ] Update the Detailed Portfolio View to allow Advisors to actually *edit* Bespoke target weights and drift tolerances directly via the UI, replacing the current read-only display.
+- [ ] **Slice 2: The Compliance Explorer MVP**
+  - *Goal:* Deliver immediate auditability to the Compliance Officer.
+  - Wire up a real `Compliance` login (read-only RBAC).
+  - Build the dedicated "Audit & Compliance" view with a searchable data table querying the existing SQLite `/api/logs`.
+  - Remove the global JSONL text dump from the bottom of the app.
 
-- [ ] **Slice 3: Tenant Admin "Fleet Health" Insights**
-  - [ ] Implement a Firm Overview dashboard featuring aggregate metrics (e.g., Donut charts for "Portfolios In-Band vs Breached", Total AUM tracked, Broker API status).
-  - [ ] Allow Tenant Admins to set firm-wide defaults (e.g., default slippage, default drift tolerance) that cascade down to newly created bespoke portfolios.
+- [ ] **Slice 3: The Tenant Admin MVP**
+  - *Goal:* Allow firm owners to see fleet health and manage their users.
+  - Wire up a real `Tenant Admin` login.
+  - Build the Firm Overview dashboard (aggregate metrics like "Portfolios In-Band vs Breached").
+  - Add basic User Management UI so they can provision new Advisors.
 
-- [ ] **Slice 4: The Compliance Data Explorer**
-  - [ ] Remove the raw JSON text dump at the bottom of the screen.
-  - [ ] Build a dedicated "Audit Explorer" route containing a searchable, paginated data table.
-  - [ ] Allow filtering by `accountId`, `eventType` (e.g., THRESHOLD_BREACH, LIVE_EXECUTION), and date range, querying the new `/api/logs` SQLite backend.
-
-- [ ] **Slice 5: Superadmin "System Pulse" (Stretch)**
-  - [ ] Add live metrics to the `SystemOpsTab`: Event Bus latency, Broker API rate limit consumption gauges, and memory/CPU usage of the Node process.
+- [ ] **Slice 4: Superadmin Pulse & Settings (Stretch)**
+  - *Goal:* Clean up the platform owner's view.
+  - Consolidate Global Models, Asset Universe, and Broker Integrations into a clean Settings layout.
+  - Add live metrics to the System Ops tab (Event Bus latency, API rate limits).
 
 ---
 
