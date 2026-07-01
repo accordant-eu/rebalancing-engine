@@ -9,23 +9,19 @@ timestamp: "2026-07-01T12:00:00Z"
 
 This document outlines the proposed roadmap for Tranche 5, which focuses heavily on UI/UX improvements to the Command Center (`web/src/App.tsx`). The goal is to evolve the currently flat, developer-centric UI into a role-based, production-ready SaaS dashboard aligned with our established persona definitions (`docs/architecture/personas.md`).
 
-## Open Questions
+## Architectural Decisions
 
-> [!IMPORTANT]
-> **Role Data Model:** Currently, our API relies on a simplified `role` and `tenantToken` structure. Do we want to implement a formal `Users` table in SQLite for Tranche 5, or continue mocking persona identity at login for rapid UI iteration?
-> 
-> **Design System:** We are using raw CSS (`App.css`). Do you want to stick with this for maximum customizability, or should we adopt a lightweight UI component library (like Radix UI or a minimalist Tailwind setup) for faster assembly of data tables and forms?
-
-## Current State Analysis
-
-Right now, the `App.tsx` is largely a single-page monolith that uses conditional rendering (`userRole === 'Admin'`) to show/hide tabs. 
-- The **Fleet Dashboard** is a raw list, not optimized for triage.
-- The **Audit Tail** is permanently docked at the bottom of the screen for *everyone*, cluttering the interface for Advisors.
-- **Progressive Disclosure** is missing; Superadmins see the same basic layout as Advisors, just with more buttons.
+- **Role Data Model:** We will implement a formal `Users` table in SQLite (`userId`, `tenantId`, `role`, `passwordHash`). This establishes true RBAC and enables Tenant Admins to manage real users, moving beyond the mocked login of previous MVP phases.
+- **Design System:** We will adopt **Tailwind CSS**. This provides rapid styling capabilities essential for assembling the varied dashboard layouts required by different personas without introducing heavy JS component libraries.
 
 ---
 
 ## Proposed Roadmap (Slices)
+
+- [ ] **Slice 0: Foundation (Tailwind & Users Table)**
+  - [ ] Initialize Tailwind CSS within the `web` Vite project.
+  - [ ] Add the `Users` table to `src/db/sqlite.ts` schema and update `/api/auth/login` to query real credentials.
+  - [ ] Seed default persona users (Superadmin, Tenant Admin, Advisor, Compliance Officer) for immediate testing.
 
 - [ ] **Slice 1: Persona-Specific Layouts & Navigation**
   - [ ] Physically separate the UX based on the user's logged-in persona, adhering to "Progressive Disclosure".
