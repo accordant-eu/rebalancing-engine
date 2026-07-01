@@ -19,3 +19,9 @@ Moving forward, iteration logs are strictly captured in the high-level `BUILD_JO
 - [2026-06-17](2026-06-17.md)
 
 &copy; 2026 Johan Hellman. All rights reserved.
+* **[2026-04-29](2026-04-29.md)**
+* **[2026-04-30](2026-04-30.md)**
+* **[2026-06-18](2026-06-18.md)**
+* **[2026-06-19](2026-06-19.md)**
+* **[2026-06-20](2026-06-20.md)**
+* **[2026-07-01](2026-07-01.md)**
