@@ -15,6 +15,7 @@ import { ComplianceDashboard } from './components/ComplianceDashboard';
 import { TenantAdminLayout } from './components/TenantAdminLayout';
 import { FirmOverviewDashboard } from './components/FirmOverviewDashboard';
 import { UserManagementDashboard } from './components/UserManagementDashboard';
+import { SuperadminLayout } from './components/SuperadminLayout';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -422,7 +423,33 @@ function App() {
     );
   }
 
-  // Fallback for Superadmin or unhandled roles
+  if (userRole === 'Superadmin') {
+    const getSuperTab = () => {
+      switch (currentTab) {
+        case 'tenants': return <TenantManagementTab token={tenantToken} />;
+        case 'broker': return <BrokerIntegrationTab token={tenantToken} />;
+        case 'sysops': return <SystemOpsTab token={tenantToken} />;
+        default: return <SystemOpsTab token={tenantToken} />;
+      }
+    };
+
+    const layoutTab = (['tenants', 'broker', 'sysops'].includes(currentTab) ? currentTab : 'sysops') as any;
+
+    return (
+      <SuperadminLayout 
+        identityDisplay={identityDisplay || ''} 
+        onSignOut={() => { setTenantToken(null); setUserRole(null); }}
+        activeTab={layoutTab}
+        onTabChange={(tab) => setCurrentTab(tab)}
+      >
+        <div style={{ padding: '24px' }}>
+          {getSuperTab()}
+        </div>
+      </SuperadminLayout>
+    );
+  }
+
+  // Fallback for unhandled roles
   return (
     <div className="appContainer">
       <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

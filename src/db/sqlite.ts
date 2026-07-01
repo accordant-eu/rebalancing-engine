@@ -269,7 +269,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       'tenant-baseline',
       superadminEmail,
       hashedPassword,
-      'Admin',
+      'Superadmin',
       'Active'
     );
   }
