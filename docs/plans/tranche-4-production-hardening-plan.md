@@ -14,10 +14,10 @@ Transition the rebalancing engine from a "Paper Trading" agent (Tranche 3) to a 
 
 ## Task Progress
 
-- [ ] **Slice 1: Live Webhook & Execution Reconciliation**
-  - [ ] Implement `src/api/webhooks/broker-reports.ts`
-  - [ ] Update `LiveStateManager` for partial fill parsing
-  - [ ] Add `Orders` table to SQLite schema
+- [x] **Slice 1: Live Webhook & Execution Reconciliation**
+  - [x] Implement `src/api/webhooks/broker-reports.ts`
+  - [x] Update `LiveStateManager` for partial fill parsing
+  - [x] Add `Orders` table to SQLite schema
 - [ ] **Slice 2: Persistent Audit & Compliance Sink**
   - [ ] Add `AuditTrails` table to SQLite schema
   - [ ] Refactor `DefaultAuditSink`

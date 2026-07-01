@@ -1,6 +1,7 @@
 import { BrokerAdapter } from '../broker/adapter';
 import { TradeProposal, ExecutionContext } from '../models/domain';
 import { logger } from '../utils/logger';
+import { LiveStateManager } from './state';
 
 export interface Executor {
   execute(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal, eventId: string): Promise<void>;
@@ -27,7 +28,7 @@ export class DryRunExecutor implements Executor {
 }
 
 export class BrokerExecutor implements Executor {
-  constructor(private adapter: BrokerAdapter) {}
+  constructor(private adapter: BrokerAdapter, private stateManager?: LiveStateManager) {}
 
   public async execute(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal, eventId: string): Promise<void> {
     if (proposal.trades.length === 0) {
@@ -36,6 +37,12 @@ export class BrokerExecutor implements Executor {
 
     logger.info(`[BrokerExecutor] Submitting ${proposal.trades.length} trades to broker for account ${brokerAccountId} on event: ${eventId}`);
     
-    await this.adapter.submitTrades(context, brokerAccountId, proposal);
+    const submittedOrders = await this.adapter.submitTrades(context, brokerAccountId, proposal);
+
+    if (this.stateManager && this.stateManager.registerOrder) {
+      for (const order of submittedOrders) {
+        this.stateManager.registerOrder(order.orderId, brokerAccountId, order.instrumentId, order.direction, order.quantity);
+      }
+    }
   }
 }

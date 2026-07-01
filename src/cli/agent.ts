@@ -86,7 +86,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
         constraints: []
       });
 
-      const executor = new CircuitBreaker(new BrokerExecutor(adapter), {
+      const executor = new CircuitBreaker(new BrokerExecutor(adapter, stateManager), {
         maxTradesPerSession: 5,
         maxGrossNotionalPerTrade: 500000,
       }, notifications);

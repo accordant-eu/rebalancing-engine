@@ -14,7 +14,7 @@ export interface BrokerAdapter {
   /**
    * Submits trade proposals to the broker for execution on behalf of a sub-account.
    */
-  submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<void>;
+  submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<{ orderId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number }[]>;
 
   /**
    * Checks if there are any pending/open orders at the broker for a sub-account.

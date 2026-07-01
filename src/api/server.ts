@@ -11,6 +11,7 @@ import { MockOptimizerService } from '../optimizer';
 import { logger } from '../utils/logger';
 import swaggerUi from 'swagger-ui-express';
 import { openApiSpec } from './openapi';
+import { setupBrokerWebhooks } from './webhooks/broker-reports';
 import { evaluateRebalance } from '../core/evaluation';
 import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
 import { systemEventBus, SystemEvent } from '../events/bus';
@@ -244,19 +245,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.post('/api/webhooks/alpaca', (req, res) => {
-    // Simulated webhook endpoint for asynchronous trade fills from Alpaca
-    const event = req.body;
-    logger.info({ event }, '[Webhook] Received Alpaca event');
-
-    if (event.event === 'fill') {
-      const accountId = event.account_id;
-      if (accountId) {
-        stateManager.enqueuePortfolio(accountId, Date.now());
-      }
-    }
-    res.json({ success: true });
-  });
+  app.use('/api/webhooks', setupBrokerWebhooks(stateManager));
 
   app.get('/api/state', (req, res) => {
     const tenantId = (req as any).tenantId;

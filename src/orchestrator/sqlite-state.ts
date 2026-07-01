@@ -417,6 +417,60 @@ export class SqliteStateManager implements LiveStateManager {
     return this.lastTradeTimes.get(accountId) ?? 0;
   }
 
+  public registerOrder(orderId: string, accountId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number): void {
+    const db = getDb();
+    db.prepare(`
+      INSERT OR REPLACE INTO Orders (orderId, accountId, instrumentId, direction, quantity, filledQuantity, status, createdAt)
+      VALUES (?, ?, ?, ?, ?, 0, 'PENDING', ?)
+    `).run(orderId, accountId, instrumentId, direction, quantity, new Date().toISOString());
+  }
+
+  public processExecutionReport(orderId: string, accountId: string, status: string, filledQuantity: number, fillPrice: number): void {
+    const db = getDb();
+    const tx = db.transaction(() => {
+      const order = db.prepare(`SELECT instrumentId, direction, filledQuantity, status FROM Orders WHERE orderId = ?`).get(orderId) as any;
+      if (!order) return; // Order not found, maybe externally generated, skip for now.
+
+      const previousFilled = order.filledQuantity;
+      const deltaFilled = filledQuantity - previousFilled;
+
+      // Update Order Status
+      db.prepare(`UPDATE Orders SET filledQuantity = ?, status = ? WHERE orderId = ?`).run(filledQuantity, status, orderId);
+
+      if (deltaFilled > 0) {
+        // Incrementally update Holdings and Cash
+        const portRow = db.prepare(`SELECT cash FROM Portfolios WHERE accountId = ?`).get(accountId) as { cash: number };
+        const holdingRow = db.prepare(`SELECT quantity FROM Holdings WHERE accountId = ? AND instrumentId = ?`).get(accountId, order.instrumentId) as { quantity: number } | undefined;
+        
+        let newCash = portRow.cash;
+        let newQuantity = holdingRow ? holdingRow.quantity : 0;
+        
+        const valueExchanged = deltaFilled * fillPrice;
+
+        if (order.direction === 'BUY') {
+          newCash -= valueExchanged;
+          newQuantity += deltaFilled;
+        } else if (order.direction === 'SELL') {
+          newCash += valueExchanged;
+          newQuantity -= deltaFilled;
+        }
+
+        // Apply new values
+        db.prepare(`UPDATE Portfolios SET cash = ? WHERE accountId = ?`).run(newCash, accountId);
+        
+        if (newQuantity > 0) {
+          db.prepare(`INSERT OR REPLACE INTO Holdings (accountId, instrumentId, quantity) VALUES (?, ?, ?)`).run(accountId, order.instrumentId, newQuantity);
+        } else {
+          db.prepare(`DELETE FROM Holdings WHERE accountId = ? AND instrumentId = ?`).run(accountId, order.instrumentId);
+        }
+        
+        // Enqueue portfolio since state changed
+        this.enqueuePortfolio(accountId, Date.now());
+      }
+    });
+    tx();
+  }
+
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     

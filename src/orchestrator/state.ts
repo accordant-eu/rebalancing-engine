@@ -26,6 +26,8 @@ export interface LiveStateManager {
   updateCircuitBreakerStatus?(accountId: string, status: 'open' | 'closed'): void;
   markTradeExecution(accountId: string, timestampMs: number): void;
   getLastTradeTimeMs(accountId: string): number;
+  registerOrder?(orderId: string, accountId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number): void;
+  processExecutionReport?(orderId: string, accountId: string, status: string, filledQuantity: number, fillPrice: number): void;
   getAccountState(accountId: string): LiveState;
   getAllAccountIds(): string[];
   getAllStates(): Record<string, LiveState>;
@@ -101,6 +103,14 @@ export class MultiPortfolioStateManager implements LiveStateManager {
 
   public getLastTradeTimeMs(accountId: string): number {
     return this.lastTradeTimes.get(accountId) ?? 0;
+  }
+
+  public registerOrder(orderId: string, accountId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number): void {
+    // In-memory mock does nothing for now
+  }
+
+  public processExecutionReport(orderId: string, accountId: string, status: string, filledQuantity: number, fillPrice: number): void {
+    // In-memory mock does nothing for now
   }
 
   public getAccountState(accountId: string): LiveState {

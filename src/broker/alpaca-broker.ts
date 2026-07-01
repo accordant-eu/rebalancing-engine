@@ -101,13 +101,15 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
     return prices;
   }
 
-  public async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<void> {
+  public async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<{ orderId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number }[]> {
+    const orders: { orderId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number }[] = [];
+
     for (const trade of proposal.trades) {
       if (trade.quantity <= 0) continue;
 
       const brokerSymbol = context.translateBrokerSymbol ? context.translateBrokerSymbol(trade.instrumentId, 'Alpaca') : trade.instrumentId;
 
-      await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders`, context, {
+      const response = await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders`, context, {
         method: 'POST',
         body: JSON.stringify({
           symbol: brokerSymbol,
@@ -117,7 +119,18 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
           time_in_force: 'day',
         })
       });
+
+      if (response && response.id) {
+        orders.push({
+          orderId: response.id,
+          instrumentId: trade.instrumentId,
+          direction: trade.direction,
+          quantity: trade.quantity
+        });
+      }
     }
+    
+    return orders;
   }
 
   public async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> {

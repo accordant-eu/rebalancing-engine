@@ -15,7 +15,7 @@ class DummyBrokerAdapter implements BrokerAdapter {
   async getPrices(context: ExecutionContext, symbols: string[]): Promise<Record<string, number>> {
     return { 'AAPL': 150, 'MSFT': 250 };
   }
-  async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<void> {}
+  async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<any[]> { return []; }
   async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> { return false; }
 }
 

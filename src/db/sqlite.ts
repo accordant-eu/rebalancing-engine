@@ -130,6 +130,17 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       submittedBy TEXT NOT NULL,
       FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS Orders (
+      orderId TEXT PRIMARY KEY,
+      accountId TEXT NOT NULL,
+      instrumentId TEXT NOT NULL,
+      direction TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      filledQuantity REAL DEFAULT 0,
+      status TEXT DEFAULT 'PENDING',
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
+    );
   `);
 
   // Safe migrations for existing databases
@@ -141,6 +152,18 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN constraints TEXT`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN circuitBreakerStatus TEXT DEFAULT 'closed'`); } catch (e) { /* ignore if exists */ }
   
+  try { db.exec(`CREATE TABLE IF NOT EXISTS Orders (
+      orderId TEXT PRIMARY KEY,
+      accountId TEXT NOT NULL,
+      instrumentId TEXT NOT NULL,
+      direction TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      filledQuantity REAL DEFAULT 0,
+      status TEXT DEFAULT 'PENDING',
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
+  )`); } catch (e) { /* ignore if exists */ }
+
   try { db.exec(`ALTER TABLE Models ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Models ADD COLUMN evaluationFrequency TEXT DEFAULT 'realtime'`); } catch (e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Models ADD COLUMN constraints TEXT`); } catch (e) { /* ignore if exists */ }
