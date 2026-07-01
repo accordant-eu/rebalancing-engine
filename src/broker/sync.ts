@@ -6,14 +6,26 @@ import { logger } from '../utils/logger';
 
 export class BrokerSyncService {
   private interval: NodeJS.Timeout | null = null;
+  private isRunning: boolean = false;
   private adapters: Map<string, AlpacaBrokerAdapter> = new Map();
 
   constructor(private stateManager: LiveStateManager, private orchestrator: Orchestrator) {}
 
   public start(intervalMs: number = 60000): void {
     if (this.interval) return;
-    this.sync(); // Initial sync
-    this.interval = setInterval(() => this.sync(), intervalMs);
+
+    const runSync = async () => {
+      if (this.isRunning) return;
+      this.isRunning = true;
+      try {
+        await this.sync();
+      } finally {
+        this.isRunning = false;
+      }
+    };
+
+    runSync(); // Initial sync
+    this.interval = setInterval(runSync, intervalMs);
     logger.info(`[BrokerSyncService] Started with interval ${intervalMs}ms`);
   }
 

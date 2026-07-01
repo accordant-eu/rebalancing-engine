@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createHash, randomBytes } from 'crypto';
 import fs from 'fs';
 import readline from 'readline';
+import { readLinesBackwards } from '../utils/fs';
 import { getDb } from '../db/sqlite';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { validateTargetAllocation } from '../core/drift';
@@ -368,7 +369,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.get('/api/logs', (req, res) => {
+  app.get('/api/logs', async (req, res) => {
     const tenantId = (req as any).tenantId;
     const portfolioId = req.query.portfolioId as string;
     const since = req.query.since as string;
@@ -376,45 +377,47 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    // NOTE: For PoC we parse the file in memory. For larger files, this will be slow and should be moved to a DB or indexed.
+    // NOTE: Uses readLinesBackwards to avoid memory exhaustion on large log files.
     try {
       if (!fs.existsSync('./data/audit-trail.jsonl')) {
         return res.json({ total: 0, data: [] });
       }
       
-      const fileContent = fs.readFileSync('./data/audit-trail.jsonl', 'utf-8');
-      const lines = fileContent.split('\n').filter(l => l.trim().length > 0);
+      let allLogs: any[] = [];
+      const tenantStates = tenantId !== 'superadmin' ? stateManager.getStatesFilteredByTenant(tenantId || '') : null;
+      let count = 0;
       
-      let allLogs = lines.map(l => JSON.parse(l));
-      
-      // Filter by tenant
-      if (tenantId !== 'superadmin') {
-        const tenantStates = stateManager.getStatesFilteredByTenant(tenantId || '');
-        allLogs = allLogs.filter(log => {
-          const accId = log.accountId || (log.eventId && log.eventId.split(':')[0]);
-          return accId && tenantStates[accId];
-        });
+      for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
+        if (!line.trim()) continue;
+        try {
+          const log = JSON.parse(line);
+          
+          if (tenantStates) {
+            const accId = log.accountId || (log.eventId && log.eventId.split(':')[0]);
+            if (!accId || !tenantStates[accId]) continue;
+          }
+
+          if (portfolioId && log.accountId !== portfolioId) continue;
+          if (type && log.type !== type) continue;
+          
+          if (since) {
+            const sinceTime = new Date(since).getTime();
+            if (new Date(log.createdAt).getTime() < sinceTime) {
+               // Logs are chronologically appended, so if we hit one older than 'since', we can break
+               break; 
+            }
+          }
+          
+          allLogs.push(log);
+          count++;
+          if (count >= offset + limit) {
+             break;
+          }
+        } catch(e) {}
       }
 
-      // Filter by query params
-      if (portfolioId) {
-        allLogs = allLogs.filter(log => log.accountId === portfolioId);
-      }
-      if (type) {
-        allLogs = allLogs.filter(log => log.type === type); // Assuming log.type exists
-      }
-      if (since) {
-        const sinceTime = new Date(since).getTime();
-        allLogs = allLogs.filter(log => new Date(log.createdAt).getTime() >= sinceTime);
-      }
-      
-      // Sort desc by time (assuming append-only JSONL means naturally sorted asc)
-      allLogs.reverse();
-
-      const total = allLogs.length;
       const data = allLogs.slice(offset, offset + limit);
-
-      res.json({ total, data });
+      res.json({ total: offset + data.length, data });
     } catch (e: any) {
       sendError(res, 500, 'INTERNAL_ERROR', e.message);
     }
@@ -465,7 +468,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     });
   });
 
-  app.get('/api/portfolios/summary', (req, res) => {
+  app.get('/api/portfolios/summary', async (req, res) => {
     const tenantId = (req as any).tenantId;
     const targetTenant = tenantId === 'superadmin' ? null : tenantId;
     const portfolios = stateManager.getStatesFilteredByTenant(targetTenant);
@@ -523,23 +526,26 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
     try {
       if (fs.existsSync('./data/audit-trail.jsonl')) {
-        const fileContent = fs.readFileSync('./data/audit-trail.jsonl', 'utf-8');
-        const lines = fileContent.split('\n').filter(l => l.trim().length > 0);
-        
         const now = Date.now();
         const ms24h = 24 * 60 * 60 * 1000;
         const ms7d = 7 * 24 * 60 * 60 * 1000;
 
-        for (let i = lines.length - 1; i >= 0; i--) {
+        for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
+          if (!line.trim()) continue;
           try {
-            const log = JSON.parse(lines[i]);
+            const log = JSON.parse(line);
+            const logTime = new Date(log.createdAt).getTime();
+            
+            if (now - logTime > ms7d) {
+               break; // Stop reading further back than 7 days
+            }
+
             if (log.type === 'LIVE_EXECUTION') {
               const accId = log.accountId || (log.eventId && log.eventId.split(':')[0]);
               // Tenant filter
               if (tenantId === 'superadmin' || (accId && portfolios[accId])) {
-                const logTime = new Date(log.createdAt).getTime();
                 if (now - logTime <= ms24h) executions24h++;
-                if (now - logTime <= ms7d) executions7d++;
+                executions7d++;
               }
             }
           } catch(err) { }
@@ -642,7 +648,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     res.json(result);
   });
 
-  app.get('/api/portfolios/:id', (req, res) => {
+  app.get('/api/portfolios/:id', async (req, res) => {
     const tenantId = (req as any).tenantId;
     const accountId = req.params.id;
     const state = stateManager.getAccountState(accountId);
@@ -702,16 +708,15 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       };
     });
 
-    // NOTE: For PoC we parse the file in memory. For larger files, this will be slow and should be moved to a DB or indexed.
     try {
-      const fileContent = fs.readFileSync('./data/audit-trail.jsonl', 'utf-8');
-      const lines = fileContent.split('\n');
-      for (let i = lines.length - 1; i >= 0; i--) {
-        if (!lines[i].trim()) continue;
-        const parsed = JSON.parse(lines[i]);
-        if (parsed.accountId === accountId && parsed.outputs && parsed.outputs.tradeProposal) {
-          lastProposal = parsed.outputs.tradeProposal;
-          break;
+      if (fs.existsSync('./data/audit-trail.jsonl')) {
+        for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
+          if (!line.trim()) continue;
+          const parsed = JSON.parse(line);
+          if (parsed.accountId === accountId && parsed.outputs && parsed.outputs.tradeProposal) {
+            lastProposal = parsed.outputs.tradeProposal;
+            break;
+          }
         }
       }
     } catch(e) {
@@ -890,7 +895,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.get('/api/portfolios/:id/proposals', (req, res) => {
+  app.get('/api/portfolios/:id/proposals', async (req, res) => {
     const tenantId = (req as any).tenantId;
     const accountId = req.params.id;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -902,21 +907,21 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
     const proposals: any[] = [];
     
-    // NOTE: For PoC we parse the file in memory. For larger files, this will be slow and should be moved to a DB or indexed.
     try {
-      const fileContent = fs.readFileSync('./data/audit-trail.jsonl', 'utf-8');
-      const lines = fileContent.split('\n');
-      for (let i = lines.length - 1; i >= 0 && proposals.length < limit; i--) {
-        if (!lines[i].trim()) continue;
-        const parsed = JSON.parse(lines[i]);
-        if (parsed.accountId === accountId && parsed.outputs && parsed.outputs.tradeProposal) {
-          proposals.push({
-            proposedAt: parsed.createdAt,
-            executionMode: parsed.outputs.executionTargetMode,
-            executed: parsed.type === 'LIVE_EXECUTION', // basic assumption based on type
-            trades: parsed.outputs.tradeProposal.trades,
-            warnings: parsed.outputs.tradeProposal.warnings.map((w: any) => w.message)
-          });
+      if (fs.existsSync('./data/audit-trail.jsonl')) {
+        for await (const line of readLinesBackwards('./data/audit-trail.jsonl')) {
+          if (!line.trim()) continue;
+          const parsed = JSON.parse(line);
+          if (parsed.accountId === accountId && parsed.outputs && parsed.outputs.tradeProposal) {
+            proposals.push({
+              proposedAt: parsed.createdAt,
+              executionMode: parsed.outputs.executionTargetMode,
+              executed: parsed.type === 'LIVE_EXECUTION', // basic assumption based on type
+              trades: parsed.outputs.tradeProposal.trades,
+              warnings: parsed.outputs.tradeProposal.warnings.map((w: any) => w.message)
+            });
+            if (proposals.length >= limit) break;
+          }
         }
       }
     } catch(e) {
