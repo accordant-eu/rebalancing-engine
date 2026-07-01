@@ -180,6 +180,11 @@ export interface RebalancingPolicy {
    */
   driftUtilityConversionRate?: number;
   /**
+   * The estimated fixed slippage per trade in basis points used for evaluating transaction costs.
+   * Defaults to 5 bps if omitted.
+   */
+  assumedSlippageBps?: number;
+  /**
    * Governs how new cash deposits are deployed into the portfolio.
    * Defaults to 'REBALANCING' (deploying cash to under-weight assets).
    */

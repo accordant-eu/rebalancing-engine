@@ -108,7 +108,8 @@ export class Orchestrator {
         }
 
         // Mocked slippage model for Friction Optimization MVP
-        const frictionModel = new PercentageSlippageModel(5); // 5 bps standard slippage
+        const slippageBps = currentState.policy.assumedSlippageBps ?? 5;
+        const frictionModel = new PercentageSlippageModel(slippageBps);
 
         const evaluation = evaluateRebalance({
           eventId: `${accountId}:tick:${timestampMs}`,

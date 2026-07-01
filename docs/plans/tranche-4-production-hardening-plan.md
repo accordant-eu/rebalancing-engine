@@ -26,8 +26,8 @@ Transition the rebalancing engine from a "Paper Trading" agent (Tranche 3) to a 
   - [x] Create `WebhookNotifier` (e.g. Slack/Discord)
   - [x] Hook `systemEventBus` (Circuit Breaker halts, errors) to the dispatcher
   - [x] Update `.env.example`
-- [ ] **Slice 4: TCO Optimizer Un-Mocking (Stretch)**
-  - [ ] Connect `PercentageSlippageModel` to live data
+- [x] **Slice 4: TCO Optimizer Un-Mocking (Stretch)**
+  - [x] Connect `PercentageSlippageModel` to `RebalancingPolicy` config (deferred live data via ADR-0056)
 
 ---
 
