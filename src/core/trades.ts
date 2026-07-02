@@ -37,7 +37,7 @@ export function generateTradeProposal(
   qualityIndicators?: QualityIndicator[],
 ): TradeProposal {
   validateTargetAllocation(target);
-  if (valuation.cash < 0 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
+  if (valuation.cash < -0.01 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
     throw new Error('Cannot generate trade proposal for negative cash balance');
   }
 

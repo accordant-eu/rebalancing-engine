@@ -2,30 +2,43 @@ import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { Orchestrator } from '../orchestrator';
 
 export function startTickerSimulator(stateManager: SqliteStateManager, orchestrator: Orchestrator, intervalMs: number = 1000) {
-  return setInterval(() => {
-    const currentPrices = stateManager.getGlobalPrices().prices;
-    const newPrices = { ...currentPrices };
+  let timeoutId: NodeJS.Timeout;
 
-    // Artificially drift the prices
-    const firstAsset = Object.keys(newPrices)[0];
-    const secondAsset = Object.keys(newPrices)[1];
-    if (firstAsset) {
-      newPrices[firstAsset] = newPrices[firstAsset] * 1.02; // Up 2%
-    }
-    if (secondAsset) {
-      newPrices[secondAsset] = newPrices[secondAsset] * 0.985; // Down 1.5%
-    }
+  const tick = async () => {
+    try {
+      const currentPrices = stateManager.getGlobalPrices().prices;
+      const newPrices = { ...currentPrices };
 
-    stateManager.updateGlobalPrices(newPrices, new Date().toISOString());
-    
-    const now = Date.now();
-    const affected1 = firstAsset ? stateManager.getPortfoliosAffectedByInstrument(firstAsset) : [];
-    const affected2 = secondAsset ? stateManager.getPortfoliosAffectedByInstrument(secondAsset) : [];
-    
-    for (const id of new Set([...affected1, ...affected2])) {
-      stateManager.enqueuePortfolio(id, now);
-    }
+      // Artificially drift the prices
+      const firstAsset = Object.keys(newPrices)[0];
+      const secondAsset = Object.keys(newPrices)[1];
+      if (firstAsset) {
+        const factor = newPrices[firstAsset] > 200 ? 0.95 : 1.02;
+        newPrices[firstAsset] = newPrices[firstAsset] * factor;
+      }
+      if (secondAsset) {
+        const factor = newPrices[secondAsset] < 50 ? 1.05 : 0.985;
+        newPrices[secondAsset] = newPrices[secondAsset] * factor;
+      }
 
-    orchestrator.onTick(now);
-  }, intervalMs);
+      stateManager.updateGlobalPrices(newPrices, new Date().toISOString());
+      
+      const now = Date.now();
+      const affected1 = firstAsset ? stateManager.getPortfoliosAffectedByInstrument(firstAsset) : [];
+      const affected2 = secondAsset ? stateManager.getPortfoliosAffectedByInstrument(secondAsset) : [];
+      
+      for (const id of new Set([...affected1, ...affected2])) {
+        stateManager.enqueuePortfolio(id, now);
+      }
+
+      await orchestrator.onTick(now);
+    } catch (err) {
+      console.error('[Ticker Simulator] Tick failed:', err);
+    } finally {
+      timeoutId = setTimeout(tick, intervalMs);
+    }
+  };
+
+  timeoutId = setTimeout(tick, intervalMs);
+  return () => clearTimeout(timeoutId);
 }
