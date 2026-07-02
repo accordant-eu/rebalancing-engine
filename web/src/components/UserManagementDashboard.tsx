@@ -12,7 +12,7 @@ export const UserManagementDashboard: React.FC<{ token: string | null }> = ({ to
   const fetchUsers = async () => {
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:3000/api/users', {
+      const res = await fetch('/api/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -35,7 +35,7 @@ export const UserManagementDashboard: React.FC<{ token: string | null }> = ({ to
     setError('');
     setSuccess('');
     try {
-      const res = await fetch('http://localhost:3000/api/users', {
+      const res = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
