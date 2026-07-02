@@ -371,8 +371,11 @@ function App() {
   let identityDisplay = tenantToken;
   try {
     if (tenantToken) {
-      const decoded = JSON.parse(atob(tenantToken));
-      identityDisplay = `${decoded.userId} (${decoded.tenantId})`;
+      const parts = tenantToken.split('.');
+      if (parts.length === 3) {
+        const decoded = JSON.parse(atob(parts[1]));
+        identityDisplay = `${decoded.userId} (${decoded.tenantId})`;
+      }
     }
   } catch(e) {}
 
@@ -400,7 +403,7 @@ function App() {
         case 'adminModels': return <RebalancingModelsTab token={tenantToken} />;
         case 'assets': return <AssetUniverseTab token={tenantToken} />;
         case 'users': return <UserManagementDashboard token={tenantToken} />;
-        default: return <FirmOverviewDashboard portfolios={Object.values(state?.portfolios || {})} />;
+        default: return <FirmOverviewDashboard token={tenantToken} />;
       }
     };
     
