@@ -15,12 +15,12 @@ export const ComplianceDashboard: React.FC<{ token: string | null }> = ({ token 
       if (accountIdFilter) query.append('accountId', accountIdFilter);
       if (typeFilter) query.append('type', typeFilter);
       
-      const res = await fetch(`http://localhost:3000/api/logs?${query.toString()}`, {
+      const res = await fetch(`/api/logs?${query.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        const data = await res.json();
-        setLogs(data);
+        const payload = await res.json();
+        setLogs(Array.isArray(payload) ? payload : payload.data || []);
       }
     } catch(e) {
       console.error('Failed to fetch audit trails', e);

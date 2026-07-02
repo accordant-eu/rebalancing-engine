@@ -246,45 +246,6 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   app.use('/api/webhooks', setupBrokerWebhooks(stateManager));
 
-  // --- Audit Explorer (Compliance) ---
-  app.get('/api/logs', (req: any, res: any) => {
-    const { accountId, type, limit = '100', offset = '0' } = req.query;
-    // Tenants can only see their own logs, Superadmin sees all
-    const db = getDb();
-    
-    let query = `SELECT eventId, accountId, tenantId, type, inputs, outputs, timestampMs, createdAt FROM AuditTrails WHERE 1=1`;
-    const params: any[] = [];
-    
-    if (req.role !== 'Admin' || (process.env.SUPERADMIN_TENANT_ID && req.tenantId !== process.env.SUPERADMIN_TENANT_ID)) {
-      query += ` AND tenantId = ?`;
-      params.push(req.tenantId);
-    }
-    
-    if (accountId) {
-      query += ` AND accountId = ?`;
-      params.push(accountId);
-    }
-    
-    if (type) {
-      query += ` AND type = ?`;
-      params.push(type);
-    }
-    
-    query += ` ORDER BY timestampMs DESC LIMIT ? OFFSET ?`;
-    params.push(parseInt(limit, 10));
-    params.push(parseInt(offset, 10));
-    
-    const logs = db.prepare(query).all(...params);
-    // Parse JSON fields
-    const parsedLogs = logs.map((l: any) => ({
-      ...l,
-      inputs: JSON.parse(l.inputs || '{}'),
-      outputs: JSON.parse(l.outputs || '{}')
-    }));
-    
-    res.json(parsedLogs);
-  });
-
   // --- Tenant Admin Endpoints ---
   app.get('/api/users', (req: any, res: any) => {
     if (req.role !== 'Admin') {
@@ -553,13 +514,18 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
     let lastEvaluatedAt: number | null = null;
 
-    Object.values(portfolios).forEach((state) => {
-      // Aggregate AUM
-      let portfolioValue = state.portfolioState.cash;
-      state.portfolioState.holdings.forEach(h => {
-        portfolioValue += h.quantity * (prices.prices[h.instrumentId] || 0);
-      });
-      totalAum += portfolioValue;
+    const portfolioList = Object.values(portfolios);
+    const CHUNK_SIZE = 100;
+
+    for (let i = 0; i < portfolioList.length; i += CHUNK_SIZE) {
+      const chunk = portfolioList.slice(i, i + CHUNK_SIZE);
+      chunk.forEach((state) => {
+        // Aggregate AUM
+        let portfolioValue = state.portfolioState.cash;
+        state.portfolioState.holdings.forEach(h => {
+          portfolioValue += h.quantity * (prices.prices[h.instrumentId] || 0);
+        });
+        totalAum += portfolioValue;
 
       // Circuit Breakers
       if (state.portfolioState.circuitBreakerStatus === 'open') {
@@ -591,9 +557,13 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       }
     });
 
-    // Recent executions from Audit logs
-    let executions24h = 0;
-    let executions7d = 0;
+    // Yield to event loop to prevent DoS
+    await new Promise(resolve => setImmediate(resolve));
+  }
+
+  // Recent executions from Audit logs
+  let executions24h = 0;
+  let executions7d = 0;
 
     try {
       const db = getDb();

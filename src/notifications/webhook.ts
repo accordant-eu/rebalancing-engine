@@ -18,7 +18,8 @@ export class WebhookNotifier implements NotificationAdapter {
       const response = await fetch(this.webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(5000)
       });
 
       if (!response.ok) {

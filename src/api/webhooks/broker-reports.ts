@@ -1,11 +1,32 @@
 import { Router } from 'express';
 import { LiveStateManager } from '../../orchestrator/state';
 import { logger } from '../../utils/logger';
+import crypto from 'crypto';
 
 export function setupBrokerWebhooks(stateManager: LiveStateManager): Router {
   const router = Router();
 
   router.post('/alpaca', (req, res) => {
+    const signature = req.headers['alpaca-signature'] || req.headers['x-alpaca-signature'];
+    const secret = process.env.ALPACA_WEBHOOK_SECRET || 'local-dummy-secret';
+
+    if (!signature) {
+      res.status(401).json({ error: 'Missing signature' });
+      return;
+    }
+
+    // Ensure we have rawBody (express.json must be configured to populate req.rawBody or we stringify req.body for fallback)
+    // Note: Alpaca calculates HMAC over the raw string body. Assuming `req.body` is available via express.json middleware.
+    // If rawBody is not mounted globally, we fallback to stringifying the body but it may fail if spacing differs.
+    const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+    const expectedSignature = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+    if (signature !== expectedSignature) {
+      logger.warn('[Webhook] Invalid Alpaca signature');
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
+
     const event = req.body;
     logger.info({ event: event.event, orderId: event.order?.id }, '[Webhook] Received Alpaca execution report');
 
