@@ -574,9 +574,9 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       const limit24h = now - ms24h;
 
       let q7d = `SELECT count(*) as count FROM AuditTrails WHERE type = 'LIVE_EXECUTION' AND timestampMs >= ?`;
-      let params7d: any[] = [limit7d];
+      const params7d: any[] = [limit7d];
       let q24h = `SELECT count(*) as count FROM AuditTrails WHERE type = 'LIVE_EXECUTION' AND timestampMs >= ?`;
-      let params24h: any[] = [limit24h];
+      const params24h: any[] = [limit24h];
 
       if (tenantId !== 'superadmin') {
         q7d += ` AND tenantId = ?`;
@@ -590,7 +590,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
       const res24h = db.prepare(q24h).get(...params24h) as { count: number };
       executions24h = res24h?.count || 0;
-    } catch (e) { }
+    } catch (e) { /* intentional empty catch */ }
 
     res.json({
       asOf: new Date().toISOString(),
