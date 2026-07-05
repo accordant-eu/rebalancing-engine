@@ -159,7 +159,11 @@ function App() {
       }
       const data = await res.json();
       setTenantToken(data.token);
-      setUserRole(data.role);
+      if (data.isSuperadmin) {
+        setUserRole('Superadmin');
+      } else {
+        setUserRole(data.role);
+      }
     } catch(err) {
       alert('Login failed');
     }
@@ -339,21 +343,23 @@ function App() {
     return (
       <div className="p-8 max-w-7xl mx-auto h-full overflow-y-auto">
         <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-6">Model Mandates</h2>
-        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-soft mb-8 overflow-hidden transition-all duration-300 hover:shadow-soft-hover">
-          <div className="px-6 py-5 border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-md flex justify-between items-center">
-            <span className="font-bold tracking-tight text-slate-900 text-lg">Create New Model Mandate</span>
-            <button 
-              onClick={handleRunOptimizer}
-              className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold tracking-wide rounded-xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 text-sm flex items-center gap-2"
-            >
-              <Zap size={16} className="text-sky-200" />
-              Run Optimizer (Tranche C Mock)
-            </button>
+        {(userRole === 'Admin' || userRole === 'Superadmin') && (
+          <div className="bg-white border border-slate-200/60 rounded-2xl shadow-soft mb-8 overflow-hidden transition-all duration-300 hover:shadow-soft-hover">
+            <div className="px-6 py-5 border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-md flex justify-between items-center">
+              <span className="font-bold tracking-tight text-slate-900 text-lg">Create New Model Mandate</span>
+              <button 
+                onClick={handleRunOptimizer}
+                className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold tracking-wide rounded-xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 text-sm flex items-center gap-2"
+              >
+                <Zap size={16} className="text-sky-200" />
+                Run Optimizer (Tranche C Mock)
+              </button>
+            </div>
+            <div className="p-6">
+              <MandateBuilderForm token={tenantToken || ''} onSubmit={handleCreateModel} />
+            </div>
           </div>
-          <div className="p-6">
-            <MandateBuilderForm token={tenantToken || ''} onSubmit={handleCreateModel} />
-          </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {models.map(m => (

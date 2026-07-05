@@ -62,6 +62,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
         (req as any).tenantId = keyRecord.tenantId;
         (req as any).userId = 'api-key';
         (req as any).role = 'Admin';
+        (req as any).isSuperadmin = keyRecord.tenantId === process.env.SUPERADMIN_TENANT_ID;
         return next();
       }
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid API key');
@@ -72,6 +73,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       (req as any).tenantId = decoded.tenantId;
       (req as any).userId = decoded.userId;
       (req as any).role = decoded.role;
+      (req as any).isSuperadmin = decoded.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && decoded.tenantId === process.env.SUPERADMIN_TENANT_ID;
     } catch (e) {
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid token signature');
     }
@@ -82,6 +84,20 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   const requireSuperadmin = (req: any, res: any, next: any) => {
     if (req.role !== 'Admin' || !process.env.SUPERADMIN_TENANT_ID || req.tenantId !== process.env.SUPERADMIN_TENANT_ID) {
       return sendError(res, 403, 'FORBIDDEN', 'Superadmin access required');
+    }
+    next();
+  };
+
+  const requireAdmin = (req: any, res: any, next: any) => {
+    if (req.role !== 'Admin') {
+      return sendError(res, 403, 'FORBIDDEN', 'Admin access required');
+    }
+    next();
+  };
+
+  const forbidViewer = (req: any, res: any, next: any) => {
+    if (req.role === 'Viewer') {
+      return sendError(res, 403, 'FORBIDDEN', 'Viewer role cannot perform this action');
     }
     next();
   };
@@ -105,7 +121,9 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const refreshToken = randomBytes(32).toString('hex');
     stateManager.createRefreshToken(user.userId, refreshToken, 7 * 24 * 60 * 60 * 1000);
     
-    res.json({ token, refreshToken, tenantId: user.tenantId, role: user.role });
+    const isSuperadmin = user.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && user.tenantId === process.env.SUPERADMIN_TENANT_ID;
+    
+    res.json({ token, refreshToken, tenantId: user.tenantId, role: user.role, isSuperadmin });
   });
 
   app.post('/api/auth/refresh', (req, res) => {
@@ -128,7 +146,9 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const newRefreshToken = randomBytes(32).toString('hex');
     stateManager.createRefreshToken(user.userId, newRefreshToken, 7 * 24 * 60 * 60 * 1000);
 
-    res.json({ token, refreshToken: newRefreshToken });
+    const isSuperadmin = user.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && user.tenantId === process.env.SUPERADMIN_TENANT_ID;
+
+    res.json({ token, refreshToken: newRefreshToken, isSuperadmin });
   });
 
   // --- Admin Endpoints ---
@@ -233,7 +253,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   });
   // -----------------------
 
-  app.post('/api/optimizer/run', (req, res) => {
+  app.post('/api/optimizer/run', requireAdmin, (req, res) => {
     try {
       const optimizer = new MockOptimizerService(stateManager);
       optimizer.run();
@@ -285,7 +305,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   app.get('/api/state', (req, res) => {
     const tenantId = (req as any).tenantId;
-    const targetTenant = tenantId === 'superadmin' ? null : tenantId;
+    const targetTenant = (req as any).isSuperadmin ? null : tenantId;
     res.json({
       globalPrices: stateManager.getGlobalPrices(),
       portfolios: stateManager.getStatesFilteredByTenant(targetTenant),
@@ -294,7 +314,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   app.get('/api/models', (req, res) => {
     const tenantId = (req as any).tenantId;
-    if (tenantId === 'superadmin') {
+    if ((req as any).isSuperadmin) {
       const db = getDb();
       const rows = db.prepare(`SELECT * FROM Models`).all() as any[];
       const models = rows.map(r => ({
@@ -329,15 +349,15 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   app.get('/api/models/:id', (req, res) => {
     const tenantId = (req as any).tenantId;
     const modelId = req.params.id;
-    const models = tenantId === 'superadmin' ? stateManager.getAllTenants().flatMap(t => stateManager.getModels(t.tenantId)) : stateManager.getModels(tenantId);
+    const models = (req as any).isSuperadmin ? stateManager.getAllTenants().flatMap(t => stateManager.getModels(t.tenantId)) : stateManager.getModels(tenantId);
     const model = models.find((m: any) => m.modelId === modelId);
-    if (!model || (tenantId !== 'superadmin' && model.tenantId !== tenantId)) {
+    if (!model || (!(req as any).isSuperadmin && model.tenantId !== tenantId)) {
       return sendError(res, 404, 'MODEL_NOT_FOUND', `Model '${modelId}' not found`);
     }
     res.json(model);
   });
 
-  app.post('/api/models', (req, res) => {
+  app.post('/api/models', requireAdmin, (req, res) => {
     const tenantId = (req as any).tenantId;
     const model = { ...req.body, tenantId };
     try {
@@ -349,10 +369,17 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.put('/api/models/:id', (req, res) => {
+  app.put('/api/models/:id', requireAdmin, (req, res) => {
     const tenantId = (req as any).tenantId;
     const modelId = req.params.id;
-    const model = { ...req.body, modelId, tenantId };
+    
+    const models = (req as any).isSuperadmin ? stateManager.getAllTenants().flatMap(t => stateManager.getModels(t.tenantId)) : stateManager.getModels(tenantId);
+    const existing = models.find((m: any) => m.modelId === modelId);
+    if (!existing || (!(req as any).isSuperadmin && existing.tenantId !== tenantId)) {
+      return sendError(res, 404, 'MODEL_NOT_FOUND', `Model '${modelId}' not found`);
+    }
+
+    const model = { ...req.body, modelId, tenantId: existing.tenantId };
     try {
       validateModelMandate(model);
       const affectedAccounts = stateManager.updateModel(model);
@@ -362,7 +389,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.put('/api/portfolios/:id/subscription', (req, res) => {
+  app.put('/api/portfolios/:id/subscription', forbidViewer, (req, res) => {
     const accountId = req.params.id;
     const { modelId, subscriptionType } = req.body;
     try {
@@ -374,12 +401,12 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.put('/api/portfolios/:id/mandate', (req, res) => {
+  app.put('/api/portfolios/:id/mandate', forbidViewer, (req, res) => {
     const accountId = req.params.id;
     const tenantId = (req as any).tenantId;
     const state = stateManager.getAccountState(accountId);
     
-    if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+    if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
       return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
     }
 
@@ -407,7 +434,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       let query = `SELECT * FROM AuditTrails WHERE 1=1`;
       const params: any[] = [];
 
-      if (tenantId !== 'superadmin') {
+      if (!(req as any).isSuperadmin) {
         query += ` AND tenantId = ?`;
         params.push(tenantId);
       }
@@ -440,7 +467,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       // For total count
       let countQuery = `SELECT count(*) as count FROM AuditTrails WHERE 1=1`;
       const countParams = params.slice(0, -2); // Remove limit and offset
-      if (tenantId !== 'superadmin') countQuery += ` AND tenantId = ?`;
+      if (!(req as any).isSuperadmin) countQuery += ` AND tenantId = ?`;
       if (portfolioId) countQuery += ` AND accountId = ?`;
       if (type) countQuery += ` AND type = ?`;
       if (since) countQuery += ` AND timestampMs >= ?`;
@@ -477,7 +504,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }, 30000);
 
     const onSystemEvent = (event: SystemEvent) => {
-      if (tenantId !== 'superadmin' && event.tenantId !== tenantId) {
+      if (!(req as any).isSuperadmin && event.tenantId !== tenantId) {
         return;
       }
 
@@ -502,7 +529,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   app.get('/api/portfolios/summary', async (req, res) => {
     const tenantId = (req as any).tenantId;
-    const targetTenant = tenantId === 'superadmin' ? null : tenantId;
+    const targetTenant = (req as any).isSuperadmin ? null : tenantId;
     const portfolios = stateManager.getStatesFilteredByTenant(targetTenant);
     const prices = stateManager.getGlobalPrices();
 
@@ -578,7 +605,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       let q24h = `SELECT count(*) as count FROM AuditTrails WHERE type = 'LIVE_EXECUTION' AND timestampMs >= ?`;
       const params24h: any[] = [limit24h];
 
-      if (tenantId !== 'superadmin') {
+      if (!(req as any).isSuperadmin) {
         q7d += ` AND tenantId = ?`;
         params7d.push(tenantId);
         q24h += ` AND tenantId = ?`;
@@ -613,7 +640,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   });
   app.get('/api/portfolios', (req, res) => {
     const tenantId = (req as any).tenantId;
-    const targetTenant = tenantId === 'superadmin' ? null : tenantId;
+    const targetTenant = (req as any).isSuperadmin ? null : tenantId;
     const portfolios = stateManager.getStatesFilteredByTenant(targetTenant);
     const prices = stateManager.getGlobalPrices();
     
@@ -692,7 +719,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const accountId = req.params.id;
     const state = stateManager.getAccountState(accountId);
     
-    if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+    if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
       return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
     }
 
@@ -781,14 +808,14 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     });
   });
 
-  app.post('/api/portfolios/:id/trigger-rebalance', (req, res) => {
+  app.post('/api/portfolios/:id/trigger-rebalance', forbidViewer, (req, res) => {
     const tenantId = (req as any).tenantId;
     const accountId = req.params.id;
     const { dryRun } = req.body;
     
     try {
       const state = stateManager.getAccountState(accountId);
-      if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+      if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
         return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
       }
 
@@ -827,13 +854,13 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.post('/api/portfolios/:id/circuit-breaker/reset', (req, res) => {
+  app.post('/api/portfolios/:id/circuit-breaker/reset', requireAdmin, (req, res) => {
     const tenantId = (req as any).tenantId;
     const accountId = req.params.id;
     
     try {
       const state = stateManager.getAccountState(accountId);
-      if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+      if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
         return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
       }
 
@@ -855,7 +882,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     }
   });
 
-  app.post('/api/portfolios/:id/cashflows', (req, res) => {
+  app.post('/api/portfolios/:id/cashflows', forbidViewer, (req, res) => {
     const tenantId = (req as any).tenantId;
     const accountId = req.params.id;
     const { amount, direction, currency, expectedSettlementDate, note } = req.body;
@@ -866,7 +893,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
     try {
       const state = stateManager.getAccountState(accountId);
-      if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+      if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
         return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
       }
 
@@ -892,7 +919,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const accountId = req.params.id;
     const state = stateManager.getAccountState(accountId);
     
-    if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+    if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
       return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
     }
 
@@ -938,7 +965,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const limit = parseInt(req.query.limit as string) || 20;
 
     const state = stateManager.getAccountState(accountId);
-    if (!state || (tenantId !== 'superadmin' && state.portfolioState.tenantId !== tenantId)) {
+    if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
       return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
     }
 
