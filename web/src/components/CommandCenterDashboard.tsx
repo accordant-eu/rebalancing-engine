@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { StatePayload } from '../types';
+import { AlertCircle, Eye, AlertTriangle, AlertOctagon, Activity } from 'lucide-react';
 
 interface DashboardProps {
   state: StatePayload;
@@ -49,7 +50,15 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
   }, [state, accountIds]);
 
   if (accountIds.length === 0) {
-    return <div className="p-6 text-gray-400">No portfolios loaded in this tenant.</div>;
+    return (
+      <div className="p-8 flex flex-col items-center justify-center text-slate-400 h-full">
+        <div className="bg-slate-100 p-4 rounded-full mb-4 shadow-sm">
+          <Eye size={32} className="text-slate-300" />
+        </div>
+        <p className="text-lg font-medium">No portfolios loaded</p>
+        <p className="text-sm">There is no active data for this tenant.</p>
+      </div>
+    );
   }
 
   // 2. Action Queues
@@ -58,53 +67,63 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
   const halted = aggregates.portfoliosWithMetrics.filter(p => p.isHalted);
 
   return (
-    <div className="flex flex-col gap-6 p-6 h-full font-sans text-gray-100">
+    <div className="flex flex-col gap-6 p-8 h-full max-w-7xl mx-auto font-sans">
       
       {/* Top Layer: HUD */}
-      <div className="flex gap-4">
-        <div className="flex-1 p-5 rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm">
-          <div className="text-sm text-gray-400 font-semibold tracking-wide uppercase">Total Fleet AUM</div>
-          <div className="text-3xl font-light mt-2 text-white">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1 p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft flex flex-col justify-center transition-all duration-300 hover:shadow-soft-hover hover:-translate-y-1 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-[0.03] transform translate-x-4 -translate-y-4 text-emerald-500"><Eye size={120} /></div>
+          <div className="text-xs text-slate-500 font-bold tracking-wider uppercase mb-1 relative z-10">Total Fleet AUM</div>
+          <div className="text-3xl font-bold tracking-tight text-slate-900 font-mono relative z-10 truncate" title={`$${aggregates.totalAum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>
             ${aggregates.totalAum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
-        <div className="flex-1 p-5 rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm">
-          <div className="text-sm text-gray-400 font-semibold tracking-wide uppercase">Fleet Health</div>
-          <div className={`text-3xl font-light mt-2 ${aggregates.breachedCount > 0 ? 'text-yellow-500' : 'text-green-500'}`}>
-            {accountIds.length - aggregates.breachedCount} In-Band <span className="text-gray-500 text-lg mx-2">/</span> {aggregates.breachedCount} Breached
+        <div className="flex-1 p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft flex flex-col justify-center transition-all duration-300 hover:shadow-soft-hover hover:-translate-y-1 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-[0.03] transform translate-x-4 -translate-y-4 text-sky-500"><Activity size={120} /></div>
+          <div className="text-xs text-slate-500 font-bold tracking-wider uppercase mb-1 relative z-10">Fleet Health</div>
+          <div className={`text-3xl font-bold tracking-tight font-mono relative z-10 ${aggregates.breachedCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+            <span className={aggregates.breachedCount > 0 ? 'text-slate-900' : ''}>{accountIds.length - aggregates.breachedCount}</span> 
+            <span className="text-sm font-sans font-medium text-slate-500 ml-1">In-Band</span> 
+            <span className="text-slate-300 mx-3">/</span> 
+            {aggregates.breachedCount} 
+            <span className="text-sm font-sans font-medium text-slate-500 ml-1">Breached</span>
           </div>
         </div>
-        <div className={`flex-1 p-5 rounded-xl border ${aggregates.haltedCount > 0 ? 'border-red-500/50 bg-red-500/10' : 'border-gray-800 bg-[#1a1d24]'} shadow-sm`}>
-          <div className="text-sm text-gray-400 font-semibold tracking-wide uppercase">Circuit Breaker Halts</div>
-          <div className={`text-3xl font-light mt-2 ${aggregates.haltedCount > 0 ? 'text-red-500 font-medium' : 'text-green-500'}`}>
-            {aggregates.haltedCount} Halted
+        <div className={`flex-1 p-6 rounded-2xl border shadow-soft flex flex-col justify-center transition-all duration-300 hover:shadow-soft-hover hover:-translate-y-1 relative overflow-hidden ${aggregates.haltedCount > 0 ? 'border-rose-200/60 bg-rose-50' : 'border-slate-200/60 bg-white'}`}>
+          <div className="absolute top-0 right-0 p-4 opacity-[0.03] transform translate-x-4 -translate-y-4 text-rose-500"><AlertOctagon size={120} /></div>
+          <div className={`text-xs font-bold tracking-wider uppercase mb-1 relative z-10 ${aggregates.haltedCount > 0 ? 'text-rose-600' : 'text-slate-500'}`}>Circuit Breaker Halts</div>
+          <div className={`text-3xl font-bold tracking-tight font-mono relative z-10 ${aggregates.haltedCount > 0 ? 'text-rose-700' : 'text-emerald-600'}`}>
+            {aggregates.haltedCount} <span className="text-sm font-sans font-medium opacity-80">Halted</span>
           </div>
         </div>
       </div>
 
       {/* Middle Layer: Action Queues */}
-      <div className="grid grid-cols-2 gap-6">
-        <div className="rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-800 bg-red-500/5 text-red-400 font-semibold flex justify-between items-center">
-            Action Required: Breached Drift
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{criticalDrift.length}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-slate-200/60 bg-white shadow-soft overflow-hidden flex flex-col transition-all duration-300 hover:shadow-soft-hover">
+          <div className="px-6 py-4 border-b border-rose-100 bg-rose-50/80 backdrop-blur-md text-rose-700 font-bold tracking-tight flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={18} />
+              Action Required: Breached Drift
+            </div>
+            <span className="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">{criticalDrift.length}</span>
           </div>
           <div className="p-0 overflow-auto max-h-96">
-            {criticalDrift.length === 0 ? <div className="p-5 text-gray-500 text-sm">No critical drifts. All good! 🎉</div> : (
+            {criticalDrift.length === 0 ? <div className="p-8 text-center text-slate-500 font-medium">No critical drifts. All good! 🎉</div> : (
               <table className="w-full text-left text-sm">
-                <thead className="bg-[#0f1115] text-gray-400 sticky top-0">
+                <thead className="bg-slate-50/80 backdrop-blur text-slate-500 sticky top-0 border-b border-slate-200/60">
                   <tr>
-                    <th className="px-5 py-3 font-semibold">Account</th>
-                    <th className="px-5 py-3 font-semibold">Max Drift</th>
-                    <th className="px-5 py-3 font-semibold">Tolerance</th>
+                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Account</th>
+                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Max Drift</th>
+                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Tolerance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+                <tbody className="divide-y divide-slate-100">
                   {criticalDrift.map(p => (
-                    <tr key={p.accountId} className="hover:bg-[#252830] cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
-                      <td className="px-5 py-3 text-blue-400 font-medium">{p.accountId}</td>
-                      <td className="px-5 py-3 text-red-400 font-semibold">{(p.maxDrift * 100).toFixed(2)}%</td>
-                      <td className="px-5 py-3 text-gray-400">{(p.tolerance * 100).toFixed(1)}%</td>
+                    <tr key={p.accountId} className="hover:bg-slate-50/80 cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
+                      <td className="px-6 py-4 text-slate-800 font-medium font-mono text-xs">{p.accountId}</td>
+                      <td className="px-6 py-4 text-rose-600 font-bold font-mono">{(p.maxDrift * 100).toFixed(2)}%</td>
+                      <td className="px-6 py-4 text-slate-500 font-mono">{(p.tolerance * 100).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -113,27 +132,30 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-800 bg-[#1a1d24] shadow-sm overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-800 bg-yellow-500/5 text-yellow-500 font-semibold flex justify-between items-center">
-            Watchlist: Near-Misses
-            <span className="bg-yellow-500 text-black text-xs px-2 py-1 rounded-full">{nearMisses.length}</span>
+        <div className="rounded-2xl border border-slate-200/60 bg-white shadow-soft overflow-hidden flex flex-col transition-all duration-300 hover:shadow-soft-hover">
+          <div className="px-6 py-4 border-b border-amber-100 bg-amber-50/80 backdrop-blur-md text-amber-700 font-bold tracking-tight flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={18} />
+              Watchlist: Near-Misses
+            </div>
+            <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">{nearMisses.length}</span>
           </div>
           <div className="p-0 overflow-auto max-h-96">
-            {nearMisses.length === 0 ? <div className="p-5 text-gray-500 text-sm">No near-misses.</div> : (
+            {nearMisses.length === 0 ? <div className="p-8 text-center text-slate-500 font-medium">No near-misses.</div> : (
               <table className="w-full text-left text-sm">
-                <thead className="bg-[#0f1115] text-gray-400 sticky top-0">
+                <thead className="bg-slate-50/80 backdrop-blur text-slate-500 sticky top-0 border-b border-slate-200/60">
                   <tr>
-                    <th className="px-5 py-3 font-semibold">Account</th>
-                    <th className="px-5 py-3 font-semibold">Max Drift</th>
-                    <th className="px-5 py-3 font-semibold">Tolerance</th>
+                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Account</th>
+                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Max Drift</th>
+                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Tolerance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+                <tbody className="divide-y divide-slate-100">
                   {nearMisses.map(p => (
-                    <tr key={p.accountId} className="hover:bg-[#252830] cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
-                      <td className="px-5 py-3 text-blue-400 font-medium">{p.accountId}</td>
-                      <td className="px-5 py-3 text-yellow-500 font-semibold">{(p.maxDrift * 100).toFixed(2)}%</td>
-                      <td className="px-5 py-3 text-gray-400">{(p.tolerance * 100).toFixed(1)}%</td>
+                    <tr key={p.accountId} className="hover:bg-slate-50/80 cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
+                      <td className="px-6 py-4 text-slate-800 font-medium font-mono text-xs">{p.accountId}</td>
+                      <td className="px-6 py-4 text-amber-600 font-bold font-mono">{(p.maxDrift * 100).toFixed(2)}%</td>
+                      <td className="px-6 py-4 text-slate-500 font-mono">{(p.tolerance * 100).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -145,27 +167,28 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
 
       {/* Circuit Breakers (if any) */}
       {halted.length > 0 && (
-        <div className="rounded-xl border border-red-500/50 bg-[#1a1d24] shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-red-500/50 bg-red-600 text-white font-bold tracking-wide uppercase flex justify-between items-center">
+        <div className="rounded-2xl border border-rose-200/60 bg-white shadow-soft overflow-hidden transition-all duration-300 hover:shadow-soft-hover">
+          <div className="px-6 py-4 border-b border-rose-200/60 bg-rose-600 text-white font-bold tracking-wide uppercase flex items-center gap-3">
+            <AlertOctagon size={20} />
             CRITICAL: Halted Portfolios
           </div>
           <div className="p-0">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#0f1115] text-gray-400">
+              <thead className="bg-slate-50/80 backdrop-blur text-slate-500 border-b border-slate-200/60">
                 <tr>
-                  <th className="px-5 py-3 font-semibold">Account</th>
-                  <th className="px-5 py-3 font-semibold">Equity</th>
-                  <th className="px-5 py-3 font-semibold text-right">Action</th>
+                  <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Account</th>
+                  <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Equity</th>
+                  <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-slate-100">
                 {halted.map(p => (
-                  <tr key={p.accountId}>
-                    <td className="px-5 py-3 text-red-500 font-bold">{p.accountId}</td>
-                    <td className="px-5 py-3 text-gray-300">${p.equity.toFixed(2)}</td>
-                    <td className="px-5 py-3 text-right">
+                  <tr key={p.accountId} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-6 py-4 text-rose-700 font-bold font-mono text-xs">{p.accountId}</td>
+                    <td className="px-6 py-4 text-slate-700 font-mono font-medium">${p.equity.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-right">
                       <button 
-                        className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 rounded shadow-sm transition-colors text-xs font-semibold uppercase tracking-wider"
+                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 text-xs font-semibold uppercase tracking-wider"
                         onClick={() => setSelectedAccountId(p.accountId)}
                       >
                         Inspect

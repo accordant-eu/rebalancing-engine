@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './App.css';
+import { ArrowLeft, Info, Zap } from 'lucide-react';
 
 import type { LiveState, ModelMandate, StatePayload } from './types';
 import { MandateBuilderForm } from './components/MandateBuilderForm';
@@ -67,7 +67,7 @@ function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, 
 function App() {
   const [tenantToken, setTenantToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops' | 'assets' | 'users'>('fleet');
+  const [currentTab, setCurrentTab] = useState<'inbox' | 'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops' | 'assets' | 'users'>('fleet');
   
   const [state, setState] = useState<StatePayload | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -194,20 +194,27 @@ function App() {
 
   if (!tenantToken) {
     return (
-      <div className="appContainer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <div className="panel" style={{ width: '400px', padding: '32px' }}>
-          <h2>SaaS Command Center</h2>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px' }}>
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="w-full max-w-md p-10 bg-white rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center justify-center mb-10 gap-3">
+            <div className="p-2 bg-sky-100 rounded-lg">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Accordant</h2>
+          </div>
+          <form onSubmit={handleLogin} className="flex flex-col gap-6">
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Email</label>
-              <input name="email" type="email" required style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }} />
+              <label className="block mb-2 text-sm font-semibold text-slate-600">Email Address</label>
+              <input name="email" type="email" required className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" placeholder="admin@accordant.eu" />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Password</label>
-              <input name="password" type="password" required style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px' }} />
+              <label className="block mb-2 text-sm font-semibold text-slate-600">Password</label>
+              <input name="password" type="password" required className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" placeholder="••••••••" />
             </div>
-            <button type="submit" style={{ padding: '12px', background: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Access Dashboard
+            <button type="submit" className="mt-4 w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+              Sign In to Engine
             </button>
           </form>
         </div>
@@ -229,30 +236,32 @@ function App() {
     const activeModelId = portfolio.portfolioState.modelId;
 
     return (
-      <div>
-        <div style={{ marginBottom: '16px' }}>
+      <div className="p-8 max-w-7xl mx-auto h-full flex flex-col gap-6">
+        <div className="flex items-center gap-4">
           <button 
-            style={{ background: 'var(--border-subtle)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+            className="px-4 py-2 bg-white border border-slate-200/60 text-slate-600 hover:text-slate-900 hover:bg-slate-50/80 rounded-xl shadow-sm font-medium transition-all hover:shadow-md hover:-translate-y-0.5 flex items-center gap-2"
             onClick={() => setSelectedAccountId(null)}
           >
-            &larr; Back to Fleet View
+            <ArrowLeft size={16} />
+            Back to Fleet View
           </button>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Portfolio: <span className="font-mono text-sky-600">{selectedAccountId}</span></h2>
         </div>
 
         {/* Subscription Control Panel */}
-        <div className="panel" style={{ marginBottom: '16px' }}>
-          <div className="panelHeader" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Mandate</span>
-            <span style={{ fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', background: isDiscretionary ? 'var(--accent-blue)' : 'var(--status-yellow)', color: isDiscretionary ? 'white' : 'black', fontWeight: 'bold' }}>
+        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-soft overflow-hidden transition-all duration-300 hover:shadow-soft-hover">
+          <div className="px-6 py-5 border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-md flex justify-between items-center">
+            <span className="font-bold tracking-tight text-slate-900 text-lg">Mandate Configuration</span>
+            <span className={`text-[11px] px-3 py-1.5 rounded-full font-bold uppercase tracking-wider shadow-sm border ${isDiscretionary ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
               {isDiscretionary ? 'SUBSCRIBED TO MODEL' : 'BESPOKE (CUSTOM)'}
             </span>
           </div>
-          <div className="panelBody" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div className="p-6 flex flex-col gap-5">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
               <select 
                 value={portfolio.portfolioState.subscriptionType || 'bespoke'}
                 onChange={(e) => handleUpdateSubscription(selectedAccountId, e.target.value === 'bespoke' ? null : (activeModelId || models[0]?.modelId), e.target.value)}
-                style={{ padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px', minWidth: '200px' }}
+                className="px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-sm min-w-[200px] cursor-pointer transition-all"
               >
                 <option value="bespoke">Bespoke</option>
                 <option value="discretionary">Discretionary (Model Mandate)</option>
@@ -262,7 +271,7 @@ function App() {
                 <select 
                   value={activeModelId || ''}
                   onChange={(e) => handleUpdateSubscription(selectedAccountId, e.target.value, 'discretionary')}
-                  style={{ padding: '8px', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px', minWidth: '200px' }}
+                  className="px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-sm min-w-[200px] cursor-pointer transition-all"
                 >
                   {models.map(m => (
                     <option key={m.modelId} value={m.modelId}>{m.name}</option>
@@ -272,16 +281,19 @@ function App() {
             </div>
 
             {!isDiscretionary && (
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', border: '1px dashed var(--border-subtle)' }}>
-                <em>Note: UI for manually editing Bespoke Mandate parameters (target weights, absolute drift tolerance, etc.) is scheduled for a future Tranche. Currently viewing read-only targets.</em>
+              <div className="text-sm text-slate-600 p-5 bg-sky-50/50 rounded-xl border border-sky-100 flex items-start gap-3">
+                <Info size={20} className="text-sky-500 flex-shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <em>Note: UI for manually editing Bespoke Mandate parameters (target weights, absolute drift tolerance, etc.) is scheduled for a future Tranche. Currently viewing read-only targets.</em>
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="panel">
-          <div className="panelHeader">Target Allocation Drift</div>
-          <div className="panelBody holdingsGrid">
+        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-soft overflow-hidden flex-1 flex flex-col transition-all duration-300 hover:shadow-soft-hover">
+          <div className="px-6 py-5 border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-md font-bold tracking-tight text-slate-900 text-lg">Target Allocation Drift</div>
+          <div className="p-6 overflow-y-auto grid gap-4 bg-slate-50/30">
             {metrics.positions.map(h => {
               const maxDriftDisplay = (portfolio.policy.absoluteDriftTolerance || 0.05) * 2;
               const normalizedDrift = Math.min(Math.max(h.drift / maxDriftDisplay, -1), 1);
@@ -291,25 +303,25 @@ function App() {
               };
 
               return (
-                <div className="holdingRow" key={h.symbol} style={{ borderColor: h.isBreached ? 'var(--status-red)' : '' }}>
-                  <div className="holdingSymbol">{h.symbol}</div>
-                  <div className="holdingMetrics">
-                    <div className="metricGroup">
-                      <span className="metricLabel">Target vs Current</span>
-                      <span className="metricValue">{(h.targetWeight * 100).toFixed(1)}% → {(h.currentWeight * 100).toFixed(1)}%</span>
+                <div key={h.symbol} className={`flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-6 p-5 rounded-2xl border transition-all duration-300 shadow-sm hover:shadow-md ${h.isBreached ? 'border-rose-200 bg-rose-50/80' : 'border-slate-200/80 bg-white'}`}>
+                  <div className="w-16 lg:w-24 font-bold text-xl text-slate-900 tracking-tight">{h.symbol}</div>
+                  <div className="flex-1 flex flex-col sm:flex-row items-center gap-4 lg:gap-6 w-full">
+                    <div className="flex flex-col w-full sm:w-24 lg:w-32 text-center sm:text-left">
+                      <span className="text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Target vs Current</span>
+                      <span className="text-sm font-medium text-slate-800 font-mono">{(h.targetWeight * 100).toFixed(1)}% → {(h.currentWeight * 100).toFixed(1)}%</span>
                     </div>
                     
-                    <div className="driftBarContainer">
-                      <div className="driftBarCenter"></div>
+                    <div className="flex-1 h-3 bg-slate-100 rounded-full relative w-full sm:min-w-[150px] shadow-inner overflow-hidden border border-slate-200/50 mt-2 sm:mt-0">
+                      <div className="absolute top-0 bottom-0 left-1/2 w-px bg-slate-300 z-10"></div>
                       <div 
-                        className={`driftBarFill ${h.isPositive ? 'driftPositive' : 'driftNegative'}`}
+                        className={`absolute top-0 bottom-0 transition-all duration-500 ease-out ${h.isPositive ? 'bg-sky-500' : 'bg-rose-500'}`}
                         style={barStyle}
                       ></div>
                     </div>
                     
-                    <div className="metricGroup">
-                      <span className="metricLabel">Absolute Drift</span>
-                      <span className="metricValue" style={{ color: h.isPositive ? 'var(--status-green)' : 'var(--status-red)' }}>
+                    <div className="flex flex-col w-full sm:w-20 lg:w-24 text-center sm:text-right mt-2 sm:mt-0">
+                      <span className="text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Abs Drift</span>
+                      <span className={`text-sm font-bold font-mono ${h.isPositive ? 'text-sky-600' : 'text-rose-600'}`}>
                         {h.isPositive ? '+' : ''}{(h.drift * 100).toFixed(2)}%
                       </span>
                     </div>
@@ -325,40 +337,43 @@ function App() {
 
   const renderModelsTab = () => {
     return (
-      <div style={{ padding: '24px', overflowY: 'auto', maxHeight: '100%' }}>
-        <h2 style={{ marginBottom: '24px' }}>Model Mandates</h2>
-        <div className="panel" style={{ marginBottom: '24px' }}>
-          <div className="panelHeader" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Create New Model Mandate</span>
+      <div className="p-8 max-w-7xl mx-auto h-full overflow-y-auto">
+        <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-6">Model Mandates</h2>
+        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-soft mb-8 overflow-hidden transition-all duration-300 hover:shadow-soft-hover">
+          <div className="px-6 py-5 border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-md flex justify-between items-center">
+            <span className="font-bold tracking-tight text-slate-900 text-lg">Create New Model Mandate</span>
             <button 
               onClick={handleRunOptimizer}
-              style={{ background: 'var(--accent-blue)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+              className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold tracking-wide rounded-xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 text-sm flex items-center gap-2"
             >
+              <Zap size={16} className="text-sky-200" />
               Run Optimizer (Tranche C Mock)
             </button>
           </div>
-          <div className="panelBody">
+          <div className="p-6">
             <MandateBuilderForm token={tenantToken || ''} onSubmit={handleCreateModel} />
           </div>
         </div>
 
-        <div className="heatmapGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {models.map(m => (
-            <div key={m.modelId} className="panel">
-              <div className="panelHeader">{m.name}</div>
-              <div className="panelBody">
-                <div style={{ marginBottom: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+            <div key={m.modelId} className="bg-white border border-slate-200/60 rounded-2xl shadow-soft overflow-hidden flex flex-col transition-all duration-300 hover:shadow-soft-hover hover:-translate-y-1">
+              <div className="px-6 py-5 border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-md font-bold tracking-tight text-slate-900 text-lg">{m.name}</div>
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="mb-5 text-[11px] font-bold text-slate-400 flex justify-between uppercase tracking-wider">
                   <span>ID: {m.modelId}</span>
                   {tenantToken === 'superadmin' && <span>Tenant: {m.tenantId}</span>}
                 </div>
                 <div>
-                  <span className="metricLabel" style={{ display: 'block', marginBottom: '4px' }}>Target Allocation</span>
-                  {m.targetAllocation.targets.map(t => (
-                    <div key={t.instrumentId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <span>{t.instrumentId}</span>
-                      <span>{(t.weight * 100).toFixed(1)}%</span>
-                    </div>
-                  ))}
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-4 border-b border-slate-100 pb-2">Target Allocation</span>
+                  <div className="space-y-3">
+                    {m.targetAllocation.targets.map(t => (
+                      <div key={t.instrumentId} className="flex justify-between items-center text-sm group">
+                        <span className="font-bold text-slate-700 group-hover:text-slate-900 transition-colors">{t.instrumentId}</span>
+                        <span className="font-mono text-sky-600 font-medium bg-sky-50 px-2 py-0.5 rounded">{(t.weight * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -380,9 +395,18 @@ function App() {
   } catch(e) {}
 
   if (userRole === 'Advisor') {
+    const layoutTab = (['inbox', 'fleet', 'models'].includes(currentTab) ? currentTab : 'inbox') as any;
+
     return (
-      <AdvisorLayout identityDisplay={identityDisplay || ''} onSignOut={() => { setTenantToken(null); setUserRole(null); }}>
+      <AdvisorLayout 
+        identityDisplay={identityDisplay || ''} 
+        onSignOut={() => { setTenantToken(null); setUserRole(null); }}
+        activeTab={layoutTab}
+        onTabChange={(tab) => setCurrentTab(tab)}
+      >
+        {currentTab === 'inbox' && <div className="p-8 text-slate-500">Action Inbox under construction... Redirecting logic here soon! (Tranche C)</div>}
         {currentTab === 'fleet' && (!selectedAccountId ? renderHeatmap() : renderDetailedView())}
+        {currentTab === 'models' && renderModelsTab()}
       </AdvisorLayout>
     );
   }
@@ -401,14 +425,13 @@ function App() {
     const getAdminTab = () => {
       switch (currentTab) {
         case 'adminModels': return <RebalancingModelsTab token={tenantToken} />;
-        case 'assets': return <AssetUniverseTab token={tenantToken} />;
         case 'users': return <UserManagementDashboard token={tenantToken} />;
         default: return <FirmOverviewDashboard token={tenantToken} />;
       }
     };
     
     // Map currentTab to the layout's activeTab type
-    const layoutTab = (['overview', 'users', 'models', 'assets'].includes(currentTab) ? currentTab : 'overview') as any;
+    const layoutTab = (['overview', 'users', 'models'].includes(currentTab) ? currentTab : 'overview') as any;
 
     return (
       <TenantAdminLayout 

@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import type { ModelMandate } from '../types';
 import { AssetPicker } from './AssetPicker';
+import { Settings, Target, Zap, Shield, Plus, X } from 'lucide-react';
 
 interface MandateBuilderFormProps {
   initialData?: Partial<ModelMandate>;
@@ -86,28 +87,34 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
     onSubmit(data as Partial<ModelMandate>);
   };
 
+  const inputClasses = "w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all shadow-sm";
+  const labelClasses = "block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2";
+
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <form onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col gap-6">
       
       {/* 1. Core Mandate Identity */}
-      <div className="panel" style={{ border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '8px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'white' }}>1. Identity & Strategy</h3>
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 300px' }}>
-            <label className="metricLabel">Mandate Name</label>
-            <input required {...register('name')} placeholder="e.g. Aggressive Growth" className="formInput" />
+      <div className="p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft transition-all duration-300 hover:shadow-soft-hover">
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+          <Settings size={20} className="text-sky-500" />
+          <h3 className="text-lg font-bold text-slate-900 m-0 tracking-tight">1. Identity & Strategy</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1">
+            <label className={labelClasses}>Mandate Name</label>
+            <input required {...register('name')} placeholder="e.g. Aggressive Growth" className={inputClasses} />
           </div>
-          <div style={{ flex: '1 1 200px' }}>
-            <label className="metricLabel">Strategy Archetype</label>
-            <select {...register('archetype')} className="formInput">
+          <div>
+            <label className={labelClasses}>Strategy Archetype</label>
+            <select {...register('archetype')} className={`${inputClasses} cursor-pointer`}>
               <option value="StaticWeights">Static Weights</option>
               <option value="EfficientFrontier" disabled>Efficient Frontier (Coming Soon)</option>
               <option value="MinimumVariance" disabled>Minimum Variance (Coming Soon)</option>
             </select>
           </div>
-          <div style={{ flex: '1 1 200px' }}>
-            <label className="metricLabel">Evaluation Frequency</label>
-            <select {...register('evaluationFrequency')} className="formInput">
+          <div>
+            <label className={labelClasses}>Evaluation Frequency</label>
+            <select {...register('evaluationFrequency')} className={`${inputClasses} cursor-pointer`}>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -118,121 +125,120 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
       </div>
 
       {/* 2. Target Configuration */}
-      <div className="panel" style={{ border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '8px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'white' }}>2. Target Configuration</h3>
+      <div className="p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft transition-all duration-300 hover:shadow-soft-hover">
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+          <Target size={20} className="text-sky-500" />
+          <h3 className="text-lg font-bold text-slate-900 m-0 tracking-tight">2. Target Configuration</h3>
+        </div>
         {selectedArchetype === 'StaticWeights' && (
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 50px', gap: '8px', marginBottom: '8px' }}>
-              <label className="metricLabel">Asset Ticker</label>
-              <label className="metricLabel">Target Weight (e.g. 0.6)</label>
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-[1fr_1fr_50px] gap-4 mb-2">
+              <label className={labelClasses}>Asset Ticker</label>
+              <label className={labelClasses}>Target Weight (e.g. 0.6)</label>
               <div></div>
             </div>
             {targetFields.map((field, index) => (
-              <div key={field.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 50px', gap: '8px', marginBottom: '8px' }}>
+              <div key={field.id} className="grid grid-cols-[1fr_1fr_50px] gap-4 items-center group">
                 <AssetPicker required {...register(`targetAllocation.targets.${index}.instrumentId`)} token={token || ''} />
-                <input required type="number" step="0.01" max="1" min="0" {...register(`targetAllocation.targets.${index}.weight`)} placeholder="0.6" className="formInput" />
-                <button type="button" onClick={() => removeTarget(index)} style={{ background: 'var(--status-red)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>X</button>
+                <input required type="number" step="0.01" max="1" min="0" {...register(`targetAllocation.targets.${index}.weight`)} placeholder="0.6" className={inputClasses} />
+                <button type="button" onClick={() => removeTarget(index)} className="h-10 w-10 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50">
+                  <X size={16} />
+                </button>
               </div>
             ))}
-            <button type="button" onClick={() => appendTarget({ instrumentId: '', weight: 0 })} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--accent-blue)', border: '1px solid var(--accent-blue)', borderRadius: '4px', cursor: 'pointer', marginTop: '8px' }}>
-              + Add Target Asset
+            <button type="button" onClick={() => appendTarget({ instrumentId: '', weight: 0 })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
+              <Plus size={16} /> Add Target Asset
             </button>
-            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
-              <label className="metricLabel">Cash Buffer (e.g. 0.1 for 10%)</label>
-              <input type="number" step="0.01" max="1" min="0" {...register('targetAllocation.cashBuffer')} placeholder="0.0" className="formInput" style={{ maxWidth: '200px', display: 'block' }} />
+            <div className="mt-6 pt-6 border-t border-slate-100 w-full sm:w-1/2">
+              <label className={labelClasses}>Cash Buffer (e.g. 0.1 for 10%)</label>
+              <input type="number" step="0.01" max="1" min="0" {...register('targetAllocation.cashBuffer')} placeholder="0.0" className={inputClasses} />
             </div>
           </div>
         )}
       </div>
 
       {/* 3. Execution Policy & Friction */}
-      <div className="panel" style={{ border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '8px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'white' }}>3. Execution Policy & Friction</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+      <div className="p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft transition-all duration-300 hover:shadow-soft-hover">
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+          <Zap size={20} className="text-sky-500" />
+          <h3 className="text-lg font-bold text-slate-900 m-0 tracking-tight">3. Execution Policy & Friction</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
-            <label className="metricLabel">Absolute Drift Tolerance</label>
-            <input required type="number" step="0.01" {...register('policy.absoluteDriftTolerance')} placeholder="0.05" className="formInput" title="How far an asset can drift before triggering evaluation." />
+            <label className={labelClasses}>Absolute Drift Tolerance</label>
+            <input required type="number" step="0.01" {...register('policy.absoluteDriftTolerance')} placeholder="0.05" className={inputClasses} title="How far an asset can drift before triggering evaluation." />
           </div>
           <div>
-            <label className="metricLabel">Execution Target Mode</label>
-            <select {...register('policy.executionTargetMode')} className="formInput" title="Boundary limits TCO. Full Reset minimizes tracking error.">
+            <label className={labelClasses}>Execution Target Mode</label>
+            <select {...register('policy.executionTargetMode')} className={`${inputClasses} cursor-pointer`} title="Boundary limits TCO. Full Reset minimizes tracking error.">
               <option value="boundary">Boundary (Optimal TCO)</option>
               <option value="full_reset">Full Reset</option>
             </select>
           </div>
           <div>
-            <label className="metricLabel">Deposit Allocation Mode</label>
-            <select {...register('policy.depositAllocationMode')} className="formInput">
+            <label className={labelClasses}>Deposit Allocation Mode</label>
+            <select {...register('policy.depositAllocationMode')} className={`${inputClasses} cursor-pointer`}>
               <option value="REBALANCING">Rebalancing (Default)</option>
               <option value="CURRENT_WEIGHT">Current Weight (Ride Momentum)</option>
               <option value="FIXED_TARGET">Fixed Target (Naive)</option>
             </select>
           </div>
           <div>
-            <label className="metricLabel">Min Trade Size ($)</label>
-            <input required type="number" step="1" {...register('policy.minimumTradeSize')} placeholder="10" className="formInput" />
+            <label className={labelClasses}>Min Trade Size ($)</label>
+            <input required type="number" step="1" {...register('policy.minimumTradeSize')} placeholder="10" className={inputClasses} />
           </div>
           <div>
-            <label className="metricLabel">Utility Conversion Rate <span title="How many bps of drift reduction justify 1 bps of TCO. Default 1.0.">ℹ️</span></label>
-            <input type="number" step="0.1" {...register('policy.driftUtilityConversionRate')} placeholder="1.0" className="formInput" />
+            <label className={labelClasses}>Utility Conversion Rate <span title="How many bps of drift reduction justify 1 bps of TCO. Default 1.0.">ℹ️</span></label>
+            <input type="number" step="0.1" {...register('policy.driftUtilityConversionRate')} placeholder="1.0" className={inputClasses} />
           </div>
           <div>
-            <label className="metricLabel">Max Friction (bps) Optional</label>
-            <input type="number" step="1" {...register('policy.maxFrictionBps')} placeholder="50" className="formInput" />
+            <label className={labelClasses}>Max Friction (bps) Optional</label>
+            <input type="number" step="1" {...register('policy.maxFrictionBps')} placeholder="50" className={inputClasses} />
           </div>
         </div>
       </div>
 
       {/* 4. Constraints / Overlays */}
-      <div className="panel" style={{ border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '8px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px', color: 'white' }}>4. Constraints & Overlays</h3>
-        {constraintFields.map((field: any, index) => (
-          <div key={field.id} style={{ display: 'flex', gap: '16px', marginBottom: '8px', alignItems: 'center' }}>
-            <select {...register(`constraints.${index}.type`)} className="formInput" style={{ width: '200px' }}>
-              <option value="ConcentrationLimit">Concentration Limit</option>
-            </select>
-            <input type="number" step="0.01" {...register(`constraints.${index}.parameters.maxWeight`)} placeholder="Max Weight (e.g. 0.1 for 10%)" className="formInput" style={{ flex: 1 }} />
-            <button type="button" onClick={() => removeConstraint(index)} style={{ background: 'var(--status-red)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px' }}>Remove</button>
-          </div>
-        ))}
-        <button type="button" onClick={() => appendConstraint({ type: 'ConcentrationLimit', parameters: { maxWeight: 0.1 } })} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--status-yellow)', border: '1px solid var(--status-yellow)', borderRadius: '4px', cursor: 'pointer', marginTop: '8px' }}>
-          + Add Constraint
-        </button>
+      <div className="p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft transition-all duration-300 hover:shadow-soft-hover">
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+          <Shield size={20} className="text-sky-500" />
+          <h3 className="text-lg font-bold text-slate-900 m-0 tracking-tight">4. Constraints & Overlays</h3>
+        </div>
+        <div className="flex flex-col gap-4">
+          {constraintFields.map((field: any, index) => (
+            <div key={field.id} className="flex flex-col sm:flex-row gap-4 items-center group">
+              <select {...register(`constraints.${index}.type`)} className={`${inputClasses} sm:w-[250px] cursor-pointer`}>
+                <option value="ConcentrationLimit">Concentration Limit</option>
+              </select>
+              <input type="number" step="0.01" {...register(`constraints.${index}.parameters.maxWeight`)} placeholder="Max Weight (e.g. 0.1 for 10%)" className={inputClasses} />
+              <button type="button" onClick={() => removeConstraint(index)} className="h-10 px-4 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm font-semibold whitespace-nowrap">
+                Remove
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => appendConstraint({ type: 'ConcentrationLimit', parameters: { maxWeight: 0.1 } })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
+            <Plus size={16} /> Add Constraint
+          </button>
+        </div>
       </div>
 
       {errorMsg && (
-        <div style={{ padding: '12px', background: 'var(--status-red)', color: 'white', borderRadius: '4px', marginTop: '16px' }}>
+        <div className="p-4 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl font-medium flex items-center gap-2">
+          <Shield size={18} />
           <strong>Validation Error:</strong> {errorMsg}
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', marginTop: '16px' }}>
+      <div className="flex gap-4 justify-end mt-4">
         {onCancel && (
-          <button type="button" onClick={onCancel} style={{ padding: '12px 24px', background: 'transparent', color: 'white', border: '1px solid var(--border-subtle)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button type="button" onClick={onCancel} className="px-6 py-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-200">
             Cancel
           </button>
         )}
-        <button type="submit" style={{ padding: '12px 24px', background: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+        <button type="submit" className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold tracking-wide hover:bg-indigo-700 transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
           Save Mandate
         </button>
       </div>
-
-      <style>{`
-        .formInput {
-          width: 100%;
-          padding: 10px;
-          background: rgba(0,0,0,0.2);
-          color: white;
-          border: 1px solid var(--border-subtle);
-          border-radius: 4px;
-          margin-top: 4px;
-          box-sizing: border-box;
-        }
-        .formInput:focus {
-          outline: none;
-          border-color: var(--accent-blue);
-        }
-      `}</style>
     </form>
   );
 };

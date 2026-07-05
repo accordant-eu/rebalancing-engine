@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './Admin.css';
+import { Building2, Users, Key, Plus, Settings } from 'lucide-react';
 
 interface Tenant {
   tenantId: string;
@@ -117,48 +117,91 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
     fetchApiKeys(selectedTenant);
   };
 
+  const inputClasses = "w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all shadow-sm";
+
   return (
-    <div className="admin-container">
-      <section className="admin-section">
-        <h2 className="admin-section-title">{isEditing ? 'Edit Tenant Settings' : 'Provision New Tenant'}</h2>
-        <form onSubmit={handleCreateTenant} className="admin-form-grid">
-          <input className="admin-input" placeholder="Tenant ID (e.g. firm-xyz)" value={form.tenantId} onChange={e => setForm({...form, tenantId: e.target.value})} disabled={isEditing} required />
-          <input className="admin-input" placeholder="Firm Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-          <select className="admin-input" value={form.brokerType} onChange={e => setForm({...form, brokerType: e.target.value})}>
+    <div className="flex flex-col gap-8 max-w-7xl mx-auto pb-12">
+      
+      {/* Top Section: Provision Tenant */}
+      <section className="bg-white border border-slate-200/60 rounded-2xl p-8 shadow-soft transition-all duration-300 hover:shadow-soft-hover">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-sm text-white">
+            <Building2 size={20} />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{isEditing ? 'Edit Tenant Settings' : 'Provision New Tenant'}</h2>
+        </div>
+        
+        <form onSubmit={handleCreateTenant} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <input className={inputClasses} placeholder="Tenant ID (e.g. firm-xyz)" value={form.tenantId} onChange={e => setForm({...form, tenantId: e.target.value})} disabled={isEditing} required />
+          <input className={inputClasses} placeholder="Firm Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+          <select className={`${inputClasses} cursor-pointer`} value={form.brokerType} onChange={e => setForm({...form, brokerType: e.target.value})}>
             <option value="MOCK">MOCK (Paper Trading)</option>
             <option value="ALPACA">ALPACA</option>
           </select>
-          <input className="admin-input" placeholder="Broker Base URL (Optional)" value={form.brokerBaseUrl} onChange={e => setForm({...form, brokerBaseUrl: e.target.value})} />
+          <input className={inputClasses} placeholder="Broker Base URL (Optional)" value={form.brokerBaseUrl} onChange={e => setForm({...form, brokerBaseUrl: e.target.value})} />
           {form.brokerType === 'ALPACA' && (
             <>
-              <input className="admin-input" placeholder="API Key" value={form.brokerApiKey} onChange={e => setForm({...form, brokerApiKey: e.target.value})} />
-              <input className="admin-input" type="password" placeholder="API Secret" value={form.brokerApiSecret} onChange={e => setForm({...form, brokerApiSecret: e.target.value})} />
+              <input className={inputClasses} placeholder="API Key" value={form.brokerApiKey} onChange={e => setForm({...form, brokerApiKey: e.target.value})} />
+              <input className={inputClasses} type="password" placeholder="API Secret" value={form.brokerApiSecret} onChange={e => setForm({...form, brokerApiSecret: e.target.value})} />
             </>
           )}
-          <button className="admin-button" type="submit">{isEditing ? 'Save Changes' : 'Provision Tenant'}</button>
-          {isEditing && <button type="button" className="admin-button" style={{ backgroundColor: 'transparent', border: '1px solid var(--border-subtle)' }} onClick={() => { setIsEditing(false); setForm({ tenantId: '', name: '', brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '', brokerBaseUrl: '' }); }}>Cancel</button>}
+          <div className="md:col-span-2 flex gap-4 mt-2">
+            <button className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold tracking-wide hover:bg-slate-800 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5" type="submit">
+              {isEditing ? 'Save Changes' : 'Provision Tenant'}
+            </button>
+            {isEditing && (
+              <button 
+                type="button" 
+                className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold tracking-wide hover:bg-slate-50 transition-all shadow-sm"
+                onClick={() => { setIsEditing(false); setForm({ tenantId: '', name: '', brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '', brokerBaseUrl: '' }); }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-        <section className="admin-section">
-          <h2 className="admin-section-title">Active Tenants</h2>
-          <div className="admin-table-container">
-            <table className="admin-table">
-              <thead><tr><th>Tenant</th><th>Broker</th><th>Action</th></tr></thead>
-              <tbody>
+      {/* Main Grid: Tenants & Management */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        
+        {/* Left Column: Active Tenants */}
+        <section className="bg-white border border-slate-200/60 rounded-2xl shadow-soft overflow-hidden flex flex-col h-[600px] transition-all duration-300 hover:shadow-soft-hover">
+          <div className="px-6 py-5 border-b border-slate-200/60 bg-slate-50/50 backdrop-blur-md flex items-center gap-3">
+            <Building2 size={18} className="text-slate-400" />
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Active Tenants</h2>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-white text-slate-500 border-b border-slate-200/60 sticky top-0 z-10">
+                <tr>
+                  <th className="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Tenant</th>
+                  <th className="px-6 py-4 font-bold uppercase tracking-wider text-[11px]">Broker</th>
+                  <th className="px-6 py-4 font-bold uppercase tracking-wider text-[11px] text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
                 {tenants.map(t => (
-                  <tr key={t.tenantId}>
-                    <td>{t.name}</td>
-                    <td>{t.brokerType}</td>
-                    <td>
-                      <button className="admin-link-button" style={{ marginRight: '12px' }} onClick={() => handleEditClick(t)}>Edit</button>
-                      <button 
-                        className="admin-link-button"
-                        onClick={() => { setSelectedTenant(t.tenantId); fetchUsers(t.tenantId); fetchApiKeys(t.tenantId); }}
-                      >
-                        Manage Users & Keys
-                      </button>
+                  <tr key={t.tenantId} className={`hover:bg-slate-50/80 transition-colors group ${selectedTenant === t.tenantId ? 'bg-sky-50/50' : ''}`}>
+                    <td className="px-6 py-4 text-slate-900 font-medium">{t.name}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                        {t.brokerType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="text-slate-500 hover:text-sky-600 font-semibold text-xs transition-colors" onClick={() => handleEditClick(t)}>Edit</button>
+                        <button 
+                          className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm"
+                          onClick={() => { setSelectedTenant(t.tenantId); fetchUsers(t.tenantId); fetchApiKeys(t.tenantId); }}
+                        >
+                          Manage
+                        </button>
+                      </div>
+                      <div className={`text-sky-600 font-bold text-xs ${selectedTenant === t.tenantId ? 'block' : 'hidden'} group-hover:hidden`}>
+                        Selected
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -167,30 +210,58 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
           </div>
         </section>
 
-        {selectedTenant && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            <section className="admin-section" style={{ borderColor: 'var(--border-focus)' }}>
-              <h2 className="admin-section-title">Users for {selectedTenant}</h2>
-              <form onSubmit={handleCreateUser} className="admin-form-grid" style={{ marginBottom: '24px' }}>
-                <input className="admin-input" placeholder="User ID (e.g. u-123)" value={userForm.userId} onChange={e => setUserForm({...userForm, userId: e.target.value})} required />
-                <input className="admin-input" placeholder="Email" type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required />
-                <input className="admin-input" placeholder="Password" type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} required />
-                <select className="admin-input" value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})}>
-                  <option value="Viewer">Viewer</option>
-                  <option value="Admin">Admin</option>
-                </select>
-                <button className="admin-button admin-button-green" type="submit">Provision User</button>
-              </form>
+        {/* Right Column: Users & Keys */}
+        {selectedTenant ? (
+          <div className="flex flex-col gap-8">
+            
+            {/* Users Section */}
+            <section className="bg-white border border-sky-200/60 rounded-2xl shadow-soft overflow-hidden transition-all duration-300 hover:shadow-soft-hover">
+              <div className="px-6 py-5 border-b border-sky-100 bg-sky-50/50 flex items-center gap-3">
+                <Users size={18} className="text-sky-500" />
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">Users for {selectedTenant}</h2>
+              </div>
+              
+              <div className="p-6 border-b border-slate-100">
+                <form onSubmit={handleCreateUser} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input className={inputClasses} placeholder="User ID (e.g. u-123)" value={userForm.userId} onChange={e => setUserForm({...userForm, userId: e.target.value})} required />
+                  <input className={inputClasses} placeholder="Email" type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required />
+                  <input className={inputClasses} placeholder="Password" type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} required />
+                  <div className="flex gap-4">
+                    <select className={`${inputClasses} flex-1 cursor-pointer`} value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})}>
+                      <option value="Viewer">Viewer</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                    <button className="px-6 bg-emerald-600 text-white rounded-xl font-bold tracking-wide hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md whitespace-nowrap" type="submit">
+                      Add User
+                    </button>
+                  </div>
+                </form>
+              </div>
 
-              <div className="admin-table-container">
-                <table className="admin-table">
-                  <thead><tr><th>Email</th><th>Role</th><th>Status</th></tr></thead>
-                  <tbody>
-                    {users.map(u => (
-                      <tr key={u.userId}>
-                        <td>{u.email}</td>
-                        <td>{u.role}</td>
-                        <td>{u.status}</td>
+              <div className="max-h-64 overflow-y-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200/60">
+                    <tr>
+                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-[11px]">Email</th>
+                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-[11px]">Role</th>
+                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-[11px]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {users.length === 0 ? (
+                      <tr><td colSpan={3} className="px-6 py-8 text-center text-slate-400 font-medium">No users provisioned.</td></tr>
+                    ) : users.map(u => (
+                      <tr key={u.userId} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 text-slate-900 font-medium">{u.email}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${u.role === 'Admin' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-700'}`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-emerald-600 font-semibold text-xs flex items-center gap-1.5 mt-2">
+                          <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                          {u.status}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -198,23 +269,43 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
               </div>
             </section>
 
-            <section className="admin-section" style={{ borderColor: 'var(--status-blue)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 className="admin-section-title" style={{ margin: 0 }}>API Credentials (B2B)</h2>
-                <button className="admin-button" style={{ padding: '6px 12px', fontSize: '0.875rem' }} onClick={handleGenerateApiKey}>Generate Key</button>
+            {/* API Keys Section */}
+            <section className="bg-white border border-purple-200/60 rounded-2xl shadow-soft overflow-hidden transition-all duration-300 hover:shadow-soft-hover">
+              <div className="px-6 py-5 border-b border-purple-100 bg-purple-50/50 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Key size={18} className="text-purple-500" />
+                  <h2 className="text-lg font-bold text-slate-900 tracking-tight">API Credentials (B2B)</h2>
+                </div>
+                <button className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold text-xs shadow-sm hover:bg-purple-700 transition-all hover:shadow-md flex items-center gap-1.5" onClick={handleGenerateApiKey}>
+                  <Plus size={14} /> Generate Key
+                </button>
               </div>
-              <div className="admin-table-container">
-                <table className="admin-table">
-                  <thead><tr><th>Prefix</th><th>Created</th><th>Status</th><th>Action</th></tr></thead>
-                  <tbody>
-                    {apiKeys.map(k => (
-                      <tr key={k.keyId}>
-                        <td>{k.keyPrefix}</td>
-                        <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(k.createdAt).toLocaleString()}</td>
-                        <td style={{ color: k.status === 'Revoked' ? 'var(--status-red)' : 'var(--status-green)' }}>{k.status}</td>
-                        <td>
+              
+              <div className="max-h-64 overflow-y-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200/60">
+                    <tr>
+                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-[11px]">Prefix</th>
+                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-[11px]">Created</th>
+                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-[11px]">Status</th>
+                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-[11px] text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {apiKeys.length === 0 ? (
+                      <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-400 font-medium">No API keys generated.</td></tr>
+                    ) : apiKeys.map(k => (
+                      <tr key={k.keyId} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 text-slate-900 font-mono text-xs font-semibold">{k.keyPrefix}</td>
+                        <td className="px-6 py-4 text-slate-500 text-xs">{new Date(k.createdAt).toLocaleString()}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${k.status === 'Revoked' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                            {k.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
                           {k.status === 'Active' && (
-                            <button className="admin-link-button" style={{ color: 'var(--status-red)' }} onClick={() => handleRevokeApiKey(k.keyId)}>Revoke</button>
+                            <button className="text-rose-600 hover:text-rose-800 font-semibold text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-rose-50" onClick={() => handleRevokeApiKey(k.keyId)}>Revoke</button>
                           )}
                         </td>
                       </tr>
@@ -223,6 +314,12 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
                 </table>
               </div>
             </section>
+          </div>
+        ) : (
+          <div className="bg-slate-50 border border-slate-200/60 rounded-2xl border-dashed flex flex-col items-center justify-center text-slate-400 p-12 min-h-[600px]">
+            <Settings size={48} className="mb-4 opacity-20" />
+            <p className="font-medium text-lg">Select a tenant to manage</p>
+            <p className="text-sm">Manage users and API credentials</p>
           </div>
         )}
       </div>
