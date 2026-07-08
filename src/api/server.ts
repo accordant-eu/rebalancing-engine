@@ -1,8 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import { createHash, randomBytes } from 'crypto';
-import fs from 'fs';
-import readline from 'readline';
 import { getDb } from '../db/sqlite';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { validateTargetAllocation } from '../core/drift';
@@ -74,7 +72,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       (req as any).userId = decoded.userId;
       (req as any).role = decoded.role;
       (req as any).isSuperadmin = decoded.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && decoded.tenantId === process.env.SUPERADMIN_TENANT_ID;
-    } catch (e) {
+    } catch (e: any) {
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid token signature');
     }
     next();
@@ -396,7 +394,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       stateManager.assignPortfolioToModel(accountId, modelId, subscriptionType);
       stateManager.enqueuePortfolio(accountId, Date.now());
       res.json({ success: true });
-    } catch (e) {
+    } catch (e: any) {
       res.status(500).json({ error: String(e) });
     }
   });
@@ -476,7 +474,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       const totalCount = countRes?.count || 0;
 
       res.json({ total: totalCount, data: allLogs });
-    } catch (e) {
+    } catch (e: any) {
       logger.error({ err: e }, 'Error fetching logs');
       res.json({ total: 0, data: [] });
     }
@@ -579,7 +577,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
         // Use current time to represent real-time HUD freshness
         lastEvaluatedAt = Date.now();
-      } catch (e) {
+      } catch (e: any) {
         notEvaluated++;
       }
     });
@@ -617,7 +615,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
       const res24h = db.prepare(q24h).get(...params24h) as { count: number };
       executions24h = res24h?.count || 0;
-    } catch (e) { /* intentional empty catch */ }
+    } catch (e: any) { /* intentional empty catch */ }
 
     res.json({
       asOf: new Date().toISOString(),
@@ -676,7 +674,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
         });
         driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
         driftMeasurements = evalResult.driftMeasurements;
-      } catch (e) {
+      } catch (e: any) {
         // intentional empty catch
       }
       
@@ -756,7 +754,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       });
       driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
       driftMeasurements = evalResult.driftMeasurements;
-    } catch (e) {
+    } catch (e: any) {
       // intentional empty catch
     }
     
@@ -885,7 +883,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   app.post('/api/portfolios/:id/cashflows', forbidViewer, (req, res) => {
     const tenantId = (req as any).tenantId;
     const accountId = req.params.id;
-    const { amount, direction, currency, expectedSettlementDate, note } = req.body;
+    const { amount, direction, currency, expectedSettlementDate } = req.body;
     
     if (!amount || !direction) {
       return sendError(res, 400, 'BAD_REQUEST', 'amount and direction are required');

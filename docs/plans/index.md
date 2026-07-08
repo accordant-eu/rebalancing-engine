@@ -30,6 +30,8 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Týr Agent API Integration Plan](tyr-agent-api-integration-plan.md)** - Implementation plan for the Týr agent API integration based on Issue #9
 * **[Tranche 4 Production Hardening Plan](tranche-4-production-hardening-plan.md)** - Implementation plan for transitioning to a Live Trading Agent
 * **[Tranche 5 UX & Persona Optimization Roadmap](tranche-5-ux-optimization-plan.md)** - Implementation plan for transitioning the Command Center to a role-based SaaS dashboard
+* **[Friction Optimization](001-friction-optimization.md)** - Plan for friction optimization
+* **[E2e Browser Test Plan](e2e-browser-test-plan.md)** - Plan for end-to-end browser testing
 
 ## Exploration Plans
 These documents detail how we intend to translate v3 exploration concepts into concrete tranches.

@@ -9,14 +9,14 @@ import { BrokerAdapter } from '../src/broker';
 import { TradeProposal, ExecutionContext, PortfolioState } from '../src/models/domain';
 
 class DummyBrokerAdapter implements BrokerAdapter {
-  async getPortfolioState(context: ExecutionContext, brokerAccountId: string): Promise<PortfolioState> {
-    return { accountId: brokerAccountId, cash: 1000, holdings: [] };
+  async getPortfolioState(_context: ExecutionContext, _brokerAccountId: string): Promise<PortfolioState> {
+    return { accountId: _brokerAccountId, cash: 1000, holdings: [] };
   }
-  async getPrices(context: ExecutionContext, symbols: string[]): Promise<Record<string, number>> {
+  async getPrices(_context: ExecutionContext, _symbols: string[]): Promise<Record<string, number>> {
     return { 'AAPL': 150, 'MSFT': 250 };
   }
-  async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<any[]> { return []; }
-  async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> { return false; }
+  async submitTrades(_context: ExecutionContext, _brokerAccountId: string, _proposal: TradeProposal): Promise<any> { return []; }
+  async hasOpenOrders(_context: ExecutionContext, _brokerAccountId: string): Promise<boolean> { return false; }
 }
 
 describe('Integration Tests (End-to-End)', () => {

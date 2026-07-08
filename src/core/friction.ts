@@ -9,7 +9,7 @@ export class FixedFeeModel implements FrictionModel {
     this.feePerTrade = feePerTrade;
   }
 
-  public estimateCost(tradeValue: number, instrumentId: string): number {
+  public estimateCost(_tradeValue: number, _instrumentId: string): number {
     return this.feePerTrade;
   }
 }
@@ -21,7 +21,7 @@ export class PercentageSlippageModel implements FrictionModel {
     this.slippageBps = slippageBps;
   }
 
-  public estimateCost(tradeValue: number, instrumentId: string): number {
+  public estimateCost(tradeValue: number, _instrumentId: string): number {
     return tradeValue * (this.slippageBps / 10000);
   }
 }

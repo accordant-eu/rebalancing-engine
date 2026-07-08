@@ -97,6 +97,10 @@ export class MultiPortfolioStateManager implements LiveStateManager {
     state.portfolioState.subscriptionType = 'bespoke';
   }
 
+  public async handleBrokerEvent(event: any, _timestampMs: number): Promise<void> {
+    // Placeholder implementation
+  }
+
   public markTradeExecution(accountId: string, timestampMs: number): void {
     this.lastTradeTimes.set(accountId, timestampMs);
   }
@@ -105,11 +109,11 @@ export class MultiPortfolioStateManager implements LiveStateManager {
     return this.lastTradeTimes.get(accountId) ?? 0;
   }
 
-  public registerOrder(orderId: string, accountId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number): void {
+  async submitOrder(_orderId: string, _accountId: string, _instrumentId: string, _direction: 'BUY' | 'SELL', _quantity: number): Promise<void> {
     // In-memory mock does nothing for now
   }
 
-  public processExecutionReport(orderId: string, accountId: string, status: string, filledQuantity: number, fillPrice: number): void {
+  async recordOrderExecution(_orderId: string, _accountId: string, _status: string, _filledQuantity?: number, _fillPrice?: number): Promise<void> {
     // In-memory mock does nothing for now
   }
 

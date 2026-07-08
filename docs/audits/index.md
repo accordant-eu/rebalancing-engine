@@ -22,6 +22,7 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Scheduled Recurring Cash Flow Audit](scheduled-recurring-cash-flow-audit.md)** - Documentation for scheduled recurring cash flow audit
 * **[Tax Lots Audit](tax-lots-audit.md)** - Documentation for tax lots audit
 * **[Test Case Audit](test-case-audit.md)** - Documentation for test case audit
+* **[Adversarial Audit Tranche 7](adversarial-audit-tranche-7.md)** - Security and resilience testing
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

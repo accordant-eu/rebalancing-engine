@@ -5,17 +5,17 @@ import { logger } from '../src/utils/logger';
 
 class MockAdapter implements BrokerAdapter {
   submitted: boolean = false;
-  getPortfolioState(context: ExecutionContext, brokerAccountId: string): Promise<PortfolioState> {
+  async getPortfolioState(_context: ExecutionContext, _brokerAccountId: string): Promise<PortfolioState> {
     throw new Error('Method not implemented.');
   }
-  getPrices(context: ExecutionContext): Promise<Record<string, number>> {
+  getPrices(_context: ExecutionContext): Promise<Record<string, number>> {
     throw new Error('Method not implemented.');
   }
   submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<any[]> {
     this.submitted = true;
     return Promise.resolve([]);
   }
-  hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> {
+  hasOpenOrders(_context: ExecutionContext, _brokerAccountId: string): Promise<boolean> {
     return Promise.resolve(false);
   }
 }

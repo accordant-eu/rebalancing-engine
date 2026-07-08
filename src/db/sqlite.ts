@@ -154,13 +154,13 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   `);
 
   // Safe migrations for existing databases
-  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN tenantId TEXT REFERENCES Tenants(tenantId) ON DELETE CASCADE`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN modelId TEXT REFERENCES Models(modelId) ON DELETE SET NULL`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN subscriptionType TEXT DEFAULT 'bespoke'`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN brokerAccountId TEXT`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN constraints TEXT`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN circuitBreakerStatus TEXT DEFAULT 'closed'`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN tenantId TEXT REFERENCES Tenants(tenantId) ON DELETE CASCADE`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN modelId TEXT REFERENCES Models(modelId) ON DELETE SET NULL`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN subscriptionType TEXT DEFAULT 'bespoke'`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN brokerAccountId TEXT`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN constraints TEXT`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN circuitBreakerStatus TEXT DEFAULT 'closed'`); } catch (_e) { /* ignore if exists */ }
   
   try { db.exec(`CREATE TABLE IF NOT EXISTS Orders (
       orderId TEXT PRIMARY KEY,
@@ -172,7 +172,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       status TEXT DEFAULT 'PENDING',
       createdAt TEXT NOT NULL,
       FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
-  )`); } catch (e) { /* ignore if exists */ }
+  )`); } catch (_e) { /* ignore if exists */ }
 
   try { db.exec(`CREATE TABLE IF NOT EXISTS AuditTrails (
       eventId TEXT PRIMARY KEY,
@@ -183,16 +183,16 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       outputs TEXT,
       timestampMs INTEGER NOT NULL,
       createdAt TEXT NOT NULL
-  )`); } catch (e) { /* ignore if exists */ }
+  )`); } catch (_e) { /* ignore if exists */ }
 
-  try { db.exec(`ALTER TABLE Models ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Models ADD COLUMN evaluationFrequency TEXT DEFAULT 'realtime'`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Models ADD COLUMN constraints TEXT`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Models ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Models ADD COLUMN evaluationFrequency TEXT DEFAULT 'realtime'`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Models ADD COLUMN constraints TEXT`); } catch (_e) { /* ignore if exists */ }
 
-  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerType TEXT DEFAULT 'MOCK'`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiKey TEXT`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiSecret TEXT`); } catch (e) { /* ignore if exists */ }
-  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerBaseUrl TEXT`); } catch (e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerType TEXT DEFAULT 'MOCK'`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiKey TEXT`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiSecret TEXT`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerBaseUrl TEXT`); } catch (_e) { /* ignore if exists */ }
 
   // Create Users table explicitly as part of migrations (since the initial block is skipped if db exists)
   db.exec(`

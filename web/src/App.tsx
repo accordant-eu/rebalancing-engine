@@ -103,7 +103,7 @@ function App() {
           const data = await res.json();
           setState(data);
         }
-      } catch (e) {
+      } catch (_e) {
         console.error('Failed to fetch state', e);
       }
     };
@@ -115,7 +115,7 @@ function App() {
           const payload = await res.json();
           setLogs(Array.isArray(payload) ? payload : (payload.data || []));
         }
-      } catch (e) {
+      } catch (_e) {
         console.error('Failed to fetch logs', e);
       }
     };
@@ -164,7 +164,7 @@ function App() {
       } else {
         setUserRole(data.role);
       }
-    } catch(err) {
+    } catch (_err) {
       alert('Login failed');
     }
   };

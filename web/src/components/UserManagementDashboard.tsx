@@ -20,7 +20,7 @@ export const UserManagementDashboard: React.FC<{ token: string | null }> = ({ to
         const data = await res.json();
         setUsers(data);
       }
-    } catch (e) {
+    } catch (_e) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ export const UserManagementDashboard: React.FC<{ token: string | null }> = ({ to
       setEmail('');
       setPassword('');
       fetchUsers();
-    } catch (e) {
+    } catch (_e) {
       setError('Network error');
     }
   };
