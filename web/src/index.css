@@ -3,10 +3,10 @@
 
 @layer base {
   html, body {
-    @apply antialiased text-slate-900 bg-slate-50 min-h-screen;
-    /* Subtle dot grid pattern for a premium "dashboard" feel */
-    background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
-    background-size: 24px 24px;
+    @apply antialiased text-slate-800 bg-slate-50/80 min-h-screen selection:bg-teal-200 selection:text-teal-900;
+    /* Extremely subtle elegant noise/grid pattern */
+    background-image: radial-gradient(circle at 2px 2px, rgba(226, 232, 240, 0.6) 1px, transparent 0);
+    background-size: 32px 32px;
   }
 }
 
@@ -15,34 +15,35 @@
   --bg-base: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-hover: #f1f5f9;
-  --bg-glass: rgba(255, 255, 255, 0.8);
+  --bg-glass: rgba(255, 255, 255, 0.85);
   
-  --text-primary: #0f172a;
+  --text-primary: #1e293b;
   --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-muted: #94a3b8;
   
   --border-subtle: #e2e8f0;
-  --border-focus: #0ea5e9;
+  --border-focus: #14b8a6; /* Teal 500 */
   
-  --accent-blue: #0ea5e9;
-  --accent-blue-glow: rgba(14, 165, 233, 0.1);
+  --accent-blue: #14b8a6;
+  --accent-blue-glow: rgba(20, 184, 166, 0.1);
   
-  --status-green: #059669;
-  --status-red: #dc2626;
-  --status-yellow: #d97706;
+  --status-green: #10b981;
+  --status-red: #ef4444;
+  --status-yellow: #f59e0b;
 }
 
-/* Scrollbar styling */
+/* Elegant Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full;
+  @apply bg-slate-300 rounded-full border-2 border-slate-50;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-300;
+  @apply bg-slate-400;
 }
+

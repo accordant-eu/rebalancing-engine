@@ -108,26 +108,30 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
             </div>
             <span className="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">{criticalDrift.length}</span>
           </div>
-          <div className="p-0 overflow-auto max-h-96">
+          <div className="p-4 overflow-auto max-h-96 flex flex-col gap-3 bg-slate-50/30">
             {criticalDrift.length === 0 ? <div className="p-8 text-center text-slate-500 font-medium">No critical drifts. All good! 🎉</div> : (
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50/80 backdrop-blur text-slate-500 sticky top-0 border-b border-slate-200/60">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Account</th>
-                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Max Drift</th>
-                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Tolerance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {criticalDrift.map(p => (
-                    <tr key={p.accountId} className="hover:bg-slate-50/80 cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
-                      <td className="px-6 py-4 text-slate-800 font-medium font-mono text-xs">{p.accountId}</td>
-                      <td className="px-6 py-4 text-rose-600 font-bold font-mono">{(p.maxDrift * 100).toFixed(2)}%</td>
-                      <td className="px-6 py-4 text-slate-500 font-mono">{(p.tolerance * 100).toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              criticalDrift.map(p => (
+                <div 
+                  key={p.accountId}
+                  onClick={() => setSelectedAccountId(p.accountId)}
+                  className="flex items-center justify-between p-4 bg-white border border-rose-100 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-rose-300 group"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Account</span>
+                    <span className="text-slate-800 font-bold font-mono text-sm">{p.accountId}</span>
+                  </div>
+                  <div className="flex gap-6 items-center text-right">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Tolerance</span>
+                      <span className="text-slate-500 font-mono text-xs">{(p.tolerance * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-rose-400 mb-0.5">Max Drift</span>
+                      <span className="text-rose-600 font-bold font-mono bg-rose-50 px-2 py-0.5 rounded-md">{(p.maxDrift * 100).toFixed(2)}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
@@ -140,26 +144,30 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
             </div>
             <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">{nearMisses.length}</span>
           </div>
-          <div className="p-0 overflow-auto max-h-96">
+          <div className="p-4 overflow-auto max-h-96 flex flex-col gap-3 bg-slate-50/30">
             {nearMisses.length === 0 ? <div className="p-8 text-center text-slate-500 font-medium">No near-misses.</div> : (
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50/80 backdrop-blur text-slate-500 sticky top-0 border-b border-slate-200/60">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Account</th>
-                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Max Drift</th>
-                    <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Tolerance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {nearMisses.map(p => (
-                    <tr key={p.accountId} className="hover:bg-slate-50/80 cursor-pointer transition-colors" onClick={() => setSelectedAccountId(p.accountId)}>
-                      <td className="px-6 py-4 text-slate-800 font-medium font-mono text-xs">{p.accountId}</td>
-                      <td className="px-6 py-4 text-amber-600 font-bold font-mono">{(p.maxDrift * 100).toFixed(2)}%</td>
-                      <td className="px-6 py-4 text-slate-500 font-mono">{(p.tolerance * 100).toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              nearMisses.map(p => (
+                <div 
+                  key={p.accountId}
+                  onClick={() => setSelectedAccountId(p.accountId)}
+                  className="flex items-center justify-between p-4 bg-white border border-amber-100 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-amber-300 group"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Account</span>
+                    <span className="text-slate-800 font-bold font-mono text-sm">{p.accountId}</span>
+                  </div>
+                  <div className="flex gap-6 items-center text-right">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Tolerance</span>
+                      <span className="text-slate-500 font-mono text-xs">{(p.tolerance * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-amber-500 mb-0.5">Max Drift</span>
+                      <span className="text-amber-600 font-bold font-mono bg-amber-50 px-2 py-0.5 rounded-md">{(p.maxDrift * 100).toFixed(2)}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
@@ -172,32 +180,27 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
             <AlertOctagon size={20} />
             CRITICAL: Halted Portfolios
           </div>
-          <div className="p-0">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50/80 backdrop-blur text-slate-500 border-b border-slate-200/60">
-                <tr>
-                  <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Account</th>
-                  <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs">Equity</th>
-                  <th className="px-6 py-3 font-semibold uppercase tracking-wider text-xs text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {halted.map(p => (
-                  <tr key={p.accountId} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-6 py-4 text-rose-700 font-bold font-mono text-xs">{p.accountId}</td>
-                    <td className="px-6 py-4 text-slate-700 font-mono font-medium">${p.equity.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 text-xs font-semibold uppercase tracking-wider"
-                        onClick={() => setSelectedAccountId(p.accountId)}
-                      >
-                        Inspect
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="p-4 flex flex-col gap-3 bg-rose-50/30">
+            {halted.map(p => (
+              <div 
+                key={p.accountId}
+                className="flex items-center justify-between p-4 bg-white border border-rose-200 rounded-xl transition-all duration-200 shadow-sm"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-rose-100 text-rose-600 rounded-lg"><AlertOctagon size={18} /></div>
+                  <div className="flex flex-col">
+                    <span className="text-rose-700 font-bold font-mono text-sm">{p.accountId}</span>
+                    <span className="text-slate-500 font-medium text-xs">Equity: ${p.equity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+                <button 
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 text-xs font-semibold uppercase tracking-wider"
+                  onClick={() => setSelectedAccountId(p.accountId)}
+                >
+                  Inspect & Resolve
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}

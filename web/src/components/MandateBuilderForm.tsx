@@ -3,6 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import type { ModelMandate } from '../types';
 import { AssetPicker } from './AssetPicker';
 import { Settings, Target, Zap, Shield, Plus, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MandateBuilderFormProps {
   initialData?: Partial<ModelMandate>;
@@ -91,7 +92,13 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
   const labelClasses = "block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2";
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col gap-6">
+    <motion.form 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      onSubmit={handleSubmit(onFormSubmit)} 
+      className="flex flex-col gap-6"
+    >
       
       {/* 1. Core Mandate Identity */}
       <div className="p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft transition-all duration-300 hover:shadow-soft-hover">
@@ -137,15 +144,23 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
               <label className={labelClasses}>Target Weight (e.g. 0.6)</label>
               <div></div>
             </div>
-            {targetFields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-[1fr_1fr_50px] gap-4 items-center group">
-                <AssetPicker required {...register(`targetAllocation.targets.${index}.instrumentId`)} token={token || ''} />
-                <input required type="number" step="0.01" max="1" min="0" {...register(`targetAllocation.targets.${index}.weight`)} placeholder="0.6" className={inputClasses} />
-                <button type="button" onClick={() => removeTarget(index)} className="h-10 w-10 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50">
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
+            <AnimatePresence>
+              {targetFields.map((field, index) => (
+                <motion.div 
+                  key={field.id} 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                  className="grid grid-cols-[1fr_1fr_50px] gap-4 items-center group"
+                >
+                  <AssetPicker required {...register(`targetAllocation.targets.${index}.instrumentId`)} token={token || ''} />
+                  <input required type="number" step="0.01" max="1" min="0" {...register(`targetAllocation.targets.${index}.weight`)} placeholder="0.6" className={inputClasses} />
+                  <button type="button" onClick={() => removeTarget(index)} className="h-10 w-10 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50">
+                    <X size={16} />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
             <button type="button" onClick={() => appendTarget({ instrumentId: '', weight: 0 })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
               <Plus size={16} /> Add Target Asset
             </button>
@@ -205,29 +220,44 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
           <h3 className="text-lg font-bold text-slate-900 m-0 tracking-tight">4. Constraints & Overlays</h3>
         </div>
         <div className="flex flex-col gap-4">
-          {constraintFields.map((field: any, index) => (
-            <div key={field.id} className="flex flex-col sm:flex-row gap-4 items-center group">
-              <select {...register(`constraints.${index}.type`)} className={`${inputClasses} sm:w-[250px] cursor-pointer`}>
-                <option value="ConcentrationLimit">Concentration Limit</option>
-              </select>
-              <input type="number" step="0.01" {...register(`constraints.${index}.parameters.maxWeight`)} placeholder="Max Weight (e.g. 0.1 for 10%)" className={inputClasses} />
-              <button type="button" onClick={() => removeConstraint(index)} className="h-10 px-4 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm font-semibold whitespace-nowrap">
-                Remove
-              </button>
-            </div>
-          ))}
+          <AnimatePresence>
+            {constraintFields.map((field: any, index) => (
+              <motion.div 
+                key={field.id} 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                className="flex flex-col sm:flex-row gap-4 items-center group"
+              >
+                <select {...register(`constraints.${index}.type`)} className={`${inputClasses} sm:w-[250px] cursor-pointer`}>
+                  <option value="ConcentrationLimit">Concentration Limit</option>
+                </select>
+                <input type="number" step="0.01" {...register(`constraints.${index}.parameters.maxWeight`)} placeholder="Max Weight (e.g. 0.1 for 10%)" className={inputClasses} />
+                <button type="button" onClick={() => removeConstraint(index)} className="h-10 px-4 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm font-semibold whitespace-nowrap">
+                  Remove
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
           <button type="button" onClick={() => appendConstraint({ type: 'ConcentrationLimit', parameters: { maxWeight: 0.1 } })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
             <Plus size={16} /> Add Constraint
           </button>
         </div>
       </div>
 
-      {errorMsg && (
-        <div className="p-4 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl font-medium flex items-center gap-2">
-          <Shield size={18} />
-          <strong>Validation Error:</strong> {errorMsg}
-        </div>
-      )}
+      <AnimatePresence>
+        {errorMsg && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="p-4 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl font-medium flex items-center gap-2"
+          >
+            <Shield size={18} />
+            <strong>Validation Error:</strong> {errorMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex gap-4 justify-end mt-4">
         {onCancel && (
@@ -239,6 +269,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
           Save Mandate
         </button>
       </div>
-    </form>
+    </motion.form>
   );
 };
+
