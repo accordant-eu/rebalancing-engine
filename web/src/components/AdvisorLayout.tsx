@@ -1,6 +1,6 @@
 import React from 'react';
 import { Briefcase, Inbox, LineChart, FileText } from 'lucide-react';
-import { SharedWorkspaceLayout, NavItem } from './SharedWorkspaceLayout';
+import { SharedWorkspaceLayout, type NavItem } from './SharedWorkspaceLayout';
 
 export const AdvisorLayout: React.FC<{ 
   children: React.ReactNode; 

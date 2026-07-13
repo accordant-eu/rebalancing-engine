@@ -1,6 +1,6 @@
 import React from 'react';
 import { Home, Users, Layers, Activity } from 'lucide-react';
-import { SharedWorkspaceLayout, NavItem } from './SharedWorkspaceLayout';
+import { SharedWorkspaceLayout, type NavItem } from './SharedWorkspaceLayout';
 
 interface TenantAdminLayoutProps {
   children: React.ReactNode;

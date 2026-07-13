@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Search, FileBarChart } from 'lucide-react';
-import { SharedWorkspaceLayout, NavItem } from './SharedWorkspaceLayout';
+import { SharedWorkspaceLayout, type NavItem } from './SharedWorkspaceLayout';
 
 export const ComplianceLayout: React.FC<{ 
   children: React.ReactNode; 

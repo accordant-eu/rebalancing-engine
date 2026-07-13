@@ -104,7 +104,7 @@ function App() {
           setState(data);
         }
       } catch (_e) {
-        console.error('Failed to fetch state', e);
+        console.error('Failed to fetch state', _e);
       }
     };
 
@@ -116,7 +116,7 @@ function App() {
           setLogs(Array.isArray(payload) ? payload : (payload.data || []));
         }
       } catch (_e) {
-        console.error('Failed to fetch logs', e);
+        console.error('Failed to fetch logs', _e);
       }
     };
 
@@ -164,7 +164,7 @@ function App() {
       } else {
         setUserRole(data.role);
       }
-    } catch (_err) {
+    } catch (err) {
       alert('Login failed');
     }
   };

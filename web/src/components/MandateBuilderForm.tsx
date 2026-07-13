@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import type { ModelMandate } from '../types';
 import { AssetPicker } from './AssetPicker';
 import { Settings, Target, Zap, Shield, Plus, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 
 interface MandateBuilderFormProps {
   initialData?: Partial<ModelMandate>;
@@ -88,11 +88,11 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
     onSubmit(data as Partial<ModelMandate>);
   };
 
-  const inputClasses = "w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all shadow-sm";
+  const inputClasses = "w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-500 outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all shadow-sm";
   const labelClasses = "block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2";
 
   return (
-    <motion.form 
+    <m.form 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -146,7 +146,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
             </div>
             <AnimatePresence>
               {targetFields.map((field, index) => (
-                <motion.div 
+                <m.div 
                   key={field.id} 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -158,7 +158,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
                   <button type="button" onClick={() => removeTarget(index)} className="h-10 w-10 flex items-center justify-center bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50">
                     <X size={16} />
                   </button>
-                </motion.div>
+                </m.div>
               ))}
             </AnimatePresence>
             <button type="button" onClick={() => appendTarget({ instrumentId: '', weight: 0 })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
@@ -222,7 +222,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
         <div className="flex flex-col gap-4">
           <AnimatePresence>
             {constraintFields.map((field: any, index) => (
-              <motion.div 
+              <m.div 
                 key={field.id} 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -236,7 +236,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
                 <button type="button" onClick={() => removeConstraint(index)} className="h-10 px-4 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm font-semibold whitespace-nowrap">
                   Remove
                 </button>
-              </motion.div>
+              </m.div>
             ))}
           </AnimatePresence>
           <button type="button" onClick={() => appendConstraint({ type: 'ConcentrationLimit', parameters: { maxWeight: 0.1 } })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
@@ -247,7 +247,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
 
       <AnimatePresence>
         {errorMsg && (
-          <motion.div 
+          <m.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -255,7 +255,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
           >
             <Shield size={18} />
             <strong>Validation Error:</strong> {errorMsg}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -269,7 +269,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
           Save Mandate
         </button>
       </div>
-    </motion.form>
+    </m.form>
   );
 };
 

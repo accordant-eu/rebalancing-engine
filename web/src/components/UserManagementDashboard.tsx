@@ -21,7 +21,7 @@ export const UserManagementDashboard: React.FC<{ token: string | null }> = ({ to
         setUsers(data);
       }
     } catch (_e) {
-      console.error(e);
+      console.error(_e);
     } finally {
       setLoading(false);
     }
