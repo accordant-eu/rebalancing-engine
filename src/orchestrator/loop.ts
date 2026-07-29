@@ -8,6 +8,7 @@ import { logger } from '../utils/logger';
 import { LiveStateManager } from './state';
 import { ExecutionContext } from '../models/domain';
 import { systemEventBus } from '../events/bus';
+import { CalendarAdapter } from '../services/market-calendar';
 
 export interface OrchestratorConfig {
   cooldownMs: number; // e.g. 10 * 60 * 1000 for 10 minutes
@@ -23,6 +24,7 @@ export class Orchestrator {
     private config: OrchestratorConfig,
     private auditStorage?: AuditStorageAdapter,
     private notifications?: NotificationAdapter,
+    private calendar?: CalendarAdapter,
   ) {}
 
   public start(): void {
@@ -58,6 +60,10 @@ export class Orchestrator {
   public async onTick(timestampMs: number = Date.now()): Promise<void> {
     if (!this.isRunning || this.isPaused) {
       return;
+    }
+    
+    if (this.calendar && !this.calendar.isOpen(timestampMs)) {
+      return; // Market is closed, skip evaluation
     }
 
     // We dequeue up to 50 portfolios per tick to prevent blocking the event loop for too long

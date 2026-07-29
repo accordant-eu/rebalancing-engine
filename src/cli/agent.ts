@@ -5,6 +5,7 @@ import { BrokerSyncService } from '../broker/sync';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, Orchestrator } from '../orchestrator';
 import { StdoutNotificationAdapter, WebhookNotifier, MultiNotifier } from '../notifications';
 import { loadScenarioFixture } from '../runner';
+import { USMarketCalendar, MockCalendar } from '../services/market-calendar';
 import { initDb } from '../db/sqlite';
 import { executeSeed } from './seed';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
@@ -103,7 +104,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
 
       const orchestrator = new Orchestrator(stateManager, executor, {
         cooldownMs: 60000, // 1 minute cooldown for paper trading
-      }, auditStorageAdapter, notifications);
+      }, auditStorageAdapter, notifications, new USMarketCalendar());
 
       const app = setupExpressApp(stateManager, orchestrator);
 
@@ -157,7 +158,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
 
     const orchestrator = new Orchestrator(stateManager, new DryRunExecutor(), {
       cooldownMs: 10000,
-    }, auditStorageAdapter, notifications);
+    }, auditStorageAdapter, notifications, new MockCalendar());
 
     const app = setupExpressApp(stateManager, orchestrator);
 

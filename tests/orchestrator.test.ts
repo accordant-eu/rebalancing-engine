@@ -1,4 +1,5 @@
 import { DryRunExecutor, Orchestrator } from '../src/orchestrator';
+import { MockCalendar } from '../src/services/market-calendar';
 import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 import { loadScenarioFixture } from '../src/runner';
@@ -115,5 +116,19 @@ describe('Orchestrator', () => {
     await orchestrator.onTick(1000);
 
     expect(executor.execute).not.toHaveBeenCalled();
+  });
+
+  it('skips evaluation if the market calendar says it is closed', async () => {
+    const closedCalendar = new MockCalendar(false);
+    const customOrchestrator = new Orchestrator(stateManager, executor, { cooldownMs: 5000 }, undefined, undefined, closedCalendar);
+    customOrchestrator.start();
+
+    const currentPrices = stateManager.getGlobalPrices().prices;
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.0 }); // large drift
+
+    stateManager.enqueuePortfolio(accountId, 1000);
+    await customOrchestrator.onTick(1000);
+
+    expect(executor.execute).not.toHaveBeenCalled(); // Market is closed, so no execution despite drift
   });
 });

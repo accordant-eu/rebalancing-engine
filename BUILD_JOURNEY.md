@@ -173,5 +173,6 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 77 | 2026-07-08 | Codebase Hygiene & Web Testing | Maintenance | Comprehensive ESLint fixes across frontend and backend, orchestrated documentation link restorations, and added Vitest UI smoke testing. | [Log](docs/iterations/2026-07-08.md) |
 | 78 | 2026-07-08 | Tranche 7 Execution: Premium UX & UI Polish | UI & UX | Refactored web frontend layouts into a unified SharedWorkspaceLayout with framer-motion micro-animations and a premium light mode aesthetic. | [Log](docs/iterations/2026-07-08.md#iteration-78-detail---2026-07-08) |
 | 79 | 2026-07-13 | Issue 60 Feedback Implementation | UI & UX | Addressed Vidar's feedback regarding UX/UI. Implemented lazy-loading for framer-motion, improved accessibility contrast, and added layout testing. | [Log](docs/iterations/2026-07-13.md) |
+| 80 | 2026-07-29 | Operational Resilience (Market Calendar) | Live Trading Readiness | Implemented a MarketCalendar middleware for the Orchestrator to ensure the Live Agent does not run outside of US trading hours (09:30 - 16:00 ET) or on weekends. | [Log](docs/iterations/2026-07-29.md) |
 
 ## Active Tranche Focus
