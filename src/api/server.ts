@@ -12,6 +12,7 @@ import { setupBrokerWebhooks } from './webhooks/broker-reports';
 import { evaluateRebalance } from '../core/evaluation';
 import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
 import { systemEventBus, SystemEvent } from '../events/bus';
+import rateLimit from 'express-rate-limit';
 
 
 import { Orchestrator } from '../orchestrator/loop';
@@ -24,6 +25,16 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   const app = express();
   app.use(cors());
   app.use(express.json());
+
+  // Apply rate limiting to all requests to address CodeQL alerts (CWE-770, CWE-307, CWE-400)
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: 'Too many requests, please try again later.'
+  });
+  app.use(limiter);
 
   const sendError = (res: any, status: number, code: string, message: string, details: any = {}) => {
     res.status(status).json({ error: { code, message, details } });
