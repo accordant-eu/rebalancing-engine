@@ -28,6 +28,7 @@ export interface LiveStateManager {
   getLastTradeTimeMs(accountId: string): number;
   registerOrder?(orderId: string, accountId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number): void;
   processExecutionReport?(orderId: string, accountId: string, status: string, filledQuantity: number, fillPrice: number): void;
+  getPendingOrders?(tenantId?: string): { orderId: string, accountId: string, instrumentId: string, direction: string, quantity: number, filledQuantity: number, status: string, brokerAccountId?: string }[];
   getAccountState(accountId: string): LiveState;
   getAllAccountIds(): string[];
   getAllStates(): Record<string, LiveState>;

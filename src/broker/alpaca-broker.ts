@@ -137,4 +137,21 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
     const orders = await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders?status=open`, context);
     return orders.length > 0;
   }
+
+  public async getOrderStatus(context: ExecutionContext, brokerAccountId: string, orderId: string): Promise<{ status: string, filledQuantity: number, fillPrice: number }> {
+    const order = await this.fetchApi(`/trading/accounts/${brokerAccountId}/orders/${orderId}`, context);
+    
+    // Map Alpaca status to our internal status
+    let status = 'PENDING';
+    if (order.status === 'filled') status = 'FILLED';
+    else if (order.status === 'partially_filled') status = 'PARTIAL_FILL';
+    else if (order.status === 'canceled' || order.status === 'expired') status = 'CANCELED';
+    else if (order.status === 'rejected') status = 'REJECTED';
+
+    return {
+      status,
+      filledQuantity: parseFloat(order.filled_qty || '0'),
+      fillPrice: parseFloat(order.filled_avg_price || '0')
+    };
+  }
 }

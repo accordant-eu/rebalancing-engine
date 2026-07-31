@@ -20,4 +20,9 @@ export interface BrokerAdapter {
    * Checks if there are any pending/open orders at the broker for a sub-account.
    */
   hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean>;
+
+  /**
+   * Fetches the execution status of a specific order.
+   */
+  getOrderStatus(context: ExecutionContext, brokerAccountId: string, orderId: string): Promise<{ status: string, filledQuantity: number, fillPrice: number }>;
 }

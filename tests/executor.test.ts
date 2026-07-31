@@ -11,12 +11,20 @@ class MockAdapter implements BrokerAdapter {
   getPrices(_context: ExecutionContext): Promise<Record<string, number>> {
     throw new Error('Method not implemented.');
   }
-  submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<any[]> {
+  async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<{ orderId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number }[]> {
     this.submitted = true;
-    return Promise.resolve([]);
+    return proposal.trades.map(t => ({
+      orderId: 'test-order-' + t.instrumentId,
+      instrumentId: t.instrumentId,
+      direction: t.direction,
+      quantity: t.quantity
+    }));
   }
-  hasOpenOrders(_context: ExecutionContext, _brokerAccountId: string): Promise<boolean> {
-    return Promise.resolve(false);
+  async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> {
+    return false;
+  }
+  async getOrderStatus(context: ExecutionContext, brokerAccountId: string, orderId: string): Promise<{ status: string, filledQuantity: number, fillPrice: number }> {
+    return { status: 'FILLED', filledQuantity: 0, fillPrice: 0 };
   }
 }
 

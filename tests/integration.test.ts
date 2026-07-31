@@ -15,8 +15,20 @@ class DummyBrokerAdapter implements BrokerAdapter {
   async getPrices(_context: ExecutionContext, _symbols: string[]): Promise<Record<string, number>> {
     return { 'AAPL': 150, 'MSFT': 250 };
   }
-  async submitTrades(_context: ExecutionContext, _brokerAccountId: string, _proposal: TradeProposal): Promise<any> { return []; }
-  async hasOpenOrders(_context: ExecutionContext, _brokerAccountId: string): Promise<boolean> { return false; }
+  async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<{ orderId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number }[]> {
+    return proposal.trades.map(t => ({
+      orderId: 'mock-order-' + Math.random().toString(),
+      instrumentId: t.instrumentId,
+      direction: t.direction,
+      quantity: t.quantity
+    }));
+  }
+  async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> {
+    return false;
+  }
+  async getOrderStatus(context: ExecutionContext, brokerAccountId: string, orderId: string): Promise<{ status: string, filledQuantity: number, fillPrice: number }> {
+    return { status: 'FILLED', filledQuantity: 0, fillPrice: 0 };
+  }
 }
 
 describe('Integration Tests (End-to-End)', () => {

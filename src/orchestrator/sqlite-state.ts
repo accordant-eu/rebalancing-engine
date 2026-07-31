@@ -471,6 +471,25 @@ export class SqliteStateManager implements LiveStateManager {
     tx();
   }
 
+  public getPendingOrders(tenantId?: string): { orderId: string, accountId: string, instrumentId: string, direction: string, quantity: number, filledQuantity: number, status: string, brokerAccountId?: string }[] {
+    const db = getDb();
+    if (tenantId) {
+      return db.prepare(`
+        SELECT o.orderId, o.accountId, o.instrumentId, o.direction, o.quantity, o.filledQuantity, o.status, p.brokerAccountId
+        FROM Orders o
+        JOIN Portfolios p ON o.accountId = p.accountId
+        WHERE o.status = 'PENDING' AND p.tenantId = ?
+      `).all(tenantId) as any[];
+    } else {
+      return db.prepare(`
+        SELECT o.orderId, o.accountId, o.instrumentId, o.direction, o.quantity, o.filledQuantity, o.status, p.brokerAccountId
+        FROM Orders o
+        JOIN Portfolios p ON o.accountId = p.accountId
+        WHERE o.status = 'PENDING'
+      `).all() as any[];
+    }
+  }
+
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     

@@ -3,7 +3,7 @@ import { SqliteAuditStorage } from '../audit/storage';
 import { AlpacaBrokerAdapter } from '../broker/alpaca-broker';
 import { BrokerSyncService } from '../broker/sync';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, Orchestrator } from '../orchestrator';
-import { StdoutNotificationAdapter, WebhookNotifier, MultiNotifier } from '../notifications';
+import { StdoutNotificationAdapter, WebhookNotifier, MultiNotifier, SlackNotifier } from '../notifications';
 import { loadScenarioFixture } from '../runner';
 import { USMarketCalendar, MockCalendar } from '../services/market-calendar';
 import { initDb } from '../db/sqlite';
@@ -43,9 +43,12 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
   }
 
   const stdNotifier = new StdoutNotificationAdapter();
-  const notifiers = [stdNotifier];
+  const notifiers: import('../notifications').NotificationAdapter[] = [stdNotifier];
   if (process.env.ALERT_WEBHOOK_URL) {
     notifiers.push(new WebhookNotifier(process.env.ALERT_WEBHOOK_URL));
+  }
+  if (process.env.SLACK_WEBHOOK_URL) {
+    notifiers.push(new SlackNotifier(process.env.SLACK_WEBHOOK_URL));
   }
   const notifications = new MultiNotifier(notifiers);
   const auditStorage = new SqliteAuditStorage();

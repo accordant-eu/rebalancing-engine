@@ -104,7 +104,31 @@ export class BrokerSyncService {
           }
         }
 
-        // 2. Sync Positions and Cash
+        // 2. Sync Pending Orders
+        if (this.stateManager.getPendingOrders && this.stateManager.processExecutionReport) {
+          try {
+            const pendingOrders = this.stateManager.getPendingOrders(tenantId);
+            for (const order of pendingOrders) {
+              const brokerAccountId = order.brokerAccountId || order.accountId;
+              const statusData = await adapter.getOrderStatus(context, brokerAccountId, order.orderId);
+              
+              if (statusData.status !== order.status || statusData.filledQuantity !== order.filledQuantity) {
+                logger.info(`[BrokerSyncService] Order ${order.orderId} status changed from ${order.status} to ${statusData.status}`);
+                this.stateManager.processExecutionReport(
+                  order.orderId,
+                  order.accountId,
+                  statusData.status,
+                  statusData.filledQuantity,
+                  statusData.fillPrice
+                );
+              }
+            }
+          } catch (e) {
+            logger.error(`[BrokerSyncService] Failed to sync orders for tenant ${tenantId}: ${e}`);
+          }
+        }
+
+        // 3. Sync Positions and Cash
         for (const id of accountIds) {
           const state = this.stateManager.getAccountState(id);
           const brokerAccountId = state.portfolioState.brokerAccountId || id;
