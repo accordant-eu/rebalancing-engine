@@ -1,10 +1,34 @@
-import { MockOptimizerService } from '../src/optimizer';
+import { DynamicOptimizerService } from '../src/optimizer';
+import { ProjectedGradientDescent } from '../src/optimizer/solver';
 import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 
-describe('MockOptimizerService', () => {
+describe('ProjectedGradientDescent Solver', () => {
+  it('solves simple minimum variance', () => {
+    const solver = new ProjectedGradientDescent();
+    
+    // Two independent assets with different volatilities
+    // Asset 0 is low vol, Asset 1 is high vol
+    const cov = [
+      [0.01, 0.00],
+      [0.00, 0.04]
+    ];
+    const mu = [0, 0];
+    const lambda = 0;
+    const targetSum = 1.0;
+
+    const w = solver.solve(cov, mu, lambda, targetSum);
+    
+    // Inverse variance weighting: w0 = (1/0.01) / (1/0.01 + 1/0.04) = 100 / 125 = 0.8
+    // w1 = 25 / 125 = 0.2
+    expect(w[0]).toBeCloseTo(0.8, 3);
+    expect(w[1]).toBeCloseTo(0.2, 3);
+  });
+});
+
+describe('DynamicOptimizerService', () => {
   let stateManager: SqliteStateManager;
-  let optimizer: MockOptimizerService;
+  let optimizer: DynamicOptimizerService;
 
   beforeEach(() => {
     initDb(':memory:');
@@ -33,9 +57,7 @@ describe('MockOptimizerService', () => {
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
     });
 
-    const mockClock = () => new Date('2026-06-19T10:00:00Z').getTime();
-    optimizer = new MockOptimizerService(stateManager, mockClock);
-
+    optimizer = new DynamicOptimizerService(stateManager);
     optimizer.run();
 
     const model = stateManager.getAllModels().find(m => m.modelId === 'static-model');
@@ -43,15 +65,16 @@ describe('MockOptimizerService', () => {
     expect(model?.targetAllocation.targets[0].instrumentId).toBe('AAPL');
   });
 
-  it('generates valid allocation and fans out to portfolios for non-StaticWeights models', () => {
+  it('generates valid allocation and fans out to portfolios for MinimumVariance models', () => {
     stateManager.createModel({
       modelId: 'dynamic-model',
       tenantId: 'tenant-1',
       name: 'Dynamic Model',
-      archetype: 'EfficientFrontier',
+      archetype: 'MinimumVariance',
       evaluationFrequency: 'daily',
       targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] },
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
+      universe: ['AAPL', 'MSFT', 'SPY']
     });
 
     stateManager.registerPortfolio('acc-1', {
@@ -59,25 +82,22 @@ describe('MockOptimizerService', () => {
       priceSnapshot: { prices: {} },
       targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] },
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
-      archetype: 'EfficientFrontier',
+      archetype: 'MinimumVariance',
     });
 
-    const mockClock = () => new Date('2026-06-19T10:00:00Z').getTime();
-    optimizer = new MockOptimizerService(stateManager, mockClock);
-
+    optimizer = new DynamicOptimizerService(stateManager);
     optimizer.run();
 
     const model = stateManager.getAllModels().find(m => m.modelId === 'dynamic-model');
-    expect(model?.targetAllocation.targets).toHaveLength(3);
+    expect(model?.targetAllocation.targets.length).toBeGreaterThan(0);
     
-    // Ensure sum equals 1.0 - cashBuffer (which is 0.05)
+    // Ensure sum equals 1.0 - cashBuffer (which is 0.05 by default)
     const sum = model!.targetAllocation.targets.reduce((acc, t) => acc + t.weight, 0);
     expect(sum).toBeCloseTo(0.95);
     expect(model?.targetAllocation.cashBuffer).toBe(0.05);
 
     // Verify it cascaded to portfolio
     const state = stateManager.getAccountState('acc-1');
-    expect(state.targetAllocation.targets).toHaveLength(3);
     const pSum = state.targetAllocation.targets.reduce((acc, t) => acc + t.weight, 0);
     expect(pSum).toBeCloseTo(0.95);
     

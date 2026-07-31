@@ -106,6 +106,7 @@ export interface ModelMandate {
   targetAllocation: TargetAllocation;
   policy: RebalancingPolicy;
   constraints?: ConstraintIndicator[];
+  universe?: string[]; // Allowed instruments for dynamic optimizers
 }
 
 export type SubscriptionType = 'discretionary' | 'bespoke';

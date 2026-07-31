@@ -4,7 +4,7 @@ import { createHash, randomBytes } from 'crypto';
 import { getDb } from '../db/sqlite';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { validateTargetAllocation } from '../core/drift';
-import { MockOptimizerService } from '../optimizer';
+import { DynamicOptimizerService } from '../optimizer';
 import { logger } from '../utils/logger';
 import swaggerUi from 'swagger-ui-express';
 import { openApiSpec } from './openapi';
@@ -264,7 +264,7 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
 
   app.post('/api/optimizer/run', requireAdmin, (req, res) => {
     try {
-      const optimizer = new MockOptimizerService(stateManager);
+      const optimizer = new DynamicOptimizerService(stateManager);
       optimizer.run();
       res.json({ message: 'Mock optimizer successfully ran for all dynamic models' });
     } catch (err: any) {
