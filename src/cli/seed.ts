@@ -1,7 +1,7 @@
 import { initDb } from '../db/sqlite';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { loadScenarioFixture } from '../runner';
-import { CommandContext, CommandResult } from './commands';
+import { CommandContext, CommandResult } from './types';
 import { UsageError } from './errors';
 import { ParsedArgs } from './options';
 

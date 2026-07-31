@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 export class ProjectedGradientDescent {
   /**
    * Solves the portfolio optimization problem:
@@ -11,7 +13,7 @@ export class ProjectedGradientDescent {
    * @param maxIters Maximum number of iterations
    * @param tol Convergence tolerance
    */
-  public solve(cov: number[][], mu: number[], lambda: number, targetSum: number, maxIters: number = 10000, tol: number = 1e-6): number[] {
+  public async solve(cov: number[][], mu: number[], lambda: number, targetSum: number, maxIters: number = 10000, tol: number = 1e-6): Promise<{ converged: boolean, iters: number, weights: number[] }> {
     const n = cov.length;
     let w = Array(n).fill(targetSum / n); // Initialize with equal weights
     
@@ -28,6 +30,10 @@ export class ProjectedGradientDescent {
     const lr = maxEigenVal > 0 ? 1 / maxEigenVal : 0.01;
 
     for (let iter = 0; iter < maxIters; iter++) {
+      if (iter % 100 === 0) {
+        await new Promise(resolve => setImmediate(resolve));
+      }
+
       // 1. Calculate gradient: g = Cov * w - lambda * mu
       const g = Array(n).fill(0);
       for (let i = 0; i < n; i++) {
@@ -57,11 +63,12 @@ export class ProjectedGradientDescent {
       w = w_proj;
 
       if (maxDiff < tol) {
-        break; // Converged
+        return { converged: true, iters: iter + 1, weights: w };
       }
     }
 
-    return w;
+    logger.warn({ maxIters, targetSum }, 'ProjectedGradientDescent failed to converge within maximum iterations');
+    return { converged: false, iters: maxIters, weights: w };
   }
 
   /**

@@ -13,12 +13,16 @@ export class DynamicOptimizerService {
   /**
    * Runs the dynamic optimizer for all models that require advanced targeting.
    */
-  public run(): void {
+  public async run(): Promise<void> {
     const models = this.stateManager.getAllModels();
     
     for (const model of models) {
       if (model.archetype === 'StaticWeights') {
         continue;
+      }
+
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('CRITICAL: SyntheticRiskModel cannot be used in production to update real portfolio targets.');
       }
 
       const universe = model.universe && model.universe.length > 0 ? model.universe : ['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD', 'US38259P5089:XNAS:USD', 'US88160R1014:XNAS:USD', 'SPY', 'BND'];
@@ -34,7 +38,8 @@ export class DynamicOptimizerService {
         lambda = 0.5; // Arbitrary risk aversion for demonstration
       }
 
-      const weights = this.solver.solve(cov, mu, lambda, targetSum);
+      const result = await this.solver.solve(cov, mu, lambda, targetSum);
+      const weights = result.weights;
 
       const targets: TargetWeight[] = [];
       for (let i = 0; i < universe.length; i++) {
@@ -45,15 +50,30 @@ export class DynamicOptimizerService {
         });
       }
 
+      const activeTargets = targets.filter(t => t.weight > 0);
+
       // Ensure exact sum due to rounding
-      const sum = targets.reduce((acc, t) => acc + t.weight, 0);
+      const sum = activeTargets.reduce((acc, t) => acc + t.weight, 0);
       const diff = targetSum - sum;
-      if (targets.length > 0) {
-        targets[0].weight = Number((targets[0].weight + diff).toFixed(4));
+      if (activeTargets.length > 0) {
+        let maxIdx = 0;
+        let maxWeight = -1;
+        for (let i = 0; i < activeTargets.length; i++) {
+            if (activeTargets[i].weight > maxWeight) {
+                maxWeight = activeTargets[i].weight;
+                maxIdx = i;
+            }
+        }
+        activeTargets[maxIdx].weight = Number((activeTargets[maxIdx].weight + diff).toFixed(4));
+        
+        const newSum = activeTargets.reduce((acc, t) => acc + t.weight, 0);
+        if (Math.abs(newSum - targetSum) > 1e-4) {
+            logger.warn({ expected: targetSum, actual: newSum }, 'Portfolio target sum deviates significantly from expected');
+        }
       }
 
       const newTargetAllocation: TargetAllocation = {
-        targets: targets.filter(t => t.weight > 0),
+        targets: activeTargets,
         cashBuffer,
       };
 

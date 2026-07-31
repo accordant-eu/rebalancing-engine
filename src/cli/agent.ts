@@ -9,7 +9,7 @@ import { USMarketCalendar, MockCalendar } from '../services/market-calendar';
 import { initDb } from '../db/sqlite';
 import { executeSeed } from './seed';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
-import { CommandContext, CommandResult } from './commands';
+import { CommandContext, CommandResult } from './types';
 import { UsageError } from './errors';
 import { ParsedArgs } from './options';
 import { setupExpressApp } from '../api/server';

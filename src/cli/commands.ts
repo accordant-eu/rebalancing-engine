@@ -17,16 +17,7 @@ import { getFormat, getStringOption, hasBooleanOption, OutputFormat, ParsedArgs 
 import { BatchOutput, CliOutput, InspectOutput, renderOutput, ValidateOutput } from './render';
 import { validateScenarioFixture } from './validation';
 import { executeAgent } from './agent';
-
-export interface CommandContext {
-  cwd: string;
-  stdin?: string;
-}
-
-export interface CommandResult {
-  exitCode: number;
-  output: string;
-}
+import { CommandContext, CommandResult } from './types';
 
 export async function executeCommand(parsed: ParsedArgs, context: CommandContext): Promise<CommandResult> {
   if (hasBooleanOption(parsed.options, 'help') && parsed.command === undefined) {
