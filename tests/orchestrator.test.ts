@@ -4,6 +4,8 @@ import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 import { loadScenarioFixture } from '../src/runner';
 import * as path from 'path';
+import { ConcentrationLimitIndicator, DriftReductionIndicator, DriftUtilityTranslator } from '../src/core/quality';
+import { logger } from '../src/utils/logger';
 
 describe('Orchestrator', () => {
   const fixturePath = path.join(__dirname, 'fixtures', 'scenarios.json');
@@ -221,7 +223,7 @@ describe('Orchestrator', () => {
 
     stateManager.enqueuePortfolio(accountId, 1000);
     
-    const loggerSpy = jest.spyOn((require('../src/utils/logger') as any).logger, 'error').mockImplementation();
+    const loggerSpy = jest.spyOn(logger as any, 'error').mockImplementation();
     await orchestratorWithAudit.onTick(1000);
 
     expect(executor.execute).toHaveBeenCalledTimes(1);
@@ -254,7 +256,7 @@ describe('Orchestrator', () => {
       throw new Error('Evaluation Crash');
     });
     
-    const loggerSpy = jest.spyOn((require('../src/utils/logger') as any).logger, 'error').mockImplementation();
+    const loggerSpy = jest.spyOn(logger as any, 'error').mockImplementation();
 
     stateManager.enqueuePortfolio(accountId, 1000);
     await customOrchestrator.onTick(1000);
