@@ -178,5 +178,6 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 82 | 2026-07-31 | Advanced Optimizers | Live Agent Orchestrator | Replaced the mock optimizer with a DynamicOptimizerService using a synthetic risk model and a pure TypeScript Projected Gradient Descent solver for Minimum Variance and Efficient Frontier mandates. | [Log](docs/iterations/2026-07-31-optimizer.md) |
 | 83 | 2026-07-31 | Mitigation of Issues 75-84 | Quality & Architecture | Executed mitigation plan addressing rounding math, synthetic model blocks, async, dependency upgrades, and test coverage expansion. | [Log](docs/iterations/2026-07-31-mitigations.md) |
 | 84 | 2026-07-31 | Resolution of Issues 73-74 | Quality & Architecture | Resolved Issues #73 and #74 with Optimizer security (SHA-256) and numerical safeguards. | [Log](docs/iterations/2026-07-31-mitigations.md) |
+| 85 | 2026-08-01 | Live Agent v3.0 Foundations | Architecture | Implemented Asynchronous WebSockets, End-of-Day (EOD) Reconciliation cron jobs, and Corporate Actions Circuit Breakers for safety. | [Log](docs/iterations/2026-08-01-v3-features.md) |
 
 ## Active Tranche Focus
