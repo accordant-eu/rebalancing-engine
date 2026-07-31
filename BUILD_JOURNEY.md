@@ -176,6 +176,6 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 80 | 2026-07-29 | Operational Resilience (Market Calendar) | Live Trading Readiness | Implemented a MarketCalendar middleware for the Orchestrator to ensure the Live Agent does not run outside of US trading hours (09:30 - 16:00 ET) or on weekends. | [Log](docs/iterations/2026-07-29.md) |
 | 81 | 2026-07-31 | Active Order Reconciliation & Alerting | Live Trading Readiness | Implemented active polling fallback for missed Alpaca webhooks and a native Slack Notifier integration. | [Log](docs/iterations/2026-07-31.md) |
 | 82 | 2026-07-31 | Advanced Optimizers | Live Agent Orchestrator | Replaced the mock optimizer with a DynamicOptimizerService using a synthetic risk model and a pure TypeScript Projected Gradient Descent solver for Minimum Variance and Efficient Frontier mandates. | [Log](docs/iterations/2026-07-31-optimizer.md) |
-| 83 | 2026-07-31 | Mitigation of Issues 75-84 | Quality & Architecture | Executed mitigation plan addressing rounding math, synthetic model blocks, async optimizer yields, CLI dependencies, and API router extraction. | [Log](docs/iterations/2026-07-31-mitigations.md) |
+| 83 | 2026-07-31 | Mitigation of Issues 75-84 | Quality & Architecture | Executed mitigation plan addressing rounding math, synthetic model blocks, async, dependency upgrades, and test coverage expansion. | [Log](docs/iterations/2026-07-31-mitigations.md) |
 
 ## Active Tranche Focus
