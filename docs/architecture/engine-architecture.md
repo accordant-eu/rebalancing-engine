@@ -39,6 +39,9 @@ The engine isolates variable algorithmic logic into swappable Strategy Modules:
 - **Calendar-Based Module:** Triggers based strictly on scheduled intervals, frequently used for systematic factor momentum strategies.
 - **Manual Module:** Triggers an immediate full-reset rebalance based on an explicit command.
 
+### Dynamic Optimization Layer
+- **Dynamic Optimizer Service:** Asynchronously evaluates risk inputs (Expected Returns, Covariance) and solves for quantitative mandates (`MinimumVariance`, `EfficientFrontier`) using Projected Gradient Descent. The solver updates target allocations across the tenant models and propagates them down to all subscribed portfolios.
+
 ## Domain Model
 
 | Entity                | Purpose                                                      | Key Fields                                             |

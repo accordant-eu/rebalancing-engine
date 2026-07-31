@@ -10,6 +10,8 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-07-29 | `architecture/personas.md` | Minor | Documented UI/UX Access Control rules and progressive disclosure boundaries for new SharedWorkspaceLayout. |
+| 2026-07-31 | `architecture/engine-architecture.md` | Minor | Added documentation for the new Dynamic Optimization Layer and Projected Gradient Descent solver. |
 | 2026-06-20 | Added `docs/architecture/personas.md` to formally document user personas, RBAC rules, and Command Center UX logic. |
 | 2026-06-18 | Added `docs/plans/tyr-agent-api-integration-plan.md` to map out the API enrichment for the Týr agent integration. |
 | 2026-06-19 | Added `docs/api/mandate-schema.md` to formally document the Model Mandate JSON payload for external B2B agents. |
