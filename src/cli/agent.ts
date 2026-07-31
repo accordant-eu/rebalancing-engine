@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { SqliteAuditStorage } from '../audit/storage';
 import { AlpacaBrokerAdapter } from '../broker/alpaca-broker';
+import { AlpacaBrokerStreamer } from '../broker/alpaca-streamer';
 import { BrokerSyncService } from '../broker/sync';
 import { BrokerExecutor, CircuitBreaker, DryRunExecutor, Orchestrator } from '../orchestrator';
 import { StdoutNotificationAdapter, WebhookNotifier, MultiNotifier, SlackNotifier } from '../notifications';
@@ -118,6 +119,30 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
       orchestrator.start();
       notifications.notify('info', 'Live Agent (Alpaca Broker API) Started.', { target: scenarioId });
       logger.info(`Press Ctrl+C to stop.\n`);
+
+      if (process.env.ALPACA_BROKER_API_KEY && process.env.ALPACA_BROKER_API_SECRET) {
+        const streamer = new AlpacaBrokerStreamer(
+          process.env.ALPACA_BROKER_API_KEY,
+          process.env.ALPACA_BROKER_API_SECRET,
+          true
+        );
+        streamer.onTradeExecution((event) => {
+          logger.info({ event }, '[Streamer] Received trade execution event');
+          // Update DB with the fill
+          try {
+            stateManager.processExecutionReport(
+              event.orderId,
+              event.brokerAccountId,
+              event.status,
+              event.filledQuantity || 0,
+              event.filledPrice || 0
+            );
+          } catch (e: any) {
+            logger.error({ e, event }, 'Failed to record streamer execution');
+          }
+        });
+        await streamer.connect().catch(e => logger.error({ error: String(e) }, 'Failed to connect streamer'));
+      }
 
       const syncService = new BrokerSyncService(stateManager, orchestrator);
       syncService.start(10000); // 10 second poll for testing/live feedback
