@@ -37,8 +37,12 @@ Executed the implementation plan to mitigate security, performance, and architec
   - Custom fallback logic for `translateBrokerSymbol`.
   - Circuit breaker openings for fatal loop errors.
   - Missing tenant config circuit breaker continuations.
-  - Unhandled promise rejection mitigations for `auditStorage.saveAuditRecord` via `.catch()`.
 - Achieved **100% lines coverage** for both `loop.ts` and `ticker.ts`.
+
+## Optimizer Security & Safety (Issues #73, #74)
+- **#73 Security (Synthetic Risk Model)**: Migrated `SyntheticRiskModel` deterministic mock data generator from using `md5` to `sha256` to pass strict security/cryptographic scanning requirements and explicitly documented its mock status.
+- **#74 Optimizer (Numerical Safeguards)**: Added rigorous input validations (dimension, NaN, negative target checks) and fallback safeguards to `ProjectedGradientDescent`. The solver now gracefully falls back and reports failure if fed degenerate covariance matrices (maxEigenVal <= 0) or encounters `NaN/Infinity` instability during projection descent, rather than getting stuck or generating poisoned weights.
+
 
 ## Open Questions & Known Issues
 - `npm audit fix` introduced breaking changes to `jest` and `ts-jest` versions, causing the test suite to fail with a `ScriptTransformer` error. This needs manual intervention to pin down working versions.

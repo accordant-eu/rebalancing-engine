@@ -15,6 +15,30 @@ export class ProjectedGradientDescent {
    */
   public async solve(cov: number[][], mu: number[], lambda: number, targetSum: number, maxIters: number = 10000, tol: number = 1e-6): Promise<{ converged: boolean, iters: number, weights: number[] }> {
     const n = cov.length;
+    if (n === 0 || mu.length !== n) {
+      throw new Error(`ProjectedGradientDescent: Dimension mismatch. Covariance matrix is ${n}x${cov[0]?.length || 0}, expected returns length is ${mu.length}.`);
+    }
+    if (targetSum <= 0 || isNaN(targetSum) || !isFinite(targetSum)) {
+      throw new Error(`ProjectedGradientDescent: Invalid targetSum ${targetSum}. Must be > 0 and finite.`);
+    }
+    if (lambda < 0 || isNaN(lambda) || !isFinite(lambda)) {
+      throw new Error(`ProjectedGradientDescent: Invalid lambda ${lambda}. Must be >= 0 and finite.`);
+    }
+
+    for (let i = 0; i < n; i++) {
+      if (isNaN(mu[i]) || !isFinite(mu[i])) {
+        throw new Error(`ProjectedGradientDescent: Invalid expected return at index ${i}: ${mu[i]}`);
+      }
+      if (!cov[i] || cov[i].length !== n) {
+        throw new Error(`ProjectedGradientDescent: Covariance matrix is not square at row ${i}.`);
+      }
+      for (let j = 0; j < n; j++) {
+        if (isNaN(cov[i][j]) || !isFinite(cov[i][j])) {
+          throw new Error(`ProjectedGradientDescent: Invalid covariance value at [${i}][${j}]: ${cov[i][j]}`);
+        }
+      }
+    }
+
     let w = Array(n).fill(targetSum / n); // Initialize with equal weights
     
     // Determine a safe learning rate (1 / Lipschitz constant of gradient)
@@ -27,7 +51,11 @@ export class ProjectedGradientDescent {
       }
       if (rowSum > maxEigenVal) maxEigenVal = rowSum;
     }
-    const lr = maxEigenVal > 0 ? 1 / maxEigenVal : 0.01;
+    if (maxEigenVal <= 0 || isNaN(maxEigenVal)) {
+      logger.warn('ProjectedGradientDescent: Covariance matrix max eigenvalue is 0 or NaN. Inputs may be degenerate.');
+      return { converged: false, iters: 0, weights: w };
+    }
+    const lr = 1 / maxEigenVal;
 
     for (let iter = 0; iter < maxIters; iter++) {
       if (iter % 100 === 0) {
@@ -53,7 +81,21 @@ export class ProjectedGradientDescent {
       // 3. Project onto the probability simplex (sum(w) = targetSum, w >= 0)
       const w_proj = this.projectToSimplex(w_next, targetSum);
 
-      // 4. Check convergence
+      // 4. Numerical instability safeguard
+      let unstable = false;
+      for (let i = 0; i < n; i++) {
+        if (isNaN(w_proj[i]) || !isFinite(w_proj[i])) {
+          unstable = true;
+          break;
+        }
+      }
+      
+      if (unstable) {
+        logger.warn({ maxIters, targetSum }, 'ProjectedGradientDescent encountered NaN/Infinity. Aborting iteration.');
+        return { converged: false, iters: iter + 1, weights: w };
+      }
+
+      // 5. Check convergence
       let maxDiff = 0;
       for (let i = 0; i < n; i++) {
         const diff = Math.abs(w_proj[i] - w[i]);

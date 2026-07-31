@@ -23,6 +23,48 @@ describe('ProjectedGradientDescent Solver', () => {
     expect(w[0]).toBeCloseTo(0.8, 3);
     expect(w[1]).toBeCloseTo(0.2, 3);
   });
+
+  it('throws error if covariance matrix or mu has dimension mismatch', async () => {
+    const solver = new ProjectedGradientDescent();
+    await expect(solver.solve([[1, 0]], [0, 0], 0, 1.0)).rejects.toThrow('Dimension mismatch');
+    await expect(solver.solve([[1, 0], [0, 1]], [0], 0, 1.0)).rejects.toThrow('Dimension mismatch');
+    await expect(solver.solve([[1, 0], [0]], [0, 0], 0, 1.0)).rejects.toThrow('not square at row 1');
+  });
+
+  it('throws error if targetSum or lambda is invalid', async () => {
+    const solver = new ProjectedGradientDescent();
+    await expect(solver.solve([[1]], [0], 0, -1.0)).rejects.toThrow('Invalid targetSum');
+    await expect(solver.solve([[1]], [0], -5, 1.0)).rejects.toThrow('Invalid lambda');
+  });
+
+  it('throws error if inputs contain NaN', async () => {
+    const solver = new ProjectedGradientDescent();
+    await expect(solver.solve([[NaN]], [0], 0, 1.0)).rejects.toThrow('Invalid covariance value');
+    await expect(solver.solve([[1]], [NaN], 0, 1.0)).rejects.toThrow('Invalid expected return');
+  });
+
+  it('safely handles zero covariance matrix', async () => {
+    const solver = new ProjectedGradientDescent();
+    const result = await solver.solve([[0, 0], [0, 0]], [0, 0], 0, 1.0);
+    expect(result.converged).toBe(false);
+    expect(result.weights).toEqual([0.5, 0.5]); // Falls back to equal weights
+  });
+
+  it('aborts safely if numerical instability (NaN) is encountered during descent', async () => {
+    const solver = new ProjectedGradientDescent();
+    
+    // We can force NaN by mocking Math.max which is used in projection
+    const originalMax = Math.max;
+    Math.max = jest.fn().mockReturnValue(NaN);
+    
+    const result = await solver.solve([[1]], [0], 0, 1.0);
+    
+    expect(result.converged).toBe(false);
+    expect(result.iters).toBe(1);
+    expect(result.weights).toEqual([1.0]); // Returns initial weights
+
+    Math.max = originalMax; // Restore
+  });
 });
 
 describe('DynamicOptimizerService', () => {

@@ -3,11 +3,12 @@ import crypto from 'crypto';
 export class SyntheticRiskModel {
   /**
    * Generates a stable pseudo-random expected return based on the instrument ID.
+   * Note: This is for deterministic mock generation only. Not intended for secure cryptographic use.
    * Returns a value between -0.05 and 0.15 (annualized).
    */
   public getExpectedReturns(instrumentIds: string[]): number[] {
     return instrumentIds.map(id => {
-      const hash = crypto.createHash('md5').update(id).digest('hex');
+      const hash = crypto.createHash('sha256').update(id).digest('hex');
       const val = parseInt(hash.substring(0, 8), 16) / 0xffffffff;
       return -0.05 + val * 0.20; 
     });
@@ -24,7 +25,7 @@ export class SyntheticRiskModel {
     
     // 1. Generate volatilities between 10% and 40%
     const vols = instrumentIds.map(id => {
-      const hash = crypto.createHash('md5').update(id + '_vol').digest('hex');
+      const hash = crypto.createHash('sha256').update(id + '_vol').digest('hex');
       const val = parseInt(hash.substring(0, 8), 16) / 0xffffffff;
       return 0.10 + val * 0.30;
     });
@@ -35,7 +36,7 @@ export class SyntheticRiskModel {
     
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < n; j++) {
-        const hash = crypto.createHash('md5').update(instrumentIds[i] + '_' + instrumentIds[j]).digest('hex');
+        const hash = crypto.createHash('sha256').update(instrumentIds[i] + '_' + instrumentIds[j]).digest('hex');
         const val = (parseInt(hash.substring(0, 8), 16) / 0xffffffff) * 2 - 1; // -1 to 1
         M[i][j] = val;
       }
