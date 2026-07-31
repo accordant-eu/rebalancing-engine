@@ -66,9 +66,9 @@ Connect the orchestrator to a live broker API, utilizing their simulated/paper-t
 
 Transition to real capital with production-grade monitoring and persistent audits.
 
-- [ ] **Persistent Audit Trail:** Route the engine's immutable JSON audit outputs to a database or secure log sink (essential for regulatory/compliance tracing).
-- [ ] **Reconciliation & Fills:** Handle partial fills, update live positions based on execution reports, and reconcile expected vs. actual trade prices.
-- [ ] **Alerting:** Integrate notifications (e.g., Slack, Email) for critical agent events, feed failures, or executed trades.
+- [x] **Persistent Audit Trail:** Route the engine's immutable JSON audit outputs to a database or secure log sink (essential for regulatory/compliance tracing).
+- [x] **Reconciliation & Fills:** Handle partial fills, update live positions based on execution reports, and reconcile expected vs. actual trade prices.
+- [x] **Alerting:** Integrate notifications (e.g., Slack, Email) for critical agent events, feed failures, or executed trades.
 
 ## 4. Risks and Open Questions
 
