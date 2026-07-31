@@ -4,7 +4,7 @@ import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 
 describe('ProjectedGradientDescent Solver', () => {
-  it('solves simple minimum variance', () => {
+  it('solves simple minimum variance', async () => {
     const solver = new ProjectedGradientDescent();
     
     // Two independent assets with different volatilities
@@ -17,10 +17,9 @@ describe('ProjectedGradientDescent Solver', () => {
     const lambda = 0;
     const targetSum = 1.0;
 
-    const w = solver.solve(cov, mu, lambda, targetSum);
-    
     // Inverse variance weighting: w0 = (1/0.01) / (1/0.01 + 1/0.04) = 100 / 125 = 0.8
-    // w1 = 25 / 125 = 0.2
+    const result = await solver.solve(cov, mu, 0, 1.0);
+    const w = result.weights;
     expect(w[0]).toBeCloseTo(0.8, 3);
     expect(w[1]).toBeCloseTo(0.2, 3);
   });
@@ -65,28 +64,33 @@ describe('DynamicOptimizerService', () => {
     expect(model?.targetAllocation.targets[0].instrumentId).toBe('AAPL');
   });
 
-  it('generates valid allocation and fans out to portfolios for MinimumVariance models', () => {
+  it('generates valid allocation and fans out to portfolios for MinimumVariance models', async () => {
+    stateManager.createTenant('tenant-1', 'Acme Firm');
+    
+    // Register dynamic model
     stateManager.createModel({
       modelId: 'dynamic-model',
       tenantId: 'tenant-1',
-      name: 'Dynamic Model',
+      name: 'Dynamic MinVar',
       archetype: 'MinimumVariance',
       evaluationFrequency: 'daily',
-      targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] },
+      targetAllocation: { cashBuffer: 0.05, targets: [] },
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
       universe: ['AAPL', 'MSFT', 'SPY']
     });
-
+    
+    // Register portfolio subscribed to it
     stateManager.registerPortfolio('acc-1', {
       portfolioState: { accountId: 'acc-1', tenantId: 'tenant-1', modelId: 'dynamic-model', subscriptionType: 'discretionary', cash: 1000, holdings: [] },
       priceSnapshot: { prices: {} },
       targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] },
       policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
       archetype: 'MinimumVariance',
+      constraints: []
     });
 
     optimizer = new DynamicOptimizerService(stateManager);
-    optimizer.run();
+    await optimizer.run();
 
     const model = stateManager.getAllModels().find(m => m.modelId === 'dynamic-model');
     expect(model?.targetAllocation.targets.length).toBeGreaterThan(0);

@@ -1,10 +1,18 @@
 import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
+import { initDb, getDb } from '../src/db/sqlite';
 
 describe('StateManager', () => {
   let stateManager: SqliteStateManager;
 
+  beforeAll(() => {
+    initDb(':memory:');
+  });
+
   beforeEach(() => {
     stateManager = new SqliteStateManager();
+    const db = getDb();
+    db.prepare('DELETE FROM Portfolios').run();
+    db.prepare('DELETE FROM Tenants').run();
   });
 
   it('should create and retrieve tenants', () => {
@@ -15,6 +23,16 @@ describe('StateManager', () => {
   });
 
   it('should register and retrieve portfolio', () => {
+    stateManager.createTenant('t1', 'Tenant 1');
+    stateManager.createModel({
+      modelId: 'm1',
+      tenantId: 't1',
+      name: 'Model 1',
+      archetype: 'StaticWeights',
+      evaluationFrequency: 'daily',
+      targetAllocation: { cashBuffer: 0.05, targets: [] },
+      policy: { absoluteDriftTolerance: 0.05, minimumTradeSize: 10 }
+    });
     const pState = {
       accountId: 'p1',
       tenantId: 't1',
