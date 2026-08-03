@@ -25,9 +25,9 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-06-14 | Added `docs/roadmap/v3-exploration.md` to map out scaling architectures and future feature requirements (TCO, TLH, Dashboard). |
 | 2026-06-14 | Created formal `docs/plans/live-agent-v3-mvp-plan.md` to sequence the implementation of Tranches 5-9. |
 | 2026-06-14 | Extracted formal decisions from the v3 exploration phase into ADRs 0041, 0042, and 0043. |
-| 2026-06-14 | Drafted ADRs 0044 and 0045 for the Tranche 5 Monorepo and API architecture. |
-| 2026-06-14 | Drafted ADR 0046 for size-based log rotation and dry-run simulation reset. |
-| 2026-06-12 | Add `decisions/0047-use-simple-margin-for-tco-penalty.md` |
+| 2026-07-20 | Migrated scheduling configuration from domain interfaces to `CalendarAdapter` strategy execution context. |
+| 2026-07-28 | Removed global event bus from core evaluations. Replaced with local domain models (`AuditRecord`, `TriggerRecord`) to ensure pure, deterministic side-effect-free testing in `src/core/evaluation.ts`. |
+| 2026-08-03 | Added `docs/prd/execution-overlays-tlh-prd.md` detailing the jurisdiction-agnostic Execution Overlays architecture for Tax-Loss Harvesting and Wash Sale Lockouts. |
 | 2026-06-13 | Add `decisions/0048-use-multi-portfolio-in-memory-scale.md` |
 | 2026-06-13 | Add `decisions/0049-use-sqlite-for-persistent-state-management.md` |
 | 2026-06-15 | Add `decisions/0050-use-b2b-broker-api.md` |

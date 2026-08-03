@@ -17,7 +17,9 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Rebalancing Engine Optimizer Feasibility Prd](rebalancing-engine-optimizer-feasibility-prd.md)** - Documentation for rebalancing engine optimizer feasibility prd
 * **[Rebalancing Engine Production Boundary Prd](rebalancing-engine-production-boundary-prd.md)** - Documentation for rebalancing engine production boundary prd
 * **[Rebalancing Engine Tax Lots Prd](rebalancing-engine-tax-lots-prd.md)** - Documentation for rebalancing engine tax lots prd
-* **[Scheduled Recurring Cash Flow Prd](scheduled-recurring-cash-flow-prd.md)** - Documentation for scheduled recurring cash flow prd
+* **[Scheduled Recurring Cash Flow PRD](scheduled-recurring-cash-flow-prd.md)**
+* **[Tax Lot Foundations PRD](rebalancing-engine-tax-lots-prd.md)**
+* **[Execution Overlays & Tax-Loss Harvesting (TLH) PRD](execution-overlays-tlh-prd.md)**
 
 
 &copy; 2026 Johan Hellman. All rights reserved.
