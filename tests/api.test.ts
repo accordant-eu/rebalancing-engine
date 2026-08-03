@@ -286,7 +286,7 @@ describe('API Endpoints (Týr Integration)', () => {
       const server = app.listen(0, async () => {
         const port = (server.address() as any).port;
         const http = await import('http');
-        const req = http.get(`http://localhost:${port}/api/events/stream`, {
+        const req = http.get(`http://127.0.0.1:${port}/api/events/stream`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }, (res: any) => {
           expect(res.statusCode).toBe(200);
@@ -315,7 +315,7 @@ describe('API Endpoints (Týr Integration)', () => {
       const server = app.listen(0, async () => {
         const port = (server.address() as any).port;
         const http = await import('http');
-        const req = http.get(`http://localhost:${port}/api/events/stream`, {
+        const req = http.get(`http://127.0.0.1:${port}/api/events/stream`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }, (res: any) => {
           res.on('data', (chunk: Buffer) => {
