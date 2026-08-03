@@ -301,3 +301,10 @@ export function getDb(): Database.Database {
   }
   return dbInstance;
 }
+
+export function closeDb(): void {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+}

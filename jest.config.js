@@ -5,4 +5,5 @@ module.exports = {
   rootDir: '.',
   roots: ['<rootDir>/src/', '<rootDir>/tests/'],
   testMatch: ['**/?(*.)+(spec|test).[jt]s?(x)'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 };
