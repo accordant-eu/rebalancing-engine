@@ -32,6 +32,7 @@ describe('Execution Overlays (TLH)', () => {
       {
         instrumentId: 'IVV',
         quantity: 10,
+        price: 90,
         marketValue: 900,
         taxLots: [
           { lotId: 'lot1', quantity: 10, unitCost: 100, acquisitionDate: '2026-01-01' }
