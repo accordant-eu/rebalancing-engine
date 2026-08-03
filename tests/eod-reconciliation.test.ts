@@ -13,7 +13,7 @@ describe('EodReconciliationJob', () => {
   let mockGetPortfolioState: jest.Mock;
 
   beforeEach(() => {
-    initDb();
+    initDb(':memory:');
     stateManager = new SqliteStateManager();
     eodJob = new EodReconciliationJob(stateManager);
 
