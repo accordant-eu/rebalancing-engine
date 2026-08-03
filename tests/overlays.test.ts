@@ -1,6 +1,7 @@
 import { OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay } from '../src/core/overlays';
 import { EvaluationState } from '../src/core/quality';
-import { PriceSnapshot, RebalancingPolicy, TargetAllocation, TradeProposal, ValuationResult } from '../src/models/domain';
+import { PriceSnapshot, RebalancingPolicy, TargetAllocation, TradeProposal } from '../src/models/domain';
+import { ValuationResult } from '../src/core/valuation';
 
 describe('Execution Overlays (TLH)', () => {
   const policy: RebalancingPolicy = {
@@ -17,7 +18,7 @@ describe('Execution Overlays (TLH)', () => {
   };
 
   const priceSnapshot: PriceSnapshot = {
-    timestamp: '2026-08-01T00:00:00Z',
+    asOf: '2026-08-01T00:00:00Z',
     prices: {
       'IVV': 90, // Price dropped from 100 to 90 (10% loss)
       'VOO': 90
