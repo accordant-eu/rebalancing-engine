@@ -23,6 +23,7 @@ import {
   generateTradeProposal,
 } from './trades';
 import { FrictionModel } from './friction';
+import { ExecutionOverlay, OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay } from './overlays';
 import {
   buildCashFlowProposalWarnings,
   buildCashFlowScheduleProposalWarnings,
@@ -77,6 +78,17 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
   const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
   const strategy = selectStrategy(input.policy.strategyType);
   const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
+  const executionOverlays: ExecutionOverlay[] = [];
+  if (input.policy.executionOverlays) {
+    for (const overlayName of input.policy.executionOverlays) {
+      if (overlayName === 'OpportunisticLossHarvestingOverlay') {
+        executionOverlays.push(new OpportunisticLossHarvestingOverlay());
+      } else if (overlayName === 'WashSaleLockoutOverlay') {
+        executionOverlays.push(new WashSaleLockoutOverlay());
+      }
+    }
+  }
+
   let tradeProposal = trigger.isTriggered
     ? generateTradeProposal(
         valuation,
@@ -85,6 +97,8 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
         input.policy,
         cashFlowScheduleSummary,
         input.frictionModel,
+        undefined,
+        executionOverlays
       )
     : {
         trades: [],
@@ -118,7 +132,8 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
       target: input.targetAllocation,
       policy: input.policy,
       proposedTrades: [],
-      estimatedTco: 0
+      estimatedTco: 0,
+      temporaryEquivalencyMapping: tradeProposal.temporaryEquivalencyMapping
     };
 
     let estimatedTco = 0;
@@ -134,7 +149,8 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
       target: input.targetAllocation,
       policy: input.policy,
       proposedTrades: tradeProposal.trades,
-      estimatedTco
+      estimatedTco,
+      temporaryEquivalencyMapping: tradeProposal.temporaryEquivalencyMapping
     };
 
     let allPassed = true;

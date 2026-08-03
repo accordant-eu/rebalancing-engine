@@ -12,6 +12,7 @@ export interface EvaluationState {
   policy: RebalancingPolicy;
   proposedTrades: ProposedTrade[]; // Trades proposed to reach this state. Empty for State A.
   estimatedTco: number; // The estimated Total Cost of Ownership in currency terms. 0 for State A.
+  temporaryEquivalencyMapping?: Map<string, string>; // Maps substitute instrumentId -> primary instrumentId for drift calculation
 }
 
 /**
@@ -72,8 +73,8 @@ export class DriftReductionIndicator implements QualityIndicator {
   constructor(private translator: UtilityTranslator) {}
 
   evaluate(preTradeState: EvaluationState, postTradeState: EvaluationState): QualityEvaluationResult {
-    const preDrift = calculateDrift(preTradeState.weightResults, preTradeState.target, preTradeState.policy);
-    const postDrift = calculateDrift(postTradeState.weightResults, postTradeState.target, postTradeState.policy);
+    const preDrift = calculateDrift(preTradeState.weightResults, preTradeState.target, preTradeState.policy, preTradeState.temporaryEquivalencyMapping);
+    const postDrift = calculateDrift(postTradeState.weightResults, postTradeState.target, postTradeState.policy, postTradeState.temporaryEquivalencyMapping);
 
     const sumAbsoluteDriftBefore = preDrift.reduce((acc, d) => acc + Math.abs(d.absoluteDrift), 0);
     const sumAbsoluteDriftAfter = postDrift.reduce((acc, d) => acc + Math.abs(d.absoluteDrift), 0);

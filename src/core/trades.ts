@@ -35,6 +35,7 @@ export function generateTradeProposal(
   cashFlowScheduleSummary?: CashFlowScheduleSummary,
   frictionModel?: FrictionModel,
   qualityIndicators?: QualityIndicator[],
+  executionOverlays?: import('./overlays').ExecutionOverlay[]
 ): TradeProposal {
   validateTargetAllocation(target);
   if (valuation.cash < -0.01 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
@@ -130,6 +131,22 @@ export function generateTradeProposal(
     );
   }
 
+  // Define EvaluationState for overlays
+  const evaluationState: EvaluationState = {
+    valuation,
+    weightResults: calculateCurrentWeights(valuation),
+    target,
+    policy: policy || { absoluteDriftTolerance: 0, minimumTradeSize: 0 },
+    proposedTrades: [], // Overlays mutate the proposal
+    estimatedTco: 0
+  };
+
+  if (executionOverlays && executionOverlays.length > 0) {
+    for (const overlay of executionOverlays) {
+      finalizedProposal = overlay.apply(finalizedProposal, evaluationState, priceSnapshot);
+    }
+  }
+
   if (qualityIndicators && qualityIndicators.length > 0) {
     finalizedProposal = applyQualityEvaluationPipeline(
       finalizedProposal,
@@ -137,8 +154,13 @@ export function generateTradeProposal(
       target,
       policy,
       qualityIndicators,
-      frictionModel
+      frictionModel,
+      evaluationState.temporaryEquivalencyMapping
     );
+  }
+
+  if (evaluationState.temporaryEquivalencyMapping) {
+    finalizedProposal.temporaryEquivalencyMapping = evaluationState.temporaryEquivalencyMapping;
   }
 
   return finalizedProposal;
@@ -150,7 +172,8 @@ export function applyQualityEvaluationPipeline(
   target: TargetAllocation,
   policy: RebalancingPolicy | undefined,
   qualityIndicators: QualityIndicator[],
-  frictionModel?: FrictionModel
+  frictionModel?: FrictionModel,
+  temporaryEquivalencyMapping?: Map<string, string>
 ): TradeProposal {
   if (qualityIndicators.length === 0 || proposal.trades.length === 0) {
     return proposal;
@@ -166,7 +189,8 @@ export function applyQualityEvaluationPipeline(
     target,
     policy: policy || { absoluteDriftTolerance: 0, minimumTradeSize: 0 },
     proposedTrades: [],
-    estimatedTco: 0
+    estimatedTco: 0,
+    temporaryEquivalencyMapping
   };
 
   const postTradeValuation = simulatePostTradeValuation(valuation, proposal.trades, totalTco);
@@ -177,7 +201,8 @@ export function applyQualityEvaluationPipeline(
     target,
     policy: policy || { absoluteDriftTolerance: 0, minimumTradeSize: 0 },
     proposedTrades: proposal.trades,
-    estimatedTco: totalTco
+    estimatedTco: totalTco,
+    temporaryEquivalencyMapping
   };
 
   let allPassed = true;

@@ -185,13 +185,17 @@ export interface RebalancingPolicy {
    * Defaults to 5 bps if omitted.
    */
   assumedSlippageBps?: number;
-  /**
-   * Governs how new cash deposits are deployed into the portfolio.
-   * Defaults to 'REBALANCING' (deploying cash to under-weight assets).
-   */
+  // Governs how new cash deposits are deployed into the portfolio.
+  // Defaults to 'REBALANCING' (deploying cash to under-weight assets).
   depositAllocationMode?: DepositAllocationMode;
   // Required only when strategyType is calendar.
   calendar?: CalendarRebalancingConfig;
+  // Execution Overlays to apply (e.g., ['OpportunisticLossHarvestingOverlay', 'WashSaleLockoutOverlay'])
+  executionOverlays?: string[];
+  // Minimum percentage loss required to trigger tax-loss harvesting (e.g., 500 for 5%)
+  tlhLossThresholdBps?: number;
+  // Arrays of instrument IDs that are treated as fungible for drift calculation (e.g., [['IVV', 'VOO']])
+  equivalencyGroups?: string[][];
 }
 
 // Outputs
@@ -234,7 +238,9 @@ export type ProposalWarningCode =
   | 'PENDING_CASH_FLOW_EXCLUDED'
   | 'FUTURE_CASH_FLOW_SCHEDULED'
   | 'FRICTION_COST_EXCEEDED'
-  | 'QUALITY_EVALUATION_FAILED';
+  | 'QUALITY_EVALUATION_FAILED'
+  | 'TLH_HARVEST_GENERATED'
+  | 'WASH_SALE_LOCKOUT';
 
 export interface ProposalWarning {
   code: ProposalWarningCode;
@@ -264,6 +270,7 @@ export interface TradeProposal {
   executionTargetMode: ExecutionTargetMode;
   boundaryBandMode?: BoundaryBandMode;
   qualityEvaluation?: QualityEvaluationResult;
+  temporaryEquivalencyMapping?: Map<string, string>;
 }
 
 export interface TriggerResult {

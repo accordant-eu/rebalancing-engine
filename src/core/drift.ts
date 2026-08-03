@@ -18,13 +18,12 @@ export function validateTargetAllocation(target: TargetAllocation): void {
 
 /**
  * Compares current weights to the target allocation to calculate drift.
- * Detects assets in the current portfolio that are not in the target allocation (out of universe).
- * Assumes out of universe assets have a target weight of 0.
  */
 export function calculateDrift(
   currentWeights: WeightResult[],
   target: TargetAllocation,
   policy: RebalancingPolicy,
+  temporaryEquivalencyMapping?: Map<string, string>
 ): DriftMeasurement[] {
   // Map targets for quick lookup
   const targetMap = new Map<string, number>();
@@ -35,19 +34,25 @@ export function calculateDrift(
   const measurements: DriftMeasurement[] = [];
   const processedInstruments = new Set<string>();
 
-  // Calculate drift for all currently held assets
+  // If there's an equivalency mapping, we aggregate the current weights of substitutes 
+  // into their primary targets to prevent artificial drift during TLH.
+  const effectiveCurrentWeights = new Map<string, number>();
   for (const cw of currentWeights) {
-    const instrumentId = cw.instrumentId;
+    const primaryId = temporaryEquivalencyMapping?.get(cw.instrumentId) || cw.instrumentId;
+    const existing = effectiveCurrentWeights.get(primaryId) || 0;
+    effectiveCurrentWeights.set(primaryId, existing + cw.weight);
+  }
+
+  // Calculate drift for all effectively held assets
+  for (const [instrumentId, aggregatedWeight] of effectiveCurrentWeights.entries()) {
     processedInstruments.add(instrumentId);
 
     const targetWeight = targetMap.get(instrumentId) || 0;
-    const absoluteDrift = toDecimal(cw.weight).minus(targetWeight).toNumber();
+    const absoluteDrift = toDecimal(aggregatedWeight).minus(targetWeight).toNumber();
     let relativeDrift = 0;
     if (targetWeight > 0) {
       relativeDrift = toDecimal(absoluteDrift).div(targetWeight).toNumber();
-    } else if (cw.weight > 0) {
-      // If target is 0 but we hold it, relative drift is undefined or functionally infinite.
-      // We set it to 1 (100%) as a fallback indicator of total drift away from target.
+    } else if (aggregatedWeight > 0) {
       relativeDrift = 1;
     }
 
@@ -61,7 +66,7 @@ export function calculateDrift(
 
     measurements.push({
       instrumentId,
-      currentWeight: cw.weight,
+      currentWeight: aggregatedWeight,
       targetWeight,
       absoluteDrift,
       relativeDrift,
