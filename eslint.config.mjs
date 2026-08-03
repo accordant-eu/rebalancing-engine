@@ -1,5 +1,14 @@
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import Module from 'module';
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function(id) {
+  if (id === 'typescript') {
+    return originalRequire.call(this, 'typescript6');
+  }
+  return originalRequire.call(this, id);
+};
+
+const eslint = (await import('@eslint/js')).default;
+const tseslint = (await import('typescript-eslint')).default;
 
 export default tseslint.config(eslint.configs.recommended, ...tseslint.configs.recommended, {
   rules: {
