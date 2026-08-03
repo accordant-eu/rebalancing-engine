@@ -57,9 +57,14 @@ export class ProjectedGradientDescent {
     }
     const lr = 1 / maxEigenVal;
 
+    let lastYield = Date.now();
     for (let iter = 0; iter < maxIters; iter++) {
-      if (iter % 100 === 0) {
+      // Yield to the event loop if we've been running synchronously for more than 10ms
+      // This prevents O(N^2) loops from blocking the main thread for seconds.
+      const now = Date.now();
+      if (now - lastYield > 10) {
         await new Promise(resolve => setImmediate(resolve));
+        lastYield = Date.now();
       }
 
       // 1. Calculate gradient: g = Cov * w - lambda * mu

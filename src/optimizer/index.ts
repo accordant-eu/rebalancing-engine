@@ -39,6 +39,9 @@ export class DynamicOptimizerService {
       }
 
       const result = await this.solver.solve(cov, mu, lambda, targetSum);
+      if (!result.converged) {
+        throw new Error(`CRITICAL: Optimizer failed to converge for Model ${model.modelId} (${model.name}). Aborting target update.`);
+      }
       const weights = result.weights;
 
       const targets: TargetWeight[] = [];
@@ -64,7 +67,11 @@ export class DynamicOptimizerService {
                 maxIdx = i;
             }
         }
-        activeTargets[maxIdx].weight = Number((activeTargets[maxIdx].weight + diff).toFixed(4));
+        let adjustedWeight = activeTargets[maxIdx].weight + diff;
+        if (adjustedWeight < 0) {
+            throw new Error(`CRITICAL: Rounding adjustment resulted in negative weight ${adjustedWeight} for Model ${model.modelId}`);
+        }
+        activeTargets[maxIdx].weight = Number(adjustedWeight.toFixed(4));
         
         const newSum = activeTargets.reduce((acc, t) => acc + t.weight, 0);
         if (Math.abs(newSum - targetSum) > 1e-4) {
