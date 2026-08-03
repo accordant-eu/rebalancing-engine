@@ -67,7 +67,7 @@ export class DynamicOptimizerService {
                 maxIdx = i;
             }
         }
-        let adjustedWeight = activeTargets[maxIdx].weight + diff;
+        const adjustedWeight = activeTargets[maxIdx].weight + diff;
         if (adjustedWeight < 0) {
             throw new Error(`CRITICAL: Rounding adjustment resulted in negative weight ${adjustedWeight} for Model ${model.modelId}`);
         }
