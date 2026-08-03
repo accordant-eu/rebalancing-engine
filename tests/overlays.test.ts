@@ -1,7 +1,6 @@
 import { OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay } from '../src/core/overlays';
 import { EvaluationState } from '../src/core/quality';
-import { PriceSnapshot, RebalancingPolicy, TargetAllocation, TradeProposal } from '../src/models/domain';
-import { ValuationResult } from '../src/core/valuation';
+import { PriceSnapshot, RebalancingPolicy, TargetAllocation, TradeProposal, ValuationResult } from '../src/models/domain';
 
 describe('Execution Overlays (TLH)', () => {
   const policy: RebalancingPolicy = {
@@ -51,10 +50,9 @@ describe('Execution Overlays (TLH)', () => {
     estimatedTco: 0
   };
 
-  it('OpportunisticLossHarvestingOverlay identifies losses and generates TLH trades', () => {
+  it('OpportunisticLossHarvestingOverlay identifies losses and generates TLH trades with metadata', () => {
     const overlay = new OpportunisticLossHarvestingOverlay();
     
-    // An empty drift proposal
     const proposal: TradeProposal = {
       trades: [],
       estimatedPostTradeCash: 0,
@@ -73,67 +71,98 @@ describe('Execution Overlays (TLH)', () => {
       estimatedValue: 900,
       lotAllocations: [
         { lotId: 'lot1', quantity: 10, estimatedValue: 900, unitCost: 100, acquisitionDate: '2026-01-01' }
-      ]
+      ],
+      metadata: { origin: 'OpportunisticLossHarvestingOverlay', reason: 'TLH_HARVEST' }
     });
     expect(newProposal.trades[1]).toEqual({
       instrumentId: 'VOO',
       direction: 'BUY',
       quantity: 10,
       estimatedPrice: 90,
-      estimatedValue: 900
+      estimatedValue: 900,
+      metadata: { origin: 'OpportunisticLossHarvestingOverlay', reason: 'TLH_HARVEST' }
     });
     
-    expect(evaluationState.temporaryEquivalencyMapping?.get('VOO')).toBe('IVV');
+    expect(newProposal.temporaryEquivalencyMapping?.get('VOO')).toBe('IVV');
     expect(newProposal.warnings[0].code).toBe('TLH_HARVEST_GENERATED');
+    
+    // Ensure purity: original proposal is untouched
+    expect(proposal.trades.length).toBe(0);
   });
 
-  it('OpportunisticLossHarvestingOverlay skips harvesting if no substitute exists', () => {
+  it('OpportunisticLossHarvestingOverlay ignores NaN, 0, or negative inputs', () => {
     const overlay = new OpportunisticLossHarvestingOverlay();
     
-    const stateWithoutSubstitutes = {
+    const badValuation: ValuationResult = {
+      ...valuation,
+      holdings: [
+        {
+          instrumentId: 'IVV',
+          quantity: 10,
+          price: NaN,
+          marketValue: 900,
+          taxLots: [
+            { lotId: 'lot1', quantity: 10, unitCost: -100, acquisitionDate: '2026-01-01' },
+            { lotId: 'lot2', quantity: NaN, unitCost: 100, acquisitionDate: '2026-01-01' },
+            { lotId: 'lot3', quantity: 10, unitCost: 100, acquisitionDate: '2026-01-01' } // Valid lot, but bad price below
+          ]
+        }
+      ]
+    };
+
+    const badPriceSnapshot: PriceSnapshot = {
+      prices: { 'IVV': 0, 'VOO': NaN }
+    };
+
+    const stateWithBadInputs: EvaluationState = {
       ...evaluationState,
-      policy: { ...policy, equivalencyGroups: [] }
+      valuation: badValuation
     };
 
-    const proposal: TradeProposal = {
-      trades: [],
-      estimatedPostTradeCash: 0,
-      warnings: [],
-      executionTargetMode: 'full_reset'
-    };
+    const proposal: TradeProposal = { trades: [], estimatedPostTradeCash: 0, warnings: [], executionTargetMode: 'full_reset' };
 
-    const newProposal = overlay.apply(proposal, stateWithoutSubstitutes, priceSnapshot);
-    expect(newProposal.trades.length).toBe(0); // Skipped
+    const newProposal = overlay.apply(proposal, stateWithBadInputs, badPriceSnapshot);
+    expect(newProposal.trades.length).toBe(0); 
   });
 
-  it('WashSaleLockoutOverlay suppresses TLH SELL if a drift BUY exists for the same asset', () => {
+  it('WashSaleLockoutOverlay suppresses TLH trades if a drift BUY exists for any asset in the equivalency group', () => {
     const generativeOverlay = new OpportunisticLossHarvestingOverlay();
     const constraintOverlay = new WashSaleLockoutOverlay();
     
-    // Suppose the drift strategy ALREADY generated a BUY for IVV because we deposited cash
+    // The drift strategy ALREADY generated a BUY for IVV (tagged as DRIFT_STRATEGY)
+    const driftTrade = { 
+      instrumentId: 'IVV', 
+      direction: 'BUY' as const, 
+      quantity: 5, 
+      estimatedPrice: 90, 
+      estimatedValue: 450,
+      metadata: { origin: 'DRIFT_STRATEGY' }
+    };
+    
     const proposal: TradeProposal = {
-      trades: [
-        { instrumentId: 'IVV', direction: 'BUY', quantity: 5, estimatedPrice: 90, estimatedValue: 450 }
-      ],
+      trades: [driftTrade],
       estimatedPostTradeCash: 0,
       warnings: [],
       executionTargetMode: 'full_reset'
     };
 
-    // 1. Generative overlay injects TLH SELL for IVV (at a loss)
+    // 1. Generative overlay injects TLH SELL for IVV (at a loss) and BUY for VOO
     const proposalAfterGenerative = generativeOverlay.apply(proposal, evaluationState, priceSnapshot);
-    expect(proposalAfterGenerative.trades.length).toBe(3); // Drift BUY IVV, TLH SELL IVV, TLH BUY VOO
+    expect(proposalAfterGenerative.trades.length).toBe(3); 
 
-    // 2. Constraint overlay detects the overlap (BUY IVV and SELL IVV at a loss) and suppresses the SELL
+    // 2. Constraint overlay detects the overlap (Drift BUY IVV clashes with TLH SELL IVV/BUY VOO group)
     const finalProposal = constraintOverlay.apply(proposalAfterGenerative, evaluationState, priceSnapshot);
     
-    expect(finalProposal.trades.length).toBe(2);
-    // The TLH SELL should be gone!
-    expect(finalProposal.trades.find(t => t.direction === 'SELL' && t.instrumentId === 'IVV')).toBeUndefined();
-    // The Drift BUY should remain
-    expect(finalProposal.trades.find(t => t.direction === 'BUY' && t.instrumentId === 'IVV')).toBeDefined();
+    // The TLH SELL and BUY should be gone!
+    expect(finalProposal.trades.length).toBe(1);
     
-    // Warning emitted
-    expect(finalProposal.warnings.find(w => w.code === 'WASH_SALE_LOCKOUT')).toBeDefined();
+    // The Drift BUY must remain
+    expect(finalProposal.trades[0]).toEqual(driftTrade);
+    
+    // Warning emitted with full auditability
+    const warning = finalProposal.warnings.find(w => w.code === 'WASH_SALE_LOCKOUT');
+    expect(warning).toBeDefined();
+    expect(warning?.instrumentId).toBe('IVV');
+    expect(warning?.estimatedValue).toBe(900); // the suppressed TLH sell value
   });
 });

@@ -217,6 +217,7 @@ export interface ProposedTrade {
   estimatedPrice: number;
   estimatedValue: number;
   lotAllocations?: ProposedLotAllocation[];
+  metadata?: Record<string, string>;
 }
 
 export interface ProposedLotAllocation {

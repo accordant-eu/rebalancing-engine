@@ -39,9 +39,8 @@ export class OpportunisticLossHarvestingOverlay implements ExecutionOverlay {
       if (!holding.taxLots) continue;
       
       const currentPrice = priceSnapshot.prices[holding.instrumentId];
-      if (!currentPrice || currentPrice <= 0) continue;
+      if (currentPrice === undefined || currentPrice <= 0 || Number.isNaN(currentPrice) || !Number.isFinite(currentPrice)) continue;
 
-      // Find the equivalency group for this holding to locate a substitute
       let substitute: string | undefined;
       for (const group of policy.equivalencyGroups) {
         if (group.includes(holding.instrumentId)) {
@@ -50,15 +49,20 @@ export class OpportunisticLossHarvestingOverlay implements ExecutionOverlay {
         }
       }
 
-      if (!substitute) continue; // No substitute available
+      if (!substitute) continue;
+      
+      const substitutePrice = priceSnapshot.prices[substitute];
+      if (substitutePrice === undefined || substitutePrice <= 0 || Number.isNaN(substitutePrice) || !Number.isFinite(substitutePrice)) continue;
 
       for (const lot of holding.taxLots) {
-        if (!lot.unitCost) continue;
+        if (lot.unitCost === undefined || lot.unitCost <= 0 || Number.isNaN(lot.unitCost) || !Number.isFinite(lot.unitCost)) continue;
+        if (lot.quantity === undefined || lot.quantity <= 0 || Number.isNaN(lot.quantity) || !Number.isFinite(lot.quantity)) continue;
+        if (lot.quantity > holding.quantity) continue;
 
         const lossPct = (lot.unitCost - currentPrice) / lot.unitCost;
         if (lossPct > lossThreshold) {
-          // Opportunistically harvest this loss
           const estimatedValue = lot.quantity * currentPrice;
+          if (estimatedValue <= 0 || Number.isNaN(estimatedValue) || !Number.isFinite(estimatedValue)) continue;
           
           const sellAllocation: ProposedLotAllocation = {
             lotId: lot.lotId,
@@ -74,46 +78,43 @@ export class OpportunisticLossHarvestingOverlay implements ExecutionOverlay {
             quantity: lot.quantity,
             estimatedPrice: currentPrice,
             estimatedValue: estimatedValue,
-            lotAllocations: [sellAllocation]
+            lotAllocations: [sellAllocation],
+            metadata: { origin: 'OpportunisticLossHarvestingOverlay', reason: 'TLH_HARVEST' }
           });
 
-          // Buy the substitute
-          const substitutePrice = priceSnapshot.prices[substitute];
-          if (substitutePrice && substitutePrice > 0) {
-            newTrades.push({
-              instrumentId: substitute,
-              direction: 'BUY',
-              quantity: estimatedValue / substitutePrice,
-              estimatedPrice: substitutePrice,
-              estimatedValue: estimatedValue
-            });
-            tlhInjectedSubstitutes.set(substitute, holding.instrumentId);
-          }
+          newTrades.push({
+            instrumentId: substitute,
+            direction: 'BUY',
+            quantity: estimatedValue / substitutePrice,
+            estimatedPrice: substitutePrice,
+            estimatedValue: estimatedValue,
+            metadata: { origin: 'OpportunisticLossHarvestingOverlay', reason: 'TLH_HARVEST' }
+          });
+          
+          tlhInjectedSubstitutes.set(substitute, holding.instrumentId);
         }
       }
     }
 
-    if (newTrades.length > 0) {
-      // Inject the Equivalency Mappings into the EvaluationState so the 
-      // QualityPipeline/Drift Calculator doesn't reject it as tracking error.
-      if (!state.temporaryEquivalencyMapping) {
-        state.temporaryEquivalencyMapping = new Map<string, string>();
-      }
-      for (const [sub, pri] of tlhInjectedSubstitutes.entries()) {
-        state.temporaryEquivalencyMapping.set(sub, pri);
-      }
-      
-      // Mutate proposal
-      proposal.trades.push(...newTrades);
-      
-      // Warn about TLH overrides
-      proposal.warnings.push({
-        code: 'TLH_HARVEST_GENERATED' as any,
-        message: 'Tax-loss harvesting opportunity identified and injected into the proposal.'
-      });
+    if (newTrades.length === 0) {
+      return proposal;
     }
 
-    return proposal;
+    const newProposal: TradeProposal = {
+      ...proposal,
+      trades: [...proposal.trades, ...newTrades],
+      warnings: [...proposal.warnings, {
+        code: 'TLH_HARVEST_GENERATED',
+        message: 'Tax-loss harvesting opportunity identified and injected into the proposal.'
+      }],
+      temporaryEquivalencyMapping: proposal.temporaryEquivalencyMapping ? new Map(proposal.temporaryEquivalencyMapping) : new Map()
+    };
+
+    for (const [sub, pri] of tlhInjectedSubstitutes.entries()) {
+      newProposal.temporaryEquivalencyMapping!.set(sub, pri);
+    }
+
+    return newProposal;
   }
 }
 
@@ -128,52 +129,69 @@ export class WashSaleLockoutOverlay implements ExecutionOverlay {
     state: EvaluationState,
     priceSnapshot: PriceSnapshot
   ): TradeProposal {
-    const buyInstruments = new Set<string>();
-    
-    // Pass 1: Identify all buys
-    for (const trade of proposal.trades) {
-      if (trade.direction === 'BUY') {
-        buyInstruments.add(trade.instrumentId);
+    const policy = state.policy;
+    if (!policy.equivalencyGroups) {
+      return proposal; // Cannot resolve wash sales without equivalency definitions
+    }
+
+    // A wash sale occurs if we BUY an asset in an equivalency group, and SELL an asset in that same group at a loss.
+    // To prevent it, we suppress the TLH trades (both the SELL and the BUY of the substitute) if there's any BUY in that group.
+
+    // 1. Map each instrument to its equivalency group
+    const instrumentToGroup = new Map<string, string[]>();
+    for (const group of policy.equivalencyGroups) {
+      for (const inst of group) {
+        instrumentToGroup.set(inst, group);
       }
     }
 
-    // Pass 2: Filter out sells for assets that are being bought, ONLY if they are at a loss.
-    // Actually, any wash sale is illegal. We suppress the SELL trade.
-    // Wait, if it's a drift sell, suppressing it might break the target. 
-    // Usually, we only suppress the TLH sell. But how do we know which sell is TLH vs Drift?
-    // In our pipeline, we can just block the trade if it has lotAllocations that are at a loss.
-    
-    let hasWashSale = false;
+    // 2. Identify all groups that have a BUY trade (that is NOT a TLH buy). We prioritize drift buys.
+    const groupsWithDriftBuy = new Set<string[]>();
+    for (const trade of proposal.trades) {
+      if (trade.direction === 'BUY' && trade.metadata?.origin !== 'OpportunisticLossHarvestingOverlay') {
+        const group = instrumentToGroup.get(trade.instrumentId);
+        if (group) {
+          groupsWithDriftBuy.add(group);
+        } else {
+          // If the instrument is not in a group, we create a single-element group just for itself
+          groupsWithDriftBuy.add([trade.instrumentId]);
+        }
+      }
+    }
+
+    // 3. Filter out TLH trades that fall into a group that has a drift buy.
+    let hasWashSaleConflict = false;
     const finalTrades: ProposedTrade[] = [];
+    const newWarnings = [...proposal.warnings];
 
     for (const trade of proposal.trades) {
-      if (trade.direction === 'SELL' && buyInstruments.has(trade.instrumentId)) {
-        // Is it a loss sell?
-        let isLoss = false;
-        if (trade.lotAllocations) {
-           for (const lot of trade.lotAllocations) {
-             if (lot.unitCost && trade.estimatedPrice < lot.unitCost) {
-               isLoss = true;
-               break;
-             }
-           }
-        }
+      if (trade.metadata?.origin === 'OpportunisticLossHarvestingOverlay') {
+        const group = instrumentToGroup.get(trade.instrumentId) || [trade.instrumentId];
         
-        if (isLoss) {
-          hasWashSale = true;
-          // Suppress this SELL trade by NOT adding it to finalTrades
+        if (groupsWithDriftBuy.has(group)) {
+          // This TLH trade conflicts with a drift buy in the same equivalency group!
+          // We suppress it.
+          hasWashSaleConflict = true;
+          if (trade.direction === 'SELL') {
+             newWarnings.push({
+               code: 'WASH_SALE_LOCKOUT',
+               message: 'Tax-loss harvesting opportunity bypassed due to overlapping drift buy order within the equivalency group (Wash Sale Prevention).',
+               instrumentId: trade.instrumentId,
+               estimatedValue: trade.estimatedValue
+             });
+          }
           continue; 
         }
       }
       finalTrades.push(trade);
     }
 
-    if (hasWashSale) {
-      proposal.trades = finalTrades;
-      proposal.warnings.push({
-        code: 'WASH_SALE_LOCKOUT' as any,
-        message: 'Tax-loss harvesting opportunity bypassed due to overlapping buy order (Wash Sale Prevention).'
-      });
+    if (hasWashSaleConflict) {
+      return {
+        ...proposal,
+        trades: finalTrades,
+        warnings: newWarnings
+      };
     }
 
     return proposal;

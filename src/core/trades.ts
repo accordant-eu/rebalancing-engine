@@ -91,6 +91,7 @@ export function generateTradeProposal(
       quantity: estimatedValue.div(estimatedPrice).toNumber(),
       estimatedPrice,
       estimatedValue: estimatedValue.toNumber(),
+      metadata: { origin: 'DRIFT_STRATEGY' }
     };
     if (direction === 'SELL') {
       const holding = valuation.holdings.find((h) => h.instrumentId === instrumentId);
