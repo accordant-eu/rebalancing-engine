@@ -3,7 +3,7 @@ import { setupExpressApp } from '../src/api/server';
 import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 import express from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 describe('API Endpoints (Týr Integration)', () => {
   let app: express.Express;

@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 let dbInstance: Database.Database | null = null;
 
@@ -9,7 +9,9 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   }
 
   const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
+  if (dbPath !== ':memory:') {
+    db.pragma('journal_mode = WAL');
+  }
   db.pragma('foreign_keys = ON');
 
   db.exec(`

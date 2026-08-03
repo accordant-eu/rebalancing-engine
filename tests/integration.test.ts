@@ -4,7 +4,7 @@ import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { Orchestrator } from '../src/orchestrator/loop';
 import { initDb, getDb } from '../src/db/sqlite';
 import express from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { BrokerAdapter } from '../src/broker';
 import { TradeProposal, ExecutionContext, PortfolioState } from '../src/models/domain';
 

@@ -19,7 +19,7 @@ import rateLimit from 'express-rate-limit';
 import { Orchestrator } from '../orchestrator/loop';
 import { globalMetrics } from '../services/metrics';
 
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?: Orchestrator) {
