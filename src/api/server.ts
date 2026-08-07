@@ -258,6 +258,11 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     res.json({ ...snapshot, byBrokerType });
   });
 
+  app.get('/api/metrics', forbidViewer, (req, res) => {
+    const tenantId = (req as any).tenantId;
+    res.json(globalMetrics.getTenantSnapshot(tenantId));
+  });
+
   app.post('/api/admin/system/pause', requireSuperadmin, (req, res) => {
     if (orchestrator) orchestrator.pause();
     res.json({ isPaused: true });

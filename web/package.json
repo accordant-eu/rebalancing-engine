@@ -38,8 +38,8 @@
     "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "typescript6": "npm:typescript@^6.0.3",
     "typescript-eslint": "^8.63.0",
+    "typescript6": "npm:typescript@^6.0.3",
     "vite": "^8.0.12",
     "vitest": "^4.1.10"
   }

@@ -71,3 +71,10 @@ export interface StatePayload {
   globalPrices: { prices: Record<string, number> };
   portfolios: Record<string, LiveState>;
 }
+
+export interface TenantMetrics {
+  totalApiCalls: Record<string, number>;
+  rateLimitErrors: Record<string, number>;
+  webhooksProcessed: number;
+  averageLatencyMs: number;
+}

@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react';
-import type { StatePayload } from '../types';
-import { AlertCircle, Eye, AlertTriangle, AlertOctagon, Activity } from 'lucide-react';
+import type { StatePayload, TenantMetrics } from '../types';
+import { AlertCircle, Eye, AlertTriangle, AlertOctagon, Activity, Server } from 'lucide-react';
 
 interface DashboardProps {
   state: StatePayload;
   setSelectedAccountId: (id: string) => void;
   logs: any[];
+  metrics?: TenantMetrics | null;
 }
 
-export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSelectedAccountId }) => {
+export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSelectedAccountId, metrics }) => {
   const accountIds = Object.keys(state.portfolios);
 
   // 1. Calculate Macro Aggregates
@@ -48,6 +49,26 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
 
     return { totalAum, breachedCount, haltedCount, portfoliosWithMetrics };
   }, [state, accountIds]);
+
+  // Calculate drift distribution
+  const driftDistribution = useMemo(() => {
+    const buckets = [
+      { label: '0-1%', max: 0.01, count: 0, color: 'bg-emerald-500' },
+      { label: '1-2%', max: 0.02, count: 0, color: 'bg-emerald-400' },
+      { label: '2-3%', max: 0.03, count: 0, color: 'bg-amber-400' },
+      { label: '3-5%', max: 0.05, count: 0, color: 'bg-orange-500' },
+      { label: '>5%', max: Infinity, count: 0, color: 'bg-rose-500' },
+    ];
+
+    aggregates.portfoliosWithMetrics.forEach(p => {
+      const bucket = buckets.find(b => p.maxDrift <= b.max);
+      if (bucket) bucket.count++;
+    });
+
+    const maxCount = Math.max(...buckets.map(b => b.count));
+    
+    return { buckets, maxCount };
+  }, [aggregates.portfoliosWithMetrics]);
 
   if (accountIds.length === 0) {
     return (
@@ -204,6 +225,67 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
           </div>
         </div>
       )}
+
+      {/* Analytics & Telemetry Layer */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Drift Distribution Chart */}
+        <div className="rounded-2xl border border-slate-200/60 bg-white shadow-soft overflow-hidden flex flex-col p-6 transition-all duration-300 hover:shadow-soft-hover">
+          <div className="text-sm font-bold tracking-wider uppercase text-slate-500 mb-4 flex items-center gap-2">
+            <Activity size={16} />
+            Fleet Drift Distribution
+          </div>
+          <div className="flex-1 flex items-end justify-between gap-2 h-40 mt-4">
+            {driftDistribution.buckets.map(b => {
+              const heightPct = driftDistribution.maxCount > 0 ? (b.count / driftDistribution.maxCount) * 100 : 0;
+              return (
+                <div key={b.label} className="flex flex-col items-center flex-1 group">
+                  <div className="text-xs font-bold text-slate-400 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{b.count}</div>
+                  <div className={`w-full max-w-[40px] rounded-t-md transition-all duration-500 ${b.color} relative overflow-hidden group-hover:opacity-80`} style={{ height: `${Math.max(heightPct, 2)}%` }}>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-500 mt-2">{b.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* System Telemetry */}
+        <div className="rounded-2xl border border-slate-200/60 bg-white shadow-soft overflow-hidden flex flex-col p-6 transition-all duration-300 hover:shadow-soft-hover">
+          <div className="text-sm font-bold tracking-wider uppercase text-slate-500 mb-4 flex items-center gap-2">
+            <Server size={16} />
+            System Telemetry & API Health
+          </div>
+          {metrics ? (
+            <div className="grid grid-cols-2 gap-4 flex-1">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total API Calls</span>
+                <span className="text-2xl font-bold font-mono text-slate-700">{Object.values(metrics.totalApiCalls).reduce((a, b) => a + b, 0).toLocaleString()}</span>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rate Limit Errors</span>
+                <span className={`text-2xl font-bold font-mono ${Object.values(metrics.rateLimitErrors).reduce((a,b)=>a+b,0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                  {Object.values(metrics.rateLimitErrors).reduce((a, b) => a + b, 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Webhooks Processed</span>
+                <span className="text-2xl font-bold font-mono text-slate-700">{metrics.webhooksProcessed.toLocaleString()}</span>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Broker Latency</span>
+                <span className="text-2xl font-bold font-mono text-sky-600 flex items-baseline gap-1">
+                  {metrics.averageLatencyMs} <span className="text-sm">ms</span>
+                </span>
+              </div>
+            </div>
+          ) : (
+             <div className="flex-1 flex items-center justify-center text-slate-400 text-sm italic">
+                Loading telemetry...
+             </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

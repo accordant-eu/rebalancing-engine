@@ -181,4 +181,4 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 85 | 2026-08-01 | Live Agent v3.0 Foundations | Architecture | Implemented Asynchronous WebSockets, End-of-Day (EOD) Reconciliation cron jobs, and Corporate Actions Circuit Breakers for safety. | [Log](docs/iterations/2026-08-01-v3-features.md) |
 | 86 | 2026-08-03 | Execution Overlays (TLH) & Optimizer Fixes | Architecture | Resolved Optimizer state bugs and implemented the composable Execution Overlay Pipeline for Tax-Loss Harvesting (TLH). | [Log](docs/iterations/2026-08-03.md) |
 
-## Active Tranche Focus
+## Active Tranche Focus| 87 | 2026-08-07 | Command Center Observability | UI & API MVP | Enhanced Command Center Dashboard with Fleet Drift Distribution chart and System Telemetry panel. | [Log](docs/iterations/2026-08-07.md) |

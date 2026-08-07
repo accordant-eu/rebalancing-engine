@@ -49,6 +49,15 @@ export class MetricsService {
       averageLatencyMs: Math.round(this.averageLatencyMs),
     };
   }
+
+  public getTenantSnapshot(tenantId: string): BrokerMetricsSnapshot {
+    return {
+      totalApiCalls: { [tenantId]: this.totalApiCalls[tenantId] || 0 },
+      rateLimitErrors: { [tenantId]: this.rateLimitErrors[tenantId] || 0 },
+      webhooksProcessed: this.webhooksProcessed, // Shared/Global for now
+      averageLatencyMs: Math.round(this.averageLatencyMs), // Shared/Global average for now
+    };
+  }
 }
 
 // Global singleton for the in-memory MVP phase

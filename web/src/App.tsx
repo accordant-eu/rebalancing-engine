@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Info, Zap } from 'lucide-react';
 
-import type { LiveState, ModelMandate, StatePayload } from './types';
+import type { LiveState, ModelMandate, StatePayload, TenantMetrics } from './types';
 import { MandateBuilderForm } from './components/MandateBuilderForm';
 import { TenantManagementTab } from './components/admin/TenantManagementTab';
 import { BrokerIntegrationTab } from './components/admin/BrokerIntegrationTab';
@@ -70,6 +70,7 @@ function App() {
   const [currentTab, setCurrentTab] = useState<'inbox' | 'fleet' | 'models' | 'tenants' | 'broker' | 'adminModels' | 'sysops' | 'assets' | 'users'>('fleet');
   
   const [state, setState] = useState<StatePayload | null>(null);
+  const [metrics, setMetrics] = useState<TenantMetrics | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [models, setModels] = useState<ModelMandate[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
@@ -130,13 +131,27 @@ function App() {
       } catch(e) {}
     };
 
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch('/api/metrics', { headers });
+        if (res.ok) {
+          const payload = await res.json();
+          setMetrics(payload);
+        }
+      } catch (_e) {
+        console.error('Failed to fetch metrics', _e);
+      }
+    };
+
     fetchState();
     fetchLogs();
     fetchModels();
+    fetchMetrics();
     
     const interval = setInterval(() => {
       fetchState();
       fetchLogs();
+      fetchMetrics();
     }, 2000);
 
     return () => clearInterval(interval);
@@ -228,7 +243,7 @@ function App() {
 
   const renderHeatmap = () => {
     if (!state) return <div className="metricLabel">Waiting for state...</div>;
-    return <CommandCenterDashboard state={state} setSelectedAccountId={setSelectedAccountId} logs={logs} />;
+    return <CommandCenterDashboard state={state} setSelectedAccountId={setSelectedAccountId} logs={logs} metrics={metrics} />;
   };
 
   const renderDetailedView = () => {
