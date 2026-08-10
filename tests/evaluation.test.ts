@@ -14,7 +14,7 @@ function scenarioById(id: string) {
 
 describe('Rebalance Evaluation', () => {
   it('exposes supported strategies in stable order', () => {
-    expect(supportedStrategyTypes()).toEqual(['calendar', 'manual', 'threshold']);
+    expect(supportedStrategyTypes()).toEqual(['calendar', 'manual', 'tax_aware_us', 'threshold']);
   });
 
   it('defaults omitted strategy policies to threshold evaluation', () => {

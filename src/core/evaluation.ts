@@ -11,7 +11,7 @@ import {
   TradeProposal,
   TriggerResult,
 } from '../models/domain';
-import { CalendarRebalanceStrategy, ManualRebalanceStrategy, ThresholdStrategy } from '../strategy';
+import { CalendarRebalanceStrategy, ManualRebalanceStrategy, ThresholdStrategy, TaxAwareUsStrategy, StandardRuleBasedTradeGenerator, TaxAwareUsTradeGenerator } from '../strategy';
 import {
   applyCashFlowSchedules,
   CashFlowScheduleSummary,
@@ -34,12 +34,19 @@ import {
   ValuationResult,
   WeightResult,
 } from './valuation';
+import { TradeOptimizerRegistry, TradeOptimizerContext } from './trade-optimizer';
 
 const STRATEGY_REGISTRY: Record<RebalancingStrategyType, StrategyInterface> = {
   threshold: new ThresholdStrategy(),
   manual: new ManualRebalanceStrategy(),
   calendar: new CalendarRebalanceStrategy(),
+  tax_aware_us: new TaxAwareUsStrategy(),
 };
+
+// Initialize TradeOptimizerRegistry
+const optimizerRegistry = TradeOptimizerRegistry.getInstance();
+optimizerRegistry.register(new StandardRuleBasedTradeGenerator());
+optimizerRegistry.register(new TaxAwareUsTradeGenerator());
 
 import { QualityIndicator, EvaluationState } from './quality';
 
@@ -89,17 +96,26 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
     }
   }
 
+  const optimizerContext: TradeOptimizerContext = {
+    valuation,
+    weights,
+    driftMeasurements,
+    targetAllocation: input.targetAllocation,
+    priceSnapshot: input.priceSnapshot,
+    portfolioState: effectivePortfolioState,
+    policy: input.policy,
+    cashFlowScheduleSummary,
+    frictionModel: input.frictionModel,
+    executionOverlays,
+  };
+
+  const optimizer = optimizerRegistry.get(input.policy.optimizerType ?? (input.policy.strategyType === 'tax_aware_us' ? 'tax_aware_us' : 'standard_rule_based'));
+  const rawProposal = optimizer.generateProposal(optimizerContext);
+  // Ensure sync compatibility for current evaluation pipeline
+  const tradeProposalResult: TradeProposal = 'then' in rawProposal ? (rawProposal as any) : rawProposal;
+
   let tradeProposal = trigger.isTriggered
-    ? generateTradeProposal(
-        valuation,
-        input.targetAllocation,
-        input.priceSnapshot,
-        input.policy,
-        cashFlowScheduleSummary,
-        input.frictionModel,
-        undefined,
-        executionOverlays
-      )
+    ? tradeProposalResult
     : {
         trades: [],
         estimatedPostTradeCash: valuation.cash,
