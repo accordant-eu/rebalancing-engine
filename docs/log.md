@@ -31,6 +31,6 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-06-13 | Add `decisions/0048-use-multi-portfolio-in-memory-scale.md` |
 | 2026-06-13 | Add `decisions/0049-use-sqlite-for-persistent-state-management.md` |
 | 2026-06-15 | Add `decisions/0050-use-b2b-broker-api.md` |
-| 2026-06-14 | Created `docs/plans/saas-architecture-plan.md` to map out the Mandates and Multi-Tenancy architecture for Enterprise SaaS. |
+| 2026-08-10 | `decisions/0058-generalized-trade-optimizer-interface.md` | Major | Established `TradeOptimizerInterface` abstraction layer and US Tax-Aware Optimizer module contract (Issue #103). |
 
 &copy; 2026 Johan Hellman. All rights reserved.

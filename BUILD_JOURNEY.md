@@ -87,6 +87,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0050 | 2026-06-17 | Establish baseline for async dynamic targeting capabilities (VaR, EF) via B2B broker API | Accepted | [ADR-0050](docs/decisions/0050-use-b2b-broker-api.md) |
 | 0051 | 2026-06-18 | Use Composite Asset Schema for Instrument Identity | Accepted | [ADR-0051](docs/decisions/0051-use-composite-asset-schema-for-instrument-identity.md) |
 | 0052 | 2026-06-18 | Use Tenant API Keys for B2B Authentication | Accepted | [ADR-0052](docs/decisions/0052-use-tenant-api-keys-for-b2b-authentication.md) |
+| 0058 | 2026-08-10 | Generalized Trade Optimizer Interface and External Tax-Aware Module | Accepted | [ADR-0058](docs/decisions/0058-generalized-trade-optimizer-interface.md) |
 
 
 | Iteration | Date | Theme | Area | High-Level Summary | Details |
@@ -182,3 +183,4 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 86 | 2026-08-03 | Execution Overlays (TLH) & Optimizer Fixes | Architecture | Resolved Optimizer state bugs and implemented the composable Execution Overlay Pipeline for Tax-Loss Harvesting (TLH). | [Log](docs/iterations/2026-08-03.md) |
 
 ## Active Tranche Focus| 87 | 2026-08-07 | Command Center Observability | UI & API MVP | Enhanced Command Center Dashboard with Fleet Drift Distribution chart and System Telemetry panel. | [Log](docs/iterations/2026-08-07.md) |
+| 88 | 2026-08-10 | Generalized Trade Optimizer & US Tax Module | Architecture | Established `TradeOptimizerInterface` abstraction layer and implemented Tranche 1 of US Tax-Aware Optimizer module contract (Issue #103). | [Log](docs/iterations/2026-08-10.md) |
