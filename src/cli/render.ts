@@ -39,7 +39,7 @@ export interface BatchOutput {
 
 export interface InspectOutput {
   command: 'inspect';
-  subject: 'scenarios' | 'strategies' | 'policies';
+  subject: 'scenarios' | 'strategies' | 'policies' | 'optimizers';
   items: unknown[];
 }
 
@@ -287,6 +287,16 @@ function renderInspectSummary(output: InspectOutput): string {
         ...output.items.map((item) => {
           const field = item as { name: string; required: boolean; description: string };
           return `- ${field.name}${field.required ? ' (required)' : ''}: ${field.description}`;
+        }),
+      ]
+        .join('\n')
+        .concat('\n');
+    case 'optimizers':
+      return [
+        `Optimizers: ${output.items.length}`,
+        ...output.items.map((item) => {
+          const opt = item as { id: string; name: string; description: string };
+          return `- ${opt.id}: ${opt.name} - ${opt.description}`;
         }),
       ]
         .join('\n')

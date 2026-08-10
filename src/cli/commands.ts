@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { supportedStrategyTypes } from '../core/evaluation';
+import { TradeOptimizerRegistry } from '../core/trade-optimizer';
 import { runScenario, runScenarios, validateScenarioExpectations } from '../runner';
 import { UsageError } from './errors';
 import { BATCH_HELP, INSPECT_HELP, ROOT_HELP, RUN_HELP, VALIDATE_HELP } from './help';
@@ -321,6 +322,16 @@ function executeInspect(
         },
       };
     }
+    case 'optimizers':
+      return {
+        exitCode: 0,
+        output: '',
+        data: {
+          command: 'inspect',
+          subject: 'optimizers',
+          items: TradeOptimizerRegistry.getInstance().list(),
+        },
+      };
     case 'strategies':
       return {
         exitCode: 0,
@@ -359,9 +370,15 @@ function renderCommandOutput(
     return result;
   }
   return {
-    exitCode: result.exitCode,
+    ...result,
     output: renderOutput(result.data, format, quiet),
   };
+}
+
+function readVersionFromPackageJson(cwd: string): string {
+  const packagePath = path.resolve(cwd, 'package.json');
+  const packageJson = readJsonFile<{ version?: string }>(packagePath, cwd);
+  return packageJson.version ?? '0.0.0';
 }
 
 function exitCodeForStatus(

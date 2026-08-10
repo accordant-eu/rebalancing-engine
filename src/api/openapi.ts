@@ -366,7 +366,7 @@ Authentication is handled via a JWT token.
                   properties: {
                     accountId: { type: 'string' },
                     evaluatedAt: { type: 'string', format: 'date-time' },
-                    strategyType: { type: 'string', enum: ['threshold', 'calendar', 'manual'] },
+                    strategyType: { type: 'string', enum: ['threshold', 'calendar', 'manual', 'tax_aware_us'] },
                     rebalanceDue: { type: 'boolean' },
                     reason: { type: 'string', nullable: true },
                     driftByInstrument: {
@@ -735,7 +735,8 @@ Authentication is handled via a JWT token.
         type: 'object',
         properties: {
           evaluationDate: { type: 'string', format: 'date' },
-          strategyType: { type: 'string', enum: ['threshold', 'manual', 'calendar'] },
+          strategyType: { type: 'string', enum: ['threshold', 'manual', 'calendar', 'tax_aware_us'] },
+          optimizerType: { type: 'string', enum: ['standard_rule_based', 'tax_aware_us'] },
           executionTargetMode: { type: 'string', enum: ['full_reset', 'boundary'] },
           boundaryBandMode: { type: 'string', enum: ['absolute', 'relative'] },
           sellSelectionMode: { type: 'string', enum: ['FIFO', 'LIFO', 'HIGHEST_COST', 'LOWEST_COST'] },
