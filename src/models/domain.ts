@@ -118,6 +118,7 @@ export interface PortfolioState {
   subscriptionType?: SubscriptionType;
   brokerAccountId?: string;
   circuitBreakerStatus?: 'open' | 'closed';
+  taxJurisdiction?: string;
   cash: number;
   holdings: Holding[];
   cashFlows?: CashFlow[];
@@ -139,7 +140,7 @@ export interface PriceSnapshot {
   asOf?: string; // Optional ISO timestamp for audit traceability
 }
 
-export type RebalancingStrategyType = 'threshold' | 'manual' | 'calendar';
+export type RebalancingStrategyType = 'threshold' | 'manual' | 'calendar' | 'tax_aware_us';
 
 export type ExecutionTargetMode = 'full_reset' | 'boundary';
 
@@ -161,6 +162,8 @@ export interface RebalancingPolicy {
   evaluationDate?: string;
   // Strategy defaults to threshold when omitted for backward compatibility.
   strategyType?: RebalancingStrategyType;
+  // Optimizer type defaults to standard_rule_based when omitted.
+  optimizerType?: 'standard_rule_based' | 'tax_aware_us' | string;
   // Trade sizing defaults to full reset. Boundary mode is a threshold-specific transaction-cost-aware proof point.
   executionTargetMode?: ExecutionTargetMode;
   // Boundary sizing defaults to absolute bands. Relative mode requires relativeDriftTolerance.
@@ -241,7 +244,8 @@ export type ProposalWarningCode =
   | 'FRICTION_COST_EXCEEDED'
   | 'QUALITY_EVALUATION_FAILED'
   | 'TLH_HARVEST_GENERATED'
-  | 'WASH_SALE_LOCKOUT';
+  | 'WASH_SALE_LOCKOUT'
+  | 'TAX_AWARE_US_STUB';
 
 export interface ProposalWarning {
   code: ProposalWarningCode;

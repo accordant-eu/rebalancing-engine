@@ -66,5 +66,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0055: Continuous Broker State Synchronization](0055-continuous-broker-state-sync.md) - Accepted
 * [ADR-0056: Deferred Live Spread Fetching for Slippage Modeling](0056-deferred-live-spread-slippage.md) - Accepted
 * [ADR-0057: Use Lucide-React for UI Iconography](0057-use-lucide-react-for-ui-iconography.md) - Accepted
+* [ADR-0058: Generalized Trade Optimizer Interface and External Tax-Aware Module](0058-generalized-trade-optimizer-interface.md) - Accepted
 
 &copy; 2026 Johan Hellman. All rights reserved.
