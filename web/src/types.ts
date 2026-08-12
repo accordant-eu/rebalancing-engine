@@ -78,3 +78,15 @@ export interface TenantMetrics {
   webhooksProcessed: number;
   averageLatencyMs: number;
 }
+
+export interface SystemStreamEvent {
+  type: string;
+  accountId: string;
+  tenantId: string;
+  timestamp: string;
+  eventId: string;
+  reason?: string;
+  proposal?: any;
+  grossNotional?: number;
+  tradesCount?: number;
+}

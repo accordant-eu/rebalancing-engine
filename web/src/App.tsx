@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Info, Zap } from 'lucide-react';
 
-import type { LiveState, ModelMandate, StatePayload, TenantMetrics } from './types';
+import type { LiveState, ModelMandate, StatePayload, SystemStreamEvent, TenantMetrics } from './types';
 import { MandateBuilderForm } from './components/MandateBuilderForm';
 import { TenantManagementTab } from './components/admin/TenantManagementTab';
 import { BrokerIntegrationTab } from './components/admin/BrokerIntegrationTab';
@@ -75,6 +75,9 @@ function App() {
   const [models, setModels] = useState<ModelMandate[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
+  const [streamStatus, setStreamStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const [streamEvents, setStreamEvents] = useState<SystemStreamEvent[]>([]);
+
   const handleRunOptimizer = async () => {
     try {
       const headers = { 'Content-Type': 'application/json' } as any;
@@ -147,6 +150,32 @@ function App() {
     fetchLogs();
     fetchModels();
     fetchMetrics();
+
+    // EventSource Real-Time Stream
+    setStreamStatus('connecting');
+    const es = new EventSource(`/api/events/stream?token=${encodeURIComponent(tenantToken)}`);
+
+    es.onopen = () => {
+      setStreamStatus('connected');
+    };
+
+    es.onmessage = (evt) => {
+      if (evt.data && !evt.data.startsWith(':')) {
+        try {
+          const systemEvt: SystemStreamEvent = JSON.parse(evt.data);
+          setStreamEvents((prev) => [systemEvt, ...prev].slice(0, 50));
+          fetchState();
+          fetchLogs();
+          fetchMetrics();
+        } catch (_err) {
+          // ignore non-json keepalive stream comments
+        }
+      }
+    };
+
+    es.onerror = () => {
+      setStreamStatus('disconnected');
+    };
     
     const interval = setInterval(() => {
       fetchState();
@@ -154,7 +183,10 @@ function App() {
       fetchMetrics();
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      es.close();
+    };
   }, [tenantToken]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -243,7 +275,16 @@ function App() {
 
   const renderHeatmap = () => {
     if (!state) return <div className="metricLabel">Waiting for state...</div>;
-    return <CommandCenterDashboard state={state} setSelectedAccountId={setSelectedAccountId} logs={logs} metrics={metrics} />;
+    return (
+      <CommandCenterDashboard
+        state={state}
+        setSelectedAccountId={setSelectedAccountId}
+        logs={logs}
+        metrics={metrics}
+        streamStatus={streamStatus}
+        streamEvents={streamEvents}
+      />
+    );
   };
 
   const renderDetailedView = () => {
