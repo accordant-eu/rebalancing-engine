@@ -80,4 +80,27 @@ describe('CircuitBreaker', () => {
     expect(mockExecutor.execute).not.toHaveBeenCalled();
     expect(circuitBreaker.getExecutedCount()).toBe(0);
   });
+
+  it('enforces limits on Oracle tax-aware trades', async () => {
+    const oracleProposal: TradeProposal = {
+      trades: [
+        {
+          instrumentId: 'AAPL',
+          direction: 'SELL',
+          quantity: 100,
+          estimatedPrice: 200,
+          estimatedValue: 20000,
+          metadata: { origin: 'ORACLE_TAX_OPTIMIZER', taxLotId: 'lot_1' },
+        },
+      ],
+      estimatedPostTradeCash: 20000,
+      warnings: [],
+      executionTargetMode: 'full_reset',
+    };
+
+    await expect(circuitBreaker.execute(dummyContext, 'account-1', oracleProposal, 'event-tax-1')).rejects.toThrow(
+      /Gross notional value/
+    );
+    expect(mockExecutor.execute).not.toHaveBeenCalled();
+  });
 });
