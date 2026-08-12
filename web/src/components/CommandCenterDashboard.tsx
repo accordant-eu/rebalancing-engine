@@ -1,15 +1,23 @@
 import React, { useMemo } from 'react';
-import type { StatePayload, TenantMetrics } from '../types';
-import { AlertCircle, Eye, AlertTriangle, AlertOctagon, Activity, Server } from 'lucide-react';
+import type { StatePayload, SystemStreamEvent, TenantMetrics } from '../types';
+import { AlertCircle, Eye, AlertTriangle, AlertOctagon, Activity, Server, Radio } from 'lucide-react';
 
 interface DashboardProps {
   state: StatePayload;
   setSelectedAccountId: (id: string) => void;
   logs: any[];
   metrics?: TenantMetrics | null;
+  streamStatus?: 'connected' | 'connecting' | 'disconnected';
+  streamEvents?: SystemStreamEvent[];
 }
 
-export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSelectedAccountId, metrics }) => {
+export const CommandCenterDashboard: React.FC<DashboardProps> = ({
+  state,
+  setSelectedAccountId,
+  metrics,
+  streamStatus = 'disconnected',
+  streamEvents = [],
+}) => {
   const accountIds = Object.keys(state.portfolios);
 
   // 1. Calculate Macro Aggregates
@@ -90,7 +98,38 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
   return (
     <div className="flex flex-col gap-6 p-8 h-full max-w-7xl mx-auto font-sans">
       
-      {/* Top Layer: HUD */}
+      {/* Top Layer: HUD Header with Stream Indicator */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200/60 shadow-soft">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-slate-100 rounded-xl text-slate-700">
+            <Radio size={20} className={streamStatus === 'connected' ? 'animate-pulse text-emerald-500' : 'text-slate-400'} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Fleet Command Center</h1>
+            <p className="text-xs text-slate-500">Real-Time Engine Telemetry & Portfolio Monitoring</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {streamStatus === 'connected' ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              Live Streaming (SSE)
+            </span>
+          ) : streamStatus === 'connecting' ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              Connecting Stream...
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+              <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+              2s Polling Backup
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* HUD Aggregate Cards */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1 p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft flex flex-col justify-center transition-all duration-300 hover:shadow-soft-hover hover:-translate-y-1 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-[0.03] transform translate-x-4 -translate-y-4 text-emerald-500"><Eye size={120} /></div>
@@ -226,7 +265,7 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
         </div>
       )}
 
-      {/* Analytics & Telemetry Layer */}
+      {/* Bottom Layer: Drift Distribution & Real-Time Stream Telemetry */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Drift Distribution Chart */}
         <div className="rounded-2xl border border-slate-200/60 bg-white shadow-soft overflow-hidden flex flex-col p-6 transition-all duration-300 hover:shadow-soft-hover">
@@ -250,40 +289,52 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({ state, setSel
           </div>
         </div>
 
-        {/* System Telemetry */}
+        {/* Real-Time Telemetry & Live Stream Feed */}
         <div className="rounded-2xl border border-slate-200/60 bg-white shadow-soft overflow-hidden flex flex-col p-6 transition-all duration-300 hover:shadow-soft-hover">
-          <div className="text-sm font-bold tracking-wider uppercase text-slate-500 mb-4 flex items-center gap-2">
-            <Server size={16} />
-            System Telemetry & API Health
-          </div>
-          {metrics ? (
-            <div className="grid grid-cols-2 gap-4 flex-1">
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total API Calls</span>
-                <span className="text-2xl font-bold font-mono text-slate-700">{Object.values(metrics.totalApiCalls).reduce((a, b) => a + b, 0).toLocaleString()}</span>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Rate Limit Errors</span>
-                <span className={`text-2xl font-bold font-mono ${Object.values(metrics.rateLimitErrors).reduce((a,b)=>a+b,0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                  {Object.values(metrics.rateLimitErrors).reduce((a, b) => a + b, 0).toLocaleString()}
-                </span>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Webhooks Processed</span>
-                <span className="text-2xl font-bold font-mono text-slate-700">{metrics.webhooksProcessed.toLocaleString()}</span>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Broker Latency</span>
-                <span className="text-2xl font-bold font-mono text-sky-600 flex items-baseline gap-1">
-                  {metrics.averageLatencyMs} <span className="text-sm">ms</span>
-                </span>
-              </div>
+          <div className="text-sm font-bold tracking-wider uppercase text-slate-500 mb-4 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Radio size={16} className={streamStatus === 'connected' ? 'text-emerald-500 animate-pulse' : 'text-slate-400'} />
+              Real-Time Telemetry & Event Stream
             </div>
-          ) : (
-             <div className="flex-1 flex items-center justify-center text-slate-400 text-sm italic">
-                Loading telemetry...
-             </div>
-          )}
+            <span className="text-xs font-mono font-normal text-slate-400">{streamEvents.length} events</span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto max-h-48 flex flex-col gap-2 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
+            {streamEvents.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs italic py-6">
+                <Radio size={24} className="mb-2 opacity-30 animate-pulse" />
+                Listening for real-time engine events...
+              </div>
+            ) : (
+              streamEvents.map((evt, idx) => (
+                <div
+                  key={`${evt.eventId}-${idx}`}
+                  onClick={() => evt.accountId && setSelectedAccountId(evt.accountId)}
+                  className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-slate-200/60 text-xs cursor-pointer hover:border-sky-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                        evt.type === 'LIVE_EXECUTION'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : evt.type === 'CIRCUIT_BREAKER_HALT'
+                          ? 'bg-rose-100 text-rose-800'
+                          : evt.type === 'THRESHOLD_BREACH'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-sky-100 text-sky-800'
+                      }`}
+                    >
+                      {evt.type}
+                    </span>
+                    <span className="font-mono text-slate-700 font-semibold">{evt.accountId}</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {new Date(evt.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
