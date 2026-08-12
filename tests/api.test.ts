@@ -170,8 +170,36 @@ describe('API Endpoints (Týr Integration)', () => {
       
       expect(res.status).toBe(200);
       expect(res.body.accountId).toBe('acc-1');
+      expect(res.body.taxJurisdiction).toBe('US');
       expect(res.body.holdings).toBeDefined();
       expect(res.body.circuitBreakerStatus).toBeDefined();
+    });
+
+    it('PUT /api/portfolios/:id/policy updates taxJurisdiction and policy', async () => {
+      const res = await request(app)
+        .put('/api/portfolios/acc-1/policy')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          taxJurisdiction: 'US',
+          policy: { strategyType: 'tax_aware_us', optimizerType: 'tax_aware_us' },
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.taxJurisdiction).toBe('US');
+      expect(res.body.policy.strategyType).toBe('tax_aware_us');
+    });
+
+    it('PUT /api/portfolios/:id/policy rejects tax_aware_us for non-US jurisdiction', async () => {
+      const res = await request(app)
+        .put('/api/portfolios/acc-1/policy')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          taxJurisdiction: 'DE',
+          policy: { strategyType: 'tax_aware_us', optimizerType: 'tax_aware_us' },
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('INVALID_TAX_JURISDICTION');
     });
 
     it('GET /api/portfolios/:id/drift returns drift metrics', async () => {

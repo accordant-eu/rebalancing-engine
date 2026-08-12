@@ -238,6 +238,7 @@ Authentication is handled via a JWT token.
                   properties: {
                     accountId: { type: 'string' },
                     tenantId: { type: 'string' },
+                    taxJurisdiction: { type: 'string', example: 'US' },
                     modelId: { type: 'string', nullable: true },
                     totalValue: { type: 'number' },
                     cash: { type: 'number' },

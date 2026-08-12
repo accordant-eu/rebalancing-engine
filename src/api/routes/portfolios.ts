@@ -281,6 +281,7 @@ export function createPortfoliosRouter(
     res.json({
       accountId: state.portfolioState.accountId,
       tenantId: state.portfolioState.tenantId,
+      taxJurisdiction: state.portfolioState.taxJurisdiction || 'US',
       modelId: state.portfolioState.modelId || null,
       modelName,
       subscriptionType: state.portfolioState.subscriptionType || 'bespoke',
@@ -296,6 +297,42 @@ export function createPortfoliosRouter(
       pendingCashFlows: state.portfolioState.cashFlows?.filter((c: any) => c.status === 'PENDING') || [],
       circuitBreakerStatus: state.portfolioState.circuitBreakerStatus || 'closed',
       lastProposal
+    });
+  });
+
+  router.put('/:id/policy', forbidViewer, (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const accountId = req.params.id;
+    const state = stateManager.getAccountState(accountId);
+
+    if (!state || (!(req as any).isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
+      return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
+    }
+
+    const { taxJurisdiction, policy } = req.body || {};
+
+    if (policy) {
+      const isTaxAwareUs = policy.strategyType === 'tax_aware_us' || policy.optimizerType === 'tax_aware_us';
+      const effectiveJurisdiction = taxJurisdiction ?? state.portfolioState.taxJurisdiction ?? 'US';
+      if (isTaxAwareUs && effectiveJurisdiction.toUpperCase() !== 'US') {
+        return sendError(
+          res,
+          400,
+          'INVALID_TAX_JURISDICTION',
+          `TAX_AWARE_US strategy/optimizer requires taxJurisdiction 'US', but '${effectiveJurisdiction}' was provided.`
+        );
+      }
+      state.policy = { ...state.policy, ...policy };
+    }
+
+    if (taxJurisdiction) {
+      state.portfolioState.taxJurisdiction = taxJurisdiction;
+    }
+
+    res.json({
+      accountId,
+      taxJurisdiction: state.portfolioState.taxJurisdiction,
+      policy: state.policy,
     });
   });
 
