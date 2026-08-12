@@ -19,9 +19,6 @@ import {
 } from './cash-flows';
 import { calculateDrift } from './drift';
 import { PostTradeSimulation, simulatePostTrade } from './simulation';
-import {
-  generateTradeProposal,
-} from './trades';
 import { FrictionModel } from './friction';
 import { ExecutionOverlay, OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay } from './overlays';
 import {
@@ -301,7 +298,7 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
   const optimizer = optimizerRegistry.get(input.policy.optimizerType ?? (input.policy.strategyType === 'tax_aware_us' ? 'tax_aware_us' : 'standard_rule_based'));
   const tradeProposalResult = await optimizer.generateProposal(optimizerContext);
 
-  let tradeProposal = trigger.isTriggered
+  const tradeProposal = trigger.isTriggered
     ? tradeProposalResult
     : {
         trades: [],
@@ -317,7 +314,7 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
             : undefined,
       };
 
-  let postTradeSimulation = simulatePostTrade(
+  const postTradeSimulation = simulatePostTrade(
     effectivePortfolioState,
     input.priceSnapshot,
     input.targetAllocation,

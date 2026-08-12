@@ -12,8 +12,6 @@ export class OracleMockServer {
 
       // Find total holdings for this target asset
       const matchingLots = payload.tax_lots.filter((l) => l.identifier === target.asset_class);
-      const totalQty = matchingLots.reduce((acc, l) => acc + l.quantity, 0);
-      const totalValue = totalQty * price;
 
       // Check if any lot has an opportunity for TLH (unitCost > current price)
       for (const lot of matchingLots) {
