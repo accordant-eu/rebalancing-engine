@@ -36,7 +36,7 @@ describe('TaxAwareUsTradeGenerator & Strategy', () => {
     optimizerType: 'tax_aware_us',
   };
 
-  it('allows execution when taxJurisdiction is US', () => {
+  it('allows execution when taxJurisdiction is US', async () => {
     const generator = new TaxAwareUsTradeGenerator();
     const valuation = calculateValuation(portfolioState, priceSnapshot);
     const context: TradeOptimizerContext = {
@@ -49,18 +49,18 @@ describe('TaxAwareUsTradeGenerator & Strategy', () => {
       policy,
     };
 
-    const proposal = generator.generateProposal(context);
+    const proposal = await generator.generateProposal(context);
     expect(proposal).toBeDefined();
     expect(proposal.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: 'TAX_AWARE_US_STUB',
+          code: 'TAX_OPTIMIZER_UNREACHABLE_FALLBACK',
         }),
       ])
     );
   });
 
-  it('throws an error if taxJurisdiction is non-US (e.g., DE)', () => {
+  it('throws an error if taxJurisdiction is non-US (e.g., DE)', async () => {
     const generator = new TaxAwareUsTradeGenerator();
     const deState: PortfolioState = {
       ...portfolioState,
@@ -77,7 +77,7 @@ describe('TaxAwareUsTradeGenerator & Strategy', () => {
       policy,
     };
 
-    expect(() => generator.generateProposal(context)).toThrow(
+    await expect(generator.generateProposal(context)).rejects.toThrow(
       'TAX_AWARE_US optimizer is restricted to US tax jurisdictions'
     );
   });

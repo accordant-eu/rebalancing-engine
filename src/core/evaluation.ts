@@ -111,8 +111,12 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
 
   const optimizer = optimizerRegistry.get(input.policy.optimizerType ?? (input.policy.strategyType === 'tax_aware_us' ? 'tax_aware_us' : 'standard_rule_based'));
   const rawProposal = optimizer.generateProposal(optimizerContext);
-  // Ensure sync compatibility for current evaluation pipeline
-  const tradeProposalResult: TradeProposal = 'then' in rawProposal ? (rawProposal as any) : rawProposal;
+
+  if ('then' in rawProposal) {
+    throw new Error(`Optimizer '${optimizer.id}' is asynchronous. Please call evaluateRebalanceAsync instead.`);
+  }
+
+  const tradeProposalResult: TradeProposal = rawProposal;
 
   let tradeProposal = trigger.isTriggered
     ? tradeProposalResult
@@ -258,4 +262,103 @@ function resolveEvaluationDate(input: RebalanceEvaluationInput): string | undefi
   }
 
   return evaluationDate;
+}
+
+export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): Promise<RebalanceEvaluation> {
+  const evaluationDate = resolveEvaluationDate(input);
+  const scheduledCashFlowExpansion = applyCashFlowSchedules(input.portfolioState, evaluationDate);
+  const effectivePortfolioState = scheduledCashFlowExpansion.portfolioState;
+  const cashFlowScheduleSummary = scheduledCashFlowExpansion.summary;
+  const valuation = calculateValuation(effectivePortfolioState, input.priceSnapshot);
+  const weights = calculateCurrentWeights(valuation);
+  const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
+  const strategy = selectStrategy(input.policy.strategyType);
+  const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
+  const executionOverlays: ExecutionOverlay[] = [];
+  if (input.policy.executionOverlays) {
+    for (const overlayName of input.policy.executionOverlays) {
+      if (overlayName === 'OpportunisticLossHarvestingOverlay') {
+        executionOverlays.push(new OpportunisticLossHarvestingOverlay());
+      } else if (overlayName === 'WashSaleLockoutOverlay') {
+        executionOverlays.push(new WashSaleLockoutOverlay());
+      }
+    }
+  }
+
+  const optimizerContext: TradeOptimizerContext = {
+    valuation,
+    weights,
+    driftMeasurements,
+    targetAllocation: input.targetAllocation,
+    priceSnapshot: input.priceSnapshot,
+    portfolioState: effectivePortfolioState,
+    policy: input.policy,
+    cashFlowScheduleSummary,
+    frictionModel: input.frictionModel,
+    executionOverlays,
+  };
+
+  const optimizer = optimizerRegistry.get(input.policy.optimizerType ?? (input.policy.strategyType === 'tax_aware_us' ? 'tax_aware_us' : 'standard_rule_based'));
+  const tradeProposalResult = await optimizer.generateProposal(optimizerContext);
+
+  let tradeProposal = trigger.isTriggered
+    ? tradeProposalResult
+    : {
+        trades: [],
+        estimatedPostTradeCash: valuation.cash,
+        warnings: [
+          ...buildCashFlowProposalWarnings(valuation.cashFlowSummary),
+          ...buildCashFlowScheduleProposalWarnings(cashFlowScheduleSummary),
+        ],
+        executionTargetMode: input.policy.executionTargetMode ?? 'full_reset',
+        boundaryBandMode:
+          input.policy.executionTargetMode === 'boundary'
+            ? (input.policy.boundaryBandMode ?? 'absolute')
+            : undefined,
+      };
+
+  let postTradeSimulation = simulatePostTrade(
+    effectivePortfolioState,
+    input.priceSnapshot,
+    input.targetAllocation,
+    input.policy,
+    tradeProposal,
+  );
+
+  const qualityResults: Array<{ name: string; passed: boolean; reason?: string }> = [];
+
+  const explanation = generateExplanation(
+    trigger,
+    tradeProposal,
+    postTradeSimulation,
+    cashFlowScheduleSummary,
+  );
+  const auditRecord = generateAuditRecord({
+    eventId: input.eventId,
+    createdAt: input.createdAt,
+    portfolioState: input.portfolioState,
+    targetAllocation: input.targetAllocation,
+    priceSnapshot: input.priceSnapshot,
+    policy: input.policy,
+    driftMeasurements,
+    trigger,
+    tradeProposal,
+    postTradeSimulation,
+    explanation,
+    cashFlowSummary: valuation.cashFlowSummary,
+    cashFlowScheduleSummary,
+  });
+
+  return {
+    valuation,
+    weights,
+    driftMeasurements,
+    trigger,
+    tradeProposal,
+    postTradeSimulation,
+    explanation,
+    auditRecord,
+    cashFlowScheduleSummary,
+    qualityResults
+  };
 }

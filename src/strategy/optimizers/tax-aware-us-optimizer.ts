@@ -1,5 +1,5 @@
 import { TradeOptimizerInterface, TradeOptimizerContext } from '../../core/trade-optimizer';
-import { generateTradeProposal } from '../../core/trades';
+import { OracleTaxOptimizerAdapter, OracleAdapterConfig } from '../../core/oracle-adapter';
 import { TradeProposal } from '../../models/domain';
 
 export class TaxAwareUsTradeGenerator implements TradeOptimizerInterface {
@@ -7,7 +7,13 @@ export class TaxAwareUsTradeGenerator implements TradeOptimizerInterface {
   readonly name = 'US Tax-Aware Trade Optimizer (Oracle Contract)';
   readonly description = 'Delegates trade generation to an external US tax-aware optimization engine for tax-loss harvesting and wash sale prevention.';
 
-  generateProposal(context: TradeOptimizerContext): TradeProposal {
+  private adapter: OracleTaxOptimizerAdapter;
+
+  constructor(config?: OracleAdapterConfig) {
+    this.adapter = new OracleTaxOptimizerAdapter(config);
+  }
+
+  public async generateProposal(context: TradeOptimizerContext): Promise<TradeProposal> {
     const { portfolioState } = context;
 
     if (portfolioState.taxJurisdiction && portfolioState.taxJurisdiction.toUpperCase() !== 'US') {
@@ -16,28 +22,6 @@ export class TaxAwareUsTradeGenerator implements TradeOptimizerInterface {
       );
     }
 
-    // Tranche 1 Stub Implementation:
-    // Generate standard rule-based proposal and enrich metadata with tax-aware contract status
-    const proposal = generateTradeProposal(
-      context.valuation,
-      context.targetAllocation,
-      context.priceSnapshot,
-      context.policy,
-      context.cashFlowScheduleSummary,
-      context.frictionModel,
-      undefined,
-      context.executionOverlays
-    );
-
-    return {
-      ...proposal,
-      warnings: [
-        ...(proposal.warnings || []),
-        {
-          code: 'TAX_AWARE_US_STUB',
-          message: 'TAX_AWARE_US contract active: Trades evaluated via US Tax-Aware Optimizer interface stub.',
-        },
-      ],
-    };
+    return this.adapter.generateProposal(context);
   }
 }
