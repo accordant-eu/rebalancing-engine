@@ -238,7 +238,7 @@ describe('CLI', () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Batch: success');
-    expect(result.stdout).toContain('Expectations: valid checked: 26');
+    expect(result.stdout).toContain('Expectations: valid checked: 27');
   });
 
   it('writes deterministic per-scenario batch outputs without changing stdout summary', async () => {

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { AuditRecord } from '../audit';
-import { evaluateRebalance } from '../core/evaluation';
+import { evaluateRebalanceAsync } from '../core/evaluation';
 import {
   PortfolioState,
   PriceSnapshot,
@@ -62,15 +62,18 @@ export interface ScenarioExpectationValidation {
   mismatches: ScenarioExpectationMismatch[];
 }
 
-export function runScenarios(input: ScenarioRunnerInput, createdAt?: string): ScenarioRunResult[] {
-  return [...input.scenarios]
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .map((scenario) => runScenario(scenario, createdAt));
+export async function runScenarios(input: ScenarioRunnerInput, createdAt?: string): Promise<ScenarioRunResult[]> {
+  const sorted = [...input.scenarios].sort((a, b) => a.id.localeCompare(b.id));
+  const results: ScenarioRunResult[] = [];
+  for (const scenario of sorted) {
+    results.push(await runScenario(scenario, createdAt));
+  }
+  return results;
 }
 
-export function runScenario(scenario: ScenarioFixture, createdAt?: string): ScenarioRunResult {
+export async function runScenario(scenario: ScenarioFixture, createdAt?: string): Promise<ScenarioRunResult> {
   try {
-    const evaluation = evaluateRebalance({
+    const evaluation = await evaluateRebalanceAsync({
       eventId: `scenario:${scenario.id}`,
       createdAt: createdAt ?? new Date().toISOString(),
       portfolioState: scenario.portfolioState,
@@ -185,21 +188,23 @@ export function validateScenarioExpectations(
 }
 
 if (require.main === module) {
-  try {
-    const fixturePath =
-      process.argv[2] ?? path.join(process.cwd(), 'tests', 'fixtures', 'scenarios.json');
-    const results = runScenarios(loadScenarioFixture(fixturePath));
-    const expectationsPath = process.argv[3];
-    const expectationValidation =
-      expectationsPath === undefined
-        ? undefined
-        : validateScenarioExpectations(results, loadScenarioExpectations(expectationsPath));
-    if (expectationValidation !== undefined && !expectationValidation.isValid) {
+  (async () => {
+    try {
+      const fixturePath =
+        process.argv[2] ?? path.join(process.cwd(), 'tests', 'fixtures', 'scenarios.json');
+      const results = await runScenarios(loadScenarioFixture(fixturePath));
+      const expectationsPath = process.argv[3];
+      const expectationValidation =
+        expectationsPath === undefined
+          ? undefined
+          : validateScenarioExpectations(results, loadScenarioExpectations(expectationsPath));
+      if (expectationValidation !== undefined && !expectationValidation.isValid) {
+        process.exitCode = 1;
+      }
+      process.stdout.write(`${JSON.stringify({ results, expectationValidation }, null, 2)}\n`);
+    } catch (error) {
+      process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
       process.exitCode = 1;
     }
-    process.stdout.write(`${JSON.stringify({ results, expectationValidation }, null, 2)}\n`);
-  } catch (error) {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-    process.exitCode = 1;
-  }
+  })();
 }

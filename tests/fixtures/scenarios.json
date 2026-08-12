@@ -789,6 +789,40 @@
         "absoluteDriftTolerance": 0.01,
         "minimumTradeSize": 0
       }
+    },
+    {
+      "id": "us_taxable_tlh_rebalance",
+      "description": "US Taxable portfolio with tax lots evaluated via tax_aware_us strategy",
+      "portfolioState": {
+        "accountId": "us-acc-tlh",
+        "taxJurisdiction": "US",
+        "cash": 500,
+        "holdings": [
+          {
+            "instrumentId": "US0378331005:XNAS:USD",
+            "quantity": 50,
+            "taxLots": [
+              { "lotId": "lot_1", "quantity": 25, "unitCost": 200, "acquisitionDate": "2024-01-01" },
+              { "lotId": "lot_2", "quantity": 25, "unitCost": 100, "acquisitionDate": "2024-02-01" }
+            ]
+          }
+        ]
+      },
+      "targetAllocation": {
+        "targets": [
+          { "instrumentId": "US0378331005:XNAS:USD", "weight": 0.5 },
+          { "instrumentId": "US5949181045:XNAS:USD", "weight": 0.5 }
+        ]
+      },
+      "priceSnapshot": {
+        "prices": { "US0378331005:XNAS:USD": 150, "US5949181045:XNAS:USD": 150 }
+      },
+      "policy": {
+        "strategyType": "tax_aware_us",
+        "optimizerType": "tax_aware_us",
+        "absoluteDriftTolerance": 0.05,
+        "minimumTradeSize": 10
+      }
     }
   ]
 }

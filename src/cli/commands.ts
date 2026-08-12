@@ -40,9 +40,9 @@ export async function executeCommand(parsed: ParsedArgs, context: CommandContext
     case 'validate':
       return renderCommandOutput(executeValidate(parsed, context), format, quiet);
     case 'run':
-      return renderCommandOutput(executeRun(parsed, context), format, quiet);
+      return renderCommandOutput(await executeRun(parsed, context), format, quiet);
     case 'batch':
-      return renderCommandOutput(executeBatch(parsed, context), format, quiet);
+      return renderCommandOutput(await executeBatch(parsed, context), format, quiet);
     case 'inspect':
       return renderCommandOutput(executeInspect(parsed, context), format, quiet);
     case 'agent':
@@ -117,12 +117,12 @@ function executeValidate(
   };
 }
 
-function executeRun(
+async function executeRun(
   parsed: ParsedArgs,
   context: CommandContext,
-): CommandResult & {
+): Promise<CommandResult & {
   data: CliOutput;
-} {
+}> {
   if (hasBooleanOption(parsed.options, 'help')) {
     return { exitCode: 0, output: RUN_HELP, data: emptyValidateOutput() };
   }
@@ -142,7 +142,7 @@ function executeRun(
     scenarioPath === undefined
       ? loadExplicitScenario(explicitPaths, context.cwd)
       : loadOneScenario(scenarioPath, scenarioId, context.cwd, context.stdin);
-  const result = runScenario(scenario);
+  const result = await runScenario(scenario);
   const warningCount =
     result.status === 'success' ? result.auditRecord.outputs.tradeProposal.warnings.length : 0;
   const data: CliOutput = {
@@ -159,12 +159,12 @@ function executeRun(
   };
 }
 
-function executeBatch(
+async function executeBatch(
   parsed: ParsedArgs,
   context: CommandContext,
-): CommandResult & {
+): Promise<CommandResult & {
   data: BatchOutput;
-} {
+}> {
   if (hasBooleanOption(parsed.options, 'help')) {
     return { exitCode: 0, output: BATCH_HELP, data: emptyBatchOutput() };
   }
@@ -176,7 +176,7 @@ function executeBatch(
 
   const format = getFormat(parsed.options);
   const input = loadScenarioManifests(scenariosPath, context.cwd);
-  const results = runScenarios(input);
+  const results = await runScenarios(input);
   const expectationsPath = getStringOption(parsed.options, 'expectations');
   const expectationValidation =
     expectationsPath === undefined

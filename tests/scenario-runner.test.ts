@@ -16,9 +16,9 @@ const scenariosData = JSON.parse(fs.readFileSync(scenariosPath, 'utf8'));
 const TEST_CREATED_AT = '2026-05-02T00:00:00.000Z';
 
 describe('Scenario Runner', () => {
-  it('runs every fixture and reports deterministic per-scenario results', () => {
-    const first = runScenarios(scenariosData, TEST_CREATED_AT);
-    const second = runScenarios(scenariosData, TEST_CREATED_AT);
+  it('runs every fixture and reports deterministic per-scenario results', async () => {
+    const first = await runScenarios(scenariosData, TEST_CREATED_AT);
+    const second = await runScenarios(scenariosData, TEST_CREATED_AT);
 
     expect(first).toEqual(second);
     expect(first.map((result) => result.scenarioId)).toEqual([
@@ -48,15 +48,16 @@ describe('Scenario Runner', () => {
       'tax_lot_fifo_sell',
       'threshold_boundary_target',
       'threshold_relative_boundary_target',
+      'us_taxable_tlh_rebalance',
     ]);
   });
 
-  it('returns audit records for successful scenarios and errors for invalid scenarios', () => {
-    const results = runScenarios(scenariosData, TEST_CREATED_AT);
+  it('returns audit records for successful scenarios and errors for invalid scenarios', async () => {
+    const results = await runScenarios(scenariosData, TEST_CREATED_AT);
     const successes = results.filter((result) => result.status === 'success');
     const errors = results.filter((result) => result.status === 'error');
 
-    expect(successes).toHaveLength(21);
+    expect(successes).toHaveLength(22);
     expect(errors).toHaveLength(5);
 
     const success = successes.find((result) => result.scenarioId === 'one_asset_out_of_band');
@@ -153,9 +154,9 @@ describe('Scenario Runner', () => {
     }
   });
 
-  it('uses live timestamps by default (not the frozen constant)', () => {
+  it('uses live timestamps by default (not the frozen constant)', async () => {
     const scenario = scenariosData.scenarios.find((s: { id: string }) => s.id === 'on_target');
-    const result = runScenario(scenario);
+    const result = await runScenario(scenario);
 
     expect(result.status).toBe('success');
     if (result.status === 'success') {
@@ -164,10 +165,10 @@ describe('Scenario Runner', () => {
     }
   });
 
-  it('uses injected timestamp when provided', () => {
+  it('uses injected timestamp when provided', async () => {
     const scenario = scenariosData.scenarios.find((s: { id: string }) => s.id === 'on_target');
     const injected = '2030-01-15T10:30:00.000Z';
-    const result = runScenario(scenario, injected);
+    const result = await runScenario(scenario, injected);
 
     expect(result.status).toBe('success');
     if (result.status === 'success') {
@@ -175,21 +176,21 @@ describe('Scenario Runner', () => {
     }
   });
 
-  it('validates results against an expected-status manifest', () => {
-    const results = runScenarios(scenariosData, TEST_CREATED_AT);
+  it('validates results against an expected-status manifest', async () => {
+    const results = await runScenarios(scenariosData, TEST_CREATED_AT);
     const expectations = loadScenarioExpectations(expectationsPath);
 
     const validation = validateScenarioExpectations(results, expectations);
 
     expect(validation).toEqual({
       isValid: true,
-      checkedScenarioCount: 26,
+      checkedScenarioCount: 27,
       mismatches: [],
     });
   });
 
-  it('reports expected-status manifest mismatches', () => {
-    const results = runScenarios(scenariosData, TEST_CREATED_AT);
+  it('reports expected-status manifest mismatches', async () => {
+    const results = await runScenarios(scenariosData, TEST_CREATED_AT);
 
     const validation = validateScenarioExpectations(results, {
       scenarios: {
@@ -228,6 +229,7 @@ describe('Scenario Runner', () => {
       'tax_lot_fifo_sell',
       'threshold_boundary_target',
       'threshold_relative_boundary_target',
+      'us_taxable_tlh_rebalance',
     ]);
   });
 });
