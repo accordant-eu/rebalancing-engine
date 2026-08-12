@@ -181,8 +181,9 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 84 | 2026-07-31 | Resolution of Issues 73-74 | Quality & Architecture | Resolved Issues #73 and #74 with Optimizer security (SHA-256) and numerical safeguards. | [Log](docs/iterations/2026-07-31-mitigations.md) |
 | 85 | 2026-08-01 | Live Agent v3.0 Foundations | Architecture | Implemented Asynchronous WebSockets, End-of-Day (EOD) Reconciliation cron jobs, and Corporate Actions Circuit Breakers for safety. | [Log](docs/iterations/2026-08-01-v3-features.md) |
 | 86 | 2026-08-03 | Execution Overlays (TLH) & Optimizer Fixes | Architecture | Resolved Optimizer state bugs and implemented the composable Execution Overlay Pipeline for Tax-Loss Harvesting (TLH). | [Log](docs/iterations/2026-08-03.md) |
+## Active Tranche Focus
 
-## Active Tranche Focus| 87 | 2026-08-07 | Command Center Observability | UI & API MVP | Enhanced Command Center Dashboard with Fleet Drift Distribution chart and System Telemetry panel. | [Log](docs/iterations/2026-08-07.md) |
+| 87 | 2026-08-07 | Command Center Observability | UI & API MVP | Enhanced Command Center Dashboard with Fleet Drift Distribution chart and System Telemetry panel. | [Log](docs/iterations/2026-08-07.md) |
 | 88 | 2026-08-10 | Generalized Trade Optimizer & US Tax Module | Architecture | Established `TradeOptimizerInterface` abstraction layer and implemented Tranche 1 of US Tax-Aware Optimizer module contract (Issue #103). | [Log](docs/iterations/2026-08-10.md) |
 | 89 | 2026-08-12 | Oracle Tax Optimizer Adapter & Async Pipeline | Architecture | Implemented `OracleTaxOptimizerAdapter` HTTP RPC client, fallback resilience, `evaluateRebalanceAsync`, and `us_taxable_tlh_rebalance` fixture. | [Log](docs/iterations/2026-08-12.md) |
 | 90 | 2026-08-12 | Tranche 3: Governance, Circuit Breakers & API Validation | Architecture | Enforced circuit breaker safety limits on tax trades, enriched audit records with tax cost attribution, and exposed `taxJurisdiction` in API. | [Log](docs/iterations/2026-08-12-tranche-3.md) |
