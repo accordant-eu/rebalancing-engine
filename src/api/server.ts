@@ -60,13 +60,13 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     if (req.path === '/api/auth/login' || req.path === '/api/auth/refresh' || req.path === '/api/webhooks/alpaca') return next();
     
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return sendError(res, 401, 'UNAUTHORIZED', 'Missing Authorization header');
+    let token = authHeader ? authHeader.split(' ')[1] : undefined;
+    if (!token && req.query.token && typeof req.query.token === 'string') {
+      token = req.query.token;
     }
-    
-    const token = authHeader.split(' ')[1];
+
     if (!token) {
-      return sendError(res, 401, 'UNAUTHORIZED', 'Invalid token format');
+      return sendError(res, 401, 'UNAUTHORIZED', 'Missing Authorization header or token query param');
     }
     
     // Check if it's a B2B API Key (starts with sk_live_)

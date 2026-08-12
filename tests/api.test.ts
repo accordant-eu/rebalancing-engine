@@ -232,6 +232,33 @@ describe('API Endpoints (Týr Integration)', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
     });
 
+    it('GET /api/events/stream accepts token via query parameter', (done) => {
+      let isDone = false;
+      const finish = (err?: any) => {
+        if (!isDone) {
+          isDone = true;
+          done(err);
+        }
+      };
+
+      const server = app.listen(0, async () => {
+        const port = (server.address() as any).port;
+        const http = await import('http');
+        const reqStream = http.get(`http://127.0.0.1:${port}/api/events/stream?token=${encodeURIComponent(token)}`, (res: any) => {
+          expect(res.statusCode).toBe(200);
+          expect(res.headers['content-type']).toBe('text/event-stream');
+          
+          res.on('data', (chunk: Buffer) => {
+            if (chunk.toString().includes(': keepalive')) {
+              reqStream.destroy();
+              server.close();
+              finish();
+            }
+          });
+        });
+      });
+    });
+
     it('cannot read another tenant portfolio with own token', async () => {
       const res = await request(app)
         .get('/api/portfolios/acc-other')
