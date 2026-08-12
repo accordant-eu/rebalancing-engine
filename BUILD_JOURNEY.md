@@ -184,3 +184,4 @@ Detailed decision records are available in the [Architecture Decision Records (A
 
 ## Active Tranche Focus| 87 | 2026-08-07 | Command Center Observability | UI & API MVP | Enhanced Command Center Dashboard with Fleet Drift Distribution chart and System Telemetry panel. | [Log](docs/iterations/2026-08-07.md) |
 | 88 | 2026-08-10 | Generalized Trade Optimizer & US Tax Module | Architecture | Established `TradeOptimizerInterface` abstraction layer and implemented Tranche 1 of US Tax-Aware Optimizer module contract (Issue #103). | [Log](docs/iterations/2026-08-10.md) |
+| 89 | 2026-08-12 | Oracle Tax Optimizer Adapter & Async Pipeline | Architecture | Implemented `OracleTaxOptimizerAdapter` HTTP RPC client, fallback resilience, `evaluateRebalanceAsync`, and `us_taxable_tlh_rebalance` fixture. | [Log](docs/iterations/2026-08-12.md) |
