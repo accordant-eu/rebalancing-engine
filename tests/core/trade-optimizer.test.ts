@@ -10,6 +10,7 @@ class MockOptimizer implements TradeOptimizerInterface {
     return {
       trades: [],
       estimatedPostTradeCash: context.valuation.cash,
+      warnings: [],
       executionTargetMode: 'full_reset',
     };
   }
