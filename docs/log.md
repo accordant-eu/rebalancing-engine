@@ -33,5 +33,6 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-06-15 | Add `decisions/0050-use-b2b-broker-api.md` |
 | 2026-08-10 | `decisions/0058-generalized-trade-optimizer-interface.md` | Major | Established `TradeOptimizerInterface` abstraction layer and US Tax-Aware Optimizer module contract (Issue #103). |
 | 2026-08-12 | `core/oracle-adapter.ts` | Major | Implemented `OracleTaxOptimizerAdapter` HTTP RPC client, fallback resilience, `evaluateRebalanceAsync`, and `us_taxable_tlh_rebalance` fixture. |
+| 2026-08-12 | `orchestrator/circuit-breaker.ts` | Major | Completed Tranche 3 of Issue #103: Circuit breaker safety for tax trades, audit enrichment with tax cost attribution, and REST API jurisdiction validation. |
 
 &copy; 2026 Johan Hellman. All rights reserved.

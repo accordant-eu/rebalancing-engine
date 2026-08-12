@@ -21,9 +21,10 @@ Current implemented capabilities:
 - Offline deterministic valuation from holdings, cash, and price snapshots.
 - Drift calculation against target weights.
 - Threshold strategy, calendar due-date strategy, and manual forced rebalance strategy.
-- Full-reset trade proposals.
-- Boundary trade proposals using absolute or relative tolerance bands.
-- Decimal-backed internal arithmetic with explicit output rounding for explanations and serialized audit output.
+- Pluggable `TradeOptimizerInterface` decoupling trade construction from strategy triggers.
+- US Tax-Aware Trade Optimizer (`tax_aware_us`) integrating external Double Finance `oracle` microservice for Tax-Loss Harvesting (TLH).
+- Resilient fallback to rule-based engine when external solvers are unreachable.
+- Audit records enriched with tax cost attribution metrics (`estimatedRealizedLoss`, `washSalesPrevented`).
 - Settled and pending cash-flow records.
 - Scheduled and recurring cash-flow schedules for offline planning.
 - Generic tax-lot allocation metadata for sell trades.
