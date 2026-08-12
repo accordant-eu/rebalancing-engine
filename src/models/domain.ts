@@ -245,7 +245,9 @@ export type ProposalWarningCode =
   | 'QUALITY_EVALUATION_FAILED'
   | 'TLH_HARVEST_GENERATED'
   | 'WASH_SALE_LOCKOUT'
-  | 'TAX_AWARE_US_STUB';
+  | 'TAX_AWARE_US_STUB'
+  | 'TAX_OPTIMIZER_UNREACHABLE_FALLBACK'
+  | 'TAX_OPTIMIZER_SUCCESS';
 
 export interface ProposalWarning {
   code: ProposalWarningCode;
@@ -276,6 +278,7 @@ export interface TradeProposal {
   boundaryBandMode?: BoundaryBandMode;
   qualityEvaluation?: QualityEvaluationResult;
   temporaryEquivalencyMapping?: Map<string, string>;
+  metadata?: Record<string, string>;
 }
 
 export interface TriggerResult {
