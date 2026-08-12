@@ -149,4 +149,35 @@ describe('Audit Record', () => {
     expect(record.outputs.tradeProposal.boundaryBandMode).toBe('relative');
     expect(record.outputs.explanation.tradeExplanation).toContain('relative bands');
   });
+
+  it('captures taxCostAttribution when Oracle metadata is present', () => {
+    const evaluation = evaluateScenario('one_asset_out_of_band');
+    const proposalWithTaxMetadata = {
+      ...evaluation.tradeProposal,
+      metadata: {
+        oracleExecutionTimeMs: '15',
+        estimatedRealizedLoss: '350.5',
+        washSalesPrevented: '2',
+      },
+    };
+
+    const record = generateAuditRecord({
+      eventId: 'audit-tax',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: evaluation.scenario.portfolioState,
+      targetAllocation: evaluation.scenario.targetAllocation,
+      priceSnapshot: evaluation.scenario.priceSnapshot,
+      policy: evaluation.scenario.policy,
+      driftMeasurements: evaluation.driftMeasurements,
+      trigger: evaluation.trigger,
+      tradeProposal: proposalWithTaxMetadata,
+      postTradeSimulation: evaluation.postTradeSimulation,
+      explanation: evaluation.explanation,
+    });
+
+    expect(record.outputs.taxCostAttribution).toBeDefined();
+    expect(record.outputs.taxCostAttribution?.oracleExecutionTimeMs).toBe(15);
+    expect(record.outputs.taxCostAttribution?.estimatedRealizedLoss).toBe(350.5);
+    expect(record.outputs.taxCostAttribution?.washSalesPrevented).toBe(2);
+  });
 });

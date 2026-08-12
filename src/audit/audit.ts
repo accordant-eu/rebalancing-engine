@@ -36,6 +36,12 @@ export interface AuditRecordInput {
   cashFlowScheduleSummary?: CashFlowScheduleSummary;
 }
 
+export interface TaxCostAttribution {
+  oracleExecutionTimeMs?: number;
+  estimatedRealizedLoss?: number;
+  washSalesPrevented?: number;
+}
+
 export interface AuditRecord {
   eventId: string;
   createdAt: string;
@@ -57,10 +63,21 @@ export interface AuditRecord {
     tradeProposal: TradeProposal;
     postTradeSimulation: PostTradeSimulation;
     explanation: RecommendationExplanation;
+    taxCostAttribution?: TaxCostAttribution;
   };
 }
 
 export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
+  const metadata = input.tradeProposal.metadata;
+  const hasTaxMetadata = metadata && (metadata.oracleExecutionTimeMs !== undefined || metadata.estimatedRealizedLoss !== undefined || metadata.washSalesPrevented !== undefined);
+  const taxCostAttribution: TaxCostAttribution | undefined = hasTaxMetadata
+    ? {
+        oracleExecutionTimeMs: metadata.oracleExecutionTimeMs ? Number(metadata.oracleExecutionTimeMs) : undefined,
+        estimatedRealizedLoss: metadata.estimatedRealizedLoss ? Number(metadata.estimatedRealizedLoss) : undefined,
+        washSalesPrevented: metadata.washSalesPrevented ? Number(metadata.washSalesPrevented) : undefined,
+      }
+    : undefined;
+
   return {
     eventId: input.eventId,
     createdAt: input.createdAt,
@@ -82,6 +99,7 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
       tradeProposal: input.tradeProposal,
       postTradeSimulation: input.postTradeSimulation,
       explanation: input.explanation,
+      ...(taxCostAttribution ? { taxCostAttribution } : {}),
     },
   };
 }
