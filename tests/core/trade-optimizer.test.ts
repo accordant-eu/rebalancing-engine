@@ -117,6 +117,8 @@ describe('OracleTaxOptimizerAdapter Hardening', () => {
       targetAllocation,
       policy,
       valuation,
+      weights: [],
+      driftMeasurements: [],
     };
 
     expect(adapter.getCircuitState()).toBe('CLOSED');
