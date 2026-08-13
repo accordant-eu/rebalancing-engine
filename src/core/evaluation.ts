@@ -185,6 +185,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
       tradeProposal = {
         ...tradeProposal,
         trades: [],
+        estimatedPostTradeCash: valuation.cash,
         warnings: [...tradeProposal.warnings, { code: 'QUALITY_CHECK_FAILED', message: failureReasons }]
       };
       

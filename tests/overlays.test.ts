@@ -1,5 +1,6 @@
 import { OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay } from '../src/core/overlays';
-import { EvaluationState } from '../src/core/quality';
+import { EvaluationState, ConcentrationLimitIndicator } from '../src/core/quality';
+import { evaluateRebalance } from '../src/core/evaluation';
 import { PriceSnapshot, RebalancingPolicy, TargetAllocation, TradeProposal, ValuationResult } from '../src/models/domain';
 
 describe('Execution Overlays (TLH)', () => {
@@ -164,5 +165,123 @@ describe('Execution Overlays (TLH)', () => {
     expect(warning).toBeDefined();
     expect(warning?.instrumentId).toBe('IVV');
     expect(warning?.estimatedValue).toBe(900); // the suppressed TLH sell value
+  });
+
+  describe('Jurisdiction Matrix & Failure Mode Tests (Issue #92)', () => {
+    it('Zero-constraint jurisdiction allows simultaneous buy and loss-harvesting without wash-sale lockout', () => {
+      const generativeOverlay = new OpportunisticLossHarvestingOverlay();
+      
+      // In a zero-constraint jurisdiction, only the generative overlay is configured (no WashSaleLockoutOverlay)
+      const driftTrade = { 
+        instrumentId: 'IVV', 
+        direction: 'BUY' as const, 
+        quantity: 5, 
+        estimatedPrice: 90, 
+        estimatedValue: 450,
+        metadata: { origin: 'DRIFT_STRATEGY' }
+      };
+      
+      const proposal: TradeProposal = {
+        trades: [driftTrade],
+        estimatedPostTradeCash: 0,
+        warnings: [],
+        executionTargetMode: 'full_reset'
+      };
+
+      const proposalAfterHarvest = generativeOverlay.apply(proposal, evaluationState, priceSnapshot);
+      
+      // All trades execute: 1 drift BUY + 1 TLH SELL + 1 TLH BUY
+      expect(proposalAfterHarvest.trades.length).toBe(3);
+      expect(proposalAfterHarvest.trades.map(t => t.instrumentId)).toEqual(['IVV', 'IVV', 'VOO']);
+      expect(proposalAfterHarvest.warnings.some(w => w.code === 'WASH_SALE_LOCKOUT')).toBe(false);
+      expect(proposalAfterHarvest.warnings.some(w => w.code === 'TLH_HARVEST_GENERATED')).toBe(true);
+    });
+
+    it('Failure Mode: No substitute available in equivalency group or missing substitute price', () => {
+      const overlay = new OpportunisticLossHarvestingOverlay();
+
+      // Policy with asset in a group of 1 (no alternate substitute)
+      const isolatedPolicy: RebalancingPolicy = {
+        ...policy,
+        equivalencyGroups: [['IVV']] // No substitute counterpart
+      };
+
+      const stateWithoutSubstitute: EvaluationState = {
+        ...evaluationState,
+        policy: isolatedPolicy
+      };
+
+      const proposal: TradeProposal = {
+        trades: [],
+        estimatedPostTradeCash: 0,
+        warnings: [],
+        executionTargetMode: 'full_reset'
+      };
+
+      const result = overlay.apply(proposal, stateWithoutSubstitute, priceSnapshot);
+      // No trades should be generated when substitute is missing
+      expect(result.trades.length).toBe(0);
+
+      // Price snapshot missing price for substitute VOO
+      const priceSnapshotNoVOO: PriceSnapshot = {
+        prices: { 'IVV': 90 }
+      };
+
+      const resultMissingPrice = overlay.apply(proposal, evaluationState, priceSnapshotNoVOO);
+      expect(resultMissingPrice.trades.length).toBe(0);
+    });
+
+    it('Failure Mode: Non-convergence / concentration limit breach after overlay injection is caught by QualityPipeline', () => {
+      // Portfolio with IVV holding that has a large loss
+      const portfolioState = {
+        cash: 100,
+        holdings: [
+          {
+            instrumentId: 'IVV',
+            quantity: 10,
+            taxLots: [
+              { lotId: 'lot1', quantity: 10, unitCost: 100, acquisitionDate: '2026-01-01' }
+            ]
+          }
+        ]
+      };
+
+      const prices: PriceSnapshot = {
+        prices: { 'IVV': 90, 'VOO': 90 }
+      };
+
+      const targetAlloc: TargetAllocation = {
+        targets: [{ instrumentId: 'IVV', weight: 1.0 }],
+        cashBuffer: 0
+      };
+
+      const tlhPolicy: RebalancingPolicy = {
+        strategyType: 'manual',
+        absoluteDriftTolerance: 0.05,
+        tlhLossThresholdBps: 500, // 5% loss -> triggers TLH
+        equivalencyGroups: [['IVV', 'VOO']],
+        executionOverlays: ['OpportunisticLossHarvestingOverlay']
+      };
+
+      // Quality indicator enforcing max 50% concentration per asset
+      // The TLH overlay will attempt to allocate 100% of the portfolio into substitute VOO
+      const strictConcentrationIndicator = new ConcentrationLimitIndicator(0.50);
+
+      const evaluation = evaluateRebalance({
+        eventId: 'test-event-non-convergence',
+        createdAt: '2026-08-01T00:00:00Z',
+        portfolioState,
+        targetAllocation: targetAlloc,
+        priceSnapshot: prices,
+        policy: tlhPolicy,
+        indicators: [strictConcentrationIndicator]
+      });
+
+      // Overlay would have generated trades, but QualityIndicator fails due to concentration limit breach
+      expect(evaluation.qualityResults).toBeDefined();
+      expect(evaluation.qualityResults?.[0].passed).toBe(false);
+      expect(evaluation.tradeProposal.trades.length).toBe(0);
+      expect(evaluation.tradeProposal.warnings.some(w => w.code === 'QUALITY_CHECK_FAILED')).toBe(true);
+    });
   });
 });

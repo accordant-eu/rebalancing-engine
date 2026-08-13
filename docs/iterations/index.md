@@ -29,3 +29,5 @@ Moving forward, iteration logs are strictly captured in the high-level `BUILD_JO
 * **[2026-07-05](2026-07-05.md)**
 * **[2026-07-08](2026-07-08.md)**
 - [2026-07-13: Issue 60 Feedback Implementation](2026-07-13.md)
+- [2026-08-13: Security Hardening (Issues #105 & #106)](2026-08-13-security-hardening.md)
+- [2026-08-13: Jurisdiction Matrix & Failure Mode Verification (Issue #92)](2026-08-13-jurisdiction-matrix.md)
