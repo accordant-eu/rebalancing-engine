@@ -29,6 +29,7 @@ export interface OraclePrice {
 }
 
 export interface OracleOptimizationPayload {
+  request_id?: string;
   targets: OracleTarget[];
   tax_lots: OracleTaxLot[];
   prices: OraclePrice[];
@@ -45,6 +46,7 @@ export interface OracleTradeItem {
 }
 
 export interface OracleOptimizationResponse {
+  request_id?: string;
   status: 'success' | 'error';
   error_message?: string;
   trades: OracleTradeItem[];
@@ -65,22 +67,58 @@ export class OracleTaxOptimizerAdapter implements TradeOptimizerInterface {
   private apiKey?: string;
   private timeoutMs: number;
 
+  // Circuit Breaker state variables
+  private consecutiveFailures = 0;
+  private circuitState: 'CLOSED' | 'OPEN' = 'CLOSED';
+  private lastCircuitTripTime = 0;
+  private readonly failureThreshold = 3;
+  private readonly resetTimeoutMs = 30000;
+
   constructor(config?: OracleAdapterConfig) {
     this.serviceUrl = config?.serviceUrl ?? process.env.ORACLE_SERVICE_URL ?? 'http://localhost:8000/v1/optimize';
     this.apiKey = config?.apiKey ?? process.env.ORACLE_API_KEY;
     this.timeoutMs = config?.timeoutMs ?? 5000;
   }
 
+  public getCircuitState(): 'CLOSED' | 'OPEN' {
+    if (this.circuitState === 'OPEN' && Date.now() - this.lastCircuitTripTime > this.resetTimeoutMs) {
+      return 'CLOSED';
+    }
+    return this.circuitState;
+  }
+
   public async generateProposal(context: TradeOptimizerContext): Promise<TradeProposal> {
     const startTime = Date.now();
 
+    // Check circuit breaker status
+    if (this.circuitState === 'OPEN') {
+      if (Date.now() - this.lastCircuitTripTime > this.resetTimeoutMs) {
+        logger.info('[OracleAdapter] Circuit breaker reset timeout expired. Transitioning to HALF-OPEN for retry.');
+        this.circuitState = 'CLOSED';
+      } else {
+        logger.warn({ serviceUrl: this.serviceUrl }, '[OracleAdapter] Circuit breaker is OPEN due to consecutive failures. Short-circuiting to standard engine.');
+        const fallbackProposal = await this.fallbackGenerator.generateProposal(context);
+        return {
+          ...fallbackProposal,
+          warnings: [
+            ...(fallbackProposal.warnings || []),
+            {
+              code: 'TAX_OPTIMIZER_UNREACHABLE_FALLBACK',
+              message: `External US Tax Optimizer circuit breaker OPEN. Fell back to standard rule-based engine.`,
+            },
+          ],
+        };
+      }
+    }
+
     try {
       const payload = this.buildPayload(context);
-      const response = await this.callOracleService(payload);
+      const rawResponse = await this.callOracleService(payload);
+      const response = this.sanitizeAndValidateResponse(rawResponse, payload.request_id);
 
-      if (response.status === 'error' || !response.trades) {
-        throw new Error(response.error_message ?? 'Oracle service returned error status');
-      }
+      // On successful valid response, reset failure counter
+      this.consecutiveFailures = 0;
+      this.circuitState = 'CLOSED';
 
       const executionTimeMs = Date.now() - startTime;
       const trades: ProposedTrade[] = response.trades.map((t) => ({
@@ -114,7 +152,8 @@ export class OracleTaxOptimizerAdapter implements TradeOptimizerInterface {
         },
       };
     } catch (error: any) {
-      logger.warn({ error: error.message, serviceUrl: this.serviceUrl }, '[OracleAdapter] Unreachable or error; falling back to standard engine');
+      this.recordFailure();
+      logger.warn({ error: error.message, serviceUrl: this.serviceUrl, consecutiveFailures: this.consecutiveFailures }, '[OracleAdapter] Unreachable or error; falling back to standard engine');
 
       const fallbackProposal = await this.fallbackGenerator.generateProposal(context);
 
@@ -128,6 +167,15 @@ export class OracleTaxOptimizerAdapter implements TradeOptimizerInterface {
           },
         ],
       };
+    }
+  }
+
+  private recordFailure(): void {
+    this.consecutiveFailures++;
+    if (this.consecutiveFailures >= this.failureThreshold) {
+      this.circuitState = 'OPEN';
+      this.lastCircuitTripTime = Date.now();
+      logger.error({ consecutiveFailures: this.consecutiveFailures }, '[OracleAdapter] Failure threshold reached. Tripping circuit breaker to OPEN state.');
     }
   }
 
@@ -166,7 +214,10 @@ export class OracleTaxOptimizerAdapter implements TradeOptimizerInterface {
       price,
     }));
 
+    const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
     return {
+      request_id: requestId,
       targets,
       tax_lots: taxLots,
       prices,
@@ -174,6 +225,69 @@ export class OracleTaxOptimizerAdapter implements TradeOptimizerInterface {
       settings: {
         rebalance_threshold: context.policy.absoluteDriftTolerance,
         minimum_trade_size: context.policy.minimumTradeSize,
+      },
+    };
+  }
+
+  public sanitizeAndValidateResponse(raw: any, expectedRequestId?: string): OracleOptimizationResponse {
+    if (!raw || typeof raw !== 'object') {
+      throw new Error('Oracle service returned non-object response');
+    }
+
+    if (raw.status === 'error') {
+      throw new Error(raw.error_message ?? 'Oracle service returned error status');
+    }
+
+    if (raw.status !== 'success') {
+      throw new Error(`Oracle service returned unrecognized status: ${raw.status}`);
+    }
+
+    if (expectedRequestId && raw.request_id && raw.request_id !== expectedRequestId) {
+      throw new Error(`Replay or mismatched request_id (expected ${expectedRequestId}, got ${raw.request_id})`);
+    }
+
+    if (!Array.isArray(raw.trades)) {
+      throw new Error('Oracle service response missing valid trades array');
+    }
+
+    const sanitizedTrades: OracleTradeItem[] = [];
+    for (const trade of raw.trades) {
+      if (!trade || typeof trade !== 'object') continue;
+
+      const identifier = String(trade.identifier || '').trim();
+      const lotId = trade.lot_id ? String(trade.lot_id).trim() : undefined;
+      const direction = trade.direction;
+      const quantity = Number(trade.quantity);
+      const price = Number(trade.estimated_price);
+
+      if (!identifier) continue;
+      if (direction !== 'BUY' && direction !== 'SELL') continue;
+      if (!Number.isFinite(quantity) || quantity <= 0) continue;
+      if (!Number.isFinite(price) || price <= 0) continue;
+
+      sanitizedTrades.push({
+        identifier,
+        direction,
+        quantity,
+        estimated_price: price,
+        ...(lotId ? { lot_id: lotId } : {}),
+      });
+    }
+
+    const rawLoss = Number(raw.metrics?.estimated_realized_loss);
+    const rawWash = Number(raw.metrics?.wash_sales_prevented);
+
+    const estimated_realized_loss = Number.isFinite(rawLoss) && rawLoss >= 0 ? rawLoss : 0;
+    const wash_sales_prevented = Number.isFinite(rawWash) && rawWash >= 0 ? rawWash : 0;
+
+    return {
+      request_id: raw.request_id,
+      status: 'success',
+      trades: sanitizedTrades,
+      metrics: {
+        estimated_realized_loss,
+        wash_sales_prevented,
+        execution_time_ms: Number(raw.metrics?.execution_time_ms) || 0,
       },
     };
   }
