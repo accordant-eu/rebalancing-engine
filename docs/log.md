@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-08-13 | `docs/iterations/2026-08-13-security-hardening.md` | Minor | Documented Stream Ticket auth (Issue #105) and Oracle Adapter circuit breaker & sanitization (Issue #106). |
 | 2026-08-12 | `docs/iterations/2026-08-12-telemetry.md` | Minor | Documented Real-Time Telemetry & Event Streaming implementation for Command Center. |
 | 2026-07-29 | `architecture/personas.md` | Minor | Documented UI/UX Access Control rules and progressive disclosure boundaries for new SharedWorkspaceLayout. |
 | 2026-07-31 | `architecture/engine-architecture.md` | Minor | Added documentation for the new Dynamic Optimization Layer and Projected Gradient Descent solver. |
