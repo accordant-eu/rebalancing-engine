@@ -232,31 +232,45 @@ describe('API Endpoints (Týr Integration)', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
     });
 
-    it('GET /api/events/stream accepts token via query parameter', (done) => {
-      let isDone = false;
-      const finish = (err?: any) => {
-        if (!isDone) {
-          isDone = true;
-          done(err);
-        }
-      };
+    it('POST /api/auth/stream-ticket returns a short-lived stream ticket', async () => {
+      const res = await request(app)
+        .post('/api/auth/stream-ticket')
+        .set('Authorization', `Bearer ${token}`);
+      
+      expect(res.status).toBe(200);
+      expect(res.body.ticket).toBeDefined();
+      expect(res.body.ticket.startsWith('st_')).toBe(true);
+      expect(res.body.expiresInSeconds).toBe(30);
+    });
 
-      const server = app.listen(0, async () => {
-        const port = (server.address() as any).port;
-        const http = await import('http');
-        const reqStream = http.get(`http://127.0.0.1:${port}/api/events/stream?token=${encodeURIComponent(token)}`, (res: any) => {
+    it('GET /api/events/stream accepts single-use ticket and rejects reuse', async () => {
+      const ticketRes = await request(app)
+        .post('/api/auth/stream-ticket')
+        .set('Authorization', `Bearer ${token}`);
+      
+      const ticket = ticketRes.body.ticket;
+
+      // Second connection with same ticket must be rejected (single-use)
+      const server = app.listen(0);
+      const port = (server.address() as any).port;
+      const http = await import('http');
+
+      await new Promise<void>((resolve, reject) => {
+        const reqStream = http.get(`http://127.0.0.1:${port}/api/events/stream?ticket=${encodeURIComponent(ticket)}`, (res: any) => {
           expect(res.statusCode).toBe(200);
           expect(res.headers['content-type']).toBe('text/event-stream');
-          
-          res.on('data', (chunk: Buffer) => {
-            if (chunk.toString().includes(': keepalive')) {
-              reqStream.destroy();
-              server.close();
-              finish();
-            }
-          });
+          reqStream.destroy();
+          resolve();
         });
+        reqStream.on('error', reject);
       });
+
+      // Attempting reuse of the consumed ticket must fail (401)
+      const reuseRes = await request(app)
+        .get(`/api/events/stream?ticket=${encodeURIComponent(ticket)}`);
+      expect(reuseRes.status).toBe(401);
+
+      server.close();
     });
 
     it('cannot read another tenant portfolio with own token', async () => {

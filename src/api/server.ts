@@ -52,6 +52,26 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   app.get('/api/docs/openapi.json', (req, res) => {
     res.json(openApiSpec);
   });
+interface StreamTicket {
+  tenantId: string;
+  userId: string;
+  role: string;
+  isSuperadmin: boolean;
+  expiresAt: number;
+}
+
+const streamTicketStore = new Map<string, StreamTicket>();
+
+// Clean up expired tickets every 60s
+setInterval(() => {
+  const now = Date.now();
+  for (const [ticketId, ticket] of streamTicketStore.entries()) {
+    if (ticket.expiresAt < now) {
+      streamTicketStore.delete(ticketId);
+    }
+  }
+}, 60000).unref();
+
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 
@@ -59,14 +79,26 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
   app.use((req, res, next) => {
     if (req.path === '/api/auth/login' || req.path === '/api/auth/refresh' || req.path === '/api/webhooks/alpaca') return next();
     
-    const authHeader = req.headers.authorization;
-    let token = authHeader ? authHeader.split(' ')[1] : undefined;
-    if (!token && req.query.token && typeof req.query.token === 'string') {
-      token = req.query.token;
+    // Single-use Stream Ticket authentication for SSE (/api/events/stream?ticket=st_...)
+    if (req.path === '/api/events/stream' && req.query.ticket && typeof req.query.ticket === 'string') {
+      const ticketId = req.query.ticket;
+      const ticket = streamTicketStore.get(ticketId);
+      if (ticket && ticket.expiresAt >= Date.now()) {
+        streamTicketStore.delete(ticketId); // Single-use consumption
+        (req as any).tenantId = ticket.tenantId;
+        (req as any).userId = ticket.userId;
+        (req as any).role = ticket.role;
+        (req as any).isSuperadmin = ticket.isSuperadmin;
+        return next();
+      }
+      return sendError(res, 401, 'UNAUTHORIZED', 'Invalid or expired stream ticket');
     }
 
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : undefined;
+
     if (!token) {
-      return sendError(res, 401, 'UNAUTHORIZED', 'Missing Authorization header or token query param');
+      return sendError(res, 401, 'UNAUTHORIZED', 'Missing Authorization header');
     }
     
     // Check if it's a B2B API Key (starts with sk_live_)
@@ -165,6 +197,18 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
     const isSuperadmin = user.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && user.tenantId === process.env.SUPERADMIN_TENANT_ID;
 
     res.json({ token, refreshToken: newRefreshToken, isSuperadmin });
+  });
+
+  app.post('/api/auth/stream-ticket', (req, res) => {
+    const ticketId = 'st_' + randomBytes(16).toString('hex');
+    streamTicketStore.set(ticketId, {
+      tenantId: (req as any).tenantId,
+      userId: (req as any).userId,
+      role: (req as any).role,
+      isSuperadmin: (req as any).isSuperadmin,
+      expiresAt: Date.now() + 30000,
+    });
+    res.json({ ticket: ticketId, expiresInSeconds: 30 });
   });
 
   // --- Admin Endpoints ---

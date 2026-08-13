@@ -151,31 +151,44 @@ function App() {
     fetchModels();
     fetchMetrics();
 
-    // EventSource Real-Time Stream
+    // EventSource Real-Time Stream via Single-Use Stream Ticket
     setStreamStatus('connecting');
-    const es = new EventSource(`/api/events/stream?token=${encodeURIComponent(tenantToken)}`);
+    let es: EventSource | null = null;
 
-    es.onopen = () => {
-      setStreamStatus('connected');
-    };
+    fetch('/api/auth/stream-ticket', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${tenantToken}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.ticket) throw new Error('No ticket returned');
+        es = new EventSource(`/api/events/stream?ticket=${encodeURIComponent(data.ticket)}`);
 
-    es.onmessage = (evt) => {
-      if (evt.data && !evt.data.startsWith(':')) {
-        try {
-          const systemEvt: SystemStreamEvent = JSON.parse(evt.data);
-          setStreamEvents((prev) => [systemEvt, ...prev].slice(0, 50));
-          fetchState();
-          fetchLogs();
-          fetchMetrics();
-        } catch (_err) {
-          // ignore non-json keepalive stream comments
-        }
-      }
-    };
+        es.onopen = () => {
+          setStreamStatus('connected');
+        };
 
-    es.onerror = () => {
-      setStreamStatus('disconnected');
-    };
+        es.onmessage = (evt) => {
+          if (evt.data && !evt.data.startsWith(':')) {
+            try {
+              const systemEvt: SystemStreamEvent = JSON.parse(evt.data);
+              setStreamEvents((prev) => [systemEvt, ...prev].slice(0, 50));
+              fetchState();
+              fetchLogs();
+              fetchMetrics();
+            } catch (_err) {
+              // ignore non-json keepalive stream comments
+            }
+          }
+        };
+
+        es.onerror = () => {
+          setStreamStatus('disconnected');
+        };
+      })
+      .catch(() => {
+        setStreamStatus('disconnected');
+      });
     
     const interval = setInterval(() => {
       fetchState();
@@ -185,7 +198,7 @@ function App() {
 
     return () => {
       clearInterval(interval);
-      es.close();
+      if (es) es.close();
     };
   }, [tenantToken]);
 
