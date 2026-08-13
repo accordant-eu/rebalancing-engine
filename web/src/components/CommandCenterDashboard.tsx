@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { StatePayload, SystemStreamEvent, TenantMetrics } from '../types';
-import { AlertCircle, Eye, AlertTriangle, AlertOctagon, Activity, Server, Radio } from 'lucide-react';
+import { AlertCircle, Eye, AlertTriangle, AlertOctagon, Activity, Radio } from 'lucide-react';
 
 interface DashboardProps {
   state: StatePayload;
@@ -14,7 +14,6 @@ interface DashboardProps {
 export const CommandCenterDashboard: React.FC<DashboardProps> = ({
   state,
   setSelectedAccountId,
-  metrics,
   streamStatus = 'disconnected',
   streamEvents = [],
 }) => {
