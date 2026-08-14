@@ -517,6 +517,8 @@ function orderLots(lots: TaxLot[], sellSelectionMode: SellSelectionMode): TaxLot
       return lotsWithIndex
         .sort((a, b) => (a.lot.unitCost ?? 0) - (b.lot.unitCost ?? 0) || a.index - b.index)
         .map(({ lot }) => lot);
+    case 'SECTION_104':
+      return lots;
   }
 }
 

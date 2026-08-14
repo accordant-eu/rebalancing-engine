@@ -232,7 +232,7 @@ export class UkBedAndBreakfastOverlay implements ExecutionOverlay {
     }
 
     // 2. Identify instruments that have recent acquisitions (within 30 days) from tax-lot history
-    const evaluationDate = policy.evaluationDate || state.valuation.timestamp;
+    const evaluationDate = policy.evaluationDate || _priceSnapshot?.asOf;
     const instrumentsWithRecentAcquisition = new Set<string>();
     if (evaluationDate) {
       const evalMs = new Date(evaluationDate.slice(0, 10) + 'T00:00:00Z').getTime();

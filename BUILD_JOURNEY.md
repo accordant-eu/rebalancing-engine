@@ -88,6 +88,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0051 | 2026-06-18 | Use Composite Asset Schema for Instrument Identity | Accepted | [ADR-0051](docs/decisions/0051-use-composite-asset-schema-for-instrument-identity.md) |
 | 0052 | 2026-06-18 | Use Tenant API Keys for B2B Authentication | Accepted | [ADR-0052](docs/decisions/0052-use-tenant-api-keys-for-b2b-authentication.md) |
 | 0058 | 2026-08-10 | Generalized Trade Optimizer Interface and External Tax-Aware Module | Accepted | [ADR-0058](docs/decisions/0058-generalized-trade-optimizer-interface.md) |
+| 0059 | 2026-08-14 | UK Capital Gains Tax Rules and Bed-and-Breakfasting Overlay | Accepted | [ADR-0059](docs/decisions/0059-uk-bed-and-breakfasting-overlay.md) |
 
 
 | Iteration | Date | Theme | Area | High-Level Summary | Details |
@@ -190,3 +191,4 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 91 | 2026-08-12 | Real-Time Telemetry & Event Streaming | UI & API Observability | Integrated EventSource SSE stream, query token authentication, live streaming indicator, and real-time event feed in Command Center. | [Log](docs/iterations/2026-08-12-telemetry.md) |
 | 92 | 2026-08-13 | Security & Architecture Hardening (Issues 105 & 106) | Security & Architecture | Replaced SSE query token auth with single-use 30s Stream Tickets (#105) and hardened Oracle Adapter with sanitization & circuit breaker (#106). | [Log](docs/iterations/2026-08-13-security-hardening.md) |
 | 93 | 2026-08-13 | Jurisdiction Matrix & Failure Mode Verification (Issue 92) | Testing & Quality | Added test suites for zero-constraint jurisdictions, missing substitute failure modes, and overlay quality non-convergence. Closed issues #105, #106, #103, and #92. | [Log](docs/iterations/2026-08-13-jurisdiction-matrix.md) |
+| 94 | 2026-08-14 | UK Capital Gains & Bed-and-Breakfasting Overlay | Multi-Jurisdiction Architecture | Implemented HMRC Section 104 average-cost holding pools and UkBedAndBreakfastOverlay for 30-day repurchase matching suppression. | [Log](docs/iterations/2026-08-14-uk-tax-rules.md) |

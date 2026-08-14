@@ -1,4 +1,4 @@
-import { TaxLot, ProposedTrade, ProposedLotAllocation } from '../models/domain';
+import { TaxLot, ProposedLotAllocation } from '../models/domain';
 import { toDecimal } from './numeric';
 
 export interface Section104Pool {
