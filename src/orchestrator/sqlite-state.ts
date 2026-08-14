@@ -16,6 +16,7 @@ import { LiveState, LiveStateManager } from './state';
 
 import { ModelRepository } from '../db/repositories/ModelRepository';
 import { PortfolioRepository } from '../db/repositories/PortfolioRepository';
+import { CorporateAction, applyCorporateActionToPortfolio } from '../core/corporate-actions';
 
 export class SqliteStateManager implements LiveStateManager {
   // In-memory cache for lastTradeTimes to avoid writing frequent updates to DB
@@ -279,8 +280,28 @@ export class SqliteStateManager implements LiveStateManager {
       );
       
       deleteHoldings.run(accountId);
+      const deleteTaxLots = db.prepare(`DELETE FROM TaxLots WHERE accountId = ?`);
+      deleteTaxLots.run(accountId);
+
+      const insertTaxLot = db.prepare(`
+        INSERT OR REPLACE INTO TaxLots (lotId, accountId, instrumentId, quantity, acquisitionDate, unitCost)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+
       for (const h of state.portfolioState.holdings) {
         insertHolding.run(accountId, h.instrumentId, h.quantity);
+        if (h.taxLots) {
+          for (const lot of h.taxLots) {
+            insertTaxLot.run(
+              lot.lotId,
+              accountId,
+              h.instrumentId,
+              lot.quantity,
+              lot.acquisitionDate || null,
+              lot.unitCost !== undefined ? lot.unitCost : null
+            );
+          }
+        }
       }
 
       deleteTargets.run(accountId);
@@ -319,17 +340,78 @@ export class SqliteStateManager implements LiveStateManager {
 
       if (portfolioUpdate.holdings !== undefined) {
         db.prepare(`DELETE FROM Holdings WHERE accountId = ?`).run(accountId);
+        db.prepare(`DELETE FROM TaxLots WHERE accountId = ?`).run(accountId);
         const insertHolding = db.prepare(`
           INSERT INTO Holdings (accountId, instrumentId, quantity)
           VALUES (?, ?, ?)
         `);
+        const insertTaxLot = db.prepare(`
+          INSERT INTO TaxLots (lotId, accountId, instrumentId, quantity, acquisitionDate, unitCost)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
         for (const h of portfolioUpdate.holdings) {
           insertHolding.run(accountId, h.instrumentId, h.quantity);
+          if (h.taxLots) {
+            for (const lot of h.taxLots) {
+              insertTaxLot.run(
+                lot.lotId,
+                accountId,
+                h.instrumentId,
+                lot.quantity,
+                lot.acquisitionDate || null,
+                lot.unitCost !== undefined ? lot.unitCost : null
+              );
+            }
+          }
+        }
+      }
+
+      if (portfolioUpdate.cashFlows !== undefined) {
+        const insertCashFlow = db.prepare(`
+          INSERT OR REPLACE INTO CashFlows (cashflowId, accountId, amount, direction, currency, expectedSettlementDate, status, submittedAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const cf of portfolioUpdate.cashFlows) {
+          insertCashFlow.run(
+            cf.cashFlowId,
+            accountId,
+            cf.amount,
+            cf.direction,
+            'USD',
+            cf.effectiveDate || null,
+            cf.status,
+            new Date().toISOString()
+          );
         }
       }
     });
 
     tx();
+  }
+
+  public applyCorporateAction(action: CorporateAction): { affectedAccounts: string[]; logs: string[] } {
+    const db = getDb();
+    const accountRows = db.prepare(`
+      SELECT DISTINCT accountId FROM Holdings WHERE instrumentId = ?
+    `).all(action.instrumentId) as { accountId: string }[];
+
+    const affectedAccounts: string[] = [];
+    const logs: string[] = [];
+
+    const tx = db.transaction(() => {
+      for (const row of accountRows) {
+        const liveState = this.getLiveState(row.accountId);
+        if (!liveState) continue;
+
+        const { updatedPortfolio, log } = applyCorporateActionToPortfolio(liveState.portfolioState, action);
+        this.updatePortfolio(row.accountId, updatedPortfolio);
+        affectedAccounts.push(row.accountId);
+        logs.push(`[Account ${row.accountId}] ${log}`);
+      }
+    });
+
+    tx();
+    return { affectedAccounts, logs };
   }
 
   public updateTarget(accountId: string, target: TargetAllocation): void {
@@ -499,12 +581,27 @@ export class SqliteStateManager implements LiveStateManager {
     }
 
     const holdingsRows = db.prepare(`SELECT instrumentId, quantity FROM Holdings WHERE accountId = ?`).all(accountId) as any[];
+    const taxLotsRows = db.prepare(`SELECT lotId, instrumentId, quantity, acquisitionDate, unitCost FROM TaxLots WHERE accountId = ?`).all(accountId) as any[];
+    const taxLotsByInstrument = new Map<string, any[]>();
+    for (const lot of taxLotsRows) {
+      if (!taxLotsByInstrument.has(lot.instrumentId)) {
+        taxLotsByInstrument.set(lot.instrumentId, []);
+      }
+      taxLotsByInstrument.get(lot.instrumentId)!.push({
+        lotId: lot.lotId,
+        quantity: lot.quantity,
+        acquisitionDate: lot.acquisitionDate || undefined,
+        unitCost: lot.unitCost !== null && lot.unitCost !== undefined ? lot.unitCost : undefined,
+      });
+    }
+
     const targetsRows = db.prepare(`SELECT instrumentId, weight FROM TargetAllocations WHERE accountId = ?`).all(accountId) as any[];
     const cashFlowsRows = db.prepare(`SELECT * FROM CashFlows WHERE accountId = ? AND status = 'PENDING'`).all(accountId) as any[];
 
     const holdings: Holding[] = holdingsRows.map(r => ({
       instrumentId: r.instrumentId,
       quantity: r.quantity,
+      taxLots: taxLotsByInstrument.get(r.instrumentId) || undefined,
     }));
 
     const targets = targetsRows.map(r => ({
@@ -570,6 +667,24 @@ export class SqliteStateManager implements LiveStateManager {
     const holdings = tenantId 
       ? db.prepare(`SELECT h.accountId, h.instrumentId, h.quantity FROM Holdings h JOIN Portfolios p ON h.accountId = p.accountId WHERE p.tenantId = ?`).all(tenantId) as any[]
       : db.prepare(`SELECT accountId, instrumentId, quantity FROM Holdings`).all() as any[];
+
+    const taxLots = tenantId
+      ? db.prepare(`SELECT tl.accountId, tl.lotId, tl.instrumentId, tl.quantity, tl.acquisitionDate, tl.unitCost FROM TaxLots tl JOIN Portfolios p ON tl.accountId = p.accountId WHERE p.tenantId = ?`).all(tenantId) as any[]
+      : db.prepare(`SELECT accountId, lotId, instrumentId, quantity, acquisitionDate, unitCost FROM TaxLots`).all() as any[];
+
+    const taxLotsByAccAndInst = new Map<string, any[]>();
+    for (const lot of taxLots) {
+      const key = `${lot.accountId}:${lot.instrumentId}`;
+      if (!taxLotsByAccAndInst.has(key)) {
+        taxLotsByAccAndInst.set(key, []);
+      }
+      taxLotsByAccAndInst.get(key)!.push({
+        lotId: lot.lotId,
+        quantity: lot.quantity,
+        acquisitionDate: lot.acquisitionDate || undefined,
+        unitCost: lot.unitCost !== null && lot.unitCost !== undefined ? lot.unitCost : undefined,
+      });
+    }
       
     const targets = tenantId
       ? db.prepare(`SELECT t.accountId, t.instrumentId, t.weight FROM TargetAllocations t JOIN Portfolios p ON t.accountId = p.accountId WHERE p.tenantId = ?`).all(tenantId) as any[]
@@ -578,7 +693,12 @@ export class SqliteStateManager implements LiveStateManager {
     const holdingsByAcc: Record<string, Holding[]> = {};
     for (const h of holdings) {
       if (!holdingsByAcc[h.accountId]) holdingsByAcc[h.accountId] = [];
-      holdingsByAcc[h.accountId].push({ instrumentId: h.instrumentId, quantity: h.quantity });
+      const key = `${h.accountId}:${h.instrumentId}`;
+      holdingsByAcc[h.accountId].push({
+        instrumentId: h.instrumentId,
+        quantity: h.quantity,
+        taxLots: taxLotsByAccAndInst.get(key) || undefined,
+      });
     }
 
     const targetsByAcc: Record<string, any[]> = {};

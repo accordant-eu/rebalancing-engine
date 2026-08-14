@@ -1,10 +1,8 @@
 import { LiveState } from '../orchestrator/state';
+import { CorporateAction, applyCorporateActions, CorporateActionResult } from '../core/corporate-actions';
+import { PortfolioState } from '../models/domain';
 
-export interface CorporateAction {
-  instrumentId: string;
-  exDate: string; // ISO date format YYYY-MM-DD
-  type: 'SPLIT' | 'DIVIDEND' | 'MERGER';
-}
+export { CorporateAction };
 
 export class CorporateActionService {
   private knownActions: CorporateAction[] = [];
@@ -17,6 +15,14 @@ export class CorporateActionService {
     return this.knownActions.filter(
       a => a.instrumentId === instrumentId && a.exDate === dateStr
     );
+  }
+
+  public getActionsForDate(dateStr: string): CorporateAction[] {
+    return this.knownActions.filter(a => a.exDate === dateStr);
+  }
+
+  public processActionsForPortfolio(portfolio: PortfolioState, dateStr: string): CorporateActionResult {
+    return applyCorporateActions(portfolio, this.knownActions, dateStr);
   }
 }
 

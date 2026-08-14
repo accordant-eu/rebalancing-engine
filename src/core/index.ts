@@ -7,3 +7,4 @@ export * from './numeric';
 export * from './cash-flows';
 export * from './overlays';
 export * from './uk-tax';
+export * from './corporate-actions';
