@@ -197,3 +197,97 @@ export class WashSaleLockoutOverlay implements ExecutionOverlay {
     return proposal;
   }
 }
+
+/**
+ * Constraint Overlay: Enforces UK HMRC 30-day Bed-and-Breakfasting matching rules.
+ * Suppresses TLH loss-harvesting trades when a same-day or 30-day repurchase occurs in the same asset or equivalency group.
+ */
+export class UkBedAndBreakfastOverlay implements ExecutionOverlay {
+  name = 'UkBedAndBreakfastOverlay';
+
+  apply(
+    proposal: TradeProposal,
+    state: EvaluationState,
+    _priceSnapshot: PriceSnapshot
+  ): TradeProposal {
+    const policy = state.policy;
+    
+    // Map instrument to its equivalency group if defined, otherwise group containing only itself
+    const instrumentToGroup = new Map<string, string[]>();
+    if (policy.equivalencyGroups) {
+      for (const group of policy.equivalencyGroups) {
+        for (const inst of group) {
+          instrumentToGroup.set(inst, group);
+        }
+      }
+    }
+
+    // 1. Identify all groups that have a non-TLH BUY order in the current proposal
+    const groupsWithBuy = new Set<string[]>();
+    for (const trade of proposal.trades) {
+      if (trade.direction === 'BUY' && trade.metadata?.origin !== 'OpportunisticLossHarvestingOverlay') {
+        const group = instrumentToGroup.get(trade.instrumentId) || [trade.instrumentId];
+        groupsWithBuy.add(group);
+      }
+    }
+
+    // 2. Identify instruments that have recent acquisitions (within 30 days) from tax-lot history
+    const evaluationDate = policy.evaluationDate || state.valuation.timestamp;
+    const instrumentsWithRecentAcquisition = new Set<string>();
+    if (evaluationDate) {
+      const evalMs = new Date(evaluationDate.slice(0, 10) + 'T00:00:00Z').getTime();
+      for (const holding of state.valuation.holdings) {
+        if (!holding.taxLots) continue;
+        for (const lot of holding.taxLots) {
+          if (!lot.acquisitionDate) continue;
+          const acqMs = new Date(lot.acquisitionDate.slice(0, 10) + 'T00:00:00Z').getTime();
+          const diffDays = Math.abs((evalMs - acqMs) / (1000 * 60 * 60 * 24));
+          if (diffDays <= 30) {
+            instrumentsWithRecentAcquisition.add(holding.instrumentId);
+            const group = instrumentToGroup.get(holding.instrumentId);
+            if (group) {
+              groupsWithBuy.add(group);
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Filter out TLH trades that conflict with 30-day repurchase / bed-and-breakfast matching
+    let hasBnbConflict = false;
+    const finalTrades: ProposedTrade[] = [];
+    const newWarnings = [...proposal.warnings];
+
+    for (const trade of proposal.trades) {
+      if (trade.metadata?.origin === 'OpportunisticLossHarvestingOverlay') {
+        const group = instrumentToGroup.get(trade.instrumentId) || [trade.instrumentId];
+        const hasRecentAcq = instrumentsWithRecentAcquisition.has(trade.instrumentId);
+        
+        if (groupsWithBuy.has(group) || hasRecentAcq) {
+          hasBnbConflict = true;
+          if (trade.direction === 'SELL') {
+            newWarnings.push({
+              code: 'UK_BED_AND_BREAKFAST_LOCKOUT',
+              message: 'Tax-loss harvesting trade suppressed under UK HMRC 30-day Bed-and-Breakfast matching rules.',
+              instrumentId: trade.instrumentId,
+              estimatedValue: trade.estimatedValue
+            });
+          }
+          continue;
+        }
+      }
+      finalTrades.push(trade);
+    }
+
+    if (hasBnbConflict) {
+      return {
+        ...proposal,
+        trades: finalTrades,
+        warnings: newWarnings
+      };
+    }
+
+    return proposal;
+  }
+}
+

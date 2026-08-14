@@ -20,7 +20,7 @@ import {
 import { calculateDrift } from './drift';
 import { PostTradeSimulation, simulatePostTrade } from './simulation';
 import { FrictionModel } from './friction';
-import { ExecutionOverlay, OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay } from './overlays';
+import { ExecutionOverlay, OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay, UkBedAndBreakfastOverlay } from './overlays';
 import {
   buildCashFlowProposalWarnings,
   buildCashFlowScheduleProposalWarnings,
@@ -89,6 +89,8 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
         executionOverlays.push(new OpportunisticLossHarvestingOverlay());
       } else if (overlayName === 'WashSaleLockoutOverlay') {
         executionOverlays.push(new WashSaleLockoutOverlay());
+      } else if (overlayName === 'UkBedAndBreakfastOverlay') {
+        executionOverlays.push(new UkBedAndBreakfastOverlay());
       }
     }
   }
@@ -279,6 +281,8 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
         executionOverlays.push(new OpportunisticLossHarvestingOverlay());
       } else if (overlayName === 'WashSaleLockoutOverlay') {
         executionOverlays.push(new WashSaleLockoutOverlay());
+      } else if (overlayName === 'UkBedAndBreakfastOverlay') {
+        executionOverlays.push(new UkBedAndBreakfastOverlay());
       }
     }
   }

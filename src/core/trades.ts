@@ -17,6 +17,7 @@ import { ValuationResult, calculateCurrentWeights, simulatePostTradeValuation } 
 import { buildCashFlowProposalWarnings, buildCashFlowScheduleProposalWarnings } from '../explanation/warnings';
 import { FrictionModel } from './friction';
 import { QualityIndicator, EvaluationState, QualityEvaluationResult } from './quality';
+import { allocateSection104SellLots } from './uk-tax';
 
 const TRADE_EPSILON = CALCULATION_EPSILON;
 
@@ -463,6 +464,10 @@ function allocateSellLots(
   estimatedPrice: number,
   sellSelectionMode: SellSelectionMode,
 ): ProposedTrade['lotAllocations'] {
+  if (sellSelectionMode === 'SECTION_104') {
+    return allocateSection104SellLots(lots, sellQuantity, estimatedPrice);
+  }
+
   const orderedLots = orderLots(lots, sellSelectionMode);
   let remainingQuantity = toDecimal(sellQuantity);
   const allocations: NonNullable<ProposedTrade['lotAllocations']> = [];
