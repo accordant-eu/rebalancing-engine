@@ -130,6 +130,7 @@ describe('Model Fan-Out Queue Worker & Throttled Batch Evaluator', () => {
         tenantId: 'tenant-1',
         name: 'Growth Model',
         archetype: 'StaticWeights',
+        evaluationFrequency: 'realtime',
         targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 0.5 }, { instrumentId: 'MSFT', weight: 0.5 }] },
         policy: { absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
       };
@@ -191,6 +192,7 @@ describe('Model Fan-Out Queue Worker & Throttled Batch Evaluator', () => {
         tenantId: 'tenant-1',
         name: 'Tech Model',
         archetype: 'StaticWeights',
+        evaluationFrequency: 'realtime',
         targetAllocation: { targets: [{ instrumentId: 'AAPL', weight: 1.0 }] },
         policy: { absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
       };
