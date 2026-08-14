@@ -1,4 +1,5 @@
 import { createPortfoliosRouter } from './routes/portfolios';
+import { createQueueRouter } from './routes/queue';
 import express from 'express';
 import cors from 'cors';
 import { createHash, randomBytes } from 'crypto';
@@ -17,12 +18,13 @@ import rateLimit from 'express-rate-limit';
 
 
 import { Orchestrator } from '../orchestrator/loop';
+import { BatchEvaluationWorker } from '../orchestrator/batch-evaluator';
 import { globalMetrics } from '../services/metrics';
 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?: Orchestrator) {
+export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?: Orchestrator, batchWorker?: BatchEvaluationWorker) {
   const app = express();
   app.use(cors());
   app.use(express.json());
@@ -593,6 +595,8 @@ setInterval(() => {
   });
 
   app.use('/api/portfolios', createPortfoliosRouter(stateManager, { forbidViewer, requireAdmin, requireSuperadmin, sendError }));
+  app.use('/api/queue', createQueueRouter(stateManager, batchWorker, { forbidViewer, requireAdmin, requireSuperadmin, sendError }));
+  app.use('/api', createQueueRouter(stateManager, batchWorker, { forbidViewer, requireAdmin, requireSuperadmin, sendError }));
 
   app.get('/api/prices', (req, res) => {
     res.json(stateManager.getGlobalPrices());

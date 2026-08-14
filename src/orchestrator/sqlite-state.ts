@@ -763,6 +763,28 @@ export class SqliteStateManager implements LiveStateManager {
     db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`).run(accountId, timestampMs);
   }
 
+  public getQueueDepth(): number {
+    const db = getDb();
+    const row = db.prepare(`SELECT COUNT(*) as count FROM EvaluationQueue`).get() as { count: number };
+    return row?.count ?? 0;
+  }
+
+  public enqueueModelSubscribers(modelId: string, subscriptionType: string = 'discretionary'): string[] {
+    const db = getDb();
+    const subscribedAccounts = this.portfolioRepo.getSubscribedAccounts(modelId, subscriptionType);
+    const now = Date.now();
+    const insertQueue = db.prepare(`INSERT OR IGNORE INTO EvaluationQueue (accountId, queuedAtMs) VALUES (?, ?)`);
+
+    const tx = db.transaction(() => {
+      for (const accountId of subscribedAccounts) {
+        insertQueue.run(accountId, now);
+      }
+    });
+
+    tx();
+    return subscribedAccounts;
+  }
+
   public dequeuePortfolios(limit: number): string[] {
     const db = getDb();
     const tx = db.transaction(() => {
