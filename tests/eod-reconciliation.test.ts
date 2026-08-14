@@ -54,6 +54,7 @@ describe('EodReconciliationJob', () => {
   });
 
   afterEach(() => {
+    eodJob.stop();
     jest.clearAllMocks();
   });
 
@@ -138,4 +139,50 @@ describe('EodReconciliationJob', () => {
     expect(mockGetPortfolioState).toHaveBeenCalledTimes(1);
     expect(mockGetPortfolioState).toHaveBeenCalledWith(expect.anything(), 'acc-1');
   });
+
+  it('handles broker network/API errors gracefully without crashing or corrupting local state', async () => {
+    // acc-1 fails due to network timeout
+    mockGetPortfolioState.mockRejectedValue(new Error('Broker connection timeout (ETIMEDOUT)'));
+
+    await expect(eodJob.runReconciliation()).resolves.not.toThrow();
+
+    // Local state should remain uncorrupted
+    const finalState = stateManager.getAccountState('acc-1');
+    expect(finalState.portfolioState.cash).toBe(1000);
+    expect(finalState.portfolioState.holdings[0].quantity).toBe(10);
+  });
+
+  it('continues reconciling subsequent accounts when an individual portfolio fails', async () => {
+    // Register second portfolio for tenant-1
+    stateManager.registerPortfolio('acc-1b', {
+      portfolioState: {
+        accountId: 'acc-1b',
+        cash: 2000,
+        holdings: [{ instrumentId: 'MSFT', quantity: 20 }],
+      },
+      priceSnapshot: { prices: {} },
+      targetAllocation: { targets: [], cashBuffer: 0 },
+      policy: { absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
+      archetype: 'StaticWeights',
+      constraints: [],
+    });
+    stateManager.assignPortfolioToTenant('acc-1b', 'tenant-1');
+
+    // acc-1 fails, acc-1b succeeds with a discrepancy
+    mockGetPortfolioState
+      .mockRejectedValueOnce(new Error('Rate Limit 429'))
+      .mockResolvedValueOnce({
+        accountId: 'acc-1b',
+        cash: 2500,
+        holdings: [{ instrumentId: 'MSFT', quantity: 20 }],
+      });
+
+    await eodJob.runReconciliation();
+
+    // acc-1 remains unchanged
+    expect(stateManager.getAccountState('acc-1').portfolioState.cash).toBe(1000);
+    // acc-1b is reconciled successfully to 2500
+    expect(stateManager.getAccountState('acc-1b').portfolioState.cash).toBe(2500);
+  });
 });
+

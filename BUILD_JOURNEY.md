@@ -4,22 +4,22 @@ This file is the living project journal. It captures the journey from initializa
 
 ## 1. Project Context
 
-- **Known Objective:** Maintain and extend a generic portfolio rebalancing engine MVP.
-- **Development Approach:** This project, including its documentation, scaffolding, and future implementations, is built heavily relying on LLM tools and AI-assisted editors.
-- **What is Known:** The MVP is a TypeScript/Node.js offline calculation core using deterministic synthetic fixtures.
-- **What is Not Yet Known:** Production integration model, deployment model, live data interfaces, execution routing, and production persistence remain undecided.
-- **Next Steps:** Open questions from the roadmap have been resolved (weekly recurrence, schema-only validation deferral, scheduled flows as projection-only, price `asOf` timestamps). A live-agent vision has been documented. Near-term implementation candidates are weekly recurrence, scheduled-flow behavioral change (projection-only), price `asOf` metadata, and CI hardening. The project direction is toward a live autonomous agent with a real-time broker connection.
+- **Known Objective:** Generic portfolio rebalancing engine, autonomous live agent, and multi-tenant SaaS platform.
+- **Development Approach:** Pair programming with LLM agents adhering to repository stewardship, standing ADR decision records, and test-first verification.
+- **What is Known:** The engine features a deterministic core (valuation, drift, threshold/calendar/manual triggers, boundary sizing, tax-lot selection, overlays, quality pipeline) combined with SQLite persistent state, Alpaca live streaming/polling broker routing, dynamic gradient descent optimizers, corporate actions processor, throttled batch evaluation, and REST APIs with SSE telemetry.
+- **What is Not Yet Known:** Extended multi-custodian adapters (e.g. Interactive Brokers, DriveWealth), production cloud hosting topology, and external tax engine RPC providers.
+- **Next Steps:** Complete cross-feature hardening, maintain test suite excellence, and execute deployment handoffs when production-ready.
 
 ## 2. Current Repository Snapshot
 
-- **Repository state:** MVP offline calculation core implemented for deterministic synthetic fixtures.
-- **Languages detected:** TypeScript on Node.js.
-- **Frameworks detected:** Jest test framework; no application framework.
-- **Tooling detected:** TypeScript compiler, Jest, ESLint, Prettier, npm scripts.
-- **Tests detected:** Unit, fixture, edge-case, scenario runner, explanation, audit, and strategy tests.
-- **Documentation detected:** README, build journey, MVP plan, PRD/architecture document, roadmap, fixture README, CLI docs, PRDs/plans, and audit reports.
-- **CI/CD detected:** None.
-- **Notable gaps:** No CI workflow, no full optimizer, no jurisdiction-specific tax logic, no schema-only validator or published JSON Schema, and no live integrations/API/UI/database.
+- **Repository state:** Multi-tenant autonomous portfolio rebalancing engine with live broker streaming, SQLite persistence, and REST API.
+- **Languages detected:** TypeScript on Node.js (v20+).
+- **Frameworks detected:** Express.js REST API with SSE event bus; React Command Center dashboard (Tailwind v4, Framer Motion); Jest test framework.
+- **Tooling detected:** TypeScript compiler (`tsc`), Jest, ESLint, Prettier, SQLite (`better-sqlite3`), Docker Compose.
+- **Tests detected:** 45 test suites / 320 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, and EOD reconciliation.
+- **Documentation detected:** Full architecture docs (`docs/architecture/`), 61 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
+- **CI/CD detected:** GitHub Actions workflow (`.github/workflows/ci.yml`) with linting, testing, and Docker build verification.
+
 
 ## 3. Working Assumptions
 
@@ -198,4 +198,6 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 96 | 2026-08-14 | Model Portfolio Fan-Out Queue Worker & Throttled Batch Evaluator | Scaling & B2B Architecture | Implemented BatchEvaluationWorker with throttled batch consumption, rate-limiting, subscriber fan-out, and queue REST endpoints. | [Log](docs/iterations/2026-08-14-batch-evaluator.md) |
 | 97 | 2026-08-14 | Documentation-Driven Test Suite Audit | Testing, QA & Audit | Performed independent requirements-to-test traceability audit across 61 ADRs & 10 PRDs; produced prioritized test backlog. | [Log](docs/iterations/2026-08-14-test-suite-audit.md) |
 | 98 | 2026-08-14 | Documentation-Driven Test Suite Audit Mitigation | Testing, QA & Hardening | Implemented mitigation plan resolving P0-P3 audit findings: BrokerSyncService tests, unmocked log rotation, strict cash invariants, and async handle leak fixes. | [Log](docs/iterations/2026-08-14-audit-mitigation.md) |
+| 99 | 2026-08-14 | Cross-Feature Interaction & EOD Error Resilience | Testing & Quality Hardening | Added cross-feature interaction test suite (Corporate Action Split -> TLH Harvest, Fan-Out -> Circuit Breakers) and EOD reconciliation error resilience. | [Log](docs/iterations/2026-08-14-cross-feature-hardening.md) |
+
 
