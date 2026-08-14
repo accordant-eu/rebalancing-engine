@@ -146,7 +146,7 @@ export type ExecutionTargetMode = 'full_reset' | 'boundary';
 
 export type BoundaryBandMode = 'absolute' | 'relative';
 
-export type SellSelectionMode = 'FIFO' | 'LIFO' | 'HIGHEST_COST' | 'LOWEST_COST';
+export type SellSelectionMode = 'FIFO' | 'LIFO' | 'HIGHEST_COST' | 'LOWEST_COST' | 'SECTION_104';
 
 export type DepositAllocationMode = 'REBALANCING' | 'CURRENT_WEIGHT' | 'FIXED_TARGET';
 
