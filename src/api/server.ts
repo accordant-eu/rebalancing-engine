@@ -575,7 +575,7 @@ setInterval(() => {
         return;
       }
 
-      if (portfolios && !portfolios.includes(event.accountId)) {
+      if (portfolios && event.accountId && !portfolios.includes(event.accountId)) {
         return;
       }
 

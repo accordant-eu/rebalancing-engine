@@ -65,7 +65,7 @@ export function createQueueRouter(
    * Triggers an asynchronous fan-out re-evaluation for all portfolios subscribed to a model.
    */
   router.post('/models/:id/fan-out', async (req: Request, res: Response) => {
-    const modelId = req.params.id;
+    const modelId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id as string);
     const subscriptionType = (req.body?.subscriptionType as string) || 'discretionary';
     const executeImmediately = req.body?.executeImmediately === true;
 

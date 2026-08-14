@@ -175,12 +175,16 @@ export class BatchEvaluationWorker {
 
         const context: ExecutionContext = { tenantId, brokerConfig, translateBrokerSymbol };
 
-        const proposal = await evaluateRebalanceAsync(
-          state.portfolioState,
-          state.targetAllocation,
-          state.priceSnapshot,
-          state.policy
-        );
+        const evaluation = await evaluateRebalanceAsync({
+          eventId: `batch-fan-out:${accountId}:${timestampMs}`,
+          createdAt: new Date(timestampMs).toISOString(),
+          portfolioState: state.portfolioState,
+          targetAllocation: state.targetAllocation,
+          priceSnapshot: state.priceSnapshot,
+          policy: state.policy,
+        });
+
+        const proposal = evaluation.tradeProposal;
 
         if (proposal.trades.length > 0) {
           tradesGenerated += proposal.trades.length;
@@ -196,18 +200,7 @@ export class BatchEvaluationWorker {
         }
 
         if (this.auditStorage) {
-          await this.auditStorage.saveRecord({
-            auditId: `audit-batch-${accountId}-${timestampMs}`,
-            timestamp: new Date(timestampMs).toISOString(),
-            accountId,
-            tenantId,
-            preRebalanceState: state.portfolioState,
-            targetAllocation: state.targetAllocation,
-            prices: state.priceSnapshot,
-            proposal,
-            executionOutcome: proposal.trades.length > 0 ? 'TRADES_GENERATED' : 'NO_TRADES',
-            warnings: proposal.warnings.map(w => w.code),
-          });
+          await this.auditStorage.saveAuditRecord(evaluation.auditRecord);
         }
 
         this.stateManager.markTradeExecution?.(accountId, timestampMs);

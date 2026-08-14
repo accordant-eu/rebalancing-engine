@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-08-14 | `docs/iterations/2026-08-14-batch-evaluator.md` | Minor | Documented Model Portfolio Fan-Out Queue Worker, throttled batch evaluation, and queue REST endpoints. |
 | 2026-08-14 | `docs/iterations/2026-08-14-corporate-actions.md` | Minor | Documented Corporate Actions Processor, stock splits, dividends, mergers, and tax-lot basis preservation. |
 | 2026-08-14 | `docs/iterations/2026-08-14-uk-tax-rules.md` | Minor | Documented HMRC UK Capital Gains rules, Section 104 average cost pooling, and UkBedAndBreakfastOverlay. |
 | 2026-08-13 | `docs/iterations/2026-08-13-jurisdiction-matrix.md` | Minor | Documented test matrix gaps closure for zero-constraint jurisdictions and failure modes (Issue #92). |

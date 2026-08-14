@@ -33,3 +33,4 @@ Moving forward, iteration logs are strictly captured in the high-level `BUILD_JO
 - [2026-08-13: Jurisdiction Matrix & Failure Mode Verification (Issue #92)](2026-08-13-jurisdiction-matrix.md)
 - [2026-08-14: UK Tax Rules & Bed-and-Breakfasting Overlay](2026-08-14-uk-tax-rules.md)
 - [2026-08-14: Corporate Actions Processor & Lot Basis Recalculation Engine](2026-08-14-corporate-actions.md)
+- [2026-08-14: Model Portfolio Fan-Out Queue Worker & Throttled Batch Evaluator](2026-08-14-batch-evaluator.md)
