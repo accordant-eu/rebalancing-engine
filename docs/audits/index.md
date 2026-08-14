@@ -21,7 +21,7 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Red Team Audit Current](red-team-audit-current.md)** - Documentation for red team audit current
 * **[Scheduled Recurring Cash Flow Audit](scheduled-recurring-cash-flow-audit.md)** - Documentation for scheduled recurring cash flow audit
 * **[Tax Lots Audit](tax-lots-audit.md)** - Documentation for tax lots audit
-* **[Test Case Audit](test-case-audit.md)** - Documentation for test case audit
+* **[Documentation-Driven Test Suite Audit](documentation-driven-test-suite-audit.md)** - Independent requirements-to-test traceability audit, behavioral sanity review, boundary evaluation, and prioritized test backlog
 * **[Adversarial Audit Tranche 7](adversarial-audit-tranche-7.md)** - Security and resilience testing
 
 
