@@ -400,7 +400,7 @@ export class SqliteStateManager implements LiveStateManager {
 
     const tx = db.transaction(() => {
       for (const row of accountRows) {
-        const liveState = this.getLiveState(row.accountId);
+        const liveState = this.getAccountState(row.accountId);
         if (!liveState) continue;
 
         const { updatedPortfolio, log } = applyCorporateActionToPortfolio(liveState.portfolioState, action);

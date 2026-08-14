@@ -1,4 +1,4 @@
-import { PortfolioState, Holding, TaxLot, CashFlow } from '../models/domain';
+import { PortfolioState, TaxLot, CashFlow } from '../models/domain';
 import { toDecimal } from './numeric';
 
 export type CorporateActionType = 'SPLIT' | 'DIVIDEND' | 'CASH_DIVIDEND' | 'MERGER';
@@ -210,7 +210,7 @@ export function applyCorporateActions(
   let currentPortfolio = { ...portfolio };
   const appliedActions: CorporateAction[] = [];
   const logs: string[] = [];
-  let startingCash = toDecimal(portfolio.cash);
+  const startingCash = toDecimal(portfolio.cash);
 
   for (const action of actions) {
     if (evaluationDate && action.exDate !== evaluationDate.slice(0, 10)) {
