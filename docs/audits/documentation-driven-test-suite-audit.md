@@ -375,25 +375,36 @@ flowchart LR
 
 ---
 
-## 15. Recommended Test Backlog
+## 15. Recommended Test Backlog & Mitigation Status
 
 ### P0 — Essential Correctness & Invariant Protection
-1. **`BrokerSyncService` Integration Test Suite** (`src/broker/sync.ts`): Multi-tenant price, order, and position synchronization under both successful and failing broker responses.
-2. **`FileAuditStorage` Log Rotation Tests** (`src/audit/storage.ts`): Verify 5MB file threshold triggers `.1`, `.2`, `.3` renaming and prunes files exceeding `MAX_FILES`.
-3. **Simulation Negative Cash Clamping Removal** (`src/core/simulation.ts`): Strict rejection of negative post-trade cash balances down to epsilon.
+1. **`BrokerSyncService` Integration Test Suite** (`src/broker/sync.ts`): Multi-tenant price, order, and position synchronization under both successful and failing broker responses.  
+   *(Status: **[RESOLVED]** — Added in `tests/broker-sync.test.ts`)*
+2. **`FileAuditStorage` Log Rotation Tests** (`src/audit/storage.ts`): Verify 5MB file threshold triggers `.1`, `.2`, `.3` renaming and prunes files exceeding `MAX_FILES`.  
+   *(Status: **[RESOLVED]** — Unmocked & tested in `tests/storage.test.ts`)*
+3. **Simulation Negative Cash Clamping Removal** (`src/core/simulation.ts`): Strict rejection of negative post-trade cash balances down to epsilon.  
+   *(Status: **[RESOLVED]** — Implemented in `src/core/simulation.ts` & verified in `tests/simulation.test.ts`)*
 
 ### P1 — Important Behavior with Regression Risk
-4. **`SqliteAuditStorage` Unit Tests** (`src/audit/storage.ts`): Validate database persistence into `AuditTrails` table with correct schema mapping.
-5. **Teardown & Open Handle Cleanup**: Fix unclosed timers/connections across `alpaca-streamer`, `batch-evaluator`, and `orchestrator` to ensure clean Jest exits.
-6. **Multi-Asset TLH Substitution Cycles**: Test 3-way and bidirectional equivalency groups with overlapping tax lots.
+4. **`SqliteAuditStorage` Unit Tests** (`src/audit/storage.ts`): Validate database persistence into `AuditTrails` table with correct schema mapping.  
+   *(Status: **[RESOLVED]** — Added in `tests/storage.test.ts`)*
+5. **Teardown & Open Handle Cleanup**: Fix unclosed timers/connections across `alpaca-streamer`, `batch-evaluator`, and `orchestrator` to ensure clean Jest exits.  
+   *(Status: **[RESOLVED]** — Fixed in `src/utils/logger.ts` and test suite lifecycle teardowns)*
+6. **Multi-Asset TLH Substitution Cycles**: Test 3-way and bidirectional equivalency groups with overlapping tax lots.  
+   *(Status: **[RESOLVED]** — Added in `tests/overlays.test.ts`)*
 
 ### P2 — Additional Assurance
-7. **Deposit Allocation Mode Tests**: Test `CURRENT_WEIGHT` and `FIXED_TARGET` cash routing in `tests/trades.test.ts`.
-8. **Singular/Collinear Covariance Solver Tests**: Real mathematical edge cases for `ProjectedGradientDescent` solver.
+7. **Deposit Allocation Mode Tests**: Test `CURRENT_WEIGHT` and `FIXED_TARGET` cash routing in `tests/trades.test.ts`.  
+   *(Status: **[RESOLVED]** — Added in `tests/trades.test.ts`)*
+8. **Singular/Collinear Covariance Solver Tests**: Real mathematical edge cases for `ProjectedGradientDescent` solver.  
+   *(Status: **[RESOLVED]** — Added in `tests/optimizer.test.ts`)*
 
 ### P3 — Cleanup & Future Improvements
-9. **Remove `console.log` Debug Statement**: Clean up `src/core/simulation.ts:89`.
-10. **Sub-Cent Reverse Split Precision**: Test fractional share rounding at 8 decimal places.
+9. **Remove `console.log` Debug Statement**: Clean up `src/core/simulation.ts:89`.  
+   *(Status: **[RESOLVED]** — Removed from `src/core/simulation.ts`)*
+10. **Sub-Cent Reverse Split Precision**: Test fractional share rounding at 8 decimal places.  
+    *(Status: **[RESOLVED]** — Implemented in `src/core/corporate-actions.ts` & verified in `tests/core/corporate-actions-processor.test.ts`)*
+
 
 ---
 

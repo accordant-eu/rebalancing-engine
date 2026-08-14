@@ -93,6 +93,30 @@ describe('Corporate Actions Processor & Tax Lot Basis Recalculation', () => {
       expect(aapl!.taxLots![1].quantity * aapl!.taxLots![1].unitCost!).toBe(8000);
     });
 
+    it('handles fractional sub-cent share quantities in reverse splits with 8-decimal precision', () => {
+      const fractionalReverseSplit: CorporateAction = {
+        type: 'SPLIT',
+        instrumentId: 'AAPL',
+        exDate: '2026-08-15',
+        ratio: 1 / 3, // 1-for-3 reverse split
+      };
+
+      const { updatedPortfolio } = applyCorporateActionToPortfolio(initialPortfolio, fractionalReverseSplit);
+      const aapl = updatedPortfolio.holdings.find(h => h.instrumentId === 'AAPL');
+      
+      // 100 * (1/3) = 33.33333333
+      expect(aapl?.quantity).toBeCloseTo(33.33333333, 8);
+      // Lot 1: 60 * (1/3) = 20 qty, 150 / (1/3) = 450 cost -> Basis 9000 preserved
+      expect(aapl?.taxLots?.[0].quantity).toBe(20);
+      expect(aapl?.taxLots?.[0].unitCost).toBe(450);
+      expect(aapl!.taxLots![0].quantity * aapl!.taxLots![0].unitCost!).toBe(9000);
+
+      // Lot 2: 40 * (1/3) = 13.33333333 qty, 200 / (1/3) = 600 cost -> Basis 8000 preserved
+      expect(aapl?.taxLots?.[1].quantity).toBeCloseTo(13.33333333, 8);
+      expect(aapl?.taxLots?.[1].unitCost).toBe(600);
+      expect(aapl!.taxLots![1].quantity * aapl!.taxLots![1].unitCost!).toBeCloseTo(8000, 4);
+    });
+
     it('throws when split ratio is invalid (zero or negative)', () => {
       expect(() =>
         applyCorporateActionToPortfolio(initialPortfolio, {

@@ -1,5 +1,5 @@
 import { PortfolioState, TaxLot, CashFlow } from '../models/domain';
-import { toDecimal } from './numeric';
+import { toDecimal, roundQuantity, roundPrice, roundMoney } from './numeric';
 
 export type CorporateActionType = 'SPLIT' | 'DIVIDEND' | 'CASH_DIVIDEND' | 'MERGER';
 
@@ -81,12 +81,12 @@ export function applyCorporateActionToPortfolio(
       }
 
       const ratioDec = toDecimal(action.ratio);
-      const newHoldingQuantity = toDecimal(holding.quantity).mul(ratioDec).toNumber();
+      const newHoldingQuantity = roundQuantity(toDecimal(holding.quantity).mul(ratioDec).toNumber());
 
       const newTaxLots: TaxLot[] | undefined = holding.taxLots?.map(lot => {
-        const lotQty = toDecimal(lot.quantity).mul(ratioDec).toNumber();
+        const lotQty = roundQuantity(toDecimal(lot.quantity).mul(ratioDec).toNumber());
         const unitCost = lot.unitCost !== undefined
-          ? toDecimal(lot.unitCost).div(ratioDec).toNumber()
+          ? roundPrice(toDecimal(lot.unitCost).div(ratioDec).toNumber())
           : undefined;
 
         return {
@@ -117,8 +117,8 @@ export function applyCorporateActionToPortfolio(
         throw new Error(`Invalid dividend amount per share: ${action.amountPerShare}`);
       }
 
-      const dividendTotal = toDecimal(holding.quantity).mul(toDecimal(action.amountPerShare)).toNumber();
-      const newCash = toDecimal(portfolio.cash).plus(toDecimal(dividendTotal)).toNumber();
+      const dividendTotal = roundMoney(toDecimal(holding.quantity).mul(toDecimal(action.amountPerShare)).toNumber());
+      const newCash = roundMoney(toDecimal(portfolio.cash).plus(toDecimal(dividendTotal)).toNumber());
 
       const newCashFlow: CashFlow = {
         cashFlowId: `div-${action.instrumentId}-${action.exDate}`,
@@ -147,16 +147,16 @@ export function applyCorporateActionToPortfolio(
       }
 
       const convRatio = toDecimal(action.conversionRatio);
-      const convertedQuantity = toDecimal(holding.quantity).mul(convRatio).toNumber();
+      const convertedQuantity = roundQuantity(toDecimal(holding.quantity).mul(convRatio).toNumber());
 
       const cashInLieu = action.cashInLieuPerShare
-        ? toDecimal(holding.quantity).mul(toDecimal(action.cashInLieuPerShare)).toNumber()
+        ? roundMoney(toDecimal(holding.quantity).mul(toDecimal(action.cashInLieuPerShare)).toNumber())
         : 0;
 
       const convertedTaxLots: TaxLot[] | undefined = holding.taxLots?.map(lot => {
-        const lotQty = toDecimal(lot.quantity).mul(convRatio).toNumber();
+        const lotQty = roundQuantity(toDecimal(lot.quantity).mul(convRatio).toNumber());
         const unitCost = lot.unitCost !== undefined
-          ? toDecimal(lot.unitCost).div(convRatio).toNumber()
+          ? roundPrice(toDecimal(lot.unitCost).div(convRatio).toNumber())
           : undefined;
 
         return {

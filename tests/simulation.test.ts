@@ -213,4 +213,36 @@ describe('Post-Trade Simulation', () => {
     expect(simulation.postTradeState.cash).toBeCloseTo(300, 8);
     expect(simulation.turnover).toBeCloseTo(0.03, 8);
   });
+
+  it('rejects proposals when simulated post-trade cash becomes negative', () => {
+    const state: PortfolioState = {
+      accountId: 'negative-post-trade-cash',
+      cash: 100,
+      holdings: [],
+    };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100 } };
+    const target: TargetAllocation = { targets: [{ instrumentId: 'US0378331005:XNAS:USD', weight: 1 }] };
+    const policy: RebalancingPolicy = { absoluteDriftTolerance: 0.05, minimumTradeSize: 0 };
+    
+    // Trade costs 100.50 with 100 cash -> -0.50 cash post trade
+    const proposal: TradeProposal = {
+      trades: [
+        {
+          instrumentId: 'US0378331005:XNAS:USD',
+          direction: 'BUY',
+          quantity: 1.005,
+          estimatedPrice: 100,
+          estimatedValue: 100.50,
+        },
+      ],
+      estimatedPostTradeCash: -0.50,
+      warnings: [],
+      executionTargetMode: 'full_reset',
+    };
+
+    expect(() => simulatePostTrade(state, prices, target, policy, proposal)).toThrow(
+      'Post-trade simulation produced negative cash',
+    );
+  });
 });
+

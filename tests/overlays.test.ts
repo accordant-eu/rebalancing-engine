@@ -283,5 +283,41 @@ describe('Execution Overlays (TLH)', () => {
       expect(evaluation.tradeProposal.trades.length).toBe(0);
       expect(evaluation.tradeProposal.warnings.some(w => w.code === 'QUALITY_CHECK_FAILED')).toBe(true);
     });
+
+    it('Multi-Asset: Resolves first alternate substitute in 3-asset equivalency group', () => {
+      const overlay = new OpportunisticLossHarvestingOverlay();
+      const multiGroupPolicy: RebalancingPolicy = {
+        ...policy,
+        equivalencyGroups: [['IVV', 'VOO', 'SPLG']] // 3-asset group
+      };
+
+      const multiPriceSnapshot: PriceSnapshot = {
+        prices: {
+          'IVV': 90,
+          'VOO': 90,
+          'SPLG': 45
+        }
+      };
+
+      const multiState: EvaluationState = {
+        ...evaluationState,
+        policy: multiGroupPolicy
+      };
+
+      const proposal: TradeProposal = {
+        trades: [],
+        estimatedPostTradeCash: 0,
+        warnings: [],
+        executionTargetMode: 'full_reset'
+      };
+
+      const result = overlay.apply(proposal, multiState, multiPriceSnapshot);
+      expect(result.trades.length).toBe(2);
+      expect(result.trades[0].instrumentId).toBe('IVV');
+      expect(result.trades[0].direction).toBe('SELL');
+      expect(result.trades[1].instrumentId).toBe('VOO');
+      expect(result.trades[1].direction).toBe('BUY');
+    });
   });
 });
+

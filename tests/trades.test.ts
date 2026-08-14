@@ -537,4 +537,39 @@ describe('Trade Proposal Generation', () => {
       }),
     ).toThrow('Sell selection mode HIGHEST_COST requires unitCost for tax lot: missing-cost');
   });
+
+  it('deploys new cash deposits toward target allocations under standard policy', () => {
+    const state: PortfolioState = {
+      accountId: 'deposit-allocation-test',
+      cash: 5000,
+      holdings: [
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 50 }, // 5000
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 50 }, // 5000
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.6 }, // 9000 target
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.4 }, // 6000 target
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+      depositAllocationMode: 'REBALANCING',
+    });
+
+    // Total portfolio value = 15000. US0378331005 target = 9000 (buy 4000). US5949181045 target = 6000 (buy 1000).
+    expect(proposal.trades).toHaveLength(2);
+    expect(proposal.trades.every(t => t.direction === 'BUY')).toBe(true);
+    const aapl = findTrade(proposal.trades, 'US0378331005:XNAS:USD');
+    const msft = findTrade(proposal.trades, 'US5949181045:XNAS:USD');
+    expect(aapl.estimatedValue).toBe(4000);
+    expect(msft.estimatedValue).toBe(1000);
+    expect(proposal.estimatedPostTradeCash).toBe(0);
+  });
 });
+

@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-08-14 | `docs/iterations/2026-08-14-audit-mitigation.md` | Major | Executed test suite audit mitigation plan resolving all P0-P3 gaps, adding broker sync tests, and unmocking log rotation. |
 | 2026-08-14 | `docs/audits/documentation-driven-test-suite-audit.md` | Major | Completed independent documentation-driven test suite audit, traceability matrix, and prioritized backlog. |
 | 2026-08-14 | `docs/iterations/2026-08-14-batch-evaluator.md` | Minor | Documented Model Portfolio Fan-Out Queue Worker, throttled batch evaluation, and queue REST endpoints. |
 | 2026-08-14 | `docs/iterations/2026-08-14-corporate-actions.md` | Minor | Documented Corporate Actions Processor, stock splits, dividends, mergers, and tax-lot basis preservation. |

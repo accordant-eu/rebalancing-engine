@@ -23,16 +23,21 @@ const sensitiveEnvKeys = Object.keys(process.env).filter((key) => {
 const redactPaths = [...new Set([...baseRedactPaths, ...sensitiveEnvKeys])];
 
 export const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'test' ? 'silent' : 'info'),
   redact: {
     paths: redactPaths,
     censor: '[REDACTED]',
   },
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      ignore: 'pid,hostname',
-    },
-  },
+  ...(process.env.NODE_ENV !== 'test'
+    ? {
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            ignore: 'pid,hostname',
+          },
+        },
+      }
+    : {}),
 });
+

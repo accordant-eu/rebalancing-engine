@@ -84,15 +84,13 @@ export function simulatePostTrade(
   }
 
   const cashDiff = postTradeCash.minus(proposal.estimatedPostTradeCash).abs();
-  // Allow 0.01 absolute OR 1% relative error to account for extreme synthetic price float rounding.
-  if (cashDiff.gt(0.01) && cashDiff.div(postTradeCash.abs().plus(1)).gt(0.01)) {
-    console.log(`Debug cash: postTradeCash=${postTradeCash.toString()}, estimated=${proposal.estimatedPostTradeCash}`);
+  if (cashDiff.gt(SIMULATION_EPSILON)) {
     throw new Error('Simulated cash does not reconcile with proposal estimated post-trade cash');
   }
-  if (postTradeCash.lt(-1)) {
+  if (postTradeCash.lt(-SIMULATION_EPSILON)) {
     throw new Error('Post-trade simulation produced negative cash');
   }
-  if (postTradeCash.lt(0)) {
+  if (isWithinEpsilon(postTradeCash.toNumber(), SIMULATION_EPSILON)) {
     postTradeCash = toDecimal(0);
   }
 

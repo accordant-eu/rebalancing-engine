@@ -65,6 +65,25 @@ describe('ProjectedGradientDescent Solver', () => {
 
     Math.max = originalMax; // Restore
   });
+
+  it('safely converges or produces valid non-negative weights for collinear covariance matrices', async () => {
+    const solver = new ProjectedGradientDescent();
+    // Collinear assets where Asset 0 and Asset 1 have identical variance and correlation = 1.0
+    const cov = [
+      [0.04, 0.04, 0.00],
+      [0.04, 0.04, 0.00],
+      [0.00, 0.00, 0.01],
+    ];
+    const mu = [0.05, 0.05, 0.02];
+    const result = await solver.solve(cov, mu, 0, 1.0);
+
+    const sum = result.weights.reduce((a, b) => a + b, 0);
+    expect(sum).toBeCloseTo(1.0, 5);
+    for (const w of result.weights) {
+      expect(w).toBeGreaterThanOrEqual(0);
+      expect(Number.isNaN(w)).toBe(false);
+    }
+  });
 });
 
 describe('DynamicOptimizerService', () => {
