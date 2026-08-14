@@ -1,4 +1,9 @@
-import { OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay } from '../src/core/overlays';
+import {
+  OpportunisticLossHarvestingOverlay,
+  WashSaleLockoutOverlay,
+  ExclusionListOverlay,
+  HoldingConcentrationCapOverlay,
+} from '../src/core/overlays';
 import { EvaluationState, ConcentrationLimitIndicator } from '../src/core/quality';
 import { evaluateRebalance } from '../src/core/evaluation';
 import { PriceSnapshot, RebalancingPolicy, TargetAllocation, TradeProposal, ValuationResult } from '../src/models/domain';
@@ -319,5 +324,260 @@ describe('Execution Overlays (TLH)', () => {
       expect(result.trades[1].direction).toBe('BUY');
     });
   });
+
+  describe('ExclusionListOverlay', () => {
+    const overlay = new ExclusionListOverlay();
+
+    it('suppresses BUY orders for excluded assets and restores estimated cash', () => {
+      const state: EvaluationState = {
+        valuation: {
+          timestamp: '2026-08-01T00:00:00Z',
+          cash: 1000,
+          totalPortfolioValue: 10000,
+          holdings: [],
+        },
+        weightResults: [],
+        target: { targets: [], cashBuffer: 0 },
+        policy: {
+          absoluteDriftTolerance: 0.05,
+          minimumTradeSize: 10,
+          exclusionList: ['EXCLUDED_ESG', 'SANCTIONED_CO'],
+        },
+        proposedTrades: [],
+        estimatedTco: 0,
+      };
+
+      const proposal: TradeProposal = {
+        trades: [
+          {
+            instrumentId: 'EXCLUDED_ESG',
+            direction: 'BUY',
+            quantity: 10,
+            estimatedPrice: 100,
+            estimatedValue: 1000,
+          },
+          {
+            instrumentId: 'ALLOWED_ASSET',
+            direction: 'BUY',
+            quantity: 5,
+            estimatedPrice: 200,
+            estimatedValue: 1000,
+          },
+        ],
+        estimatedPostTradeCash: 0,
+        warnings: [],
+        executionTargetMode: 'full_reset',
+      };
+
+      const result = overlay.apply(proposal, state, { prices: {} });
+
+      expect(result.trades).toHaveLength(1);
+      expect(result.trades[0].instrumentId).toBe('ALLOWED_ASSET');
+      expect(result.estimatedPostTradeCash).toBe(1000); // 1000 cash restored
+      expect(result.warnings.some((w) => w.code === 'TRADE_SUPPRESSED_BY_OVERLAY')).toBe(true);
+    });
+
+    it('allows SELL orders (divestment) for excluded assets to proceed', () => {
+      const state: EvaluationState = {
+        valuation: {
+          timestamp: '2026-08-01T00:00:00Z',
+          cash: 0,
+          totalPortfolioValue: 5000,
+          holdings: [{ instrumentId: 'EXCLUDED_ESG', quantity: 50, marketValue: 5000 }],
+        },
+        weightResults: [],
+        target: { targets: [], cashBuffer: 0 },
+        policy: {
+          absoluteDriftTolerance: 0.05,
+          minimumTradeSize: 10,
+          exclusionList: ['EXCLUDED_ESG'],
+        },
+        proposedTrades: [],
+        estimatedTco: 0,
+      };
+
+      const proposal: TradeProposal = {
+        trades: [
+          {
+            instrumentId: 'EXCLUDED_ESG',
+            direction: 'SELL',
+            quantity: 50,
+            estimatedPrice: 100,
+            estimatedValue: 5000,
+          },
+        ],
+        estimatedPostTradeCash: 5000,
+        warnings: [],
+        executionTargetMode: 'full_reset',
+      };
+
+      const result = overlay.apply(proposal, state, { prices: {} });
+
+      expect(result.trades).toHaveLength(1);
+      expect(result.trades[0].direction).toBe('SELL');
+      expect(result.estimatedPostTradeCash).toBe(5000);
+    });
+  });
+
+  describe('HoldingConcentrationCapOverlay', () => {
+    const overlay = new HoldingConcentrationCapOverlay();
+
+    it('resizes oversized BUY orders down to the maximum concentration ceiling', () => {
+      // Total portfolio value = $10,000. Cap = 20% ($2,000 max allowed value).
+      // Current holding AAPL = $1,500 (15 shares @ $100).
+      // Proposed BUY AAPL = $1,000 (10 shares @ $100) -> Post-trade value would be $2,500 (25% > 20% cap).
+      // Resized BUY should be $500 (5 shares @ $100) -> Post-trade value = $2,000 (20% exact cap).
+      const state: EvaluationState = {
+        valuation: {
+          timestamp: '2026-08-01T00:00:00Z',
+          cash: 1000,
+          totalPortfolioValue: 10000,
+          holdings: [{ instrumentId: 'AAPL', quantity: 15, marketValue: 1500 }],
+        },
+        weightResults: [],
+        target: { targets: [], cashBuffer: 0 },
+        policy: {
+          absoluteDriftTolerance: 0.05,
+          minimumTradeSize: 50,
+          maxHoldingConcentration: 0.20, // 20% cap
+        },
+        proposedTrades: [],
+        estimatedTco: 0,
+      };
+
+      const proposal: TradeProposal = {
+        trades: [
+          {
+            instrumentId: 'AAPL',
+            direction: 'BUY',
+            quantity: 10,
+            estimatedPrice: 100,
+            estimatedValue: 1000,
+          },
+        ],
+        estimatedPostTradeCash: 0,
+        warnings: [],
+        executionTargetMode: 'full_reset',
+      };
+
+      const result = overlay.apply(proposal, state, { prices: { AAPL: 100 } });
+
+      expect(result.trades).toHaveLength(1);
+      expect(result.trades[0].instrumentId).toBe('AAPL');
+      expect(result.trades[0].quantity).toBe(5);
+      expect(result.trades[0].estimatedValue).toBe(500);
+      expect(result.estimatedPostTradeCash).toBe(500); // $500 unspent cash refunded
+      expect(result.warnings.some((w) => w.code === 'TRADE_RESIZED_BY_OVERLAY')).toBe(true);
+    });
+
+    it('suppresses BUY orders entirely when holding is already at or above concentration cap', () => {
+      // Total portfolio value = $10,000. Cap = 20% ($2,000). Current holding = $2,000 (20%).
+      const state: EvaluationState = {
+        valuation: {
+          timestamp: '2026-08-01T00:00:00Z',
+          cash: 1000,
+          totalPortfolioValue: 10000,
+          holdings: [{ instrumentId: 'AAPL', quantity: 20, marketValue: 2000 }],
+        },
+        weightResults: [],
+        target: { targets: [], cashBuffer: 0 },
+        policy: {
+          absoluteDriftTolerance: 0.05,
+          minimumTradeSize: 50,
+          maxHoldingConcentration: 0.20,
+        },
+        proposedTrades: [],
+        estimatedTco: 0,
+      };
+
+      const proposal: TradeProposal = {
+        trades: [
+          {
+            instrumentId: 'AAPL',
+            direction: 'BUY',
+            quantity: 5,
+            estimatedPrice: 100,
+            estimatedValue: 500,
+          },
+        ],
+        estimatedPostTradeCash: 0,
+        warnings: [],
+        executionTargetMode: 'full_reset',
+      };
+
+      const result = overlay.apply(proposal, state, { prices: { AAPL: 100 } });
+
+      expect(result.trades).toHaveLength(0);
+      expect(result.estimatedPostTradeCash).toBe(500); // Full refund
+      expect(result.warnings.some((w) => w.code === 'TRADE_SUPPRESSED_BY_OVERLAY')).toBe(true);
+    });
+  });
+
+  describe('Full Evaluation with Composable Overlays', () => {
+    it('evaluates rebalance with exclusion list and concentration cap in evaluateRebalance pipeline', () => {
+      const portfolioState = {
+        accountId: 'acc-compliance',
+        cash: 5000,
+        holdings: [
+          { instrumentId: 'ALLOWED_A', quantity: 20 }, // $2,000
+          { instrumentId: 'EXCLUDED_X', quantity: 30 }, // $3,000
+        ],
+      };
+
+      const prices: PriceSnapshot = {
+        prices: {
+          ALLOWED_A: 100,
+          EXCLUDED_X: 100,
+          ALLOWED_B: 100,
+        },
+      };
+
+      const targetAlloc: TargetAllocation = {
+        targets: [
+          { instrumentId: 'ALLOWED_A', weight: 0.40 }, // $4,000 target
+          { instrumentId: 'EXCLUDED_X', weight: 0.00 }, // $0 target (divest)
+          { instrumentId: 'ALLOWED_B', weight: 0.60 }, // $6,000 target
+        ],
+        cashBuffer: 0,
+      };
+
+      const policy: RebalancingPolicy = {
+        strategyType: 'manual',
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 10,
+        exclusionList: ['EXCLUDED_X'],
+        maxHoldingConcentration: 0.50, // 50% max cap ($5,000 of $10,000 portfolio)
+      };
+
+      const evaluation = evaluateRebalance({
+        eventId: 'evt-compliance-test',
+        createdAt: '2026-08-01T00:00:00Z',
+        portfolioState,
+        targetAllocation: targetAlloc,
+        priceSnapshot: prices,
+        policy,
+      });
+
+      // Total portfolio value = $10,000.
+      // EXCLUDED_X: SELL 30 shares ($3,000) allowed.
+      // ALLOWED_A: BUY 20 shares ($2,000) -> post-trade $4,000 (40% <= 50% cap).
+      // ALLOWED_B: Target is $6,000 (60%), but concentration cap is 50% ($5,000). BUY is resized to 50 shares ($5,000).
+      expect(evaluation.tradeProposal.trades).toHaveLength(3);
+
+      const sellExcluded = evaluation.tradeProposal.trades.find((t) => t.instrumentId === 'EXCLUDED_X');
+      expect(sellExcluded?.direction).toBe('SELL');
+      expect(sellExcluded?.quantity).toBe(30);
+
+      const buyA = evaluation.tradeProposal.trades.find((t) => t.instrumentId === 'ALLOWED_A');
+      expect(buyA?.direction).toBe('BUY');
+      expect(buyA?.quantity).toBe(20);
+
+      const buyB = evaluation.tradeProposal.trades.find((t) => t.instrumentId === 'ALLOWED_B');
+      expect(buyB?.direction).toBe('BUY');
+      expect(buyB?.quantity).toBe(50); // Resized from 60 to 50 to respect 50% cap
+      expect(buyB?.estimatedValue).toBe(5000);
+    });
+  });
 });
+
 

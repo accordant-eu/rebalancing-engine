@@ -37,3 +37,4 @@ Moving forward, iteration logs are strictly captured in the high-level `BUILD_JO
 - [2026-08-14: Documentation-Driven Test Suite Audit](2026-08-14-test-suite-audit.md)
 - [2026-08-14: Documentation-Driven Test Suite Audit Mitigation](2026-08-14-audit-mitigation.md)
 - [2026-08-14: Cross-Feature Interaction & EOD Error Resilience Hardening](2026-08-14-cross-feature-hardening.md)
+- [2026-08-14: Composable Exclusion and Holding Concentration Overlays (ADR-0062)](2026-08-14-exclusion-concentration-overlays.md)

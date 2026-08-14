@@ -70,5 +70,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0059: UK Capital Gains Tax Rules and Bed-and-Breakfasting Overlay](0059-uk-bed-and-breakfasting-overlay.md) - Accepted
 * [ADR-0060: Corporate Actions Processing and Tax Lot Basis Recalculation Engine](0060-corporate-actions-processor.md) - Accepted
 * [ADR-0061: Model Portfolio Fan-Out Queue Worker and Throttled Batch Evaluator](0061-model-fan-out-queue-worker.md) - Accepted
+* [ADR-0062: Composable Exclusion and Holding Concentration Overlays](0062-composable-exclusion-and-concentration-overlays.md) - Accepted
 
 &copy; 2026 Johan Hellman. All rights reserved.

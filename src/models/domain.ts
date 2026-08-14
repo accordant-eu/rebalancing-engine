@@ -199,6 +199,10 @@ export interface RebalancingPolicy {
   tlhLossThresholdBps?: number;
   // Arrays of instrument IDs that are treated as fungible for drift calculation (e.g., [['IVV', 'VOO']])
   equivalencyGroups?: string[][];
+  // List of restricted/sanctioned instruments prohibited from purchasing (e.g. ESG, blackout tickers)
+  exclusionList?: string[];
+  // Maximum allowable portfolio weight for any single instrument (e.g., 0.20 for 20% cap)
+  maxHoldingConcentration?: number;
 }
 
 // Outputs
@@ -220,7 +224,7 @@ export interface ProposedTrade {
   estimatedPrice: number;
   estimatedValue: number;
   lotAllocations?: ProposedLotAllocation[];
-  metadata?: Record<string, string>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 export interface ProposedLotAllocation {
@@ -246,9 +250,12 @@ export type ProposalWarningCode =
   | 'TLH_HARVEST_GENERATED'
   | 'WASH_SALE_LOCKOUT'
   | 'UK_BED_AND_BREAKFAST_LOCKOUT'
+  | 'TRADE_SUPPRESSED_BY_OVERLAY'
+  | 'TRADE_RESIZED_BY_OVERLAY'
   | 'TAX_AWARE_US_STUB'
   | 'TAX_OPTIMIZER_UNREACHABLE_FALLBACK'
   | 'TAX_OPTIMIZER_SUCCESS';
+
 
 export interface ProposalWarning {
   code: ProposalWarningCode;

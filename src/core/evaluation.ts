@@ -20,7 +20,14 @@ import {
 import { calculateDrift } from './drift';
 import { PostTradeSimulation, simulatePostTrade } from './simulation';
 import { FrictionModel } from './friction';
-import { ExecutionOverlay, OpportunisticLossHarvestingOverlay, WashSaleLockoutOverlay, UkBedAndBreakfastOverlay } from './overlays';
+import {
+  ExecutionOverlay,
+  OpportunisticLossHarvestingOverlay,
+  WashSaleLockoutOverlay,
+  UkBedAndBreakfastOverlay,
+  ExclusionListOverlay,
+  HoldingConcentrationCapOverlay,
+} from './overlays';
 import {
   buildCashFlowProposalWarnings,
   buildCashFlowScheduleProposalWarnings,
@@ -72,6 +79,29 @@ export interface RebalanceEvaluation {
   qualityResults?: Array<{ name: string; passed: boolean; reason?: string }>;
 }
 
+function resolveExecutionOverlays(policy: RebalancingPolicy): ExecutionOverlay[] {
+  const executionOverlays: ExecutionOverlay[] = [];
+  const overlayNames = new Set(policy.executionOverlays || []);
+
+  if (overlayNames.has('OpportunisticLossHarvestingOverlay')) {
+    executionOverlays.push(new OpportunisticLossHarvestingOverlay());
+  }
+  if (overlayNames.has('WashSaleLockoutOverlay')) {
+    executionOverlays.push(new WashSaleLockoutOverlay());
+  }
+  if (overlayNames.has('UkBedAndBreakfastOverlay')) {
+    executionOverlays.push(new UkBedAndBreakfastOverlay());
+  }
+  if (overlayNames.has('ExclusionListOverlay') || (policy.exclusionList && policy.exclusionList.length > 0)) {
+    executionOverlays.push(new ExclusionListOverlay());
+  }
+  if (overlayNames.has('HoldingConcentrationCapOverlay') || (policy.maxHoldingConcentration !== undefined && policy.maxHoldingConcentration > 0)) {
+    executionOverlays.push(new HoldingConcentrationCapOverlay());
+  }
+
+  return executionOverlays;
+}
+
 export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEvaluation {
   const evaluationDate = resolveEvaluationDate(input);
   const scheduledCashFlowExpansion = applyCashFlowSchedules(input.portfolioState, evaluationDate);
@@ -82,18 +112,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
   const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
   const strategy = selectStrategy(input.policy.strategyType);
   const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
-  const executionOverlays: ExecutionOverlay[] = [];
-  if (input.policy.executionOverlays) {
-    for (const overlayName of input.policy.executionOverlays) {
-      if (overlayName === 'OpportunisticLossHarvestingOverlay') {
-        executionOverlays.push(new OpportunisticLossHarvestingOverlay());
-      } else if (overlayName === 'WashSaleLockoutOverlay') {
-        executionOverlays.push(new WashSaleLockoutOverlay());
-      } else if (overlayName === 'UkBedAndBreakfastOverlay') {
-        executionOverlays.push(new UkBedAndBreakfastOverlay());
-      }
-    }
-  }
+  const executionOverlays = resolveExecutionOverlays(input.policy);
 
   const optimizerContext: TradeOptimizerContext = {
     valuation,
@@ -274,18 +293,7 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
   const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
   const strategy = selectStrategy(input.policy.strategyType);
   const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
-  const executionOverlays: ExecutionOverlay[] = [];
-  if (input.policy.executionOverlays) {
-    for (const overlayName of input.policy.executionOverlays) {
-      if (overlayName === 'OpportunisticLossHarvestingOverlay') {
-        executionOverlays.push(new OpportunisticLossHarvestingOverlay());
-      } else if (overlayName === 'WashSaleLockoutOverlay') {
-        executionOverlays.push(new WashSaleLockoutOverlay());
-      } else if (overlayName === 'UkBedAndBreakfastOverlay') {
-        executionOverlays.push(new UkBedAndBreakfastOverlay());
-      }
-    }
-  }
+  const executionOverlays = resolveExecutionOverlays(input.policy);
 
   const optimizerContext: TradeOptimizerContext = {
     valuation,

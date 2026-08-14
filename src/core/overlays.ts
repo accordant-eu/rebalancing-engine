@@ -1,5 +1,7 @@
 import { TradeProposal, ProposedTrade, RebalancingPolicy, TargetAllocation, PriceSnapshot, ProposedLotAllocation } from '../models/domain';
 import { EvaluationState } from './quality';
+import { toDecimal, roundQuantity, roundMoney, CALCULATION_EPSILON } from './numeric';
+import Decimal from 'decimal.js';
 
 /**
  * An Execution Overlay intercepts a TradeProposal before the Quality Pipeline
@@ -290,4 +292,148 @@ export class UkBedAndBreakfastOverlay implements ExecutionOverlay {
     return proposal;
   }
 }
+
+/**
+ * Compliance Overlay: Prohibits BUY trades for restricted, sanctioned, or ESG-excluded instruments.
+ * Allows SELL trades (divestment) to proceed unimpeded.
+ */
+export class ExclusionListOverlay implements ExecutionOverlay {
+  name = 'ExclusionListOverlay';
+
+  apply(
+    proposal: TradeProposal,
+    state: EvaluationState,
+    _priceSnapshot: PriceSnapshot
+  ): TradeProposal {
+    const exclusionList = state.policy.exclusionList;
+    if (!exclusionList || exclusionList.length === 0) {
+      return proposal;
+    }
+
+    const excludedSet = new Set(exclusionList);
+    const finalTrades: ProposedTrade[] = [];
+    const newWarnings = [...proposal.warnings];
+    let cashAdjusted = toDecimal(proposal.estimatedPostTradeCash);
+
+    for (const trade of proposal.trades) {
+      if (trade.direction === 'BUY' && excludedSet.has(trade.instrumentId)) {
+        newWarnings.push({
+          code: 'TRADE_SUPPRESSED_BY_OVERLAY',
+          message: `BUY trade for ${trade.instrumentId} suppressed: instrument is on the mandate exclusion list.`,
+          instrumentId: trade.instrumentId,
+          estimatedValue: trade.estimatedValue,
+        });
+        cashAdjusted = cashAdjusted.plus(toDecimal(trade.estimatedValue));
+        continue;
+      }
+      finalTrades.push(trade);
+    }
+
+    return {
+      ...proposal,
+      trades: finalTrades,
+      estimatedPostTradeCash: cashAdjusted.toNumber(),
+      warnings: newWarnings,
+    };
+  }
+}
+
+/**
+ * Risk & Policy Constraint Overlay: Enforces a hard maximum concentration cap per instrument.
+ * Resizes or suppresses proposed BUY trades that would push the asset's total portfolio weight
+ * above policy.maxHoldingConcentration (e.g., 0.20 for 20%).
+ */
+export class HoldingConcentrationCapOverlay implements ExecutionOverlay {
+  name = 'HoldingConcentrationCapOverlay';
+
+  apply(
+    proposal: TradeProposal,
+    state: EvaluationState,
+    priceSnapshot: PriceSnapshot
+  ): TradeProposal {
+    const maxConcentration = state.policy.maxHoldingConcentration;
+    if (maxConcentration === undefined || maxConcentration <= 0 || maxConcentration >= 1) {
+      return proposal;
+    }
+
+    const totalPortfolioValue = toDecimal(state.valuation.totalPortfolioValue);
+    if (totalPortfolioValue.lte(0)) {
+      return proposal;
+    }
+
+    const maxAllowedValue = totalPortfolioValue.mul(toDecimal(maxConcentration));
+    const minTradeSize = toDecimal(state.policy.minimumTradeSize || 0);
+
+    const currentHoldingsMap = new Map<string, Decimal>();
+    for (const h of state.valuation.holdings) {
+      currentHoldingsMap.set(h.instrumentId, toDecimal(h.marketValue));
+    }
+
+    const finalTrades: ProposedTrade[] = [];
+    const newWarnings = [...proposal.warnings];
+    let cashAdjusted = toDecimal(proposal.estimatedPostTradeCash);
+
+    for (const trade of proposal.trades) {
+      if (trade.direction !== 'BUY') {
+        finalTrades.push(trade);
+        continue;
+      }
+
+      const currentVal = currentHoldingsMap.get(trade.instrumentId) || toDecimal(0);
+      const proposedBuyVal = toDecimal(trade.estimatedValue);
+      const postTradeVal = currentVal.plus(proposedBuyVal);
+
+      if (postTradeVal.gt(maxAllowedValue.plus(CALCULATION_EPSILON))) {
+        const allowableBuyVal = maxAllowedValue.minus(currentVal);
+
+        if (allowableBuyVal.lte(CALCULATION_EPSILON) || allowableBuyVal.lt(minTradeSize)) {
+          // Already at or above cap, or allowable increment is below minimum trade size -> suppress
+          newWarnings.push({
+            code: 'TRADE_SUPPRESSED_BY_OVERLAY',
+            message: `BUY trade for ${trade.instrumentId} suppressed: position exceeds maximum concentration cap of ${(maxConcentration * 100).toFixed(1)}%.`,
+            instrumentId: trade.instrumentId,
+            estimatedValue: trade.estimatedValue,
+          });
+          cashAdjusted = cashAdjusted.plus(proposedBuyVal);
+          continue;
+        }
+
+        // Resize BUY trade down to allowable ceiling
+        const price = priceSnapshot.prices[trade.instrumentId] || trade.estimatedPrice;
+        const newQty = roundQuantity(allowableBuyVal.div(toDecimal(price)).toNumber());
+        const newEstimatedVal = roundMoney(allowableBuyVal.toNumber());
+        const cashRefund = proposedBuyVal.minus(toDecimal(newEstimatedVal));
+        cashAdjusted = cashAdjusted.plus(cashRefund);
+
+        newWarnings.push({
+          code: 'TRADE_RESIZED_BY_OVERLAY',
+          message: `BUY trade for ${trade.instrumentId} resized from $${proposedBuyVal.toFixed(2)} to $${newEstimatedVal.toFixed(2)} to respect ${(maxConcentration * 100).toFixed(1)}% concentration cap.`,
+          instrumentId: trade.instrumentId,
+          estimatedValue: newEstimatedVal,
+        });
+
+        finalTrades.push({
+          ...trade,
+          quantity: newQty,
+          estimatedValue: newEstimatedVal,
+          metadata: {
+            ...trade.metadata,
+            resizedByOverlay: true,
+            originalEstimatedValue: trade.estimatedValue,
+          },
+        });
+      } else {
+        finalTrades.push(trade);
+      }
+    }
+
+    return {
+      ...proposal,
+      trades: finalTrades,
+      estimatedPostTradeCash: cashAdjusted.toNumber(),
+      warnings: newWarnings,
+    };
+  }
+}
+
 

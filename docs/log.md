@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-08-14 | `docs/decisions/0062-composable-exclusion-and-concentration-overlays.md` | Major | Recorded ADR-0062 for ExclusionListOverlay and HoldingConcentrationCapOverlay in execution pipeline. |
 | 2026-08-14 | `docs/iterations/2026-08-14-cross-feature-hardening.md` | Minor | Implemented cross-feature multi-component tests (Split -> TLH, Fan-Out -> Circuit Breakers) and EOD broker resilience. |
 | 2026-08-14 | `docs/iterations/2026-08-14-audit-mitigation.md` | Major | Executed test suite audit mitigation plan resolving all P0-P3 gaps, adding broker sync tests, and unmocking log rotation. |
 | 2026-08-14 | `docs/audits/documentation-driven-test-suite-audit.md` | Major | Completed independent documentation-driven test suite audit, traceability matrix, and prioritized backlog. |
