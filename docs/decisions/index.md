@@ -68,5 +68,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0057: Use Lucide-React for UI Iconography](0057-use-lucide-react-for-ui-iconography.md) - Accepted
 * [ADR-0058: Generalized Trade Optimizer Interface and External Tax-Aware Module](0058-generalized-trade-optimizer-interface.md) - Accepted
 * [ADR-0059: UK Capital Gains Tax Rules and Bed-and-Breakfasting Overlay](0059-uk-bed-and-breakfasting-overlay.md) - Accepted
+* [ADR-0060: Corporate Actions Processing and Tax Lot Basis Recalculation Engine](0060-corporate-actions-processor.md) - Accepted
 
 &copy; 2026 Johan Hellman. All rights reserved.
