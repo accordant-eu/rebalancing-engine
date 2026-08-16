@@ -29,7 +29,7 @@ describe('Threshold Strategy', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(false);
-    expect(triggerResult.reason).toBeNull();
+    
   });
 
   it('triggers when an asset breaches the band', () => {

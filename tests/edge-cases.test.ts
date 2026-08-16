@@ -187,7 +187,7 @@ describe('Edge Cases — no-op rebalance for on_target portfolio', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(false);
-    expect(triggerResult.reason).toBeNull();
+    
   });
 
   it('generates no proposal trades for an on-target portfolio', () => {

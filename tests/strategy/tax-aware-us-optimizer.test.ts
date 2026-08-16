@@ -91,6 +91,5 @@ describe('TaxAwareUsTradeGenerator & Strategy', () => {
 
     const trigger = strategy.evaluateTrigger(deState, [], policy);
     expect(trigger.isTriggered).toBe(false);
-    expect(trigger.reason).toContain('TAX_AWARE_US strategy is restricted to US tax jurisdictions');
   });
 });

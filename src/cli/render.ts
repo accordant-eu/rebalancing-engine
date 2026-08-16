@@ -148,7 +148,7 @@ function renderRunSummary(result: ScenarioRunResult): string {
     'Status: success',
     `Strategy: ${outputs.strategyType}`,
     `Rebalance needed: ${outputs.trigger.isTriggered ? 'yes' : 'no'}`,
-    `Reason: ${outputs.trigger.reason ?? 'none'}`,
+    `Reason: ${outputs.trigger.isTriggered ? outputs.trigger.reason : 'none'}`,
     `Trades: ${outputs.tradeProposal.trades.length}`,
     `Warnings: ${outputs.tradeProposal.warnings.length}`,
     ...(outputs.cashFlowScheduleSummary === undefined
@@ -176,7 +176,7 @@ function renderRunPretty(result: ScenarioRunResult): string {
     `Strategy: ${outputs.strategyType}`,
     `Execution target: ${outputs.executionTargetMode}${outputs.boundaryBandMode === undefined ? '' : ` (${outputs.boundaryBandMode})`}`,
     `Rebalance needed: ${outputs.trigger.isTriggered ? 'yes' : 'no'}`,
-    `Reason: ${outputs.trigger.reason ?? 'none'}`,
+    `Reason: ${outputs.trigger.isTriggered ? outputs.trigger.reason : 'none'}`,
     '',
     'Trades:',
     ...formatTrades(outputs.tradeProposal.trades),

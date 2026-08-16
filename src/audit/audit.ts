@@ -5,7 +5,7 @@ import {
   RebalancingPolicy,
   TargetAllocation,
   TradeProposal,
-  TriggerResult,
+  TriggerResult, RebalancingStrategyType,
 } from '../models/domain';
 import { PostTradeSimulation } from '../core/simulation';
 import { CashFlowScheduleSummary } from '../core/cash-flows';
@@ -53,7 +53,7 @@ export interface AuditRecord {
     policy: RebalancingPolicy;
   };
   outputs: {
-    strategyType: TriggerResult['strategyType'];
+    strategyType: RebalancingStrategyType | null;
     executionTargetMode: TradeProposal['executionTargetMode'];
     boundaryBandMode?: TradeProposal['boundaryBandMode'];
     driftMeasurements: DriftMeasurement[];
@@ -89,7 +89,7 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
       policy: input.policy,
     },
     outputs: {
-      strategyType: input.trigger.strategyType,
+      strategyType: 'strategyType' in input.trigger ? input.trigger.strategyType : null,
       executionTargetMode: input.tradeProposal.executionTargetMode,
       boundaryBandMode: input.tradeProposal.boundaryBandMode,
       driftMeasurements: input.driftMeasurements,

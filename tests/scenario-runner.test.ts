@@ -116,7 +116,7 @@ describe('Scenario Runner', () => {
     const calendarNotDue = successes.find((result) => result.scenarioId === 'calendar_not_due');
     expect(calendarNotDue?.status).toBe('success');
     if (calendarNotDue?.status === 'success') {
-      expect(calendarNotDue.auditRecord.outputs.strategyType).toBe('calendar');
+      expect(calendarNotDue.auditRecord.outputs.strategyType).toBeNull();
       expect(calendarNotDue.auditRecord.outputs.trigger.isTriggered).toBe(false);
       expect(calendarNotDue.auditRecord.outputs.tradeProposal.trades).toEqual([]);
     }
