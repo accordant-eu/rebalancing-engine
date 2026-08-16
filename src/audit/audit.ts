@@ -3,6 +3,7 @@ import {
   PortfolioState,
   PriceSnapshot,
   RebalancingPolicy,
+  RebalancingStrategyType,
   TargetAllocation,
   TradeProposal,
   TriggerResult,
@@ -47,7 +48,7 @@ export interface AuditRecord {
     policy: RebalancingPolicy;
   };
   outputs: {
-    strategyType: TriggerResult['strategyType'];
+    strategyType?: RebalancingStrategyType;
     executionTargetMode: TradeProposal['executionTargetMode'];
     boundaryBandMode?: TradeProposal['boundaryBandMode'];
     driftMeasurements: DriftMeasurement[];
@@ -72,7 +73,7 @@ export function generateAuditRecord(input: AuditRecordInput): AuditRecord {
       policy: input.policy,
     },
     outputs: {
-      strategyType: input.trigger.strategyType,
+      strategyType: input.trigger.isTriggered ? input.trigger.strategyType : undefined,
       executionTargetMode: input.tradeProposal.executionTargetMode,
       boundaryBandMode: input.tradeProposal.boundaryBandMode,
       driftMeasurements: input.driftMeasurements,

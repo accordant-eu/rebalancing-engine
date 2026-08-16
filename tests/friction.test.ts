@@ -43,7 +43,7 @@ describe('applyFrictionPenalties', () => {
     
     expect(result.warnings.length).toBe(1);
     expect(result.warnings[0].code).toBe('FRICTION_COST_EXCEEDED');
-    expect(result.warnings[0].instrumentId).toBe('A');
+    expect((result.warnings[0] as any).instrumentId).toBe('A');
   });
 
   it('recalculates post trade cash when trades are suppressed', () => {

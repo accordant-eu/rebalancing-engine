@@ -29,7 +29,7 @@ describe('Threshold Strategy', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(false);
-    expect(triggerResult.reason).toBeNull();
+    expect((triggerResult as any).reason).toBeUndefined();
   });
 
   it('triggers when an asset breaches the band', () => {
@@ -45,8 +45,8 @@ describe('Threshold Strategy', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(true);
-    expect(triggerResult.reason).toContain('US0378331005:XNAS:USD (abs drift: 10.00%)');
-    expect(triggerResult.reason).toContain('US5949181045:XNAS:USD (abs drift: -10.00%)');
-    expect(triggerResult.reason).toContain('Policy absolute tolerance: 5.00%');
+    expect((triggerResult as any).reason).toContain('US0378331005:XNAS:USD (abs drift: 10.00%)');
+    expect((triggerResult as any).reason).toContain('US5949181045:XNAS:USD (abs drift: -10.00%)');
+    expect((triggerResult as any).reason).toContain('Policy absolute tolerance: 5.00%');
   });
 });

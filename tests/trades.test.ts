@@ -280,11 +280,11 @@ describe('Trade Proposal Generation', () => {
     expect(proposal.trades).toEqual([]);
     expect(proposal.estimatedPostTradeCash).toBe(0);
     expect(proposal.warnings).toHaveLength(2);
-    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
+    expect(proposal.warnings.map((w: any) => w.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
     for (const warning of proposal.warnings) {
       expect(warning.code).toBe('MINIMUM_TRADE_SIZE');
-      expect(warning.estimatedValue).toBeCloseTo(50, 8);
-      expect(warning.minimumTradeSize).toBe(1000);
+      expect((warning as any).estimatedValue).toBeCloseTo(50, 8);
+      expect((warning as any).minimumTradeSize).toBe(1000);
       expect(warning.message).toContain('below minimum trade size');
     }
   });

@@ -18,8 +18,6 @@ export class ThresholdStrategy implements StrategyInterface {
     if (breaches.length === 0) {
       return {
         isTriggered: false,
-        reason: null,
-        strategyType: 'threshold',
       };
     }
 

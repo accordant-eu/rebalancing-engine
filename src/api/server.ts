@@ -915,9 +915,9 @@ export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?:
       res.json({
         accountId: state.portfolioState.accountId,
         evaluatedAt: new Date().toISOString(),
-        strategyType: evalResult.trigger.strategyType,
+        strategyType: evalResult.trigger.isTriggered ? evalResult.trigger.strategyType : 'unknown',
         rebalanceDue: evalResult.trigger.isTriggered,
-        reason: evalResult.trigger.reason,
+        reason: evalResult.trigger.isTriggered ? evalResult.trigger.reason : null,
         driftByInstrument: evalResult.driftMeasurements.map((d: any) => ({
           instrumentId: d.instrumentId,
           currentWeight: d.currentWeight,

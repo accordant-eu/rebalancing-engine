@@ -73,8 +73,8 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(true);
-    expect(triggerResult.reason).toContain('US0378331005:XNAS:USD');
-    expect(triggerResult.reason).toContain('US5949181045:XNAS:USD');
+    expect((triggerResult as any).reason).toContain('US0378331005:XNAS:USD');
+    expect((triggerResult as any).reason).toContain('US5949181045:XNAS:USD');
   });
 
   it('suppresses below-minimum proposal trades with explicit warnings', () => {
@@ -90,11 +90,11 @@ describe('Edge Cases — min_trade_size_issue fixture', () => {
     expect(proposal.trades).toEqual([]);
     expect(proposal.estimatedPostTradeCash).toBe(0);
     expect(proposal.warnings).toHaveLength(2);
-    expect(proposal.warnings.map((warning) => warning.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
+    expect(proposal.warnings.map((w: any) => w.instrumentId)).toEqual(['US0378331005:XNAS:USD', 'US5949181045:XNAS:USD']);
     for (const warning of proposal.warnings) {
       expect(warning.code).toBe('MINIMUM_TRADE_SIZE');
-      expect(warning.estimatedValue).toBeCloseTo(50, 8);
-      expect(warning.minimumTradeSize).toBe(1000);
+      expect((warning as any).estimatedValue).toBeCloseTo(50, 8);
+      expect((warning as any).minimumTradeSize).toBe(1000);
     }
   });
 });
@@ -187,7 +187,7 @@ describe('Edge Cases — no-op rebalance for on_target portfolio', () => {
 
     const triggerResult = strategy.evaluateTrigger(state, drift, policy);
     expect(triggerResult.isTriggered).toBe(false);
-    expect(triggerResult.reason).toBeNull();
+    expect((triggerResult as any).reason).toBeUndefined();
   });
 
   it('generates no proposal trades for an on-target portfolio', () => {

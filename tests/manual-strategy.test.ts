@@ -89,7 +89,7 @@ describe('Manual Rebalance Strategy', () => {
       },
     });
 
-    expect(evaluation.trigger.strategyType).toBe('manual');
+    expect((evaluation.trigger as any).strategyType).toBe('manual');
     expect(evaluation.trigger.isTriggered).toBe(true);
     expect(evaluation.auditRecord.outputs.strategyType).toBe('manual');
   });

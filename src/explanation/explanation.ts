@@ -19,9 +19,9 @@ export function generateExplanation(
   cashFlowScheduleSummary?: CashFlowScheduleSummary,
 ): RecommendationExplanation {
   const summary = buildSummary(trigger, proposal, simulation);
-  const strategyPrefix = `Strategy ${trigger.strategyType}`;
+  const strategyPrefix = trigger.isTriggered ? `Strategy ${trigger.strategyType}` : 'Strategy';
   const triggerExplanation = trigger.isTriggered
-    ? `${strategyPrefix} triggered rebalance: ${trigger.reason ?? 'one or more policy thresholds were breached.'}`
+    ? `${strategyPrefix} triggered rebalance: ${trigger.reason}`
     : `${strategyPrefix} did not trigger rebalance. No rebalance was triggered because the strategy conditions were not met.`;
 
   const tradeExplanation =

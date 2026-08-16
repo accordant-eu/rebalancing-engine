@@ -222,30 +222,20 @@ export interface ProposedLotAllocation {
   acquisitionDate?: string;
 }
 
-export type ProposalWarningCode =
-  | 'ZERO_PRICE'
-  | 'CASH_DEFICIT'
-  | 'WASH_SALE_LOCKOUT'
-  | 'ROUNDING_PRECISION_LIMIT'
-  | 'NEGATIVE_CASH_POST_TRADE'
-  | 'QUALITY_CHECK_FAILED'
-  | 'MINIMUM_TRADE_SIZE'
-  | 'PENDING_CASH_FLOW_EXCLUDED'
-  | 'FUTURE_CASH_FLOW_SCHEDULED'
-  | 'FRICTION_COST_EXCEEDED'
-  | 'QUALITY_EVALUATION_FAILED';
+export type ProposalWarning =
+  | { code: 'ZERO_PRICE'; message: string; instrumentId?: string }
+  | { code: 'CASH_DEFICIT'; message: string; estimatedValue?: number }
+  | { code: 'WASH_SALE_LOCKOUT'; message: string; instrumentId?: string }
+  | { code: 'ROUNDING_PRECISION_LIMIT'; message: string; instrumentId?: string }
+  | { code: 'NEGATIVE_CASH_POST_TRADE'; message: string; estimatedValue?: number }
+  | { code: 'QUALITY_CHECK_FAILED'; message: string }
+  | { code: 'MINIMUM_TRADE_SIZE'; message: string; instrumentId: string; estimatedValue: number; minimumTradeSize: number }
+  | { code: 'PENDING_CASH_FLOW_EXCLUDED'; message: string; pendingCashFlowCount: number; pendingNetAmount: number }
+  | { code: 'FUTURE_CASH_FLOW_SCHEDULED'; message: string; futureScheduledCashFlowCount: number; futureScheduledNetAmount: number }
+  | { code: 'FRICTION_COST_EXCEEDED'; message: string; instrumentId: string; estimatedValue: number }
+  | { code: 'QUALITY_EVALUATION_FAILED'; message: string };
 
-export interface ProposalWarning {
-  code: ProposalWarningCode;
-  message: string;
-  instrumentId?: string;
-  estimatedValue?: number;
-  minimumTradeSize?: number;
-  pendingCashFlowCount?: number;
-  pendingNetAmount?: number;
-  futureScheduledCashFlowCount?: number;
-  futureScheduledNetAmount?: number;
-}
+export type ProposalWarningCode = ProposalWarning['code'];
 
 export interface QualityEvaluationResult {
   passed: boolean;
@@ -265,12 +255,14 @@ export interface TradeProposal {
   qualityEvaluation?: QualityEvaluationResult;
 }
 
-export interface TriggerResult {
-  isTriggered: boolean;
-  reason: string | null;
-  strategyType: RebalancingStrategyType;
-  metadata?: Record<string, string | number | boolean | null>;
-}
+export type TriggerResult =
+  | { isTriggered: false }
+  | {
+      isTriggered: true;
+      reason: string;
+      strategyType: RebalancingStrategyType;
+      metadata?: Record<string, string | number | boolean | null>;
+    };
 
 export interface StrategyInterface {
   evaluateTrigger(
