@@ -16,8 +16,8 @@ This file is the living project journal. It captures the journey from initializa
 - **Languages detected:** TypeScript on Node.js (v20+).
 - **Frameworks detected:** Express.js REST API with SSE event bus; React Command Center dashboard (Tailwind v4, Framer Motion); Jest test framework.
 - **Tooling detected:** TypeScript compiler (`tsc`), Jest, ESLint, Prettier, SQLite (`better-sqlite3`), Docker Compose.
-- **Tests detected:** 45 test suites / 320 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, and EOD reconciliation.
-- **Documentation detected:** Full architecture docs (`docs/architecture/`), 61 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
+- **Tests detected:** 45 test suites / 330 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, and EOD reconciliation.
+- **Documentation detected:** Full architecture docs (`docs/architecture/`), 63 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
 - **CI/CD detected:** GitHub Actions workflow (`.github/workflows/ci.yml`) with linting, testing, and Docker build verification.
 
 
