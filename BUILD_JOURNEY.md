@@ -201,6 +201,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 98 | 2026-08-14 | Documentation-Driven Test Suite Audit Mitigation | Testing, QA & Hardening | Implemented mitigation plan resolving P0-P3 audit findings: BrokerSyncService tests, unmocked log rotation, strict cash invariants, and async handle leak fixes. | [Log](docs/iterations/2026-08-14-audit-mitigation.md) |
 | 99 | 2026-08-14 | Cross-Feature Interaction & EOD Error Resilience | Testing & Quality Hardening | Added cross-feature interaction test suite (Corporate Action Split -> TLH Harvest, Fan-Out -> Circuit Breakers) and EOD reconciliation error resilience. | [Log](docs/iterations/2026-08-14-cross-feature-hardening.md) |
 | 100 | 2026-08-14 | Composable Exclusion & Holding Concentration Overlays | Architecture & Compliance | Implemented ExclusionListOverlay and HoldingConcentrationCapOverlay in execution pipeline with ADR-0062. | [Log](docs/iterations/2026-08-14-exclusion-concentration-overlays.md) |
+| 101 | 2026-08-17 | PR Merges, Dependency Upgrades & State Representation Simplifications | Maintenance & Domain Models | Merged Dependabot updates (#98-#102) and resolved/merged PR #111 implementing discriminated unions for TriggerResult and ProposalWarning (#109). | [Log](docs/iterations/2026-08-17-pr-merge-and-state-simplifications.md) |
 
 
 
