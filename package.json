@@ -40,7 +40,7 @@
     "@eslint/js": "^10.0.1",
     "@swc/core": "^1.15.47",
     "@swc/jest": "^0.2.39",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -58,11 +58,11 @@
     "supertest": "^7.2.2",
     "typescript": "^7.0.2",
     "typescript6": "npm:typescript@^6.0.3",
-    "typescript-eslint": "^8.63.0"
+    "typescript-eslint": "^8.66.0"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.2",
+    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.6",
     "decimal.js": "^10.6.0",
     "dotenv": "^17.4.2",

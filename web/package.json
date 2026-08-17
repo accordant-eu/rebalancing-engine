@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "framer-motion": "^12.42.2",
+    "framer-motion": "^13.0.0",
     "lucide-react": "^1.23.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -22,7 +22,7 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/user-event": "^14.6.3",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.14",
@@ -38,7 +38,7 @@
     "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "typescript-eslint": "^8.63.0",
+    "typescript-eslint": "^8.66.0",
     "typescript6": "npm:typescript@^6.0.3",
     "vite": "^8.0.12",
     "vitest": "^4.1.10"

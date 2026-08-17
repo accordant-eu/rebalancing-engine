@@ -91,6 +91,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0059 | 2026-08-14 | UK Capital Gains Tax Rules and Bed-and-Breakfasting Overlay | Accepted | [ADR-0059](docs/decisions/0059-uk-bed-and-breakfasting-overlay.md) |
 | 0060 | 2026-08-14 | Corporate Actions Processing and Tax Lot Basis Recalculation Engine | Accepted | [ADR-0060](docs/decisions/0060-corporate-actions-processor.md) |
 | 0061 | 2026-08-14 | Model Portfolio Fan-Out Queue Worker and Throttled Batch Evaluator | Accepted | [ADR-0061](docs/decisions/0061-model-fan-out-queue-worker.md) |
+| 0062 | 2026-08-14 | Composable Exclusion and Holding Concentration Overlays | Accepted | [ADR-0062](docs/decisions/0062-composable-exclusion-and-concentration-overlays.md) |
 
 
 | Iteration | Date | Theme | Area | High-Level Summary | Details |
@@ -199,5 +200,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 97 | 2026-08-14 | Documentation-Driven Test Suite Audit | Testing, QA & Audit | Performed independent requirements-to-test traceability audit across 61 ADRs & 10 PRDs; produced prioritized test backlog. | [Log](docs/iterations/2026-08-14-test-suite-audit.md) |
 | 98 | 2026-08-14 | Documentation-Driven Test Suite Audit Mitigation | Testing, QA & Hardening | Implemented mitigation plan resolving P0-P3 audit findings: BrokerSyncService tests, unmocked log rotation, strict cash invariants, and async handle leak fixes. | [Log](docs/iterations/2026-08-14-audit-mitigation.md) |
 | 99 | 2026-08-14 | Cross-Feature Interaction & EOD Error Resilience | Testing & Quality Hardening | Added cross-feature interaction test suite (Corporate Action Split -> TLH Harvest, Fan-Out -> Circuit Breakers) and EOD reconciliation error resilience. | [Log](docs/iterations/2026-08-14-cross-feature-hardening.md) |
+| 100 | 2026-08-14 | Composable Exclusion & Holding Concentration Overlays | Architecture & Compliance | Implemented ExclusionListOverlay and HoldingConcentrationCapOverlay in execution pipeline with ADR-0062. | [Log](docs/iterations/2026-08-14-exclusion-concentration-overlays.md) |
+
 
 
