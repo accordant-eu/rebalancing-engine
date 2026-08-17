@@ -92,6 +92,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0060 | 2026-08-14 | Corporate Actions Processing and Tax Lot Basis Recalculation Engine | Accepted | [ADR-0060](docs/decisions/0060-corporate-actions-processor.md) |
 | 0061 | 2026-08-14 | Model Portfolio Fan-Out Queue Worker and Throttled Batch Evaluator | Accepted | [ADR-0061](docs/decisions/0061-model-fan-out-queue-worker.md) |
 | 0062 | 2026-08-14 | Composable Exclusion and Holding Concentration Overlays | Accepted | [ADR-0062](docs/decisions/0062-composable-exclusion-and-concentration-overlays.md) |
+| 0063 | 2026-08-17 | Tax-Advantaged Account Wrappers & Policy Routing | Accepted | [ADR-0063](docs/decisions/0063-tax-advantaged-account-wrappers.md) |
 
 
 | Iteration | Date | Theme | Area | High-Level Summary | Details |
@@ -202,6 +203,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 99 | 2026-08-14 | Cross-Feature Interaction & EOD Error Resilience | Testing & Quality Hardening | Added cross-feature interaction test suite (Corporate Action Split -> TLH Harvest, Fan-Out -> Circuit Breakers) and EOD reconciliation error resilience. | [Log](docs/iterations/2026-08-14-cross-feature-hardening.md) |
 | 100 | 2026-08-14 | Composable Exclusion & Holding Concentration Overlays | Architecture & Compliance | Implemented ExclusionListOverlay and HoldingConcentrationCapOverlay in execution pipeline with ADR-0062. | [Log](docs/iterations/2026-08-14-exclusion-concentration-overlays.md) |
 | 101 | 2026-08-17 | PR Merges, Dependency Upgrades & State Representation Simplifications | Maintenance & Domain Models | Merged Dependabot updates (#98-#102) and resolved/merged PR #111 implementing discriminated unions for TriggerResult and ProposalWarning (#109). | [Log](docs/iterations/2026-08-17-pr-merge-and-state-simplifications.md) |
+| 102 | 2026-08-17 | Tax-Advantaged Account Wrappers & Policy Routing | Domain Models & Compliance | Implemented TaxWrapperType to support UK ISA/SIPP and US IRA/401k wrappers, bypassing spurious tax lockouts and TLH overlays (ADR-0063). | [Log](docs/iterations/2026-08-17-tax-advantaged-account-wrappers.md) |
 
 
 

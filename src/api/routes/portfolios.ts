@@ -194,6 +194,8 @@ export function createPortfoliosRouter(
         archetype: state.archetype,
         constraints: state.constraints,
         targetAllocation: state.targetAllocation,
+        taxJurisdiction: state.portfolioState.taxJurisdiction || 'US',
+        taxWrapper: state.portfolioState.taxWrapper || state.policy.taxWrapper || 'TAXABLE',
         totalValue,
         cash: state.portfolioState.cash,
         lastEvaluatedAt: new Date().toISOString(),
@@ -282,6 +284,7 @@ export function createPortfoliosRouter(
       accountId: state.portfolioState.accountId,
       tenantId: state.portfolioState.tenantId,
       taxJurisdiction: state.portfolioState.taxJurisdiction || 'US',
+      taxWrapper: state.portfolioState.taxWrapper || state.policy.taxWrapper || 'TAXABLE',
       modelId: state.portfolioState.modelId || null,
       modelName,
       subscriptionType: state.portfolioState.subscriptionType || 'bespoke',
@@ -309,7 +312,7 @@ export function createPortfoliosRouter(
       return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
     }
 
-    const { taxJurisdiction, policy } = req.body || {};
+    const { taxJurisdiction, taxWrapper, policy } = req.body || {};
 
     if (policy) {
       const isTaxAwareUs = policy.strategyType === 'tax_aware_us' || policy.optimizerType === 'tax_aware_us';
@@ -328,10 +331,15 @@ export function createPortfoliosRouter(
     if (taxJurisdiction) {
       state.portfolioState.taxJurisdiction = taxJurisdiction;
     }
+    if (taxWrapper) {
+      state.portfolioState.taxWrapper = taxWrapper;
+      state.policy.taxWrapper = taxWrapper;
+    }
 
     res.json({
       accountId,
       taxJurisdiction: state.portfolioState.taxJurisdiction,
+      taxWrapper: state.portfolioState.taxWrapper,
       policy: state.policy,
     });
   });

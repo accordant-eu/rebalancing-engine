@@ -10,6 +10,7 @@ import {
   TargetAllocation,
   TradeProposal,
   TriggerResult,
+  isTaxAdvantagedWrapper,
 } from '../models/domain';
 import { CalendarRebalanceStrategy, ManualRebalanceStrategy, ThresholdStrategy, TaxAwareUsStrategy, StandardRuleBasedTradeGenerator, TaxAwareUsTradeGenerator } from '../strategy';
 import {
@@ -79,19 +80,26 @@ export interface RebalanceEvaluation {
   qualityResults?: Array<{ name: string; passed: boolean; reason?: string }>;
 }
 
-function resolveExecutionOverlays(policy: RebalancingPolicy): ExecutionOverlay[] {
+function resolveExecutionOverlays(policy: RebalancingPolicy, portfolioState?: PortfolioState): ExecutionOverlay[] {
   const executionOverlays: ExecutionOverlay[] = [];
   const overlayNames = new Set(policy.executionOverlays || []);
+  const effectiveWrapper = policy.taxWrapper ?? portfolioState?.taxWrapper ?? 'TAXABLE';
+  const isTaxAdvantaged = isTaxAdvantagedWrapper(effectiveWrapper);
 
-  if (overlayNames.has('OpportunisticLossHarvestingOverlay')) {
-    executionOverlays.push(new OpportunisticLossHarvestingOverlay());
+  // Tax-specific overlays (TLH, WashSale, UK Bed-and-Breakfast) only apply to taxable accounts
+  if (!isTaxAdvantaged) {
+    if (overlayNames.has('OpportunisticLossHarvestingOverlay')) {
+      executionOverlays.push(new OpportunisticLossHarvestingOverlay());
+    }
+    if (overlayNames.has('WashSaleLockoutOverlay')) {
+      executionOverlays.push(new WashSaleLockoutOverlay());
+    }
+    if (overlayNames.has('UkBedAndBreakfastOverlay')) {
+      executionOverlays.push(new UkBedAndBreakfastOverlay());
+    }
   }
-  if (overlayNames.has('WashSaleLockoutOverlay')) {
-    executionOverlays.push(new WashSaleLockoutOverlay());
-  }
-  if (overlayNames.has('UkBedAndBreakfastOverlay')) {
-    executionOverlays.push(new UkBedAndBreakfastOverlay());
-  }
+
+  // Sizing & mandate constraint overlays apply to all accounts (taxable and tax-advantaged)
   if (overlayNames.has('ExclusionListOverlay') || (policy.exclusionList && policy.exclusionList.length > 0)) {
     executionOverlays.push(new ExclusionListOverlay());
   }
@@ -112,7 +120,7 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
   const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
   const strategy = selectStrategy(input.policy.strategyType);
   const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
-  const executionOverlays = resolveExecutionOverlays(input.policy);
+  const executionOverlays = resolveExecutionOverlays(input.policy, effectivePortfolioState);
 
   const optimizerContext: TradeOptimizerContext = {
     valuation,
@@ -293,7 +301,7 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
   const driftMeasurements = calculateDrift(weights, input.targetAllocation, input.policy);
   const strategy = selectStrategy(input.policy.strategyType);
   const trigger = strategy.evaluateTrigger(effectivePortfolioState, driftMeasurements, input.policy);
-  const executionOverlays = resolveExecutionOverlays(input.policy);
+  const executionOverlays = resolveExecutionOverlays(input.policy, effectivePortfolioState);
 
   const optimizerContext: TradeOptimizerContext = {
     valuation,

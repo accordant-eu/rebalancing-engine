@@ -239,6 +239,7 @@ Authentication is handled via a JWT token.
                     accountId: { type: 'string' },
                     tenantId: { type: 'string' },
                     taxJurisdiction: { type: 'string', example: 'US' },
+                    taxWrapper: { type: 'string', enum: ['TAXABLE', 'US_TRADITIONAL_IRA', 'US_ROTH_IRA', 'US_401K', 'UK_ISA', 'UK_SIPP', 'TAX_EXEMPT'], example: 'TAXABLE' },
                     modelId: { type: 'string', nullable: true },
                     totalValue: { type: 'number' },
                     cash: { type: 'number' },

@@ -64,6 +64,8 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       cashBuffer REAL DEFAULT 0,
       brokerAccountId TEXT,
       circuitBreakerStatus TEXT DEFAULT 'closed',
+      taxJurisdiction TEXT DEFAULT 'US',
+      taxWrapper TEXT DEFAULT 'TAXABLE',
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE,
       FOREIGN KEY(modelId) REFERENCES Models(modelId) ON DELETE SET NULL
     );
@@ -163,6 +165,8 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (_e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN constraints TEXT`); } catch (_e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Portfolios ADD COLUMN circuitBreakerStatus TEXT DEFAULT 'closed'`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN taxJurisdiction TEXT DEFAULT 'US'`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Portfolios ADD COLUMN taxWrapper TEXT DEFAULT 'TAXABLE'`); } catch (_e) { /* ignore if exists */ }
   
   try { db.exec(`CREATE TABLE IF NOT EXISTS Orders (
       orderId TEXT PRIMARY KEY,

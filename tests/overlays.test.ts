@@ -578,6 +578,189 @@ describe('Execution Overlays (TLH)', () => {
       expect(buyB?.estimatedValue).toBe(5000);
     });
   });
+
+  describe('Tax-Advantaged Account Wrappers (ADR-0063)', () => {
+    it('bypasses tax-loss harvesting and wash-sale lockouts for US tax-advantaged accounts (e.g., US_ROTH_IRA)', () => {
+      const taxablePortfolio = {
+        accountId: 'acc-taxable',
+        taxJurisdiction: 'US',
+        taxWrapper: 'TAXABLE' as const,
+        cash: 1000,
+        holdings: [
+          {
+            instrumentId: 'IVV',
+            quantity: 10,
+            taxLots: [{ lotId: 'lot1', quantity: 10, unitCost: 100, acquisitionDate: '2026-01-01' }],
+          },
+        ],
+      };
+
+      const iraPortfolio = {
+        accountId: 'acc-ira',
+        taxJurisdiction: 'US',
+        taxWrapper: 'US_ROTH_IRA' as const,
+        cash: 1000,
+        holdings: [
+          {
+            instrumentId: 'IVV',
+            quantity: 10,
+            taxLots: [{ lotId: 'lot1', quantity: 10, unitCost: 100, acquisitionDate: '2026-01-01' }],
+          },
+        ],
+      };
+
+      const prices: PriceSnapshot = {
+        prices: {
+          IVV: 90, // 10% loss
+          VOO: 90,
+        },
+      };
+
+      const targetAlloc: TargetAllocation = {
+        targets: [{ instrumentId: 'IVV', weight: 1.0 }],
+        cashBuffer: 0,
+      };
+
+      const policy: RebalancingPolicy = {
+        strategyType: 'manual',
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 10,
+        tlhLossThresholdBps: 500, // 5%
+        equivalencyGroups: [['IVV', 'VOO']],
+        executionOverlays: ['OpportunisticLossHarvestingOverlay', 'WashSaleLockoutOverlay'],
+      };
+
+      // 1. Taxable account should evaluate TLH and enforce WashSaleLockoutOverlay
+      const taxableEval = evaluateRebalance({
+        eventId: 'evt-taxable',
+        createdAt: '2026-08-01T00:00:00Z',
+        portfolioState: taxablePortfolio,
+        targetAllocation: targetAlloc,
+        priceSnapshot: prices,
+        policy,
+      });
+      expect(taxableEval.tradeProposal.warnings.some((w) => w.code === 'WASH_SALE_LOCKOUT')).toBe(true);
+
+      // 2. Tax-Advantaged IRA account should skip TLH and WashSale overlays (no tax lockouts or harvesting)
+      const iraEval = evaluateRebalance({
+        eventId: 'evt-ira',
+        createdAt: '2026-08-01T00:00:00Z',
+        portfolioState: iraPortfolio,
+        targetAllocation: targetAlloc,
+        priceSnapshot: prices,
+        policy,
+      });
+      expect(iraEval.tradeProposal.warnings.some((w) => w.code === 'WASH_SALE_LOCKOUT')).toBe(false);
+      expect(iraEval.tradeProposal.warnings.some((w) => w.code === 'TLH_HARVEST_GENERATED')).toBe(false);
+    });
+
+    it('bypasses UK Bed & Breakfasting lockouts for UK tax-advantaged accounts (e.g., UK_ISA, UK_SIPP)', () => {
+      const taxableUkPortfolio = {
+        accountId: 'acc-uk-taxable',
+        taxJurisdiction: 'UK',
+        taxWrapper: 'TAXABLE' as const,
+        cash: 1000,
+        holdings: [{ instrumentId: 'VOD.L', quantity: 100 }],
+      };
+
+      const isaPortfolio = {
+        accountId: 'acc-uk-isa',
+        taxJurisdiction: 'UK',
+        taxWrapper: 'UK_ISA' as const,
+        cash: 1000,
+        holdings: [{ instrumentId: 'VOD.L', quantity: 100 }],
+      };
+
+      const prices: PriceSnapshot = {
+        prices: { 'VOD.L': 10 },
+      };
+
+      const targetAlloc: TargetAllocation = {
+        targets: [{ instrumentId: 'VOD.L', weight: 1.0 }],
+        cashBuffer: 0,
+      };
+
+      const policy: RebalancingPolicy = {
+        strategyType: 'threshold',
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 10,
+        executionOverlays: ['UkBedAndBreakfastOverlay'],
+      };
+
+      const taxableEval = evaluateRebalance({
+        eventId: 'evt-uk-taxable',
+        createdAt: '2026-08-01T00:00:00Z',
+        portfolioState: taxableUkPortfolio,
+        targetAllocation: targetAlloc,
+        priceSnapshot: prices,
+        policy,
+      });
+      expect(taxableEval.tradeProposal).toBeDefined();
+
+      const isaEval = evaluateRebalance({
+        eventId: 'evt-uk-isa',
+        createdAt: '2026-08-01T00:00:00Z',
+        portfolioState: isaPortfolio,
+        targetAllocation: targetAlloc,
+        priceSnapshot: prices,
+        policy,
+      });
+      expect(isaEval.tradeProposal).toBeDefined();
+    });
+
+    it('continues enforcing ExclusionListOverlay and HoldingConcentrationCapOverlay on tax-advantaged accounts', () => {
+      const isaPortfolio = {
+        accountId: 'acc-uk-isa-restricted',
+        taxJurisdiction: 'UK',
+        taxWrapper: 'UK_ISA' as const,
+        cash: 5000,
+        holdings: [
+          { instrumentId: 'ALLOWED_A', quantity: 20 },
+          { instrumentId: 'EXCLUDED_X', quantity: 30 },
+        ],
+      };
+
+      const prices: PriceSnapshot = {
+        prices: {
+          ALLOWED_A: 100,
+          EXCLUDED_X: 100,
+          ALLOWED_B: 100,
+        },
+      };
+
+      const targetAlloc: TargetAllocation = {
+        targets: [
+          { instrumentId: 'ALLOWED_A', weight: 0.40 },
+          { instrumentId: 'EXCLUDED_X', weight: 0.00 },
+          { instrumentId: 'ALLOWED_B', weight: 0.60 },
+        ],
+        cashBuffer: 0,
+      };
+
+      const policy: RebalancingPolicy = {
+        strategyType: 'manual',
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 10,
+        exclusionList: ['EXCLUDED_X'],
+        maxHoldingConcentration: 0.50,
+      };
+
+      const evaluation = evaluateRebalance({
+        eventId: 'evt-isa-compliance',
+        createdAt: '2026-08-01T00:00:00Z',
+        portfolioState: isaPortfolio,
+        targetAllocation: targetAlloc,
+        priceSnapshot: prices,
+        policy,
+      });
+
+      // Exclusion and concentration overlays must execute identically
+      expect(evaluation.tradeProposal.trades).toHaveLength(3);
+      const buyB = evaluation.tradeProposal.trades.find((t) => t.instrumentId === 'ALLOWED_B');
+      expect(buyB?.quantity).toBe(50); // Capped at 50%
+      expect(buyB?.estimatedValue).toBe(5000);
+    });
+  });
 });
 
 

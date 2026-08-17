@@ -111,6 +111,28 @@ export interface ModelMandate {
 
 export type SubscriptionType = 'discretionary' | 'bespoke';
 
+export type TaxWrapperType =
+  | 'TAXABLE'
+  | 'US_TRADITIONAL_IRA'
+  | 'US_ROTH_IRA'
+  | 'US_401K'
+  | 'UK_ISA'
+  | 'UK_SIPP'
+  | 'TAX_EXEMPT';
+
+export function isTaxAdvantagedWrapper(wrapper?: TaxWrapperType | string): boolean {
+  if (!wrapper) return false;
+  const normalized = wrapper.toUpperCase();
+  return (
+    normalized === 'US_TRADITIONAL_IRA' ||
+    normalized === 'US_ROTH_IRA' ||
+    normalized === 'US_401K' ||
+    normalized === 'UK_ISA' ||
+    normalized === 'UK_SIPP' ||
+    normalized === 'TAX_EXEMPT'
+  );
+}
+
 export interface PortfolioState {
   accountId: string;
   tenantId?: string;
@@ -119,6 +141,7 @@ export interface PortfolioState {
   brokerAccountId?: string;
   circuitBreakerStatus?: 'open' | 'closed';
   taxJurisdiction?: string;
+  taxWrapper?: TaxWrapperType;
   cash: number;
   holdings: Holding[];
   cashFlows?: CashFlow[];
@@ -203,6 +226,8 @@ export interface RebalancingPolicy {
   exclusionList?: string[];
   // Maximum allowable portfolio weight for any single instrument (e.g., 0.20 for 20% cap)
   maxHoldingConcentration?: number;
+  // Tax wrapper governing capital gains taxation and overlay application (defaults to 'TAXABLE')
+  taxWrapper?: TaxWrapperType;
 }
 
 // Outputs

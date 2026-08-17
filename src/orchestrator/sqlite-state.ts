@@ -247,8 +247,8 @@ export class SqliteStateManager implements LiveStateManager {
     const db = getDb();
     
     const insertPortfolio = db.prepare(`
-      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO Portfolios (accountId, tenantId, modelId, subscriptionType, cash, policy, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertHolding = db.prepare(`
@@ -276,7 +276,9 @@ export class SqliteStateManager implements LiveStateManager {
         state.portfolioState.brokerAccountId || null,
         state.archetype || 'StaticWeights',
         state.constraints ? JSON.stringify(state.constraints) : null,
-        state.portfolioState.circuitBreakerStatus || 'closed'
+        state.portfolioState.circuitBreakerStatus || 'closed',
+        state.portfolioState.taxJurisdiction || 'US',
+        state.portfolioState.taxWrapper || state.policy.taxWrapper || 'TAXABLE'
       );
       
       deleteHoldings.run(accountId);
@@ -575,7 +577,7 @@ export class SqliteStateManager implements LiveStateManager {
   public getAccountState(accountId: string): LiveState {
     const db = getDb();
     
-    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
+    const portRow = db.prepare(`SELECT cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper FROM Portfolios WHERE accountId = ?`).get(accountId) as any;
     if (!portRow) {
       throw new Error(`SqliteStateManager is not initialized for account ${accountId}`);
     }
@@ -627,6 +629,8 @@ export class SqliteStateManager implements LiveStateManager {
         modelId: portRow.modelId,
         subscriptionType: portRow.subscriptionType,
         circuitBreakerStatus: portRow.circuitBreakerStatus,
+        taxJurisdiction: portRow.taxJurisdiction || 'US',
+        taxWrapper: portRow.taxWrapper || 'TAXABLE',
         cash: portRow.cash,
         holdings,
         cashFlows,
@@ -654,9 +658,9 @@ export class SqliteStateManager implements LiveStateManager {
     // For efficiency, we load everything in a few queries instead of N queries
     let portfolios: any[];
     if (tenantId) {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
     } else {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints FROM Portfolios`).all() as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper FROM Portfolios`).all() as any[];
     }
     
     const accountIds = portfolios.map(p => p.accountId);
@@ -718,6 +722,9 @@ export class SqliteStateManager implements LiveStateManager {
           modelId: p.modelId,
           subscriptionType: p.subscriptionType,
           brokerAccountId: p.brokerAccountId,
+          circuitBreakerStatus: p.circuitBreakerStatus,
+          taxJurisdiction: p.taxJurisdiction || 'US',
+          taxWrapper: p.taxWrapper || 'TAXABLE',
           cash: p.cash,
           holdings: holdingsByAcc[p.accountId] || [],
         },
