@@ -18,16 +18,19 @@ export class TaxAwareUsStrategy implements StrategyInterface {
     if (state.taxJurisdiction && state.taxJurisdiction.toUpperCase() !== 'US') {
       return {
         isTriggered: false,
-        reason: `TAX_AWARE_US strategy is restricted to US tax jurisdictions (portfolio jurisdiction: ${state.taxJurisdiction}).`,
-        strategyType: 'tax_aware_us',
       };
     }
 
     // Trigger on threshold breaches or tax loss harvesting opportunities
     const baseResult = this.thresholdStrategy.evaluateTrigger(state, drift, policy);
-    return {
-      ...baseResult,
-      strategyType: 'tax_aware_us',
-    };
+    
+    if (baseResult.isTriggered) {
+      return {
+        ...baseResult,
+        strategyType: 'tax_aware_us',
+      };
+    }
+    
+    return baseResult;
   }
 }

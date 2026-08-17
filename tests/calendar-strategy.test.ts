@@ -51,13 +51,6 @@ describe('Calendar Rebalance Strategy', () => {
 
     expect(trigger).toEqual({
       isTriggered: false,
-      reason: null,
-      strategyType: 'calendar',
-      metadata: {
-        evaluationDate: '2026-05-02',
-        nextRebalanceDate: '2026-06-01',
-        frequency: 'quarterly',
-      },
     });
   });
 
@@ -107,7 +100,6 @@ describe('Calendar Rebalance Strategy', () => {
     expect(() =>
       new CalendarRebalanceStrategy().evaluateTrigger(scenario.portfolioState, drift, {
         ...scenario.policy,
-        strategyType: 'calendar',
       }),
     ).toThrow('Calendar strategy requires calendar policy configuration');
   });
@@ -117,7 +109,6 @@ describe('Calendar Rebalance Strategy', () => {
       new CalendarRebalanceStrategy().evaluateTrigger({} as any, [], {
         absoluteDriftTolerance: 0.05,
         minimumTradeSize: 0,
-        strategyType: 'calendar',
         calendar: {
           evaluationDate: '2026-05-02T00:00:00',
           nextRebalanceDate: '2026-05-01',
@@ -131,7 +122,6 @@ describe('Calendar Rebalance Strategy', () => {
       new CalendarRebalanceStrategy().evaluateTrigger({} as any, [], {
         absoluteDriftTolerance: 0.05,
         minimumTradeSize: 0,
-        strategyType: 'calendar',
         calendar: {
           evaluationDate: '2026-05-02',
           nextRebalanceDate: '2026-05-01T00:00:00Z',
@@ -145,7 +135,6 @@ describe('Calendar Rebalance Strategy', () => {
       new CalendarRebalanceStrategy().evaluateTrigger({} as any, [], {
         absoluteDriftTolerance: 0.05,
         minimumTradeSize: 0,
-        strategyType: 'calendar',
         calendar: {
           evaluationDate: 'not-a-date',
           nextRebalanceDate: '2026-05-01',

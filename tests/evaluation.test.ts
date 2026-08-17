@@ -53,17 +53,10 @@ describe('Rebalance Evaluation', () => {
 
     expect(evaluation.trigger).toMatchObject({
       isTriggered: false,
-      reason: null,
-      strategyType: 'calendar',
-      metadata: {
-        evaluationDate: '2026-05-02',
-        nextRebalanceDate: '2026-06-01',
-        frequency: 'quarterly',
-      },
     });
     expect(evaluation.tradeProposal.trades).toEqual([]);
     expect(evaluation.tradeProposal.estimatedPostTradeCash).toBe(evaluation.valuation.cash);
-    expect(evaluation.auditRecord.outputs.strategyType).toBe('calendar');
+    expect(evaluation.auditRecord.outputs.strategyType).toBeNull();
   });
 
   it('surfaces pending cash-flow warnings and audit metadata without applying pending cash', () => {

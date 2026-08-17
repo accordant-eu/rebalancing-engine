@@ -21,16 +21,20 @@ export class CalendarRebalanceStrategy implements StrategyInterface {
     const nextRebalanceTime = parseIsoDateOnly(policy.calendar.nextRebalanceDate, 'nextRebalanceDate');
     const isDue = evaluationTime >= nextRebalanceTime;
 
-    return {
-      isTriggered: isDue,
-      reason: isDue ? `Calendar rebalance due on ${policy.calendar.nextRebalanceDate}.` : null,
-      strategyType: 'calendar',
-      metadata: {
-        evaluationDate: policy.calendar.evaluationDate,
-        nextRebalanceDate: policy.calendar.nextRebalanceDate,
-        frequency: policy.calendar.frequency ?? 'explicit',
-      },
-    };
+    if (isDue) {
+      return {
+        isTriggered: true,
+        reason: `Calendar rebalance due on ${policy.calendar.nextRebalanceDate}.`,
+        strategyType: 'calendar',
+        metadata: {
+          evaluationDate: policy.calendar.evaluationDate,
+          nextRebalanceDate: policy.calendar.nextRebalanceDate,
+          frequency: policy.calendar.frequency ?? 'explicit',
+        },
+      };
+    }
+    
+    return { isTriggered: false };
   }
 }
 
