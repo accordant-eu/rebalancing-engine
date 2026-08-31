@@ -19,6 +19,7 @@ import rateLimit from 'express-rate-limit';
 
 import { Orchestrator } from '../orchestrator/loop';
 import { BatchEvaluationWorker } from '../orchestrator/batch-evaluator';
+import { MandateSchedulerService } from '../orchestrator/scheduler';
 import { globalMetrics } from '../services/metrics';
 
 import bcrypt from 'bcryptjs';
@@ -280,6 +281,17 @@ setInterval(() => {
 
   app.get('/api/admin/queue', requireSuperadmin, (req, res) => {
     res.json({ depth: stateManager.getQueueDepth() });
+  });
+
+  app.post('/api/admin/scheduler/scan', requireSuperadmin, (req, res) => {
+    try {
+      const evaluationDate = req.body?.evaluationDate;
+      const scheduler = new MandateSchedulerService(stateManager);
+      const result = scheduler.scanAndEnqueue(evaluationDate);
+      res.json(result);
+    } catch (err: any) {
+      sendError(res, 400, 'SCHEDULER_SCAN_ERROR', err.message);
+    }
   });
 
   app.get('/api/admin/metrics', requireSuperadmin, (req, res) => {

@@ -16,8 +16,8 @@ This file is the living project journal. It captures the journey from initializa
 - **Languages detected:** TypeScript on Node.js (v20+).
 - **Frameworks detected:** Express.js REST API with SSE event bus; React Command Center dashboard (Tailwind v4, Framer Motion); Jest test framework.
 - **Tooling detected:** TypeScript compiler (`tsc`), Jest, ESLint, Prettier, SQLite (`better-sqlite3`), Docker Compose.
-- **Tests detected:** 45 test suites / 330 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, and EOD reconciliation.
-- **Documentation detected:** Full architecture docs (`docs/architecture/`), 63 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
+- **Tests detected:** 46 test suites / 339 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, EOD reconciliation, and mandate scheduling.
+- **Documentation detected:** Full architecture docs (`docs/architecture/`), 64 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
 - **CI/CD detected:** GitHub Actions workflow (`.github/workflows/ci.yml`) with linting, testing, and Docker build verification.
 
 
@@ -93,6 +93,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0061 | 2026-08-14 | Model Portfolio Fan-Out Queue Worker and Throttled Batch Evaluator | Accepted | [ADR-0061](docs/decisions/0061-model-fan-out-queue-worker.md) |
 | 0062 | 2026-08-14 | Composable Exclusion and Holding Concentration Overlays | Accepted | [ADR-0062](docs/decisions/0062-composable-exclusion-and-concentration-overlays.md) |
 | 0063 | 2026-08-17 | Tax-Advantaged Account Wrappers & Policy Routing | Accepted | [ADR-0063](docs/decisions/0063-tax-advantaged-account-wrappers.md) |
+| 0064 | 2026-08-31 | Automated Recurring Mandate Scheduler Service | Accepted | [ADR-0064](docs/decisions/0064-automated-recurring-mandate-scheduler.md) |
 
 
 | Iteration | Date | Theme | Area | High-Level Summary | Details |
@@ -205,6 +206,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 101 | 2026-08-17 | PR Merges, Dependency Upgrades & State Representation Simplifications | Maintenance & Domain Models | Merged Dependabot updates (#98-#102) and resolved/merged PR #111 implementing discriminated unions for TriggerResult and ProposalWarning (#109). | [Log](docs/iterations/2026-08-17-pr-merge-and-state-simplifications.md) |
 | 102 | 2026-08-17 | Tax-Advantaged Account Wrappers & Policy Routing | Domain Models & Compliance | Implemented TaxWrapperType to support UK ISA/SIPP and US IRA/401k wrappers, bypassing spurious tax lockouts and TLH overlays (ADR-0063). | [Log](docs/iterations/2026-08-17-tax-advantaged-account-wrappers.md) |
 | 103 | 2026-08-31 | PR Merges & Dependency Upgrades (#113-#117) | Maintenance & Dependencies | Merged Dependabot PRs (#113-#117) for eslint, typescript-eslint, @types/node, eslint-plugin-react-refresh, and lucide-react. Verified 45 test suites. | [Log](docs/iterations/2026-08-31-pr-merges-and-dependency-upgrades.md) |
+| 104 | 2026-08-31 | Automated Recurring Mandate Scheduler Service | Orchestrator & Automation | Implemented MandateSchedulerService for autonomous calendar mandate scanning, UTC date advancement, and EvaluationQueue dispatch (ADR-0064). | [Log](docs/iterations/2026-08-31-automated-recurring-mandate-scheduler.md) |
 
 
 

@@ -5,7 +5,8 @@ export type EventType =
   | 'CIRCUIT_BREAKER_HALT'
   | 'REBALANCE_EXECUTED'
   | 'CIRCUIT_BREAKER_RESET'
-  | 'BATCH_EVALUATION_PROGRESS';
+  | 'BATCH_EVALUATION_PROGRESS'
+  | 'MANDATE_SCHEDULE_EVALUATED';
 
 export interface BaseEvent {
   type: EventType;
@@ -56,12 +57,23 @@ export interface BatchEvaluationProgressEvent extends BaseEvent {
   };
 }
 
+export interface MandateScheduleEvaluatedEvent extends BaseEvent {
+  type: 'MANDATE_SCHEDULE_EVALUATED';
+  data: {
+    evaluationDate: string;
+    scanned: number;
+    enqueued: number;
+    accountIds: string[];
+  };
+}
+
 export type SystemEvent = 
   | ThresholdBreachEvent
   | CircuitBreakerHaltEvent
   | RebalanceExecutedEvent
   | CircuitBreakerResetEvent
-  | BatchEvaluationProgressEvent;
+  | BatchEvaluationProgressEvent
+  | MandateScheduleEvaluatedEvent;
 
 class EventBus extends EventEmitter {
   emitEvent(event: SystemEvent): boolean {
