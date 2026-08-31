@@ -58,7 +58,7 @@
     "supertest": "^7.2.2",
     "typescript": "^7.0.2",
     "typescript6": "npm:typescript@^6.0.3",
-    "typescript-eslint": "^8.66.0"
+    "typescript-eslint": "^8.67.0"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
