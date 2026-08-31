@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-08-31 | `docs/iterations/2026-08-31-pr-merges-and-dependency-upgrades.md` | Minor | Merged Dependabot PRs (#113-#117) and verified test suite health across 45 suites. |
 | 2026-08-17 | `docs/decisions/0063-tax-advantaged-account-wrappers.md` | Major | Recorded ADR-0063 for Tax-Advantaged Account Wrappers & Policy Routing (ISA, SIPP, IRA, 401k). |
 | 2026-08-17 | `docs/iterations/2026-08-17-pr-merge-and-state-simplifications.md` | Minor | Merged Dependabot PRs (#98-#102) and resolved/merged PR #111 (Issue #109 discriminated unions). |
 | 2026-08-14 | `docs/decisions/0062-composable-exclusion-and-concentration-overlays.md` | Major | Recorded ADR-0062 for ExclusionListOverlay and HoldingConcentrationCapOverlay in execution pipeline. |

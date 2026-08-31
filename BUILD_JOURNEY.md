@@ -204,6 +204,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 100 | 2026-08-14 | Composable Exclusion & Holding Concentration Overlays | Architecture & Compliance | Implemented ExclusionListOverlay and HoldingConcentrationCapOverlay in execution pipeline with ADR-0062. | [Log](docs/iterations/2026-08-14-exclusion-concentration-overlays.md) |
 | 101 | 2026-08-17 | PR Merges, Dependency Upgrades & State Representation Simplifications | Maintenance & Domain Models | Merged Dependabot updates (#98-#102) and resolved/merged PR #111 implementing discriminated unions for TriggerResult and ProposalWarning (#109). | [Log](docs/iterations/2026-08-17-pr-merge-and-state-simplifications.md) |
 | 102 | 2026-08-17 | Tax-Advantaged Account Wrappers & Policy Routing | Domain Models & Compliance | Implemented TaxWrapperType to support UK ISA/SIPP and US IRA/401k wrappers, bypassing spurious tax lockouts and TLH overlays (ADR-0063). | [Log](docs/iterations/2026-08-17-tax-advantaged-account-wrappers.md) |
+| 103 | 2026-08-31 | PR Merges & Dependency Upgrades (#113-#117) | Maintenance & Dependencies | Merged Dependabot PRs (#113-#117) for eslint, typescript-eslint, @types/node, eslint-plugin-react-refresh, and lucide-react. Verified 45 test suites. | [Log](docs/iterations/2026-08-31-pr-merges-and-dependency-upgrades.md) |
 
 
 
