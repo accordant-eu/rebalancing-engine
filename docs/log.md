@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-09-10 | `docs/iterations/2026-09-10-mandate-scheduler-observability-ui.md` | Minor | Implemented Mandate Scheduler & Batch Queue UI Observability widgets and status endpoints. |
 | 2026-09-10 | `docs/decisions/0064-automated-recurring-mandate-scheduler.md` | Major | Recorded ADR-0064 for Automated Recurring Mandate Scheduler Service. |
 | 2026-09-10 | `docs/iterations/2026-09-10-mandate-scheduler.md` | Minor | Implemented MandateSchedulerService, calendar math, auto-advance, and REST scan endpoint. |
 | 2026-08-17 | `docs/decisions/0063-tax-advantaged-account-wrappers.md` | Major | Recorded ADR-0063 for Tax-Advantaged Account Wrappers & Policy Routing (ISA, SIPP, IRA, 401k). |

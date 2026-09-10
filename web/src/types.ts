@@ -90,3 +90,32 @@ export interface SystemStreamEvent {
   grossNotional?: number;
   tradesCount?: number;
 }
+
+export interface UpcomingMandateAccount {
+  accountId: string;
+  tenantId?: string;
+  frequency: 'monthly' | 'quarterly' | 'annually' | 'explicit';
+  nextRebalanceDate: string;
+  evaluationDate?: string;
+}
+
+export interface SchedulerStatusResponse {
+  isRunning: boolean;
+  cronSchedule: string;
+  autoAdvanceDates: boolean;
+  calendarAccountsCount: number;
+  frequencyBreakdown: {
+    monthly: number;
+    quarterly: number;
+    annually: number;
+    explicit: number;
+  };
+  upcomingAccounts: UpcomingMandateAccount[];
+}
+
+export interface MandateScanResult {
+  evaluationDate: string;
+  scanned: number;
+  enqueued: number;
+  accountIds: string[];
+}

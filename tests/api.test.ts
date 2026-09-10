@@ -43,7 +43,16 @@ describe('API Endpoints (Týr Integration)', () => {
       portfolioState: { accountId: 'acc-other', tenantId: 'tenant-2', cash: 1000, holdings: [] },
       priceSnapshot: { prices: {} },
       targetAllocation: { targets: [] },
-      policy: { strategyType: 'threshold', absoluteDriftTolerance: 0.05, minimumTradeSize: 10 },
+      policy: {
+        strategyType: 'calendar',
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 10,
+        calendar: {
+          evaluationDate: '2026-08-01',
+          nextRebalanceDate: '2026-09-01',
+          frequency: 'monthly',
+        },
+      },
       archetype: 'StaticWeights',
     });
     stateManager.createUser({ userId: 'user-1', tenantId: 'tenant-1', email: 'test@example.com', password: bcrypt.hashSync('password', 10), role: 'Admin' });
@@ -430,6 +439,46 @@ describe('API Endpoints (Týr Integration)', () => {
       const tenantIds = res.body.map((t: any) => t.tenantId);
       expect(tenantIds).toContain('tenant-1');
       expect(tenantIds).toContain('tenant-2');
+    });
+
+    it('GET /api/admin/scheduler/status returns scheduler status and frequency breakdown', async () => {
+      const res = await request(app)
+        .get('/api/admin/scheduler/status')
+        .set('Authorization', `Bearer ${superadminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('isRunning');
+      expect(res.body).toHaveProperty('cronSchedule');
+      expect(res.body.calendarAccountsCount).toBeGreaterThanOrEqual(1);
+      expect(res.body.frequencyBreakdown.monthly).toBeGreaterThanOrEqual(1);
+      expect(Array.isArray(res.body.upcomingAccounts)).toBe(true);
+      const acc = res.body.upcomingAccounts.find((a: any) => a.accountId === 'acc-other');
+      expect(acc).toBeDefined();
+      expect(acc.nextRebalanceDate).toBe('2026-09-01');
+      expect(acc.frequency).toBe('monthly');
+    });
+
+    it('POST /api/admin/scheduler/scan triggers on-demand mandate scan and enqueues due accounts', async () => {
+      const res = await request(app)
+        .post('/api/admin/scheduler/scan')
+        .set('Authorization', `Bearer ${superadminToken}`)
+        .send({ evaluationDate: '2026-09-01' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('scanned');
+      expect(res.body).toHaveProperty('enqueued');
+      expect(res.body.accountIds).toContain('acc-other');
+    });
+
+    it('GET /api/portfolios/summary includes calendarSummary', async () => {
+      const res = await request(app)
+        .get('/api/portfolios/summary')
+        .set('Authorization', `Bearer ${superadminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('calendarSummary');
+      expect(res.body.calendarSummary.totalCalendarPortfolios).toBeGreaterThanOrEqual(1);
+      expect(Array.isArray(res.body.calendarSummary.upcomingRebalances)).toBe(true);
     });
   });
 

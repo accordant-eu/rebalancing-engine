@@ -283,6 +283,15 @@ setInterval(() => {
     res.json({ depth: stateManager.getQueueDepth() });
   });
 
+  app.get('/api/admin/scheduler/status', requireSuperadmin, (req, res) => {
+    try {
+      const scheduler = new MandateSchedulerService(stateManager);
+      res.json(scheduler.getStatus());
+    } catch (err: any) {
+      sendError(res, 500, 'SCHEDULER_STATUS_ERROR', err.message);
+    }
+  });
+
   app.post('/api/admin/scheduler/scan', requireSuperadmin, (req, res) => {
     try {
       const evaluationDate = req.body?.evaluationDate;

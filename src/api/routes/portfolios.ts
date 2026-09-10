@@ -110,6 +110,24 @@ export function createPortfoliosRouter(
       executions24h = res24h?.count || 0;
     } catch (e: any) { /* intentional empty catch */ }
 
+    let totalCalendarPortfolios = 0;
+    const upcomingRebalances: Array<{ accountId: string; frequency: string; nextRebalanceDate: string }> = [];
+
+    portfolioList.forEach(state => {
+      if (state.policy?.strategyType === 'calendar' && state.policy?.calendar) {
+        totalCalendarPortfolios++;
+        if (state.policy.calendar.nextRebalanceDate) {
+          upcomingRebalances.push({
+            accountId: state.portfolioState.accountId,
+            frequency: state.policy.calendar.frequency || 'explicit',
+            nextRebalanceDate: state.policy.calendar.nextRebalanceDate,
+          });
+        }
+      }
+    });
+
+    upcomingRebalances.sort((a, b) => a.nextRebalanceDate.localeCompare(b.nextRebalanceDate));
+
     res.json({
       asOf: new Date().toISOString(),
       meta: {
@@ -120,6 +138,10 @@ export function createPortfoliosRouter(
         inBand,
         thresholdBreach,
         notEvaluated
+      },
+      calendarSummary: {
+        totalCalendarPortfolios,
+        upcomingRebalances
       },
       totalAum,
       openCircuitBreakers,

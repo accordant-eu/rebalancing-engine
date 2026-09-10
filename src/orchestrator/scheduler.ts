@@ -50,6 +50,28 @@ export interface MandateScanResult {
   accountIds: string[];
 }
 
+export interface UpcomingMandateAccount {
+  accountId: string;
+  tenantId?: string;
+  frequency: 'monthly' | 'quarterly' | 'annually' | 'explicit';
+  nextRebalanceDate: string;
+  evaluationDate?: string;
+}
+
+export interface MandateSchedulerStatus {
+  isRunning: boolean;
+  cronSchedule: string;
+  autoAdvanceDates: boolean;
+  calendarAccountsCount: number;
+  frequencyBreakdown: {
+    monthly: number;
+    quarterly: number;
+    annually: number;
+    explicit: number;
+  };
+  upcomingAccounts: UpcomingMandateAccount[];
+}
+
 export class MandateSchedulerService {
   private scheduledTask: cron.ScheduledTask | null = null;
   private isRunning: boolean = false;
@@ -142,5 +164,54 @@ export class MandateSchedulerService {
 
     logger.info(result, 'MandateSchedulerService scan completed');
     return result;
+  }
+
+  public getStatus(): MandateSchedulerStatus {
+    const accountIds = this.stateManager.getAllAccountIds();
+    let calendarAccountsCount = 0;
+    const frequencyBreakdown = {
+      monthly: 0,
+      quarterly: 0,
+      annually: 0,
+      explicit: 0,
+    };
+    const upcomingAccounts: UpcomingMandateAccount[] = [];
+
+    for (const accountId of accountIds) {
+      const state = this.stateManager.getAccountState(accountId);
+      if (!state || !state.policy) continue;
+
+      const policy = state.policy;
+      if (policy.strategyType !== 'calendar' || !policy.calendar) continue;
+
+      calendarAccountsCount++;
+      const freq = (policy.calendar.frequency || 'explicit') as keyof typeof frequencyBreakdown;
+      if (frequencyBreakdown[freq] !== undefined) {
+        frequencyBreakdown[freq]++;
+      } else {
+        frequencyBreakdown.explicit++;
+      }
+
+      if (policy.calendar.nextRebalanceDate) {
+        upcomingAccounts.push({
+          accountId,
+          tenantId: state.portfolioState.tenantId,
+          frequency: (policy.calendar.frequency || 'explicit') as any,
+          nextRebalanceDate: policy.calendar.nextRebalanceDate,
+          evaluationDate: policy.calendar.evaluationDate,
+        });
+      }
+    }
+
+    upcomingAccounts.sort((a, b) => a.nextRebalanceDate.localeCompare(b.nextRebalanceDate));
+
+    return {
+      isRunning: this.isRunning,
+      cronSchedule: this.cronSchedule,
+      autoAdvanceDates: this.autoAdvanceDates,
+      calendarAccountsCount,
+      frequencyBreakdown,
+      upcomingAccounts,
+    };
   }
 }

@@ -40,4 +40,6 @@ Moving forward, iteration logs are strictly captured in the high-level `BUILD_JO
 - [2026-08-14: Composable Exclusion and Holding Concentration Overlays (ADR-0062)](2026-08-14-exclusion-concentration-overlays.md)
 - [2026-08-17: PR Merges, Dependency Upgrades & State Representation Simplifications (#109)](2026-08-17-pr-merge-and-state-simplifications.md)
 - [2026-08-17: Tax-Advantaged Account Wrappers & Policy Routing (ADR-0063)](2026-08-17-tax-advantaged-account-wrappers.md)
-- [2026-09-10: Automated Recurring Mandate Scheduler Service (ADR-0064)](2026-09-10-mandate-scheduler.md)
+- [2026-08-31: PR Merges & Dependency Upgrades (#113-#117)](2026-08-31-pr-merges-and-dependency-upgrades.md)
+- [2026-08-31: Automated Recurring Mandate Scheduler Service (ADR-0064)](2026-08-31-automated-recurring-mandate-scheduler.md)
+- [2026-09-10: Mandate Scheduler & Batch Queue UI Observability](2026-09-10-mandate-scheduler-observability-ui.md)
