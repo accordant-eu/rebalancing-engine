@@ -1,3 +1,11 @@
+---
+type: Audit
+title: Vidar Review — Rebalancing Engine (Tag deploy/2026-06-19-66d3489 to 6d4bd3d)
+description: Security and architecture review of the Týr API additions, SSE streaming, and token refresh release.
+tags: [audit, review, security, sse, api]
+timestamp: 2026-06-20T00:00:00Z
+---
+
 # Vidar Review — Rebalancing Engine (Tag: deploy/2026-06-19-66d3489 to 6d4bd3d)
 Date: 2026-06-20
 

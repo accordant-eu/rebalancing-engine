@@ -209,6 +209,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 103 | 2026-08-31 | PR Merges & Dependency Upgrades (#113-#117) | Maintenance & Dependencies | Merged Dependabot PRs (#113-#117) for eslint, typescript-eslint, @types/node, eslint-plugin-react-refresh, and lucide-react. Verified 45 test suites. | [Log](docs/iterations/2026-08-31-pr-merges-and-dependency-upgrades.md) |
 | 104 | 2026-09-10 | Automated Recurring Mandate Scheduler Service | Orchestrator & Automation | Implemented MandateSchedulerService for autonomous calendar mandate scanning, UTC date advancement, and EvaluationQueue dispatch (ADR-0064). | [Log](docs/iterations/2026-09-10-mandate-scheduler.md) |
 | 105 | 2026-09-10 | Mandate Scheduler & Batch Queue UI Observability | UI & Observability | Implemented Mandate Scheduler & Batch Queue Observability panels, interactive on-demand scan triggers, and firm-level calendar horizon widgets. | [Log](docs/iterations/2026-09-10-mandate-scheduler-observability-ui.md) |
+| 106 | 2026-09-10 | Repository Hygiene Remediation & Quality Hardening | Quality, CI & Tooling | Remediated web linter TS7 compatibility, expanded CI to web workspace, resolved ADR-0048 collision (ADR-0065), eliminated all 51 ESLint warnings, normalized OKF frontmatter, and resolved 6 security advisories via npm audit fix. | [Log](docs/iterations/2026-09-10-repository-hygiene-remediation.md) |
 
 
 

@@ -1,3 +1,11 @@
+---
+type: Plan
+title: IT Security Review and Mitigation Plan
+description: Security review and staged mitigation plan for Live Agent API and orchestration components.
+tags: [security, plan, api, review]
+timestamp: 2026-06-20T00:00:00Z
+---
+
 # IT Security Review and Mitigation Plan
 
 This document outlines the findings of a comprehensive IT Security review of the `rebalancing-engine` repository, focusing on the recently introduced Live Agent orchestrator, Express API, and execution components. 

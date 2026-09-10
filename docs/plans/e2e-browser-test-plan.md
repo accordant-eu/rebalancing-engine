@@ -1,3 +1,11 @@
+---
+type: Plan
+title: E2E Browser Test Plan
+description: End-to-end browser persona verification scenarios for Command Center dashboards.
+tags: [plan, e2e, testing, browser, personas]
+timestamp: 2026-06-20T00:00:00Z
+---
+
 # E2E Browser Test Plan
 
 ## Scenarios

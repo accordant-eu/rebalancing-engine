@@ -1,3 +1,11 @@
+---
+type: Iteration
+title: "Iteration Log: 2026-08-13 (Security & Architecture Hardening - Issues #105 & #106)"
+description: Technical iteration log detailing engineering changes for 2026-08-13.
+tags: [iteration, engineering, log]
+timestamp: 2026-08-13T00:00:00Z
+---
+
 # Iteration Log: 2026-08-13 (Security & Architecture Hardening - Issues #105 & #106)
 
 ## Theme: Security & Architecture Mitigation – Stream Ticket Auth & Oracle Adapter Hardening

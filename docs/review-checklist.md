@@ -1,3 +1,11 @@
+---
+type: Reference
+title: Quality Review Checklist
+description: Quality gate covering security, correctness, architecture, and maintainability for production releases.
+tags: [checklist, quality, security, review]
+timestamp: 2026-06-20T00:00:00Z
+---
+
 # Rebalancing Engine — Quality Review Checklist
 
 **Purpose**: Ensure every production release (especially direct-to-main deploys) receives a minimum quality gate covering security, correctness, architecture, and maintainability.

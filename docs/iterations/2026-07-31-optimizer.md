@@ -1,3 +1,11 @@
+---
+type: Iteration
+title: "Iteration 82 Detail - 2026-07-31"
+description: Technical iteration log detailing engineering changes for 2026-07-31.
+tags: [iteration, engineering, log]
+timestamp: 2026-07-31T00:00:00Z
+---
+
 # Iteration 82 Detail - 2026-07-31
 
 **Theme:** Advanced Optimizers (Tranche C)  
