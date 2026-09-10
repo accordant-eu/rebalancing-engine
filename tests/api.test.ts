@@ -270,7 +270,7 @@ describe('API Endpoints (Týr Integration)', () => {
         .get(`/api/events/stream?ticket=${encodeURIComponent(ticket)}`);
       expect(reuseRes.status).toBe(401);
 
-      server.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
     });
 
     it('cannot read another tenant portfolio with own token', async () => {
@@ -364,8 +364,7 @@ describe('API Endpoints (Týr Integration)', () => {
           res.on('data', (chunk: Buffer) => {
             if (chunk.toString().includes(': keepalive')) {
               req.destroy();
-              server.close();
-              finish();
+              server.close(() => finish());
             }
           });
         });
@@ -390,8 +389,7 @@ describe('API Endpoints (Týr Integration)', () => {
           res.on('data', (chunk: Buffer) => {
             if (chunk.toString().includes('CIRCUIT_BREAKER_RESET')) {
               req.destroy();
-              server.close();
-              finish();
+              server.close(() => finish());
             }
           });
         });
