@@ -15,7 +15,7 @@ This iteration implemented an automated, deterministic corporate actions process
 
 ### Key Accomplishments
 1. **ADR-0060 Adoption**:
-   - Recorded [ADR-0060](file:///Users/johanhellman/Projects/rebalancing-engine/docs/decisions/0060-corporate-actions-processor.md) documenting the architecture for corporate actions processing, basis preservation, and atomic database persistence.
+   - Recorded [ADR-0060](../decisions/0060-corporate-actions-processor.md) documenting the architecture for corporate actions processing, basis preservation, and atomic database persistence.
 2. **Core Corporate Actions Processor (`src/core/corporate-actions.ts`)**:
    - Defined `SplitCorporateAction`, `DividendCorporateAction`, `MergerCorporateAction`, and unified `CorporateAction` types.
    - Implemented `applyCorporateActionToPortfolio` and `applyCorporateActions`:

@@ -15,7 +15,7 @@ This iteration implemented HMRC-compliant UK Capital Gains Tax rules for portfol
 
 ### Key Accomplishments
 1. **ADR-0059 Adoption**:
-   - Recorded [ADR-0059](file:///Users/johanhellman/Projects/rebalancing-engine/docs/decisions/0059-uk-bed-and-breakfasting-overlay.md) outlining the architectural rationale for keeping the trade sizing engine modular and using execution overlays for regional tax law enforcement.
+   - Recorded [ADR-0059](../decisions/0059-uk-bed-and-breakfasting-overlay.md) outlining the architectural rationale for keeping the trade sizing engine modular and using execution overlays for regional tax law enforcement.
 2. **Section 104 Average Cost Holding Pool**:
    - Added `SECTION_104` to `SellSelectionMode` in `src/models/domain.ts`.
    - Created `src/core/uk-tax.ts` with `calculateSection104Pool` and `allocateSection104SellLots` to calculate pooled weighted average unit costs across all historical lots.

@@ -15,7 +15,7 @@ This iteration implemented an asynchronous, rate-limited **`BatchEvaluationWorke
 
 ### Key Accomplishments
 1. **ADR-0061 Adoption**:
-   - Recorded [ADR-0061](file:///Users/johanhellman/Projects/rebalancing-engine/docs/decisions/0061-model-fan-out-queue-worker.md) defining the architecture for throttled batch evaluation, subscriber fan-out, and progress streaming.
+   - Recorded [ADR-0061](../decisions/0061-model-fan-out-queue-worker.md) defining the architecture for throttled batch evaluation, subscriber fan-out, and progress streaming.
 2. **`BatchEvaluationWorker` Engine (`src/orchestrator/batch-evaluator.ts`)**:
    - Implemented `BatchEvaluationWorker` with configurable batch sizes (`batchSize`, default: 25), inter-item throttling (`throttleIntervalMs`, default: 200ms), and polling intervals.
    - Fully supports asynchronous evaluation via `evaluateRebalanceAsync` with automatic fallback to standard rule-based engine.

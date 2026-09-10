@@ -23,6 +23,7 @@ timestamp: 2026-06-14T00:00:00Z
 * **[Tax Lots Audit](tax-lots-audit.md)** - Documentation for tax lots audit
 * **[Documentation-Driven Test Suite Audit](documentation-driven-test-suite-audit.md)** - Independent requirements-to-test traceability audit, behavioral sanity review, boundary evaluation, and prioritized test backlog
 * **[Adversarial Audit Tranche 7](adversarial-audit-tranche-7.md)** - Security and resilience testing
+* **[Test Case Audit](test-case-audit.md)** - Comprehensive test case coverage and validation audit
 
 
 &copy; 2026 Johan Hellman. All rights reserved.
