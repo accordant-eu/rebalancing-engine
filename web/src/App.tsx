@@ -131,7 +131,7 @@ function App() {
           const data = await res.json();
           setModels(data);
         }
-      } catch(e) {}
+      } catch(_e) {}
     };
 
     const fetchMetrics = async () => {
@@ -224,7 +224,7 @@ function App() {
       } else {
         setUserRole(data.role);
       }
-    } catch (err) {
+    } catch (_err) {
       alert('Login failed');
     }
   };
@@ -467,7 +467,7 @@ function App() {
         identityDisplay = `${decoded.userId} (${decoded.tenantId})`;
       }
     }
-  } catch(e) {}
+  } catch(_e) {}
 
   if (userRole === 'Advisor') {
     const layoutTab = (['inbox', 'fleet', 'models'].includes(currentTab) ? currentTab : 'inbox') as any;

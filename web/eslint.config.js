@@ -1,9 +1,19 @@
+import Module from 'module'
+const originalRequire = Module.prototype.require
+Module.prototype.require = function(id) {
+  if (id === 'typescript') {
+    return originalRequire.call(this, 'typescript6')
+  }
+  return originalRequire.call(this, id)
+}
+
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+
+const tseslint = (await import('typescript-eslint')).default
 
 export default defineConfig([
   globalIgnores(['dist']),
