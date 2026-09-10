@@ -4,7 +4,7 @@ import {
   DriftUtilityTranslator,
   EvaluationState
 } from '../src/core/quality';
-import { TargetAllocation, RebalancingPolicy, ProposedTrade } from '../src/models/domain';
+import { TargetAllocation, RebalancingPolicy } from '../src/models/domain';
 
 describe('Quality Indicators', () => {
   const mockPolicy: RebalancingPolicy = {

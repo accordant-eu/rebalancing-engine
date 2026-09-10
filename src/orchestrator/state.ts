@@ -62,7 +62,7 @@ export class MultiPortfolioStateManager implements LiveStateManager {
       asOf,
     };
     
-    for (const [accountId, state] of this.portfolios.entries()) {
+    for (const [_accountId, state] of this.portfolios.entries()) {
       state.priceSnapshot = {
         ...state.priceSnapshot,
         prices: { ...state.priceSnapshot.prices, ...prices },
@@ -98,7 +98,7 @@ export class MultiPortfolioStateManager implements LiveStateManager {
     state.portfolioState.subscriptionType = 'bespoke';
   }
 
-  public async handleBrokerEvent(event: any, _timestampMs: number): Promise<void> {
+  public async handleBrokerEvent(_event: any, _timestampMs: number): Promise<void> {
     // Placeholder implementation
   }
 
@@ -145,7 +145,7 @@ export class MultiPortfolioStateManager implements LiveStateManager {
            p.targetAllocation.targets.every((t) => p.priceSnapshot.prices[t.instrumentId] !== undefined);
   }
 
-  public enqueuePortfolio(accountId: string, timestampMs: number): void {
+  public enqueuePortfolio(accountId: string, _timestampMs: number): void {
     if (this.portfolios.has(accountId)) {
       this.dirtyQueue.add(accountId);
     }

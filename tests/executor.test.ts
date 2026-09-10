@@ -20,10 +20,10 @@ class MockAdapter implements BrokerAdapter {
       quantity: t.quantity
     }));
   }
-  async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> {
+  async hasOpenOrders(_context: ExecutionContext, _brokerAccountId: string): Promise<boolean> {
     return false;
   }
-  async getOrderStatus(context: ExecutionContext, brokerAccountId: string, orderId: string): Promise<{ status: string, filledQuantity: number, fillPrice: number }> {
+  async getOrderStatus(_context: ExecutionContext, _brokerAccountId: string, _orderId: string): Promise<{ status: string, filledQuantity: number, fillPrice: number }> {
     return { status: 'FILLED', filledQuantity: 0, fillPrice: 0 };
   }
 }

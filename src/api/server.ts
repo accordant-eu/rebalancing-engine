@@ -11,8 +11,6 @@ import { logger } from '../utils/logger';
 import swaggerUi from 'swagger-ui-express';
 import { openApiSpec } from './openapi';
 import { setupBrokerWebhooks } from './webhooks/broker-reports';
-import { evaluateRebalance } from '../core/evaluation';
-import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
 import { systemEventBus, SystemEvent } from '../events/bus';
 import rateLimit from 'express-rate-limit';
 
@@ -125,7 +123,7 @@ setInterval(() => {
       (req as any).userId = decoded.userId;
       (req as any).role = decoded.role;
       (req as any).isSuperadmin = decoded.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && decoded.tenantId === process.env.SUPERADMIN_TENANT_ID;
-    } catch (e: any) {
+    } catch (_e: any) {
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid token signature');
     }
     next();

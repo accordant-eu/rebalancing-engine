@@ -5,31 +5,6 @@ import { Orchestrator } from '../src/orchestrator/loop';
 import { initDb, getDb } from '../src/db/sqlite';
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import { BrokerAdapter } from '../src/broker';
-import { TradeProposal, ExecutionContext, PortfolioState } from '../src/models/domain';
-
-class DummyBrokerAdapter implements BrokerAdapter {
-  async getPortfolioState(_context: ExecutionContext, _brokerAccountId: string): Promise<PortfolioState> {
-    return { accountId: _brokerAccountId, cash: 1000, holdings: [] };
-  }
-  async getPrices(_context: ExecutionContext, _symbols: string[]): Promise<Record<string, number>> {
-    return { 'AAPL': 150, 'MSFT': 250 };
-  }
-  async submitTrades(context: ExecutionContext, brokerAccountId: string, proposal: TradeProposal): Promise<{ orderId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number }[]> {
-    return proposal.trades.map(t => ({
-      orderId: 'mock-order-' + Math.random().toString(),
-      instrumentId: t.instrumentId,
-      direction: t.direction,
-      quantity: t.quantity
-    }));
-  }
-  async hasOpenOrders(context: ExecutionContext, brokerAccountId: string): Promise<boolean> {
-    return false;
-  }
-  async getOrderStatus(context: ExecutionContext, brokerAccountId: string, orderId: string): Promise<{ status: string, filledQuantity: number, fillPrice: number }> {
-    return { status: 'FILLED', filledQuantity: 0, fillPrice: 0 };
-  }
-}
 
 describe('Integration Tests (End-to-End)', () => {
   let app: express.Express;

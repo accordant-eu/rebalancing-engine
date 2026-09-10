@@ -1,5 +1,5 @@
 import { ProposedTrade, TargetAllocation, RebalancingPolicy } from '../models/domain';
-import { ValuationResult, calculateCurrentWeights, WeightResult } from './valuation';
+import { ValuationResult, WeightResult } from './valuation';
 import { calculateDrift } from './drift';
 
 /**

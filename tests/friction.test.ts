@@ -1,6 +1,6 @@
 import { FixedFeeModel, PercentageSlippageModel } from '../src/core/friction';
 import { applyFrictionPenalties } from '../src/core/trades';
-import { TradeProposal, ProposalWarningCode } from '../src/models/domain';
+import { TradeProposal } from '../src/models/domain';
 
 describe('Friction Models', () => {
   it('FixedFeeModel calculates constant fee', () => {

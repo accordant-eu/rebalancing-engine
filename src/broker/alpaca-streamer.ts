@@ -85,7 +85,7 @@ export class AlpacaBrokerStreamer implements BrokerStreamer {
   }
 
   private handleTradeUpdate(data: any) {
-    const { event, execution_id, order } = data;
+    const { event, execution_id: _execution_id, order } = data;
     
     // We only care about fill events
     if (event === 'fill' || event === 'partial_fill') {

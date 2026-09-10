@@ -375,7 +375,7 @@ function renderCommandOutput(
   };
 }
 
-function readVersionFromPackageJson(cwd: string): string {
+function _readVersionFromPackageJson(cwd: string): string {
   const packagePath = path.resolve(cwd, 'package.json');
   const packageJson = readJsonFile<{ version?: string }>(packagePath, cwd);
   return packageJson.version ?? '0.0.0';

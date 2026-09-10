@@ -7,7 +7,6 @@ import {
   RebalancingPolicy,
   TargetAllocation,
   Holding,
-  Tenant,
   ModelMandate,
   TenantBrokerConfig,
 } from '../models/domain';

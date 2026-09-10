@@ -18,7 +18,7 @@ describe('ProjectedGradientDescent Solver', () => {
     const targetSum = 1.0;
 
     // Inverse variance weighting: w0 = (1/0.01) / (1/0.01 + 1/0.04) = 100 / 125 = 0.8
-    const result = await solver.solve(cov, mu, 0, 1.0);
+    const result = await solver.solve(cov, mu, lambda, targetSum);
     const w = result.weights;
     expect(w[0]).toBeCloseTo(0.8, 3);
     expect(w[1]).toBeCloseTo(0.2, 3);

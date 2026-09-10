@@ -217,7 +217,7 @@ describe('Rebalance Evaluation', () => {
     
     // We add a friction model that estimates extremely high cost
     const frictionModel = {
-      estimateCost: (value: number, instrumentId: string) => value * 0.1, // 10% friction!
+      estimateCost: (value: number, _instrumentId: string) => value * 0.1, // 10% friction!
     };
     
     const translator = new DriftUtilityTranslator(0.0); // 0 bps utility per 1 bps drift

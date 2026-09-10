@@ -1,6 +1,5 @@
 import { AlpacaBrokerStreamer } from '../src/broker/alpaca-streamer';
 import WebSocket from 'ws';
-import { logger } from '../src/utils/logger';
 
 // Mock ws
 jest.mock('ws');
@@ -71,7 +70,6 @@ describe('AlpacaBrokerStreamer', () => {
   });
 
   it('emits trade execution event on fill', async () => {
-    const onOpen = mockWsInstance.on.mock.calls.find((c: any) => c[0] === 'open');
     // If not connected yet, we need to connect
     const connectPromise = streamer.connect();
     mockWsInstance.on.mock.calls.find((c: any) => c[0] === 'open')[1]();

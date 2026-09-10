@@ -1,4 +1,4 @@
-import { TradeProposal, ProposedTrade, RebalancingPolicy, TargetAllocation, PriceSnapshot, ProposedLotAllocation } from '../models/domain';
+import { TradeProposal, ProposedTrade, PriceSnapshot, ProposedLotAllocation } from '../models/domain';
 import { EvaluationState } from './quality';
 import { toDecimal, roundQuantity, roundMoney, CALCULATION_EPSILON } from './numeric';
 import Decimal from 'decimal.js';
@@ -129,7 +129,7 @@ export class WashSaleLockoutOverlay implements ExecutionOverlay {
   apply(
     proposal: TradeProposal,
     state: EvaluationState,
-    priceSnapshot: PriceSnapshot
+    _priceSnapshot: PriceSnapshot
   ): TradeProposal {
     const policy = state.policy;
     if (!policy.equivalencyGroups) {

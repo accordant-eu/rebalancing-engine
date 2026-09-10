@@ -16,7 +16,7 @@ export function createPortfoliosRouter(
   }
 ) {
   const router = Router();
-  const { forbidViewer, requireAdmin, requireSuperadmin, sendError } = middlewares;
+  const { forbidViewer, requireAdmin, requireSuperadmin: _requireSuperadmin, sendError } = middlewares;
 
   router.get('/summary', async (req, res) => {
     const tenantId = (req as any).tenantId;
@@ -70,7 +70,7 @@ export function createPortfoliosRouter(
 
         // Use current time to represent real-time HUD freshness
         lastEvaluatedAt = Date.now();
-      } catch (e: any) {
+      } catch (_e: any) {
         notEvaluated++;
       }
     });
@@ -108,7 +108,7 @@ export function createPortfoliosRouter(
 
       const res24h = db.prepare(q24h).get(...params24h) as { count: number };
       executions24h = res24h?.count || 0;
-    } catch (e: any) { /* intentional empty catch */ }
+    } catch (_e: any) { /* intentional empty catch */ }
 
     let totalCalendarPortfolios = 0;
     const upcomingRebalances: Array<{ accountId: string; frequency: string; nextRebalanceDate: string }> = [];
@@ -189,7 +189,7 @@ export function createPortfoliosRouter(
         });
         driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
         driftMeasurements = evalResult.driftMeasurements;
-      } catch (e: any) {
+      } catch (_e: any) {
         // intentional empty catch
       }
       
@@ -271,7 +271,7 @@ export function createPortfoliosRouter(
       });
       driftStatus = evalResult.trigger.isTriggered ? 'threshold_breach' : 'in_band';
       driftMeasurements = evalResult.driftMeasurements;
-    } catch (e: any) {
+    } catch (_e: any) {
       // intentional empty catch
     }
     
@@ -298,7 +298,7 @@ export function createPortfoliosRouter(
           lastProposal = parsedOutputs.tradeProposal;
         }
       }
-    } catch(e) {
+    } catch(_e) {
       // intentional empty catch
     }
 
@@ -546,7 +546,7 @@ export function createPortfoliosRouter(
           }
         }
       }
-    } catch(e) {
+    } catch(_e) {
       // intentional empty catch
     }
 

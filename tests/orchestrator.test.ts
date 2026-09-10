@@ -4,7 +4,6 @@ import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 import { loadScenarioFixture } from '../src/runner';
 import * as path from 'path';
-import { ConcentrationLimitIndicator, DriftReductionIndicator, DriftUtilityTranslator } from '../src/core/quality';
 import { logger } from '../src/utils/logger';
 
 describe('Orchestrator', () => {

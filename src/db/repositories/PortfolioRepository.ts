@@ -1,5 +1,5 @@
 import { getDb } from '../sqlite';
-import { PortfolioState, RebalancingPolicy, TargetAllocation, Holding } from '../../models/domain';
+import { RebalancingPolicy, TargetAllocation } from '../../models/domain';
 
 export class PortfolioRepository {
   public getSubscribedAccounts(modelId: string, subscriptionType: string = 'discretionary'): string[] {
