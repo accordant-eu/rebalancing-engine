@@ -55,7 +55,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0045: Colocate API Server within Live Agent Process](0045-colocate-api-server-within-agent-process.md) - Accepted
 * [ADR-0046: Use size-based log rotation and realistic simulation reset in dry-run](0046-use-size-based-rotation-and-simulation-reset.md) - Accepted
 * [ADR-0047: Use simple margin constraint for TCO penalty](0047-use-simple-margin-for-tco-penalty.md) - Accepted
-* [ADR-0048: Adopt Mandate Archetypes and Quality Evaluation Pipeline](0048-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md) - Accepted
 * [ADR-0048: Use MultiPortfolioStateManager for in-memory scaling mock](0048-use-multi-portfolio-in-memory-scale.md) - Accepted
 * [ADR-0049: Use better-sqlite3 for Persistent State Management](0049-use-sqlite-for-persistent-state-management.md) - Accepted
 * [ADR-0050: Use B2B Broker API for Execution](0050-use-b2b-broker-api.md) - Accepted
@@ -73,5 +72,6 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0062: Composable Exclusion and Holding Concentration Overlays](0062-composable-exclusion-and-concentration-overlays.md) - Accepted
 * [ADR-0063: Tax-Advantaged Account Wrappers & Policy Routing](0063-tax-advantaged-account-wrappers.md) - Accepted
 * [ADR-0064: Automated Recurring Mandate Scheduler Service](0064-automated-recurring-mandate-scheduler.md) - Accepted
+* [ADR-0065: Adopt Mandate Archetypes and Quality Evaluation Pipeline](0065-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md) - Accepted
 
 &copy; 2026 Johan Hellman. All rights reserved.

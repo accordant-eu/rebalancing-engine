@@ -94,6 +94,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0062 | 2026-08-14 | Composable Exclusion and Holding Concentration Overlays | Accepted | [ADR-0062](docs/decisions/0062-composable-exclusion-and-concentration-overlays.md) |
 | 0063 | 2026-08-17 | Tax-Advantaged Account Wrappers & Policy Routing | Accepted | [ADR-0063](docs/decisions/0063-tax-advantaged-account-wrappers.md) |
 | 0064 | 2026-08-31 | Automated Recurring Mandate Scheduler Service | Accepted | [ADR-0064](docs/decisions/0064-automated-recurring-mandate-scheduler.md) |
+| 0065 | 2026-06-15 | Adopt Mandate Archetypes and Quality Evaluation Pipeline | Accepted | [ADR-0065](docs/decisions/0065-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md) |
 
 
 | Iteration | Date | Theme | Area | High-Level Summary | Details |

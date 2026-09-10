@@ -5,7 +5,7 @@ description: Unify execution overlays into a pass/fail Quality Indicator model a
 timestamp: 2026-06-15T05:42:00Z
 ---
 
-# ADR-0048: Adopt Mandate Archetypes and Quality Evaluation Pipeline
+# ADR-0065: Adopt Mandate Archetypes and Quality Evaluation Pipeline
 
 ## Context
 
