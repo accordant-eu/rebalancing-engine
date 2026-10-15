@@ -1,5 +1,5 @@
 # ── Builder ───────────────────────────────────────────────────────────────────
-FROM node:20 AS builder
+FROM node:24-bookworm AS builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN cd web && npm run build
 RUN npm prune --omit=dev
 
 # ── Production ────────────────────────────────────────────────────────────────
-FROM node:20-slim AS production
+FROM node:24-bookworm-slim AS production
 
 WORKDIR /app
 
@@ -32,6 +32,9 @@ COPY --from=builder /app/dist         ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/web/dist     ./web/dist
 COPY --from=builder /app/package.json ./package.json
+
+# Verify native SQLite binding initialises correctly at image build time
+RUN node -e 'const Database = require("better-sqlite3"); const db = new Database(":memory:"); db.close();'
 
 # Data dir for SQLite + audit JSONL
 RUN mkdir -p /app/data

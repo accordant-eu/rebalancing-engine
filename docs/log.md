@@ -10,7 +10,10 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-10-15 | `docs/iterations/2026-10-15-docker-node-24-runtime-alignment.md` | Minor | Documented Docker Node 24 runtime alignment, build-time SQLite verification, and CI Docker validation (Iteration 107). |
+| 2026-10-15 | `docs/decisions/0066-align-docker-runtime-with-node-24-engine-specification.md` | Major | Recorded ADR-0066: Align Docker Runtime with Node 24 Engine Specification (resolving Issue #124). |
 | 2026-09-10 | `docs/iterations/2026-09-10-repository-hygiene-remediation.md` | Minor | Documented comprehensive repository hygiene remediation across tooling, CI, ADRs, linter, and dependencies (Iteration 106). |
+
 | 2026-09-10 | `docs/decisions/0065-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md` | Major | Reconciled ADR-0048 conflict by numbering Mandate Archetypes & Quality Evaluation Pipeline as ADR-0065. |
 | 2026-09-10 | `docs/iterations/2026-09-10-mandate-scheduler-observability-ui.md` | Minor | Implemented Mandate Scheduler & Batch Queue UI Observability widgets and status endpoints. |
 | 2026-09-10 | `docs/decisions/0064-automated-recurring-mandate-scheduler.md` | Major | Recorded ADR-0064 for Automated Recurring Mandate Scheduler Service. |

@@ -95,6 +95,8 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0063 | 2026-08-17 | Tax-Advantaged Account Wrappers & Policy Routing | Accepted | [ADR-0063](docs/decisions/0063-tax-advantaged-account-wrappers.md) |
 | 0064 | 2026-08-31 | Automated Recurring Mandate Scheduler Service | Accepted | [ADR-0064](docs/decisions/0064-automated-recurring-mandate-scheduler.md) |
 | 0065 | 2026-06-15 | Adopt Mandate Archetypes and Quality Evaluation Pipeline | Accepted | [ADR-0065](docs/decisions/0065-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md) |
+| 0066 | 2026-10-15 | Align Docker Runtime with Node 24 Engine Specification | Accepted | [ADR-0066](docs/decisions/0066-align-docker-runtime-with-node-24-engine-specification.md) |
+
 
 
 | Iteration | Date | Theme | Area | High-Level Summary | Details |
@@ -210,6 +212,8 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 104 | 2026-09-10 | Automated Recurring Mandate Scheduler Service | Orchestrator & Automation | Implemented MandateSchedulerService for autonomous calendar mandate scanning, UTC date advancement, and EvaluationQueue dispatch (ADR-0064). | [Log](docs/iterations/2026-09-10-mandate-scheduler.md) |
 | 105 | 2026-09-10 | Mandate Scheduler & Batch Queue UI Observability | UI & Observability | Implemented Mandate Scheduler & Batch Queue Observability panels, interactive on-demand scan triggers, and firm-level calendar horizon widgets. | [Log](docs/iterations/2026-09-10-mandate-scheduler-observability-ui.md) |
 | 106 | 2026-09-10 | Repository Hygiene Remediation & Quality Hardening | Quality, CI & Tooling | Remediated web linter TS7 compatibility, expanded CI to web workspace, resolved ADR-0048 collision (ADR-0065), eliminated all 51 ESLint warnings, normalized OKF frontmatter, and resolved 6 security advisories via npm audit fix. | [Log](docs/iterations/2026-09-10-repository-hygiene-remediation.md) |
+| 107 | 2026-10-15 | Docker Node 24 Runtime Alignment & Native SQLite Validation | Operations & CI/CD | Upgraded Docker images to Node 24 (Bookworm), added build-time SQLite verification and CI Docker build step resolving Issue #124; merged Dependabot PRs #119-#123 (ADR-0066). | [Log](docs/iterations/2026-10-15-docker-node-24-runtime-alignment.md) |
+
 
 
 

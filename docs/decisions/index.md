@@ -73,5 +73,7 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0063: Tax-Advantaged Account Wrappers & Policy Routing](0063-tax-advantaged-account-wrappers.md) - Accepted
 * [ADR-0064: Automated Recurring Mandate Scheduler Service](0064-automated-recurring-mandate-scheduler.md) - Accepted
 * [ADR-0065: Adopt Mandate Archetypes and Quality Evaluation Pipeline](0065-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md) - Accepted
+* [ADR-0066: Align Docker Runtime with Node 24 Engine Specification](0066-align-docker-runtime-with-node-24-engine-specification.md) - Accepted
+
 
 &copy; 2026 Johan Hellman. All rights reserved.
