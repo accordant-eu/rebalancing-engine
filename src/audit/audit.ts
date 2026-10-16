@@ -46,6 +46,7 @@ export interface AuditRecord {
   eventId: string;
   createdAt: string;
   accountId: string;
+  type?: string;
   inputs: {
     portfolioState: PortfolioState;
     targetAllocation: TargetAllocation;

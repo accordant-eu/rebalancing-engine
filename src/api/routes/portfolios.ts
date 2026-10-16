@@ -358,6 +358,16 @@ export function createPortfoliosRouter(
       state.policy.taxWrapper = taxWrapper;
     }
 
+    if (taxJurisdiction || taxWrapper) {
+      stateManager.updatePortfolio(accountId, {
+        ...(taxJurisdiction ? { taxJurisdiction } : {}),
+        ...(taxWrapper ? { taxWrapper } : {}),
+      });
+    }
+    if (policy || taxWrapper) {
+      stateManager.updatePolicy(accountId, state.policy);
+    }
+
     res.json({
       accountId,
       taxJurisdiction: state.portfolioState.taxJurisdiction,

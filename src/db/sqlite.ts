@@ -51,6 +51,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       targetAllocation TEXT NOT NULL,
       policy TEXT NOT NULL,
       constraints TEXT,
+      universe TEXT,
       FOREIGN KEY(tenantId) REFERENCES Tenants(tenantId) ON DELETE CASCADE
     );
 
@@ -63,6 +64,8 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       policy TEXT NOT NULL,
       cashBuffer REAL DEFAULT 0,
       brokerAccountId TEXT,
+      archetype TEXT DEFAULT 'StaticWeights',
+      constraints TEXT,
       circuitBreakerStatus TEXT DEFAULT 'closed',
       taxJurisdiction TEXT DEFAULT 'US',
       taxWrapper TEXT DEFAULT 'TAXABLE',
@@ -194,6 +197,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Models ADD COLUMN archetype TEXT DEFAULT 'StaticWeights'`); } catch (_e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Models ADD COLUMN evaluationFrequency TEXT DEFAULT 'realtime'`); } catch (_e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Models ADD COLUMN constraints TEXT`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Models ADD COLUMN universe TEXT`); } catch (_e) { /* ignore if exists */ }
 
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerType TEXT DEFAULT 'MOCK'`); } catch (_e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiKey TEXT`); } catch (_e) { /* ignore if exists */ }

@@ -339,6 +339,14 @@ export class SqliteStateManager implements LiveStateManager {
         db.prepare(`UPDATE Portfolios SET cash = ? WHERE accountId = ?`).run(portfolioUpdate.cash, accountId);
       }
 
+      if (portfolioUpdate.taxJurisdiction !== undefined) {
+        db.prepare(`UPDATE Portfolios SET taxJurisdiction = ? WHERE accountId = ?`).run(portfolioUpdate.taxJurisdiction, accountId);
+      }
+
+      if (portfolioUpdate.taxWrapper !== undefined) {
+        db.prepare(`UPDATE Portfolios SET taxWrapper = ? WHERE accountId = ?`).run(portfolioUpdate.taxWrapper, accountId);
+      }
+
       if (portfolioUpdate.holdings !== undefined) {
         db.prepare(`DELETE FROM Holdings WHERE accountId = ?`).run(accountId);
         db.prepare(`DELETE FROM TaxLots WHERE accountId = ?`).run(accountId);
@@ -369,8 +377,8 @@ export class SqliteStateManager implements LiveStateManager {
 
       if (portfolioUpdate.cashFlows !== undefined) {
         const insertCashFlow = db.prepare(`
-          INSERT OR REPLACE INTO CashFlows (cashflowId, accountId, amount, direction, currency, expectedSettlementDate, status, submittedAt)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT OR REPLACE INTO CashFlows (cashflowId, accountId, amount, direction, currency, expectedSettlementDate, status, submittedAt, submittedBy)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         for (const cf of portfolioUpdate.cashFlows) {
           insertCashFlow.run(
@@ -378,10 +386,11 @@ export class SqliteStateManager implements LiveStateManager {
             accountId,
             cf.amount,
             cf.direction,
-            'USD',
-            cf.effectiveDate || null,
+            (cf as any).currency || 'USD',
+            (cf as any).expectedSettlementDate || cf.effectiveDate || null,
             cf.status,
-            new Date().toISOString()
+            new Date().toISOString(),
+            (cf as any).submittedBy || 'system'
           );
         }
       }
@@ -418,6 +427,9 @@ export class SqliteStateManager implements LiveStateManager {
   public updateTarget(accountId: string, target: TargetAllocation): void {
     const db = getDb();
     const tx = db.transaction(() => {
+      if (target.cashBuffer !== undefined) {
+        db.prepare(`UPDATE Portfolios SET cashBuffer = ? WHERE accountId = ?`).run(target.cashBuffer, accountId);
+      }
       db.prepare(`DELETE FROM TargetAllocations WHERE accountId = ?`).run(accountId);
       const insertTarget = db.prepare(`
         INSERT INTO TargetAllocations (accountId, instrumentId, weight)
@@ -657,9 +669,9 @@ export class SqliteStateManager implements LiveStateManager {
     // For efficiency, we load everything in a few queries instead of N queries
     let portfolios: any[];
     if (tenantId) {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper FROM Portfolios WHERE tenantId = ?`).all(tenantId) as any[];
     } else {
-      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper FROM Portfolios`).all() as any[];
+      portfolios = db.prepare(`SELECT accountId, cash, policy, tenantId, modelId, subscriptionType, cashBuffer, brokerAccountId, archetype, constraints, circuitBreakerStatus, taxJurisdiction, taxWrapper FROM Portfolios`).all() as any[];
     }
     
     const accountIds = portfolios.map(p => p.accountId);
@@ -692,6 +704,10 @@ export class SqliteStateManager implements LiveStateManager {
     const targets = tenantId
       ? db.prepare(`SELECT t.accountId, t.instrumentId, t.weight FROM TargetAllocations t JOIN Portfolios p ON t.accountId = p.accountId WHERE p.tenantId = ?`).all(tenantId) as any[]
       : db.prepare(`SELECT accountId, instrumentId, weight FROM TargetAllocations`).all() as any[];
+
+    const cashFlowsRows = tenantId
+      ? db.prepare(`SELECT cf.* FROM CashFlows cf JOIN Portfolios p ON cf.accountId = p.accountId WHERE p.tenantId = ? AND cf.status = 'PENDING'`).all(tenantId) as any[]
+      : db.prepare(`SELECT * FROM CashFlows WHERE status = 'PENDING'`).all() as any[];
     
     const holdingsByAcc: Record<string, Holding[]> = {};
     for (const h of holdings) {
@@ -710,6 +726,19 @@ export class SqliteStateManager implements LiveStateManager {
       targetsByAcc[t.accountId].push({ instrumentId: t.instrumentId, weight: t.weight });
     }
 
+    const cashFlowsByAcc: Record<string, any[]> = {};
+    for (const r of cashFlowsRows) {
+      if (!cashFlowsByAcc[r.accountId]) cashFlowsByAcc[r.accountId] = [];
+      cashFlowsByAcc[r.accountId].push({
+        cashFlowId: r.cashflowId,
+        direction: r.direction,
+        amount: r.amount,
+        currency: r.currency,
+        expectedSettlementDate: r.expectedSettlementDate,
+        status: r.status,
+      });
+    }
+
     const globalPrices = this.getGlobalPrices();
     const result: Record<string, LiveState> = {};
 
@@ -726,9 +755,13 @@ export class SqliteStateManager implements LiveStateManager {
           taxWrapper: p.taxWrapper || 'TAXABLE',
           cash: p.cash,
           holdings: holdingsByAcc[p.accountId] || [],
+          cashFlows: cashFlowsByAcc[p.accountId] || [],
         },
         priceSnapshot: globalPrices,
-        targetAllocation: { targets: targetsByAcc[p.accountId] || [] },
+        targetAllocation: {
+          targets: targetsByAcc[p.accountId] || [],
+          cashBuffer: p.cashBuffer || 0,
+        },
         policy: JSON.parse(p.policy),
         archetype: p.archetype || 'StaticWeights',
         constraints: p.constraints ? JSON.parse(p.constraints) : undefined

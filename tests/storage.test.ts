@@ -190,4 +190,29 @@ describe('SqliteAuditStorage', () => {
     expect(saved.tenantId).toBe('tenant-nested');
     expect(saved.type).toBe('UNKNOWN');
   });
+
+  it('extracts accountId from inputs.portfolioState when eventId has a batch-fan-out prefix and infers LIVE_EXECUTION/DRY_RUN_EVALUATION from tradeProposal', async () => {
+    const storage = new SqliteAuditStorage();
+    await storage.saveAuditRecord({
+      eventId: 'batch-fan-out:acc-batch-1:1700000000',
+      inputs: {
+        portfolioState: { accountId: 'acc-batch-1', tenantId: 'tenant-1', cash: 1000, holdings: [] },
+      },
+      outputs: {
+        tradeProposal: {
+          trades: [{ instrumentId: 'AAPL', direction: 'BUY', quantity: 5, estimatedPrice: 100, estimatedValue: 500 }],
+          estimatedPostTradeCash: 500,
+          warnings: [],
+          executionTargetMode: 'full_reset',
+        },
+      },
+    });
+
+    const db = getDb();
+    const saved = db.prepare('SELECT * FROM AuditTrails WHERE eventId = ?').get('batch-fan-out:acc-batch-1:1700000000') as any;
+    expect(saved.accountId).toBe('acc-batch-1');
+    expect(saved.tenantId).toBe('tenant-1');
+    expect(saved.type).toBe('LIVE_EXECUTION');
+  });
 });
+

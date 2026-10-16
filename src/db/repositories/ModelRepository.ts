@@ -6,8 +6,8 @@ export class ModelRepository {
     const db = getDb();
     db.prepare(`
       INSERT INTO Models 
-      (modelId, tenantId, name, archetype, evaluationFrequency, targetAllocation, policy, constraints) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (modelId, tenantId, name, archetype, evaluationFrequency, targetAllocation, policy, constraints, universe) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(modelId) DO UPDATE SET
         tenantId = excluded.tenantId,
         name = excluded.name,
@@ -15,16 +15,18 @@ export class ModelRepository {
         evaluationFrequency = excluded.evaluationFrequency,
         targetAllocation = excluded.targetAllocation,
         policy = excluded.policy,
-        constraints = excluded.constraints
+        constraints = excluded.constraints,
+        universe = excluded.universe
     `).run(
       model.modelId,
       model.tenantId,
       model.name,
-      model.archetype,
-      model.evaluationFrequency,
-      JSON.stringify(model.targetAllocation),
+      model.archetype || 'StaticWeights',
+      model.evaluationFrequency || 'realtime',
+      JSON.stringify(model.targetAllocation || { targets: [] }),
       JSON.stringify(model.policy),
-      model.constraints ? JSON.stringify(model.constraints) : null
+      model.constraints ? JSON.stringify(model.constraints) : null,
+      model.universe ? JSON.stringify(model.universe) : null
     );
   }
 
@@ -62,7 +64,8 @@ export class ModelRepository {
       evaluationFrequency: r.evaluationFrequency || 'realtime',
       targetAllocation: JSON.parse(r.targetAllocation),
       policy: JSON.parse(r.policy),
-      constraints: r.constraints ? JSON.parse(r.constraints) : undefined
+      constraints: r.constraints ? JSON.parse(r.constraints) : undefined,
+      universe: r.universe ? JSON.parse(r.universe) : undefined,
     }));
   }
 }

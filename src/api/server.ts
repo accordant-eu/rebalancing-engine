@@ -401,28 +401,24 @@ setInterval(() => {
   app.get('/api/models', (req, res) => {
     const tenantId = (req as any).tenantId;
     if ((req as any).isSuperadmin) {
-      const db = getDb();
-      const rows = db.prepare(`SELECT * FROM Models`).all() as any[];
-      const models = rows.map(r => ({
-        modelId: r.modelId,
-        tenantId: r.tenantId,
-        name: r.name,
-        archetype: r.archetype,
-        evaluationFrequency: r.evaluationFrequency,
-        targetAllocation: JSON.parse(r.targetAllocation),
-        policy: JSON.parse(r.policy),
-        constraints: r.constraints ? JSON.parse(r.constraints) : []
-      }));
-      return res.json(models);
+      return res.json(stateManager.getAllModels());
     }
     res.json(stateManager.getModels(tenantId));
   });
 
   function validateModelMandate(model: any) {
-    if (model.archetype === 'EfficientFrontier' || model.archetype === 'MinimumVariance') {
-      throw new Error(`Archetype ${model.archetype} is not yet supported`);
+    const archetype = model.archetype || 'StaticWeights';
+    if (!['StaticWeights', 'EfficientFrontier', 'MinimumVariance'].includes(archetype)) {
+      throw new Error(`Archetype ${archetype} is not yet supported`);
     }
-    if (model.archetype === 'StaticWeights' && model.targetAllocation) {
+    if (archetype === 'StaticWeights' && model.targetAllocation) {
+      validateTargetAllocation(model.targetAllocation);
+      const totalWeight = model.targetAllocation.targets.reduce((acc: number, t: any) => acc + t.weight, 0);
+      const cashBuffer = model.targetAllocation.cashBuffer || 0;
+      if (Math.abs(totalWeight + cashBuffer - 1.0) > 0.0001) {
+        throw new Error(`Target allocation weights (${totalWeight}) + cashBuffer (${cashBuffer}) must sum to exactly 1.0`);
+      }
+    } else if ((archetype === 'EfficientFrontier' || archetype === 'MinimumVariance') && model.targetAllocation?.targets?.length > 0) {
       validateTargetAllocation(model.targetAllocation);
       const totalWeight = model.targetAllocation.targets.reduce((acc: number, t: any) => acc + t.weight, 0);
       const cashBuffer = model.targetAllocation.cashBuffer || 0;
@@ -435,7 +431,7 @@ setInterval(() => {
   app.get('/api/models/:id', (req, res) => {
     const tenantId = (req as any).tenantId;
     const modelId = req.params.id;
-    const models = (req as any).isSuperadmin ? stateManager.getAllTenants().flatMap(t => stateManager.getModels(t.tenantId)) : stateManager.getModels(tenantId);
+    const models = (req as any).isSuperadmin ? stateManager.getAllModels() : stateManager.getModels(tenantId);
     const model = models.find((m: any) => m.modelId === modelId);
     if (!model || (!(req as any).isSuperadmin && model.tenantId !== tenantId)) {
       return sendError(res, 404, 'MODEL_NOT_FOUND', `Model '${modelId}' not found`);
@@ -459,13 +455,13 @@ setInterval(() => {
     const tenantId = (req as any).tenantId;
     const modelId = req.params.id;
     
-    const models = (req as any).isSuperadmin ? stateManager.getAllTenants().flatMap(t => stateManager.getModels(t.tenantId)) : stateManager.getModels(tenantId);
+    const models = (req as any).isSuperadmin ? stateManager.getAllModels() : stateManager.getModels(tenantId);
     const existing = models.find((m: any) => m.modelId === modelId);
     if (!existing || (!(req as any).isSuperadmin && existing.tenantId !== tenantId)) {
       return sendError(res, 404, 'MODEL_NOT_FOUND', `Model '${modelId}' not found`);
     }
 
-    const model = { ...req.body, modelId, tenantId: existing.tenantId };
+    const model = { ...existing, ...req.body, modelId, tenantId: existing.tenantId };
     try {
       validateModelMandate(model);
       const affectedAccounts = stateManager.updateModel(model);

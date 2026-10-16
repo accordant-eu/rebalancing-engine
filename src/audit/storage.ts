@@ -60,9 +60,15 @@ export class SqliteAuditStorage implements AuditStorageAdapter {
     
     // Some records are purely system evaluations without an explicit accountId at top level, 
     // but have an eventId like accountId:timestamp
-    const accountId = record.accountId || (record.eventId ? record.eventId.split(':')[0] : null);
+    const accountId = record.accountId || record.inputs?.portfolioState?.accountId || (record.eventId ? record.eventId.split(':')[0] : null);
     const tenantId = record.inputs?.portfolioState?.tenantId || record.tenantId || null;
-    const type = record.type || 'UNKNOWN';
+    const type =
+      record.type ||
+      (record.outputs?.tradeProposal
+        ? record.outputs.tradeProposal.trades?.length > 0
+          ? 'LIVE_EXECUTION'
+          : 'DRY_RUN_EVALUATION'
+        : 'UNKNOWN');
     
     db.prepare(`
       INSERT OR REPLACE INTO AuditTrails (eventId, accountId, tenantId, type, inputs, outputs, timestampMs, createdAt)
