@@ -4,11 +4,14 @@ title: Defer API Rate Limiting, Granular Scopes, and Standardized Error Backoffs
 description: Defer implementing strict API usage constraints until post-MVP live trading
 tags: [architecture, security, api]
 timestamp: 2026-06-20T17:35:00Z
-status: Deferred
+status: Partially Superseded
 supersedes: 
 ---
 
 # Defer API Rate Limiting, Granular Scopes, and Standardized Error Backoffs
+
+> [!NOTE]
+> **Partially Superseded**: Baseline API rate limiting via `express-rate-limit` was implemented in Iteration 60 and hardened in ADR-0067. Granular OAuth scopes remain deferred.
 
 ## Context
 

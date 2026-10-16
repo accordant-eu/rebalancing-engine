@@ -20,11 +20,10 @@ Production is entirely Rufus's responsibility. AntiGravity's scope ends at `main
 | Rufus dev | `dev` | `https://ops.rebalancing.accordant.eu` | HTTP basic auth |
 | Production | `main` (reviewed) | `https://rebalancing.accordant.eu` | HTTP basic auth |
 
-Both hosted environments are behind HTTP basic auth while the app uses mock JWT
-authentication. Auth credentials are provided separately to authorised users.
+Both hosted environments are behind HTTP basic auth at the ingress/reverse proxy layer,
+while internal application sessions use signed HMAC-SHA256 JWT tokens with refresh token
+rotation and bcrypt password hashing. Auth credentials are provided separately to authorised users.
 
-> [!WARNING]
-> **Known Gap:** The application currently relies on HTTP Basic Auth at the web server layer and mock JWTs internally. If a real authentication system (e.g., true JWTs, SSO, or database-backed users) is planned for the future, this is a known architectural gap that must be addressed, and this deployment model will need to be updated accordingly.
 ---
 
 ## Architecture
@@ -111,10 +110,17 @@ The container reads from `.env` on the server (never committed to the repo).
 See `.env.example` for the full template. Key variables:
 
 ```
+SUPERADMIN_EMAIL         # Initial Superadmin user email
+SUPERADMIN_PASSWORD      # Initial Superadmin user password
+SUPERADMIN_TENANT_ID     # Default superadmin tenant (e.g. tenant-baseline)
+JWT_SECRET               # Random secret for signing access JWT tokens
+JWT_REFRESH_SECRET       # Random secret for signing refresh tokens
+ALPACA_WEBHOOK_SECRET    # Secret for validating Alpaca webhook signatures
 APCA_API_KEY_ID          # Alpaca paper trading key
 APCA_API_SECRET_KEY      # Alpaca paper trading secret
 ALPACA_BROKER_API_KEY    # Alpaca broker API key
 ALPACA_BROKER_API_SECRET # Alpaca broker API secret
+REBALANCING_DB_PATH      # SQLite database file path (defaults to data/state.db)
 LOG_LEVEL                # defaults to info
 ```
 

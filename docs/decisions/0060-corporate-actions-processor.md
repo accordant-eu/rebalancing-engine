@@ -13,7 +13,7 @@ status: Accepted
 
 In an autonomous live rebalancing engine, unannounced or unprocessed corporate actions (such as forward/reverse stock splits, cash dividends, and ticker mergers) introduce catastrophic drift estimation errors:
 - If a 4-for-1 forward stock split occurs and the market price drops by 75% on the ex-date before the broker share position is updated, the engine perceives the holding as severely underweight and generates massive erroneous BUY orders.
-- While ADR-0085 established a pre-trade circuit breaker (`CorporateActionCircuitBreaker`) to pause trading on ex-dates, the engine previously lacked an automated mechanism to process corporate actions into `PortfolioState` and adjust tax-lot cost bases.
+- While Iteration 85 established a pre-trade circuit breaker (`CorporateActionCircuitBreaker`) to pause trading on ex-dates, the engine previously lacked an automated mechanism to process corporate actions into `PortfolioState` and adjust tax-lot cost bases.
 
 ## Options Considered
 

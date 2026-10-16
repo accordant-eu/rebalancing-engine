@@ -36,6 +36,18 @@ while read -r file; do
         echo "❌ Missing 'type:' field in frontmatter of $file"
         EXIT_CODE=1
     fi
+    if ! echo "$FRONTMATTER" | grep -q "^title:"; then
+        echo "❌ Missing 'title:' field in frontmatter of $file"
+        EXIT_CODE=1
+    fi
+    if ! echo "$FRONTMATTER" | grep -q "^description:"; then
+        echo "❌ Missing 'description:' field in frontmatter of $file"
+        EXIT_CODE=1
+    fi
+    if ! echo "$FRONTMATTER" | grep -q "^timestamp:"; then
+        echo "❌ Missing 'timestamp:' field in frontmatter of $file"
+        EXIT_CODE=1
+    fi
 done < <(find "$DOCS_DIR" -type f -name "*.md" | grep -v "index.md$" | grep -v "log.md$" | grep -v "TEMPLATE.md$")
 
 if [ $EXIT_CODE -eq 0 ]; then

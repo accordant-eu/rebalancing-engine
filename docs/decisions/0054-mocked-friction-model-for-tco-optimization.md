@@ -4,11 +4,14 @@ title: Use Mocked Percentage Slippage Model for TCO Optimization
 description: Hardcode a 5 bps percentage slippage model in the Live Agent to enable Friction Optimization logic.
 tags: [architecture, friction, evaluation]
 timestamp: 2026-06-20T18:25:00Z
-status: Accepted
+status: Superseded by [ADR-0056](0056-deferred-live-spread-slippage.md)
 supersedes: 
 ---
 
 # Use Mocked Percentage Slippage Model for TCO Optimization
+
+> [!NOTE]
+> **Superseded**: Superseded by [ADR-0056](0056-deferred-live-spread-slippage.md), which made assumed slippage configurable via `policy.assumedSlippageBps` instead of a hardcoded 5 bps constant.
 
 ## Context
 

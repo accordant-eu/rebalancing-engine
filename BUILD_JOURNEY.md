@@ -16,17 +16,17 @@ This file is the living project journal. It captures the journey from initializa
 - **Languages detected:** TypeScript on Node.js (v20+).
 - **Frameworks detected:** Express.js REST API with SSE event bus; React Command Center dashboard (Tailwind v4, Framer Motion); Jest test framework.
 - **Tooling detected:** TypeScript compiler (`tsc`), Jest, ESLint, Prettier, SQLite (`better-sqlite3`), Docker Compose.
-- **Tests detected:** 46 test suites / 342 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, EOD reconciliation, and mandate scheduling.
-- **Documentation detected:** Full architecture docs (`docs/architecture/`), 64 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
+- **Tests detected:** 46 backend test suites / 346 tests; 2 frontend Vitest suites / 4 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, EOD reconciliation, mandate scheduling, and persona UI.
+- **Documentation detected:** Full architecture docs (`docs/architecture/`), 67 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
 - **CI/CD detected:** GitHub Actions workflow (`.github/workflows/ci.yml`) with linting, testing, and Docker build verification.
 
 
 ## 3. Working Assumptions
 
-- The project is a generic portfolio rebalancing engine MVP.
-- The current architecture is an offline TypeScript calculation core with no live integrations.
-- The repository’s existing TypeScript/Node.js stack should be respected unless a documented post-MVP decision changes it.
-- Future implementation should continue with short, validated proof cycles.
+- The project is a multi-tenant portfolio rebalancing SaaS platform and autonomous execution engine.
+- The architecture combines a deterministic calculation core (`src/core/`, `src/strategy/`) with an embedded SQLite persistence layer (`src/db/`), live broker streaming (`src/broker/`), batch evaluation worker (`src/orchestrator/`), and web dashboard (`web/`).
+- The repository’s TypeScript/Node.js stack (Node 24+, `decimal.js`) is strictly respected.
+- Implementation proceeds in test-driven, verifiable slices with documented ADRs and decision discipline.
 - The system requires deterministic calculations, explicit validation, and strong auditability.
 
 ## 4. Decisions Log
@@ -51,7 +51,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0014 | 2026-05-02 | Use hybrid multi-strategy architecture next | Accepted for next iteration | [ADR-0014](docs/decisions/0014-use-hybrid-multi-strategy-architecture-next.md) |
 | 0015 | 2026-05-02 | Prioritize calendar and boundary-target strategy slices | Provisional | [ADR-0015](docs/decisions/0015-prioritize-calendar-and-boundary-target-strategy-slices.md) |
 | 0016 | 2026-05-02 | Default omitted strategy policy to threshold | Accepted | [ADR-0016](docs/decisions/0016-default-omitted-strategy-policy-to-threshold.md) |
-| 0017 | 2026-05-02 | Use explicit calendar dates only | Accepted for MVP | [ADR-0017](docs/decisions/0017-use-explicit-calendar-dates-only.md) |
+| 0017 | 2026-05-02 | Use explicit calendar dates only | Superseded by ADR-0064 | [ADR-0017](docs/decisions/0017-use-explicit-calendar-dates-only.md) |
 | 0018 | 2026-05-02 | Limit boundary targeting to absolute bands first | Accepted for MVP | [ADR-0018](docs/decisions/0018-limit-boundary-targeting-to-absolute-bands-first.md) |
 | 0019 | 2026-05-02 | Use separate expected-status runner manifest | Accepted | [ADR-0019](docs/decisions/0019-use-separate-expected-status-runner-manifest.md) |
 | 0020 | 2026-05-02 | Mark active MVP slice sets complete | Accepted | [ADR-0020](docs/decisions/0020-mark-active-mvp-slice-sets-complete.md) |
@@ -59,34 +59,39 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0022 | 2026-05-02 | Scope next deferred-capability increment to numeric policy and relative boundaries | Accepted for next increment | [ADR-0022](docs/decisions/0022-scope-next-deferred-capability-increment-to-numeric-policy-and-relative-boundaries.md) |
 | 0023 | 2026-05-02 | Use `decimal.js` internally with explicit output rounding | Accepted | [ADR-0023](docs/decisions/0023-use-decimal-js-internally-with-explicit-output-rounding.md) |
 | 0024 | 2026-05-02 | Add policy-selected relative boundary targeting | Accepted | [ADR-0024](docs/decisions/0024-add-policy-selected-relative-boundary-targeting.md) |
-| 0025 | 2026-05-02 | Defer production surfaces until concrete consumers and operations are defined | Accepted | [ADR-0025](docs/decisions/0025-defer-production-surfaces-until-concrete-consumers-and-operations-are-defined.md) |
+| 0025 | 2026-05-02 | Defer production surfaces until concrete consumers and operations are defined | Superseded by ADR-0041 | [ADR-0025](docs/decisions/0025-defer-production-surfaces-until-concrete-consumers-and-operations-are-defined.md) |
 | 0026 | 2026-05-02 | Prioritize scheduled/recurring cash-flow semantics next | Accepted for planning | [ADR-0026](docs/decisions/0026-prioritize-scheduled-recurring-cash-flow-semantics-next.md) |
 | 0027 | 2026-05-02 | Require CLI exposure decisions for future engine capabilities | Accepted | [ADR-0027](docs/decisions/0027-require-cli-exposure-decisions-for-future-engine-capabilities.md) |
 | 0028 | 2026-05-02 | Consolidate user/developer docs around observed behavior | Accepted | [ADR-0028](docs/decisions/0028-consolidate-user-developer-docs-around-observed-behavior.md) |
 | 0029 | 2026-05-02 | Place scheduled flows on `PortfolioState.cashFlowSchedules` | Accepted | [ADR-0029](docs/decisions/0029-place-scheduled-flows-on-portfoliostate-cashflowschedules.md) |
 | 0030 | 2026-05-02 | Use explicit ISO date-only evaluation semantics | Accepted | [ADR-0030](docs/decisions/0030-use-explicit-iso-date-only-evaluation-semantics.md) |
-| 0031 | 2026-05-02 | Apply due schedules as schedule-derived settled cash-flow events in an internal copy | Accepted | [ADR-0031](docs/decisions/0031-apply-due-schedules-as-schedule-derived-settled-cash-flow-events-in-an-internal-copy.md) |
-| 0032 | 2026-05-02 | Support monthly, quarterly, and annual recurrence only | Accepted | [ADR-0032](docs/decisions/0032-support-monthly-quarterly-and-annual-recurrence-only.md) |
+| 0031 | 2026-05-02 | Apply due schedules as schedule-derived settled cash-flow events in an internal copy | Superseded by ADR-0036 | [ADR-0031](docs/decisions/0031-apply-due-schedules-as-schedule-derived-settled-cash-flow-events-in-an-internal-copy.md) |
+| 0032 | 2026-05-02 | Support monthly, quarterly, and annual recurrence only | Superseded by ADR-0034 | [ADR-0032](docs/decisions/0032-support-monthly-quarterly-and-annual-recurrence-only.md) |
 | 0033 | 2026-05-02 | Keep scheduled-flow CLI inputs file-based | Accepted | [ADR-0033](docs/decisions/0033-keep-scheduled-flow-cli-inputs-file-based.md) |
 | 0034 | 2026-06-14 | Add weekly recurrence frequency for cash-flow schedules | Accepted for next increment | [ADR-0034](docs/decisions/0034-add-weekly-recurrence-frequency-for-cash-flow-schedules.md) |
 | 0035 | 2026-06-14 | Defer schema-only validation mode | Deferred | [ADR-0035](docs/decisions/0035-defer-schema-only-validation-mode.md) |
 | 0036 | 2026-06-14 | Restrict scheduled cash flows to projection/planning only | Accepted | [ADR-0036](docs/decisions/0036-restrict-scheduled-cash-flows-to-projection-planning-only.md) |
 | 0037 | 2026-06-14 | Add optional `asOf` timestamp on prices for audit traceability | Accepted for next increment | [ADR-0037](docs/decisions/0037-add-optional-asof-timestamp-on-prices-for-audit-traceability.md) |
 | 0038 | 2026-06-14 | Document live-agent vision as directional architecture | Accepted | [ADR-0038](docs/decisions/0038-document-live-agent-vision-as-directional-architecture.md) |
-| 0039 | 2026-06-14 | Use JSONL for persistent audit trails | Accepted | [ADR-0039](docs/decisions/0039-use-jsonl-for-persistent-audit-trails.md) |
+| 0039 | 2026-06-14 | Use JSONL for persistent audit trails | Superseded by ADR-0049 | [ADR-0039](docs/decisions/0039-use-jsonl-for-persistent-audit-trails.md) |
 | 0040 | 2026-06-14 | Use pause strategy for reconciliation | Accepted | [ADR-0040](docs/decisions/0040-use-pause-strategy-for-reconciliation.md) |
 | 0041 | 2026-06-14 | Pivot to B2B SaaS multi-tenant architecture | Accepted | [ADR-0041](docs/decisions/0041-pivot-to-b2b-saas-multi-tenant-architecture.md) |
 | 0042 | 2026-06-14 | Separate allocation strategy from execution overlays | Accepted | [ADR-0042](docs/decisions/0042-separate-allocation-strategy-from-execution-overlays.md) |
 | 0043 | 2026-06-14 | Adopt UX-first thin-slice MVP methodology for v3 | Accepted | [ADR-0043](docs/decisions/0043-adopt-ux-first-thin-slice-mvp-methodology-for-v3.md) |
 | 0044 | 2026-06-14 | Use npm workspaces for monorepo | Accepted | [ADR-0044](docs/decisions/0044-use-npm-workspaces-for-monorepo.md) |
 | 0045 | 2026-06-14 | Colocate API Server within agent process | Accepted | [ADR-0045](docs/decisions/0045-colocate-api-server-within-agent-process.md) |
-| 0046 | 2026-06-14 | Use size-based log rotation and realistic simulation reset in dry-run | Accepted | [ADR-0046](docs/decisions/0046-use-size-based-rotation-and-simulation-reset.md) |
+| 0046 | 2026-06-14 | Use size-based log rotation and realistic simulation reset in dry-run | Superseded by ADR-0055 | [ADR-0046](docs/decisions/0046-use-size-based-rotation-and-simulation-reset.md) |
 | 0047 | 2026-06-14 | Use simple margin constraint for TCO penalty | Accepted | [ADR-0047](docs/decisions/0047-use-simple-margin-for-tco-penalty.md) |
-| 0048 | 2026-06-14 | Use MultiPortfolioStateManager for in-memory scaling mock | Accepted | [ADR-0048](docs/decisions/0048-use-multi-portfolio-in-memory-scale.md) |
+| 0048 | 2026-06-14 | Use MultiPortfolioStateManager for in-memory scaling mock | Superseded by ADR-0049 | [ADR-0048](docs/decisions/0048-use-multi-portfolio-in-memory-scale.md) |
 | 0049 | 2026-06-14 | Use better-sqlite3 for Persistent State Management | Accepted | [ADR-0049](docs/decisions/0049-use-sqlite-for-persistent-state-management.md) |
-| 0050 | 2026-06-17 | Establish baseline for async dynamic targeting capabilities (VaR, EF) via B2B broker API | Accepted | [ADR-0050](docs/decisions/0050-use-b2b-broker-api.md) |
+| 0050 | 2026-06-17 | Use B2B Broker API for Execution | Accepted | [ADR-0050](docs/decisions/0050-use-b2b-broker-api.md) |
 | 0051 | 2026-06-18 | Use Composite Asset Schema for Instrument Identity | Accepted | [ADR-0051](docs/decisions/0051-use-composite-asset-schema-for-instrument-identity.md) |
 | 0052 | 2026-06-18 | Use Tenant API Keys for B2B Authentication | Accepted | [ADR-0052](docs/decisions/0052-use-tenant-api-keys-for-b2b-authentication.md) |
+| 0053 | 2026-06-20 | Defer API Rate Limiting, Granular Scopes, and Standardized Error Backoffs | Partially Superseded | [ADR-0053](docs/decisions/0053-defer-api-rate-limiting-and-granular-scopes.md) |
+| 0054 | 2026-06-20 | Use Mocked Percentage Slippage Model for TCO Optimization | Superseded by ADR-0056 | [ADR-0054](docs/decisions/0054-mocked-friction-model-for-tco-optimization.md) |
+| 0055 | 2026-06-20 | Continuous Broker State Synchronization | Accepted | [ADR-0055](docs/decisions/0055-continuous-broker-state-sync.md) |
+| 0056 | 2026-06-20 | Deferred Live Spread Fetching for Slippage Modeling | Accepted | [ADR-0056](docs/decisions/0056-deferred-live-spread-slippage.md) |
+| 0057 | 2026-07-05 | Use Lucide-React for UI Iconography | Accepted | [ADR-0057](docs/decisions/0057-use-lucide-react-for-ui-iconography.md) |
 | 0058 | 2026-08-10 | Generalized Trade Optimizer Interface and External Tax-Aware Module | Accepted | [ADR-0058](docs/decisions/0058-generalized-trade-optimizer-interface.md) |
 | 0059 | 2026-08-14 | UK Capital Gains Tax Rules and Bed-and-Breakfasting Overlay | Accepted | [ADR-0059](docs/decisions/0059-uk-bed-and-breakfasting-overlay.md) |
 | 0060 | 2026-08-14 | Corporate Actions Processing and Tax Lot Basis Recalculation Engine | Accepted | [ADR-0060](docs/decisions/0060-corporate-actions-processor.md) |
@@ -215,6 +220,8 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 106 | 2026-09-10 | Repository Hygiene Remediation & Quality Hardening | Quality, CI & Tooling | Remediated web linter TS7 compatibility, expanded CI to web workspace, resolved ADR-0048 collision (ADR-0065), eliminated all 51 ESLint warnings, normalized OKF frontmatter, and resolved 6 security advisories via npm audit fix. | [Log](docs/iterations/2026-09-10-repository-hygiene-remediation.md) |
 | 107 | 2026-10-15 | Docker Node 24 Runtime Alignment & Native SQLite Validation | Operations & CI/CD | Upgraded Docker images to Node 24 (Bookworm), added build-time SQLite verification and CI Docker build step resolving Issue #124; merged Dependabot PRs #119-#123 (ADR-0066). | [Log](docs/iterations/2026-10-15-docker-node-24-runtime-alignment.md) |
 | 108 | 2026-10-16 | Holistic Codebase & Architecture Review | Audit & Quality | Conducted comprehensive review across ADRs 0001-0066, PRDs, roadmaps, core financial math, live agent/SQLite/API security, frontend persona/RBAC alignment, documentation hygiene, and test coverage. | [Log](docs/iterations/2026-10-16-holistic-codebase-review.md) |
+| 109 | 2026-10-16 | Holistic Audit Remediation & Hardening | Full Stack Quality & Architecture | Executed 6-chunk remediation addressing core financial math, corporate actions dividend valuation, simulation lot preservation, SQLite persistence, scheduler lifecycle, API auth/RBAC, web persona alignment, and documentation synchronization (ADR-0067). | [Log](docs/iterations/2026-10-16-audit-remediation.md) |
+
 
 
 

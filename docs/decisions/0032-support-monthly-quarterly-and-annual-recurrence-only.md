@@ -4,10 +4,13 @@ title: Support monthly, quarterly, and annual recurrence only
 description: Decision to support monthly, quarterly, and annual recurrence only
 tags: [architecture]
 timestamp: 2026-05-02T00:00:00Z
-status: Accepted
+status: Superseded by [ADR-0034](0034-add-weekly-recurrence-frequency-for-cash-flow-schedules.md)
 ---
 
 # Support monthly, quarterly, and annual recurrence only
+
+> [!NOTE]
+> **Superseded**: Extended to support `WEEKLY` recurrence frequency in [ADR-0034](0034-add-weekly-recurrence-frequency-for-cash-flow-schedules.md).
 
 ## Context
 

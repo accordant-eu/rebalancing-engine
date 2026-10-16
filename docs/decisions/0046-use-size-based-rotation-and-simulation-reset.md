@@ -3,9 +3,13 @@ type: DecisionRecord
 title: "Use size-based log rotation and realistic simulation reset in dry-run"
 description: "Decision to bound audit-trail.jsonl size to 5MB and apply post-trade state in dry runs."
 timestamp: 2026-06-14T18:50:00Z
+status: Superseded by [ADR-0049](0049-use-sqlite-for-persistent-state-management.md) and [ADR-0055](0055-continuous-broker-state-sync.md)
 ---
 
 # Use size-based log rotation and realistic simulation reset in dry-run
+
+> [!NOTE]
+> **Superseded**: JSONL audit trail rotation was superseded by SQLite audit storage, and live simulation state synchronization was formalized in [ADR-0055](0055-continuous-broker-state-sync.md).
 
 ## Context
 

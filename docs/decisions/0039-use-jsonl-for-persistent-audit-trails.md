@@ -3,9 +3,13 @@ type: DecisionRecord
 title: "Use JSONL for persistent audit trails in MVP"
 description: "Decision to use JSONL flat files instead of SQLite for the Tranche 4 audit trail."
 timestamp: 2026-06-14T00:00:00Z
+status: Superseded by [ADR-0049](0049-use-sqlite-for-persistent-state-management.md)
 ---
 
 # Use JSONL for persistent audit trails in MVP
+
+> [!NOTE]
+> **Superseded**: Superseded in Iteration 67 by `SqliteAuditStorage` (`AuditTrails` table in SQLite).
 
 ## Context
 

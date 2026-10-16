@@ -1,29 +1,29 @@
 # rebalancing-engine
 
-Generic deterministic portfolio rebalancing engine in TypeScript/Node.js. Originally built as an offline calculation core, it now features a fully autonomous Live Agent capable of streaming evaluation, real-time paper trading via Alpaca, circuit breaker limits, and persistent JSONL audit trails.
+Generic deterministic portfolio rebalancing engine in TypeScript/Node.js. Originally built as an offline calculation core, it now features a fully autonomous multi-tenant SaaS platform and Live Agent capable of continuous drift monitoring, real-time paper trading via Alpaca, SQLite state persistence, batch evaluation queue workers, REST APIs with SSE telemetry, and a persona-based React dashboard.
 
-## Current Status (Live Agent v2.0 MVP)
+## Current Status (v0.9.0 Multi-Tenant Platform)
 
-The project consists of an offline pure calculation core wrapped inside an autonomous, stateful Orchestrator agent.
+The project consists of a deterministic calculation core wrapped inside an autonomous, stateful Orchestrator agent and multi-tenant REST API server.
 
-**Core Capabilities (Offline & Live):**
-- Portfolio valuation from holdings, cash, settled cash flows, and prices.
-- Threshold, calendar due-date, and manual forced-rebalance trigger strategies.
-- Full-reset and boundary-band trade proposal modes.
-- Decimal-backed internal calculation helpers and centralized output rounding.
-- Immutable, deterministic JSON audit trails.
+**Core Capabilities (Deterministic Math & Overlays):**
+- Portfolio valuation from holdings, cash, settled cash flows, and prices (`decimal.js`).
+- Threshold, calendar due-date, manual forced-rebalance, and tax-aware trigger strategies.
+- Full-reset, boundary-band, and deposit-allocation (`REBALANCING`, `CURRENT_WEIGHT`, `FIXED_TARGET`) trade proposals.
+- Execution overlays: Tax-Loss Harvesting (TLH), UK Bed-and-Breakfasting (30-day rule), exclusions, and concentration caps.
+- Corporate actions processing: forward/reverse stock splits, cash dividends, and mergers with tax-lot basis preservation.
+- Dynamic Projected Gradient Descent risk optimizer for Minimum Variance and Efficient Frontier mandates.
+- Immutable, deterministic JSON audit trails stored in SQLite.
 
-**Live Agent Capabilities:**
-- `LiveStateManager` for continuous, safe evaluation of streaming drift.
-- Cooldown and debounce timers to prevent micro-churning around thresholds.
-- `AlpacaAdapter` for fetching live portfolio state and submitting real trades (Paper Trading).
-- `CircuitBreaker` safety limits to hard-stop execution on maximum trades or gross notional value.
+**Platform & Live Agent Capabilities:**
+- Embedded multi-tenant `better-sqlite3` storage for portfolios, models, assets, tenants, and audit logs.
+- `MandateSchedulerService` for autonomous calendar mandate scanning and execution queue dispatch.
+- `BatchEvaluationWorker` with throttled batch consumption and subscriber fan-out.
+- `AlpacaBrokerAdapter` for fetching live portfolio state and submitting real trades (Paper Trading).
+- `CircuitBreaker` safety middleware with strict gross notional and order count limits.
 - Reconciliation Pause Strategy to safely halt evaluations while broker orders are pending.
-- Persistent JSONL audit logging (`data/audit-trail.jsonl`) and stdout notifications.
-
-Explicitly out of scope today:
-- Full transaction-cost optimizer (rule-based boundary targeting is sufficient for now).
-- Jurisdiction-specific tax advice or tax-loss harvesting optimization.
+- Express 5 REST API with signed JWT authentication, tenant API keys (`sk_live_*`), and SSE event streaming.
+- React 19 / Tailwind v4 Command Center dashboard with persona layouts (Advisor, Compliance, Tenant Admin, Superadmin).
 
 For production setup, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -33,8 +33,8 @@ See the roadmap in [docs/roadmap/rebalancing-engine-roadmap.md](docs/roadmap/reb
 
 Prerequisites:
 
-- Node.js >= 18
-- npm >= 9
+- Node.js >= 24.0.0
+- npm >= 10
 
 Install dependencies:
 
@@ -167,22 +167,23 @@ Root files:
 
 ```text
 src/
-  audit/        Audit record generation and output rounding
-  cli/          Offline CLI parser, commands, input loading, rendering, help
-  core/         Valuation, drift, cash flows, trades, simulation, orchestration
+  api/          Express REST API, SSE streaming, authentication, routes, webhooks
+  audit/        Audit record generation and SQLite/file persistence
+  broker/       Alpaca broker adapters and order status reconciliation
+  cli/          CLI commands, live agent runner, input loading, rendering
+  core/         Valuation, drift, cash flows, trades, overlays, corporate actions, simulation
+  db/           better-sqlite3 schema, migrations, and repository classes
   explanation/  Deterministic recommendation explanations
-  models/       Domain interfaces
+  models/       Domain interfaces and schemas
+  notifications/Slack alerts and operational messaging
+  optimizer/    Projected Gradient Descent dynamic risk optimizer solver
+  orchestrator/ Continuous loop, mandate scheduler, batch evaluator, and circuit breakers
   runner/       Scenario runner and expectation validation
-  strategy/     Threshold, calendar, and manual trigger strategies
-tests/
-  fixtures/     Synthetic scenario and expectation manifests
-docs/
-  audits/       Audit reports
-  cli/          CLI design and reference
-  guides/       User and developer guides
-  plans/        Implementation plans
-  prd/          Product requirement docs
-  roadmap/      Roadmap
+  services/     Telemetry metrics and background broker synchronization
+  strategy/     Threshold, calendar, manual, and tax-aware trigger strategies
+web/            React 19 / Tailwind v4 Command Center dashboard (npm workspace)
+tests/          Jest backend unit/integration tests and scenario fixtures
+docs/           Architecture, ADRs, PRDs, roadmaps, guides, audits, and daily iteration logs
 ```
 
 ## Development Discipline

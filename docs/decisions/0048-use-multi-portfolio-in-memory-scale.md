@@ -3,9 +3,13 @@ type: DecisionRecord
 title: "Use MultiPortfolioStateManager for in-memory scaling mock"
 description: "Decision to refactor LiveStateManager to support multiple asynchronous portfolios in memory before migrating to SQLite."
 timestamp: 2026-06-14T19:05:00Z
+status: Superseded by [ADR-0049](0049-use-sqlite-for-persistent-state-management.md)
 ---
 
 # Use MultiPortfolioStateManager for in-memory scaling mock
+
+> [!NOTE]
+> **Superseded**: MultiPortfolioStateManager served as an intermediate scaling mock before persistent SQLite storage was introduced in [ADR-0049](0049-use-sqlite-for-persistent-state-management.md).
 
 ## Context
 

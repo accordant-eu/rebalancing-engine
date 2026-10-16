@@ -14,7 +14,7 @@ status: Accepted
 When an investment manager or dynamic optimizer updates a model portfolio mandate (or when bulk price fluctuations trigger market-wide drift breaches), hundreds or thousands of subscribed client portfolios must be re-evaluated.
 - Synchronously evaluating all portfolios in the main event loop blocks HTTP request handling and UI responsiveness.
 - Burst-executing thousands of evaluations simultaneously overwhelms external Oracle Tax Optimizer RPC endpoints and exhausts downstream broker API rate limits (e.g., Alpaca's 200 req/min threshold).
-- While ADR-0049 and ADR-0085 introduced the `EvaluationQueue` SQLite table and pre-trade circuit breakers, there was no dedicated worker managing throttled batch consumption, progress tracking, and telemetry streaming.
+- While ADR-0049 and Iteration 85 introduced the `EvaluationQueue` SQLite table and pre-trade circuit breakers, there was no dedicated worker managing throttled batch consumption, progress tracking, and telemetry streaming.
 
 ## Options Considered
 

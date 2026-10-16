@@ -4,10 +4,13 @@ title: Use explicit calendar dates only
 description: Decision to use explicit calendar dates only
 tags: [architecture]
 timestamp: 2026-05-02T00:00:00Z
-status: Accepted for MVP
+status: Superseded by [ADR-0064](0064-automated-recurring-mandate-scheduler.md)
 ---
 
 # Use explicit calendar dates only
+
+> [!NOTE]
+> **Superseded**: This decision applied to the initial offline MVP. Automated date advancement and recurring calendar evaluation were subsequently formalized in [ADR-0064](0064-automated-recurring-mandate-scheduler.md).
 
 ## Context
 

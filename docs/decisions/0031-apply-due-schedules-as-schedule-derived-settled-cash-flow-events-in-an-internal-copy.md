@@ -4,10 +4,13 @@ title: Apply due schedules as schedule-derived settled cash-flow events in an in
 description: Decision to apply due schedules as schedule-derived settled cash-flow events in an internal copy
 tags: [architecture, cash-flow]
 timestamp: 2026-05-02T00:00:00Z
-status: Accepted
+status: Superseded by [ADR-0036](0036-restrict-scheduled-cash-flows-to-projection-planning-only.md)
 ---
 
 # Apply due schedules as schedule-derived settled cash-flow events in an internal copy
+
+> [!NOTE]
+> **Superseded**: Explicitly superseded by [ADR-0036](0036-restrict-scheduled-cash-flows-to-projection-planning-only.md), which restricts scheduled cash flows to `PENDING` projection/planning without inflating actionable cash.
 
 ## Context
 

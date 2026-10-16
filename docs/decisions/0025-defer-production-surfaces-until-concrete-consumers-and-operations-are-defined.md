@@ -4,10 +4,13 @@ title: Defer production surfaces until concrete consumers and operations are def
 description: Decision to defer production surfaces until concrete consumers and operations are defined
 tags: [architecture]
 timestamp: 2026-05-02T00:00:00Z
-status: Accepted
+status: Superseded by [ADR-0041](0041-pivot-to-b2b-saas-multi-tenant-architecture.md), [ADR-0045](0045-colocate-api-server-within-agent-process.md), [ADR-0049](0049-use-sqlite-for-persistent-state-management.md), and [ADR-0050](0050-use-b2b-broker-api.md)
 ---
 
 # Defer production surfaces until concrete consumers and operations are defined
+
+> [!NOTE]
+> **Superseded**: Production surfaces (REST APIs, SQLite persistence, and broker execution) were subsequently adopted starting in [ADR-0041](0041-pivot-to-b2b-saas-multi-tenant-architecture.md).
 
 ## Context
 

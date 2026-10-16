@@ -6,10 +6,11 @@ export const openApiSpec = {
     description: `API for the generic portfolio rebalancing engine.
 
 ## Authentication
-Authentication is handled via a JWT token.
+Authentication is handled via signed JWT tokens (HS256) with refresh token rotation, or single-use 30-second stream tickets for SSE connections. B2B programmatic access uses tenant API keys (\`sk_live_*\`).
 - Call \`POST /api/auth/login\` with \`{ "email": "...", "password": "..." }\`.
 - Include the returned token in the \`Authorization\` header as \`Bearer <token>\`.
-- **Note**: The token is currently a Base64-encoded payload (unsigned) with no expiry window during the MVP phase. It will be upgraded to an RS256 signed token with a 1-hour expiry prior to public launch.
+- Exchange expired access tokens using \`POST /api/auth/refresh\`.
+- Obtain single-use SSE stream tickets via \`POST /api/auth/stream-ticket\`.
 
 ## Audit Trail Event Types
 - \`DRY_RUN_EXECUTION\`: A trade proposal was generated but not submitted to the broker.
@@ -29,7 +30,7 @@ Authentication is handled via a JWT token.
   paths: {
     '/api/auth/login': {
       post: {
-        summary: 'Login to obtain Mock JWT token',
+        summary: 'Login to obtain signed JWT token',
         operationId: 'login',
         requestBody: {
           required: true,
@@ -553,6 +554,467 @@ Authentication is handled via a JWT token.
         description: 'Receives asynchronous trade fills from Alpaca. This endpoint is auth-exempt.',
         responses: {
           '200': { description: 'Webhook received' }
+        }
+      }
+    },
+    '/api/auth/stream-ticket': {
+      post: {
+        summary: 'Generate single-use 30-second ticket for SSE event streaming',
+        operationId: 'createStreamTicket',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Stream ticket generated',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    ticket: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' }
+        }
+      }
+    },
+    '/api/state': {
+      get: {
+        summary: 'Get live states of all portfolios accessible to tenant',
+        operationId: 'getState',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Portfolio states dictionary',
+            content: {
+              'application/json': {
+                schema: { type: 'object' }
+              }
+            }
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' }
+        }
+      }
+    },
+    '/api/metrics': {
+      get: {
+        summary: 'Get operational metrics and telemetry for current tenant',
+        operationId: 'getMetrics',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Tenant operational metrics',
+            content: {
+              'application/json': {
+                schema: { type: 'object' }
+              }
+            }
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' }
+        }
+      }
+    },
+    '/api/assets': {
+      get: {
+        summary: 'List active asset master records',
+        operationId: 'getAssets',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'List of assets',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { type: 'object' }
+                }
+              }
+            }
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' }
+        }
+      }
+    },
+    '/api/users': {
+      post: {
+        summary: 'Create a new user within tenant',
+        operationId: 'createTenantUser',
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  email: { type: 'string' },
+                  password: { type: 'string' },
+                  role: { type: 'string', enum: ['Admin', 'Advisor', 'Viewer'] }
+                },
+                required: ['email', 'password', 'role']
+              }
+            }
+          }
+        },
+        responses: {
+          '201': { description: 'User created' },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' }
+        }
+      }
+    },
+    '/api/admin/users': {
+      get: {
+        summary: 'List all users across tenants (Superadmin)',
+        operationId: 'getAdminUsers',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'List of users' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { description: 'Forbidden' }
+        }
+      },
+      post: {
+        summary: 'Create user across any tenant (Superadmin)',
+        operationId: 'createAdminUser',
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  email: { type: 'string' },
+                  password: { type: 'string' },
+                  tenantId: { type: 'string' },
+                  role: { type: 'string' }
+                },
+                required: ['email', 'password', 'tenantId', 'role']
+              }
+            }
+          }
+        },
+        responses: {
+          '201': { description: 'User created' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '403': { description: 'Forbidden' }
+        }
+      }
+    },
+    '/api/admin/tenants': {
+      get: {
+        summary: 'List all tenants (Superadmin)',
+        operationId: 'getAdminTenants',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'List of tenants' }
+        }
+      },
+      post: {
+        summary: 'Create a new tenant (Superadmin)',
+        operationId: 'createAdminTenant',
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  tenantId: { type: 'string' },
+                  name: { type: 'string' },
+                  brokerType: { type: 'string' },
+                  brokerApiKey: { type: 'string' },
+                  brokerSecretKey: { type: 'string' }
+                },
+                required: ['tenantId', 'name']
+              }
+            }
+          }
+        },
+        responses: {
+          '201': { description: 'Tenant created' }
+        }
+      }
+    },
+    '/api/admin/assets': {
+      get: {
+        summary: 'List all assets (Admin / Superadmin)',
+        operationId: 'getAdminAssets',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'List of assets' }
+        }
+      },
+      post: {
+        summary: 'Register or update an asset',
+        operationId: 'createAdminAsset',
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  instrumentId: { type: 'string' },
+                  isin: { type: 'string' },
+                  ticker: { type: 'string' },
+                  exchangeMic: { type: 'string' },
+                  currency: { type: 'string' }
+                },
+                required: ['instrumentId', 'isin', 'ticker', 'exchangeMic', 'currency']
+              }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Asset registered' }
+        }
+      }
+    },
+    '/api/admin/scheduler/status': {
+      get: {
+        summary: 'Get recurring mandate scheduler service status',
+        operationId: 'getSchedulerStatus',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Scheduler status' }
+        }
+      }
+    },
+    '/api/admin/scheduler/scan': {
+      post: {
+        summary: 'Trigger immediate on-demand scan of calendar mandates',
+        operationId: 'triggerSchedulerScan',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Scan triggered and portfolios enqueued' }
+        }
+      }
+    },
+    '/api/admin/circuit-breaker/trip': {
+      post: {
+        summary: 'Trip global emergency circuit breaker',
+        operationId: 'tripGlobalCircuitBreaker',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Global circuit breaker tripped' }
+        }
+      }
+    },
+    '/api/admin/circuit-breaker/reset': {
+      post: {
+        summary: 'Reset global emergency circuit breaker',
+        operationId: 'resetGlobalCircuitBreaker',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Global circuit breaker reset' }
+        }
+      }
+    },
+    '/api/models': {
+      get: {
+        summary: 'List model portfolio mandates',
+        operationId: 'getModels',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'List of models' }
+        }
+      },
+      post: {
+        summary: 'Create a new model portfolio mandate',
+        operationId: 'createModel',
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object' }
+            }
+          }
+        },
+        responses: {
+          '201': { description: 'Model mandate created' }
+        }
+      }
+    },
+    '/api/models/{id}': {
+      get: {
+        summary: 'Get a model portfolio mandate by ID',
+        operationId: 'getModelById',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Model mandate details' }
+        }
+      },
+      put: {
+        summary: 'Update model portfolio mandate and cascade changes',
+        operationId: 'updateModelById',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object' }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Model mandate updated' }
+        }
+      }
+    },
+    '/api/models/{id}/fan-out': {
+      post: {
+        summary: 'Fan out model changes to all subscribed portfolios and enqueue for evaluation',
+        operationId: 'fanOutModel',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Subscribed portfolios enqueued' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '404': { $ref: '#/components/responses/NotFound' }
+        }
+      }
+    },
+    '/api/queue/status': {
+      get: {
+        summary: 'Get evaluation queue depth and batch worker status',
+        operationId: 'getQueueStatus',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Queue status' }
+        }
+      }
+    },
+    '/api/queue/batches': {
+      get: {
+        summary: 'Get recent evaluation batch execution telemetry',
+        operationId: 'getQueueBatches',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Recent batches' }
+        }
+      }
+    },
+    '/api/queue/run': {
+      post: {
+        summary: 'Trigger immediate batch evaluation worker cycle',
+        operationId: 'runQueueWorker',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Worker batch processed' }
+        }
+      }
+    },
+    '/api/queue/drain': {
+      post: {
+        summary: 'Drain all pending queue entries (Superadmin)',
+        operationId: 'drainQueue',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Queue drained' }
+        }
+      }
+    },
+    '/api/optimizer/run': {
+      post: {
+        summary: 'Execute dynamic risk optimizer solver for dynamic model mandates',
+        operationId: 'runOptimizer',
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': { description: 'Optimization executed' }
+        }
+      }
+    },
+    '/api/portfolios/{id}/policy': {
+      put: {
+        summary: 'Update portfolio rebalancing policy and tax routing parameters',
+        operationId: 'updatePortfolioPolicy',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object' }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Policy updated and persisted' }
+        }
+      }
+    },
+    '/api/portfolios/{id}/mandate': {
+      put: {
+        summary: 'Update bespoke portfolio mandate archetype and constraints',
+        operationId: 'updatePortfolioMandate',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object' }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Portfolio mandate updated' }
+        }
+      }
+    },
+    '/api/portfolios/{id}/subscription': {
+      put: {
+        summary: 'Subscribe portfolio to a model portfolio mandate',
+        operationId: 'subscribePortfolioToModel',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  modelId: { type: 'string' }
+                },
+                required: ['modelId']
+              }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Subscription updated' }
+        }
+      }
+    },
+    '/api/portfolios/{id}/execution-status': {
+      get: {
+        summary: 'Get latest execution status and audit metadata for portfolio',
+        operationId: 'getPortfolioExecutionStatus',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Execution status' }
+        }
+      }
+    },
+    '/api/portfolios/{id}/audit-trail': {
+      get: {
+        summary: 'Get historical audit trail records for portfolio',
+        operationId: 'getPortfolioAuditTrail',
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Historical audit trail' }
         }
       }
     },
