@@ -1,4 +1,5 @@
 import { advanceDateByFrequency, MandateSchedulerService } from '../src/orchestrator/scheduler';
+import { BatchEvaluationWorker } from '../src/orchestrator/batch-evaluator';
 import { MultiPortfolioStateManager } from '../src/orchestrator/state';
 import { RebalancingPolicy, TargetAllocation } from '../src/models/domain';
 import { systemEventBus } from '../src/events/bus';
@@ -174,5 +175,44 @@ describe('MandateSchedulerService & Calendar Math (ADR-0064)', () => {
       expect(() => scheduler.start('0 9 * * 1-5')).not.toThrow();
       expect(() => scheduler.stop()).not.toThrow();
     });
+
+    it('triggers calendar rebalance in BatchEvaluationWorker after scanAndEnqueue auto-advances nextRebalanceDate and clears lastTriggeredRebalanceDate', async () => {
+      const policyDue: RebalancingPolicy = {
+        strategyType: 'calendar',
+        absoluteDriftTolerance: 0.05,
+        minimumTradeSize: 10,
+        calendar: {
+          evaluationDate: '2026-07-01',
+          nextRebalanceDate: '2026-08-01',
+          frequency: 'monthly',
+        },
+      };
+
+      stateManager.registerPortfolio('acc-cal-e2e', {
+        portfolioState: { accountId: 'acc-cal-e2e', cash: 1000, holdings: [] },
+        priceSnapshot: { prices: { AAPL: 100 } },
+        targetAllocation: defaultTarget,
+        policy: policyDue,
+        archetype: 'StaticWeights',
+      });
+
+      const scanResult = scheduler.scanAndEnqueue('2026-08-01');
+      expect(scanResult.enqueued).toBe(1);
+
+      const afterScan = stateManager.getAccountState('acc-cal-e2e');
+      expect(afterScan.policy.calendar?.nextRebalanceDate).toBe('2026-09-01');
+      expect(afterScan.policy.calendar?.lastTriggeredRebalanceDate).toBe('2026-08-01');
+
+      const worker = new BatchEvaluationWorker(stateManager, undefined, { throttleIntervalMs: 0 });
+      const batchResult = await worker.processNextBatch();
+
+      expect(batchResult.processed).toBe(1);
+      expect(batchResult.successes).toBe(1);
+      expect(batchResult.tradesGenerated).toBe(1);
+
+      const afterBatch = stateManager.getAccountState('acc-cal-e2e');
+      expect(afterBatch.policy.calendar?.lastTriggeredRebalanceDate).toBeUndefined();
+    });
   });
 });
+

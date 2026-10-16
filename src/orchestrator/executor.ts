@@ -35,6 +35,11 @@ export class BrokerExecutor implements Executor {
       return;
     }
 
+    if (this.adapter.hasOpenOrders && (await this.adapter.hasOpenOrders(context, brokerAccountId))) {
+      logger.warn(`[BrokerExecutor] Skipping trade submission for account ${brokerAccountId} due to existing open orders.`);
+      return;
+    }
+
     logger.info(`[BrokerExecutor] Submitting ${proposal.trades.length} trades to broker for account ${brokerAccountId} on event: ${eventId}`);
     
     const submittedOrders = await this.adapter.submitTrades(context, brokerAccountId, proposal);

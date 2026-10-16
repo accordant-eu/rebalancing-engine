@@ -81,12 +81,24 @@ export class Orchestrator {
       try {
         const currentState = this.stateManager.getAccountState(accountId);
 
+        if (currentState.portfolioState.circuitBreakerStatus === 'open') {
+          logger.warn(`[Orchestrator] Skipping portfolio ${accountId}: circuitBreakerStatus is open.`);
+          continue;
+        }
+
+        const pendingOrders = this.stateManager.getPendingOrders?.(currentState.portfolioState.tenantId) || [];
+        if (pendingOrders.some((o) => o.accountId === accountId)) {
+          logger.warn(`[Orchestrator] Skipping portfolio ${accountId}: pending broker orders in flight.`);
+          continue;
+        }
+
         const brokerAccountId = currentState.portfolioState.brokerAccountId || accountId;
         const tenantId = currentState.portfolioState.tenantId || 'default';
         const brokerConfig = this.stateManager.getTenantBrokerConfig?.(tenantId);
         
         if (!brokerConfig) {
           logger.error(`[Orchestrator] Missing broker config for tenant ${tenantId}. Circuit breaking execution for portfolio ${accountId}.`);
+          this.stateManager.updateCircuitBreakerStatus?.(accountId, 'open');
           continue; // Circuit break execution
         }
 
@@ -128,6 +140,15 @@ export class Orchestrator {
           indicators
         });
 
+        if (currentState.policy.calendar?.lastTriggeredRebalanceDate) {
+          const clearedCalendar = { ...currentState.policy.calendar };
+          delete clearedCalendar.lastTriggeredRebalanceDate;
+          this.stateManager.updatePolicy(accountId, {
+            ...currentState.policy,
+            calendar: clearedCalendar,
+          });
+        }
+
         if (evaluation.trigger.isTriggered) {
           systemEventBus.emitEvent({
             type: 'THRESHOLD_BREACH',
@@ -159,7 +180,7 @@ export class Orchestrator {
           this.stateManager.markTradeExecution(accountId, timestampMs);
 
           if (this.auditStorage) {
-            this.auditStorage.saveAuditRecord(evaluation.auditRecord).catch((err) => {
+            this.auditStorage.saveAuditRecord({ ...evaluation.auditRecord, type: 'LIVE_EXECUTION' }).catch((err) => {
               if (this.notifications) {
                 this.notifications.notify('error', `Failed to save audit record for ${accountId}`, { error: String(err) });
               } else {

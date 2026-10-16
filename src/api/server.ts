@@ -23,8 +23,14 @@ import { globalMetrics } from '../services/metrics';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-export function setupExpressApp(stateManager: SqliteStateManager, orchestrator?: Orchestrator, batchWorker?: BatchEvaluationWorker) {
+export function setupExpressApp(
+  stateManager: SqliteStateManager,
+  orchestrator?: Orchestrator,
+  batchWorker?: BatchEvaluationWorker,
+  scheduler?: MandateSchedulerService
+) {
   const app = express();
+  const mandateScheduler = scheduler || new MandateSchedulerService(stateManager);
   app.use(cors());
   app.use(express.json());
 
@@ -283,8 +289,7 @@ setInterval(() => {
 
   app.get('/api/admin/scheduler/status', requireSuperadmin, (req, res) => {
     try {
-      const scheduler = new MandateSchedulerService(stateManager);
-      res.json(scheduler.getStatus());
+      res.json(mandateScheduler.getStatus());
     } catch (err: any) {
       sendError(res, 500, 'SCHEDULER_STATUS_ERROR', err.message);
     }
@@ -293,8 +298,7 @@ setInterval(() => {
   app.post('/api/admin/scheduler/scan', requireSuperadmin, (req, res) => {
     try {
       const evaluationDate = req.body?.evaluationDate;
-      const scheduler = new MandateSchedulerService(stateManager);
-      const result = scheduler.scanAndEnqueue(evaluationDate);
+      const result = mandateScheduler.scanAndEnqueue(evaluationDate);
       res.json(result);
     } catch (err: any) {
       sendError(res, 400, 'SCHEDULER_SCAN_ERROR', err.message);

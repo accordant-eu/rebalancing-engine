@@ -95,20 +95,9 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
         maxGrossNotionalPerTrade: 500000,
       }, notifications);
 
-      const auditStorageAdapter = {
-        saveAuditRecord: async (record: any) => {
-          await auditStorage.saveAuditRecord(record);
-          if (record.outputs?.trigger?.isTriggered && record.outputs?.postTradeSimulation) {
-            const accountId = record.accountId || record.eventId.split(':')[0];
-            const postState = record.outputs.postTradeSimulation.postTradeState;
-            stateManager.updatePortfolio(accountId, postState);
-          }
-        }
-      };
-
       const orchestrator = new Orchestrator(stateManager, executor, {
         cooldownMs: 60000, // 1 minute cooldown for paper trading
-      }, auditStorageAdapter, notifications, new USMarketCalendar());
+      }, auditStorage, notifications, new USMarketCalendar());
 
       const app = setupExpressApp(stateManager, orchestrator);
 

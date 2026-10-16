@@ -327,4 +327,31 @@ describe('Orchestrator', () => {
 
     expect(mockExecutor.execute).toHaveBeenCalledTimes(1);
   });
+
+  it('skips evaluation when portfolio circuitBreakerStatus is open', async () => {
+    orchestrator.start();
+    stateManager.updateCircuitBreakerStatus(accountId, 'open');
+
+    const currentPrices = stateManager.getGlobalPrices().prices;
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.0 });
+
+    stateManager.enqueuePortfolio(accountId, 1000);
+    await orchestrator.onTick(1000);
+
+    expect(executor.execute).not.toHaveBeenCalled();
+  });
+
+  it('skips evaluation when portfolio has pending orders in flight', async () => {
+    orchestrator.start();
+    stateManager.registerOrder('ord-in-flight-1', accountId, 'US0378331005:XNAS:USD', 'BUY', 5);
+
+    const currentPrices = stateManager.getGlobalPrices().prices;
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.0 });
+
+    stateManager.enqueuePortfolio(accountId, 1000);
+    await orchestrator.onTick(1000);
+
+    expect(executor.execute).not.toHaveBeenCalled();
+  });
 });
+

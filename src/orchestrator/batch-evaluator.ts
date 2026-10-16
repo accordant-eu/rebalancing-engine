@@ -1,6 +1,8 @@
 import { LiveStateManager } from './state';
 import { Executor } from './executor';
 import { evaluateRebalanceAsync } from '../core/evaluation';
+import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../core/quality';
+import { PercentageSlippageModel } from '../core/friction';
 import { AuditStorageAdapter } from '../audit/storage';
 import { NotificationAdapter } from '../notifications';
 import { logger } from '../utils/logger';
@@ -159,8 +161,28 @@ export class BatchEvaluationWorker {
         }
 
         const state = this.stateManager.getAccountState(accountId);
+
+        if (state.portfolioState.circuitBreakerStatus === 'open') {
+          logger.warn(`[BatchEvaluationWorker] Skipping account ${accountId}: circuitBreakerStatus is open.`);
+          continue;
+        }
+
+        const pendingOrders = this.stateManager.getPendingOrders?.(state.portfolioState.tenantId) || [];
+        if (pendingOrders.some((o) => o.accountId === accountId)) {
+          logger.warn(`[BatchEvaluationWorker] Skipping account ${accountId}: pending broker orders in flight.`);
+          continue;
+        }
+
         const tenantId = state.portfolioState.tenantId || 'default';
-        const brokerConfig = this.stateManager.getTenantBrokerConfig?.(tenantId) || {
+        const configuredBroker = this.stateManager.getTenantBrokerConfig
+          ? this.stateManager.getTenantBrokerConfig(tenantId)
+          : undefined;
+        if (this.executor && this.stateManager.getTenantBrokerConfig && !configuredBroker) {
+          this.stateManager.updateCircuitBreakerStatus?.(accountId, 'open');
+          throw new Error(`Missing broker config for tenant ${tenantId}. Circuit breaking execution for portfolio ${accountId}.`);
+        }
+
+        const brokerConfig = configuredBroker || {
           brokerType: 'MOCK',
           brokerApiKey: 'mock-key',
           brokerApiSecret: 'mock-secret',
@@ -175,6 +197,23 @@ export class BatchEvaluationWorker {
 
         const context: ExecutionContext = { tenantId, brokerConfig, translateBrokerSymbol };
 
+        const indicators: any[] = [];
+        if (state.archetype === 'StaticWeights') {
+          const conversionRate = state.policy.driftUtilityConversionRate ?? 1.0;
+          indicators.push(new DriftReductionIndicator(new DriftUtilityTranslator(conversionRate)));
+
+          if (state.constraints) {
+            for (const c of state.constraints) {
+              if (c.type === 'concentration_limit' && c.parameters && c.parameters.maxWeight) {
+                indicators.push(new ConcentrationLimitIndicator(c.parameters.maxWeight));
+              }
+            }
+          }
+        }
+
+        const slippageBps = state.policy.assumedSlippageBps ?? 5;
+        const frictionModel = new PercentageSlippageModel(slippageBps);
+
         const evaluation = await evaluateRebalanceAsync({
           eventId: `batch-fan-out:${accountId}:${timestampMs}`,
           createdAt: new Date(timestampMs).toISOString(),
@@ -182,7 +221,18 @@ export class BatchEvaluationWorker {
           targetAllocation: state.targetAllocation,
           priceSnapshot: state.priceSnapshot,
           policy: state.policy,
+          frictionModel,
+          indicators,
         });
+
+        if (state.policy.calendar?.lastTriggeredRebalanceDate) {
+          const clearedCalendar = { ...state.policy.calendar };
+          delete clearedCalendar.lastTriggeredRebalanceDate;
+          this.stateManager.updatePolicy(accountId, {
+            ...state.policy,
+            calendar: clearedCalendar,
+          });
+        }
 
         const proposal = evaluation.tradeProposal;
 
@@ -200,7 +250,8 @@ export class BatchEvaluationWorker {
         }
 
         if (this.auditStorage) {
-          await this.auditStorage.saveAuditRecord(evaluation.auditRecord);
+          const recordType = proposal.trades.length > 0 && this.executor ? 'LIVE_EXECUTION' : 'DRY_RUN_EVALUATION';
+          await this.auditStorage.saveAuditRecord({ ...evaluation.auditRecord, type: recordType });
         }
 
         this.stateManager.markTradeExecution?.(accountId, timestampMs);

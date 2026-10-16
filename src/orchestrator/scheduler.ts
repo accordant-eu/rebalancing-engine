@@ -141,7 +141,18 @@ export class MandateSchedulerService {
             calendar: {
               ...policy.calendar,
               evaluationDate: evalDate,
+              lastTriggeredRebalanceDate: evalDate,
               nextRebalanceDate: updatedNextDate,
+            },
+          };
+          this.stateManager.updatePolicy(accountId, updatedPolicy);
+        } else if (policy.calendar.evaluationDate !== evalDate) {
+          const updatedPolicy: RebalancingPolicy = {
+            ...policy,
+            calendar: {
+              ...policy.calendar,
+              evaluationDate: evalDate,
+              lastTriggeredRebalanceDate: evalDate,
             },
           };
           this.stateManager.updatePolicy(accountId, updatedPolicy);
