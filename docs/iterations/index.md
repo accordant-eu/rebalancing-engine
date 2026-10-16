@@ -55,6 +55,7 @@ This directory contains detailed technical logs for development iterations of th
 - [2026-09-10: Mandate Scheduler & Batch Queue UI Observability](2026-09-10-mandate-scheduler-observability-ui.md)
 - [2026-09-10: Repository Hygiene Remediation & Quality Hardening](2026-09-10-repository-hygiene-remediation.md)
 - [2026-10-15: Docker Node 24 Runtime Alignment & Native SQLite Validation](2026-10-15-docker-node-24-runtime-alignment.md)
+- [2026-10-16: Holistic Codebase & Architecture Review](2026-10-16-holistic-codebase-review.md)
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

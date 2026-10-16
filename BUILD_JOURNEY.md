@@ -213,6 +213,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 105 | 2026-09-10 | Mandate Scheduler & Batch Queue UI Observability | UI & Observability | Implemented Mandate Scheduler & Batch Queue Observability panels, interactive on-demand scan triggers, and firm-level calendar horizon widgets. | [Log](docs/iterations/2026-09-10-mandate-scheduler-observability-ui.md) |
 | 106 | 2026-09-10 | Repository Hygiene Remediation & Quality Hardening | Quality, CI & Tooling | Remediated web linter TS7 compatibility, expanded CI to web workspace, resolved ADR-0048 collision (ADR-0065), eliminated all 51 ESLint warnings, normalized OKF frontmatter, and resolved 6 security advisories via npm audit fix. | [Log](docs/iterations/2026-09-10-repository-hygiene-remediation.md) |
 | 107 | 2026-10-15 | Docker Node 24 Runtime Alignment & Native SQLite Validation | Operations & CI/CD | Upgraded Docker images to Node 24 (Bookworm), added build-time SQLite verification and CI Docker build step resolving Issue #124; merged Dependabot PRs #119-#123 (ADR-0066). | [Log](docs/iterations/2026-10-15-docker-node-24-runtime-alignment.md) |
+| 108 | 2026-10-16 | Holistic Codebase & Architecture Review | Audit & Quality | Conducted comprehensive review across ADRs 0001-0066, PRDs, roadmaps, core financial math, live agent/SQLite/API security, frontend persona/RBAC alignment, documentation hygiene, and test coverage. | [Log](docs/iterations/2026-10-16-holistic-codebase-review.md) |
 
 
 
