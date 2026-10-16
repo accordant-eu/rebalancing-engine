@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 ## Documents
 
+* **[Holistic Codebase Review Remediation Plan](holistic-review-remediation-plan.md)** - Dependency-ordered 6-chunk remediation plan addressing the 2026-10-16 holistic codebase and architecture review
 * **[Initial Mvp Plan](initial-mvp-plan.md)** - Documentation for MVP implementation plan
 * **[Rebalancing Engine Cash Flows Mvp Plan](rebalancing-engine-cash-flows-mvp-plan.md)** - Documentation for rebalancing engine cash flows mvp plan
 * **[Rebalancing Engine Deferred Capabilities Mvp Plan](rebalancing-engine-deferred-capabilities-mvp-plan.md)** - Documentation for rebalancing engine deferred capabilities mvp plan

@@ -74,6 +74,7 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0064: Automated Recurring Mandate Scheduler Service](0064-automated-recurring-mandate-scheduler.md) - Accepted
 * [ADR-0065: Adopt Mandate Archetypes and Quality Evaluation Pipeline](0065-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md) - Accepted
 * [ADR-0066: Align Docker Runtime with Node 24 Engine Specification](0066-align-docker-runtime-with-node-24-engine-specification.md) - Accepted
+* [ADR-0067: Holistic Audit Remediation & Domain Invariants](0067-holistic-audit-remediation-and-domain-invariants.md) - Accepted
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

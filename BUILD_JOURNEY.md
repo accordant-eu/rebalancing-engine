@@ -96,6 +96,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0064 | 2026-08-31 | Automated Recurring Mandate Scheduler Service | Accepted | [ADR-0064](docs/decisions/0064-automated-recurring-mandate-scheduler.md) |
 | 0065 | 2026-06-15 | Adopt Mandate Archetypes and Quality Evaluation Pipeline | Accepted | [ADR-0065](docs/decisions/0065-adopt-mandate-archetypes-and-quality-evaluation-pipeline.md) |
 | 0066 | 2026-10-15 | Align Docker Runtime with Node 24 Engine Specification | Accepted | [ADR-0066](docs/decisions/0066-align-docker-runtime-with-node-24-engine-specification.md) |
+| 0067 | 2026-10-16 | Holistic Audit Remediation & Domain Invariants | Accepted | [ADR-0067](docs/decisions/0067-holistic-audit-remediation-and-domain-invariants.md) |
 
 
 

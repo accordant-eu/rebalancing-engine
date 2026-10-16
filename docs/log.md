@@ -10,6 +10,8 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change |
 |------|--------|
+| 2026-10-16 | `docs/decisions/0067-holistic-audit-remediation-and-domain-invariants.md` | Major | Recorded ADR-0067 establishing decisions for corporate action dividend valuation, depositAllocationMode, and calendar scheduler trigger handoff. |
+| 2026-10-16 | `docs/plans/holistic-review-remediation-plan.md` | Major | Added 6-chunk dependency-ordered remediation plan for the 2026-10-16 holistic codebase review. |
 | 2026-10-16 | `docs/audits/holistic-codebase-review-2026-10-16.md` | Major | Completed holistic codebase and architecture review across ADRs, PRDs, roadmap, core math, live agent, API security, frontend personas, documentation, and test coverage. |
 | 2026-10-15 | `docs/iterations/2026-10-15-docker-node-24-runtime-alignment.md` | Minor | Documented Docker Node 24 runtime alignment, build-time SQLite verification, and CI Docker validation (Iteration 107). |
 | 2026-10-15 | `docs/decisions/0066-align-docker-runtime-with-node-24-engine-specification.md` | Major | Recorded ADR-0066: Align Docker Runtime with Node 24 Engine Specification (resolving Issue #124). |
