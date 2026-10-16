@@ -13,7 +13,7 @@ export const ComplianceDashboard: React.FC<{ token: string | null }> = ({ token 
     setLoading(true);
     try {
       const query = new URLSearchParams();
-      if (accountIdFilter) query.append('accountId', accountIdFilter);
+      if (accountIdFilter) query.append('portfolioId', accountIdFilter);
       if (typeFilter) query.append('type', typeFilter);
       
       const res = await fetch(`/api/logs?${query.toString()}`, {
@@ -56,6 +56,8 @@ export const ComplianceDashboard: React.FC<{ token: string | null }> = ({ token 
             className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm"
           >
             <option value="">All Event Types</option>
+            <option value="LIVE_EXECUTION">Live Execution</option>
+            <option value="DRY_RUN_EVALUATION">Dry-Run Evaluation</option>
             <option value="EVALUATION">Evaluation</option>
             <option value="THRESHOLD_BREACH">Threshold Breach</option>
             <option value="TRADE_EXECUTED">Trade Executed</option>

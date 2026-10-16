@@ -135,6 +135,7 @@ function App() {
     };
 
     const fetchMetrics = async () => {
+      if (userRole === 'Viewer') return;
       try {
         const res = await fetch('/api/metrics', { headers });
         if (res.ok) {
@@ -194,13 +195,13 @@ function App() {
       fetchState();
       fetchLogs();
       fetchMetrics();
-    }, 2000);
+    }, 15000);
 
     return () => {
       clearInterval(interval);
       if (es) es.close();
     };
-  }, [tenantToken]);
+  }, [tenantToken, userRole]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -506,7 +507,13 @@ function App() {
     };
     
     // Map currentTab to the layout's activeTab type
-    const layoutTab = (['overview', 'users', 'models'].includes(currentTab) ? currentTab : 'overview') as any;
+    const layoutTab = (
+      currentTab === 'adminModels'
+        ? 'models'
+        : ['overview', 'users', 'models'].includes(currentTab)
+          ? currentTab
+          : 'overview'
+    ) as 'overview' | 'users' | 'models';
 
     return (
       <TenantAdminLayout 
@@ -529,12 +536,13 @@ function App() {
       switch (currentTab) {
         case 'tenants': return <TenantManagementTab token={tenantToken} />;
         case 'broker': return <BrokerIntegrationTab token={tenantToken} />;
+        case 'assets': return <AssetUniverseTab token={tenantToken} />;
         case 'sysops': return <SystemOpsTab token={tenantToken} />;
         default: return <SystemOpsTab token={tenantToken} />;
       }
     };
 
-    const layoutTab = (['tenants', 'broker', 'sysops'].includes(currentTab) ? currentTab : 'sysops') as any;
+    const layoutTab = (['tenants', 'broker', 'sysops', 'assets'].includes(currentTab) ? currentTab : 'sysops') as 'tenants' | 'broker' | 'sysops' | 'assets';
 
     return (
       <SuperadminLayout 

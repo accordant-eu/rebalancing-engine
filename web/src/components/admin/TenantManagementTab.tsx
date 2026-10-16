@@ -229,6 +229,7 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
                   <div className="flex gap-4">
                     <select className={`${inputClasses} flex-1 cursor-pointer`} value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})}>
                       <option value="Viewer">Viewer</option>
+                      <option value="Advisor">Advisor</option>
                       <option value="Admin">Admin</option>
                     </select>
                     <button className="px-6 bg-emerald-600 text-white rounded-xl font-bold tracking-wide hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md whitespace-nowrap" type="submit">

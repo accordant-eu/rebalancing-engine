@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import type { ModelMandate } from '../types';
 import { AssetPicker } from './AssetPicker';
 import { Settings, Target, Zap, Shield, Plus, X } from 'lucide-react';
@@ -15,7 +15,7 @@ interface MandateBuilderFormProps {
 export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialData, token, onSubmit, onCancel }) => {
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
-  const { register, control, handleSubmit, watch } = useForm<Partial<ModelMandate>>({
+  const { register, control, handleSubmit } = useForm<Partial<ModelMandate>>({
     defaultValues: {
       name: initialData?.name || '',
       archetype: initialData?.archetype || 'StaticWeights',
@@ -42,7 +42,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
     name: "constraints" as const
   });
 
-  const selectedArchetype = watch('archetype');
+  const selectedArchetype = useWatch({ control, name: 'archetype' });
 
   const onFormSubmit = (data: any) => {
     // Clean up data
@@ -79,7 +79,8 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
     }
     if (data.constraints) {
       data.constraints = data.constraints.map((c: any) => {
-        if (c.type === 'ConcentrationLimit' && c.parameters?.maxWeight) {
+        if ((c.type === 'concentration_limit' || c.type === 'ConcentrationLimit') && c.parameters?.maxWeight) {
+          c.type = 'concentration_limit';
           c.parameters.maxWeight = parseFloat(c.parameters.maxWeight);
         }
         return c;
@@ -115,8 +116,8 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
             <label className={labelClasses}>Strategy Archetype</label>
             <select {...register('archetype')} className={`${inputClasses} cursor-pointer`}>
               <option value="StaticWeights">Static Weights</option>
-              <option value="EfficientFrontier" disabled>Efficient Frontier (Coming Soon)</option>
-              <option value="MinimumVariance" disabled>Minimum Variance (Coming Soon)</option>
+              <option value="EfficientFrontier">Efficient Frontier (MPT Optimizer)</option>
+              <option value="MinimumVariance">Minimum Variance (Optimizer)</option>
             </select>
           </div>
           <div>
@@ -230,7 +231,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
                 className="flex flex-col sm:flex-row gap-4 items-center group"
               >
                 <select {...register(`constraints.${index}.type`)} className={`${inputClasses} sm:w-[250px] cursor-pointer`}>
-                  <option value="ConcentrationLimit">Concentration Limit</option>
+                  <option value="concentration_limit">Concentration Limit</option>
                 </select>
                 <input type="number" step="0.01" {...register(`constraints.${index}.parameters.maxWeight`)} placeholder="Max Weight (e.g. 0.1 for 10%)" className={inputClasses} />
                 <button type="button" onClick={() => removeConstraint(index)} className="h-10 px-4 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm font-semibold whitespace-nowrap">
@@ -239,7 +240,7 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
               </m.div>
             ))}
           </AnimatePresence>
-          <button type="button" onClick={() => appendConstraint({ type: 'ConcentrationLimit', parameters: { maxWeight: 0.1 } })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
+          <button type="button" onClick={() => appendConstraint({ type: 'concentration_limit', parameters: { maxWeight: 0.1 } })} className="self-start mt-2 px-4 py-2 border-2 border-dashed border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 font-semibold rounded-xl transition-all flex items-center gap-2 text-sm">
             <Plus size={16} /> Add Constraint
           </button>
         </div>
