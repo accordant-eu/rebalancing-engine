@@ -12,6 +12,9 @@ Date: 2026-05-02
 
 Implementation status: Implemented for the offline deterministic MVP. No banking, payment, custody, execution, API, UI, database, persistence, live market data, tax advice, jurisdiction-specific tax handling, or full optimizer behavior is implemented.
 
+> [!NOTE]
+> **Supersession Notice (ADR-0036)**: While this initial PRD explored expanding due scheduled cash flows into `SETTLED` flows, [ADR-0036](../decisions/0036-restrict-scheduled-cash-flows-to-projection-planning-only.md) formally established that scheduled cash flows expand as `PENDING` records for projection and planning only, avoiding premature artificial cash deployment until actual broker settlement.
+
 ## 1. Title
 
 Scheduled and Recurring Cash-Flow Semantics for the Offline Rebalancing Engine

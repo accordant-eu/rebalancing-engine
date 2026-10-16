@@ -20,26 +20,26 @@ This document outlines the proposed roadmap for Tranche 5, which focuses heavily
 
 *Instead of horizontal technical layers (e.g., doing all layouts first, then all data), we will build end-to-end vertical slices focused on delivering immediate value to one persona at a time.*
 
-- [ ] **Slice 1: The Advisor Workspace MVP (Highest Value)**
+- [x] **Slice 1: The Advisor Workspace MVP (Highest Value)**
   - *Goal:* Deliver a focused, distraction-free environment for the person actually managing the portfolios.
   - Initialize Tailwind CSS (technical enabler).
   - Implement the `Users` table and wire up a real `Advisor` login.
   - Build the Advisor Layout (sidebar, no sysadmin tabs).
   - Build the "Action Required" Inbox (surfacing portfolios that are breached or halted).
 
-- [ ] **Slice 2: The Compliance Explorer MVP**
+- [x] **Slice 2: The Compliance Explorer MVP**
   - *Goal:* Deliver immediate auditability to the Compliance Officer.
   - Wire up a real `Compliance` login (read-only RBAC).
   - Build the dedicated "Audit & Compliance" view with a searchable data table querying the existing SQLite `/api/logs`.
   - Remove the global JSONL text dump from the bottom of the app.
 
-- [ ] **Slice 3: The Tenant Admin MVP**
+- [x] **Slice 3: The Tenant Admin MVP**
   - *Goal:* Allow firm owners to see fleet health and manage their users.
   - Wire up a real `Tenant Admin` login.
   - Build the Firm Overview dashboard (aggregate metrics like "Portfolios In-Band vs Breached").
   - Add basic User Management UI so they can provision new Advisors.
 
-- [ ] **Slice 4: Superadmin Pulse & Settings (Stretch)**
+- [x] **Slice 4: Superadmin Pulse & Settings (Stretch)**
   - *Goal:* Clean up the platform owner's view.
   - Consolidate Global Models, Asset Universe, and Broker Integrations into a clean Settings layout.
   - Add live metrics to the System Ops tab (Event Bus latency, API rate limits).
@@ -49,7 +49,7 @@ This document outlines the proposed roadmap for Tranche 5, which focuses heavily
 ## Verification Plan
 
 ### Automated Tests
-- [ ] Extend UI unit tests (if any) or API tests to ensure Role-Based Access Control (RBAC) correctly rejects Advisor tokens attempting to access Admin endpoints (e.g., `/api/sysops`).
+- [x] Extend UI unit tests (if any) or API tests to ensure Role-Based Access Control (RBAC) correctly rejects Advisor tokens attempting to access Admin endpoints (e.g., `/api/sysops`).
 
 ### Manual Verification
-- [ ] Log in sequentially as `Advisor`, `Tenant Admin`, `Compliance Officer`, and `Superadmin` to verify layout isolation and capability boundaries.
+- [x] Log in sequentially as `Advisor`, `Tenant Admin`, `Compliance Officer`, and `Superadmin` to verify layout isolation and capability boundaries.

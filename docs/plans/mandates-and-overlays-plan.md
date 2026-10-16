@@ -8,8 +8,8 @@ timestamp: 2026-06-15T00:00:00Z
 
 # Advanced Mandates, Quality Indicators & Execution Overlays Plan
 
-Date: 2026-06-15
-Status: DRAFT / DISCUSSION
+Date: 2026-06-15  
+Status: COMPLETED (Implemented via ADR-0062, ADR-0063, and ADR-0065 in Iterations 86–102)
 
 This document outlines the proposed pivot from infrastructural scaling (PostgreSQL) toward deepening the core financial domain logic. The goal is to evolve the concepts of "Target Allocations" and "Rebalancing Policy" into a sophisticated **Mandate**, and introduce **Quality Indicators** as an abstraction to evaluate trade outcomes.
 
