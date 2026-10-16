@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { evaluateRebalance, selectStrategy, supportedStrategyTypes } from '../src/core';
+import { evaluateRebalance, evaluateRebalanceAsync, selectStrategy, supportedStrategyTypes } from '../src/core';
 import { DriftReductionIndicator, ConcentrationLimitIndicator, DriftUtilityTranslator } from '../src/core/quality';
 
 const scenariosPath = path.join(__dirname, 'fixtures', 'scenarios.json');
@@ -271,6 +271,29 @@ describe('Rebalance Evaluation', () => {
     expect(evaluation.tradeProposal.trades).toEqual([]);
     expect(evaluation.tradeProposal.warnings).toContainEqual(
       expect.objectContaining({ code: 'QUALITY_CHECK_FAILED' })
+    );
+  });
+
+  it('evaluateRebalanceAsync executes quality indicators and blocks trades when quality check fails', async () => {
+    const scenario = scenarioById('one_asset_out_of_band');
+    const indicator = new ConcentrationLimitIndicator(0.4);
+
+    const evaluation = await evaluateRebalanceAsync({
+      eventId: 'evaluation-async-concentration-limit',
+      createdAt: '2026-05-02T00:00:00.000Z',
+      portfolioState: scenario.portfolioState,
+      targetAllocation: scenario.targetAllocation,
+      priceSnapshot: scenario.priceSnapshot,
+      policy: scenario.policy,
+      indicators: [indicator],
+    });
+
+    expect(evaluation.qualityResults).toContainEqual(
+      expect.objectContaining({ passed: false, name: 'ConcentrationLimitIndicator' }),
+    );
+    expect(evaluation.tradeProposal.trades).toEqual([]);
+    expect(evaluation.tradeProposal.warnings).toContainEqual(
+      expect.objectContaining({ code: 'QUALITY_CHECK_FAILED' }),
     );
   });
 });

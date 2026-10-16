@@ -244,5 +244,70 @@ describe('Post-Trade Simulation', () => {
       'Post-trade simulation produced negative cash',
     );
   });
+
+  it('preserves portfolio metadata and updates tax lots in postTradeState', () => {
+    const state: PortfolioState = {
+      accountId: 'tax-lot-sim-1',
+      tenantId: 'tenant-1',
+      taxJurisdiction: 'US',
+      taxWrapper: 'TAXABLE',
+      cash: 0,
+      holdings: [
+        {
+          instrumentId: 'US0378331005:XNAS:USD',
+          quantity: 120,
+          taxLots: [
+            { lotId: 'lot-1', quantity: 50, unitCost: 100, acquisitionDate: '2025-01-01' },
+            { lotId: 'lot-2', quantity: 70, unitCost: 120, acquisitionDate: '2025-06-01' },
+          ],
+        },
+        {
+          instrumentId: 'US5949181045:XNAS:USD',
+          quantity: 80,
+          taxLots: [
+            { lotId: 'lot-3', quantity: 80, unitCost: 90, acquisitionDate: '2025-01-01' },
+          ],
+        },
+      ],
+    };
+    const prices: PriceSnapshot = {
+      prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 },
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
+      ],
+    };
+    const policy: RebalancingPolicy = {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+      sellSelectionMode: 'FIFO',
+      evaluationDate: '2026-08-15',
+    };
+
+    const valuation = calculateValuation(state, prices);
+    const proposal = generateTradeProposal(valuation, target, prices, policy);
+    const simulation = simulatePostTrade(state, prices, target, policy, proposal);
+
+    expect(simulation.postTradeState.tenantId).toBe('tenant-1');
+    expect(simulation.postTradeState.taxJurisdiction).toBe('US');
+    expect(simulation.postTradeState.taxWrapper).toBe('TAXABLE');
+
+    const aapl = simulation.postTradeState.holdings.find(
+      (h) => h.instrumentId === 'US0378331005:XNAS:USD',
+    );
+    const msft = simulation.postTradeState.holdings.find(
+      (h) => h.instrumentId === 'US5949181045:XNAS:USD',
+    );
+    expect(aapl?.quantity).toBe(100);
+    expect(aapl?.taxLots).toEqual([
+      { lotId: 'lot-1', quantity: 30, unitCost: 100, acquisitionDate: '2025-01-01' },
+      { lotId: 'lot-2', quantity: 70, unitCost: 120, acquisitionDate: '2025-06-01' },
+    ]);
+    expect(msft?.quantity).toBe(100);
+    expect(msft?.taxLots).toHaveLength(2);
+    expect(msft?.taxLots?.[1].quantity).toBe(20);
+  });
 });
 

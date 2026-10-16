@@ -3,6 +3,7 @@ import {
   applyCorporateActions,
   CorporateAction,
 } from '../../src/core/corporate-actions';
+import { calculateValuation } from '../../src/core/valuation';
 import { PortfolioState } from '../../src/models/domain';
 import { SqliteStateManager } from '../../src/orchestrator/sqlite-state';
 import { initDb } from '../../src/db/sqlite';
@@ -154,6 +155,39 @@ describe('Corporate Actions Processor & Tax Lot Basis Recalculation', () => {
       });
 
       expect(log).toContain('Distributed $125 dividend for MSFT on 50 shares');
+
+      const valuation = calculateValuation(updatedPortfolio, { prices: { AAPL: 150, MSFT: 300 } });
+      expect(valuation.cash).toBe(1125);
+      expect(valuation.cashFlowSummary?.startingCash).toBe(1000);
+      expect(valuation.cashFlowSummary?.availableCash).toBe(1125);
+      expect(valuation.totalPortfolioValue).toBe(100 * 150 + 50 * 300 + 1125);
+    });
+
+    it('reconciles 3-lot 1/3 reverse split rounding residuals so calculateValuation succeeds', () => {
+      const threeLotPortfolio: PortfolioState = {
+        accountId: 'acc-3-lot',
+        cash: 0,
+        holdings: [
+          {
+            instrumentId: 'AAPL',
+            quantity: 300,
+            taxLots: [
+              { lotId: 'lot-1', quantity: 100, unitCost: 100, acquisitionDate: '2025-01-01' },
+              { lotId: 'lot-2', quantity: 100, unitCost: 110, acquisitionDate: '2025-02-01' },
+              { lotId: 'lot-3', quantity: 100, unitCost: 120, acquisitionDate: '2025-03-01' },
+            ],
+          },
+        ],
+      };
+
+      const { updatedPortfolio } = applyCorporateActionToPortfolio(threeLotPortfolio, {
+        type: 'SPLIT',
+        instrumentId: 'AAPL',
+        exDate: '2026-08-15',
+        ratio: 1 / 3,
+      });
+
+      expect(() => calculateValuation(updatedPortfolio, { prices: { AAPL: 300 } })).not.toThrow();
     });
   });
 
@@ -191,6 +225,38 @@ describe('Corporate Actions Processor & Tax Lot Basis Recalculation', () => {
       // Cash in lieu: 100 shares * $10 = $1000
       expect(updatedPortfolio.cash).toBe(2000); // 1000 + 1000
       expect(log).toContain('Applied merger of AAPL into NEW_CO (150 shares, $1000 cash in lieu)');
+    });
+
+    it('deduplicates colliding tax lot IDs when merging into an already-held target instrument', () => {
+      const portfolioWithCollidingLotId: PortfolioState = {
+        accountId: 'acc-merge-collision',
+        cash: 500,
+        holdings: [
+          {
+            instrumentId: 'AAPL',
+            quantity: 10,
+            taxLots: [{ lotId: 'lot-1', quantity: 10, unitCost: 100, acquisitionDate: '2025-01-01' }],
+          },
+          {
+            instrumentId: 'MSFT',
+            quantity: 20,
+            taxLots: [{ lotId: 'lot-1', quantity: 20, unitCost: 200, acquisitionDate: '2025-02-01' }],
+          },
+        ],
+      };
+
+      const { updatedPortfolio } = applyCorporateActionToPortfolio(portfolioWithCollidingLotId, {
+        type: 'MERGER',
+        instrumentId: 'AAPL',
+        targetInstrumentId: 'MSFT',
+        conversionRatio: 0.5,
+        exDate: '2026-08-15',
+      });
+
+      const msft = updatedPortfolio.holdings.find(h => h.instrumentId === 'MSFT');
+      expect(msft?.quantity).toBe(25);
+      expect(msft?.taxLots?.map(l => l.lotId)).toEqual(['lot-1', 'AAPL-lot-1']);
+      expect(() => calculateValuation(updatedPortfolio, { prices: { MSFT: 200 } })).not.toThrow();
     });
   });
 

@@ -1,3 +1,5 @@
+import { toDecimal } from './numeric';
+
 export interface FrictionModel {
   estimateCost(tradeValue: number, instrumentId: string): number;
 }
@@ -22,6 +24,6 @@ export class PercentageSlippageModel implements FrictionModel {
   }
 
   public estimateCost(tradeValue: number, _instrumentId: string): number {
-    return tradeValue * (this.slippageBps / 10000);
+    return toDecimal(tradeValue).mul(this.slippageBps).div(10000).toNumber();
   }
 }

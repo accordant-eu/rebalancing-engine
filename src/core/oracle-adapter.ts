@@ -2,6 +2,7 @@ import { TradeOptimizerInterface, TradeOptimizerContext } from './trade-optimize
 import { ProposedTrade, TradeProposal } from '../models/domain';
 import { StandardRuleBasedTradeGenerator } from '../strategy/optimizers/standard-optimizer';
 import { logger } from '../utils/logger';
+import { toDecimal } from './numeric';
 
 export interface OracleAdapterConfig {
   serviceUrl?: string;
@@ -126,7 +127,7 @@ export class OracleTaxOptimizerAdapter implements TradeOptimizerInterface {
         direction: t.direction,
         quantity: t.quantity,
         estimatedPrice: t.estimated_price,
-        estimatedValue: t.quantity * t.estimated_price,
+        estimatedValue: toDecimal(t.quantity).mul(t.estimated_price).toNumber(),
         metadata: {
           origin: 'ORACLE_TAX_OPTIMIZER',
           ...(t.lot_id ? { taxLotId: t.lot_id } : {}),
@@ -323,14 +324,14 @@ export class OracleTaxOptimizerAdapter implements TradeOptimizerInterface {
   }
 
   private calculatePostTradeCash(initialCash: number, trades: ProposedTrade[]): number {
-    let cash = initialCash;
+    let cash = toDecimal(initialCash);
     for (const trade of trades) {
       if (trade.direction === 'SELL') {
-        cash += trade.estimatedValue;
+        cash = cash.plus(trade.estimatedValue);
       } else if (trade.direction === 'BUY') {
-        cash -= trade.estimatedValue;
+        cash = cash.minus(trade.estimatedValue);
       }
     }
-    return cash;
+    return cash.toNumber();
   }
 }

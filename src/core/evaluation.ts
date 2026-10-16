@@ -21,6 +21,7 @@ import {
 import { calculateDrift } from './drift';
 import { PostTradeSimulation, simulatePostTrade } from './simulation';
 import { FrictionModel } from './friction';
+import { toDecimal } from './numeric';
 import {
   ExecutionOverlay,
   OpportunisticLossHarvestingOverlay,
@@ -182,12 +183,14 @@ export function evaluateRebalance(input: RebalanceEvaluationInput): RebalanceEva
       temporaryEquivalencyMapping: tradeProposal.temporaryEquivalencyMapping
     };
 
-    let estimatedTco = 0;
+    let estimatedTcoDec = toDecimal(0);
     if (input.frictionModel) {
       for (const t of tradeProposal.trades) {
-        estimatedTco += input.frictionModel.estimateCost(t.quantity * input.priceSnapshot.prices[t.instrumentId], t.instrumentId);
+        const tradeVal = toDecimal(t.quantity).mul(input.priceSnapshot.prices[t.instrumentId]).toNumber();
+        estimatedTcoDec = estimatedTcoDec.plus(input.frictionModel.estimateCost(tradeVal, t.instrumentId));
       }
     }
+    const estimatedTco = estimatedTcoDec.toNumber();
 
     const postTradeState: EvaluationState = {
       valuation: postTradeSimulation.postTradeValuation,
@@ -319,7 +322,7 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
   const optimizer = optimizerRegistry.get(input.policy.optimizerType ?? (input.policy.strategyType === 'tax_aware_us' ? 'tax_aware_us' : 'standard_rule_based'));
   const tradeProposalResult = await optimizer.generateProposal(optimizerContext);
 
-  const tradeProposal = trigger.isTriggered
+  let tradeProposal: TradeProposal = trigger.isTriggered
     ? tradeProposalResult
     : {
         trades: [],
@@ -335,7 +338,7 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
             : undefined,
       };
 
-  const postTradeSimulation = simulatePostTrade(
+  let postTradeSimulation = simulatePostTrade(
     effectivePortfolioState,
     input.priceSnapshot,
     input.targetAllocation,
@@ -344,6 +347,67 @@ export async function evaluateRebalanceAsync(input: RebalanceEvaluationInput): P
   );
 
   const qualityResults: Array<{ name: string; passed: boolean; reason?: string }> = [];
+
+  if (input.indicators && input.indicators.length > 0 && tradeProposal.trades.length > 0) {
+    const preTradeState: EvaluationState = {
+      valuation,
+      weightResults: weights,
+      target: input.targetAllocation,
+      policy: input.policy,
+      proposedTrades: [],
+      estimatedTco: 0,
+      temporaryEquivalencyMapping: tradeProposal.temporaryEquivalencyMapping,
+    };
+
+    let estimatedTcoDec = toDecimal(0);
+    if (input.frictionModel) {
+      for (const t of tradeProposal.trades) {
+        const tradeVal = toDecimal(t.quantity).mul(input.priceSnapshot.prices[t.instrumentId]).toNumber();
+        estimatedTcoDec = estimatedTcoDec.plus(input.frictionModel.estimateCost(tradeVal, t.instrumentId));
+      }
+    }
+    const estimatedTco = estimatedTcoDec.toNumber();
+
+    const postTradeState: EvaluationState = {
+      valuation: postTradeSimulation.postTradeValuation,
+      weightResults: postTradeSimulation.postTradeWeights,
+      target: input.targetAllocation,
+      policy: input.policy,
+      proposedTrades: tradeProposal.trades,
+      estimatedTco,
+      temporaryEquivalencyMapping: tradeProposal.temporaryEquivalencyMapping,
+    };
+
+    let allPassed = true;
+    for (const indicator of input.indicators) {
+      const result = indicator.evaluate(preTradeState, postTradeState);
+      qualityResults.push({ name: indicator.name, passed: result.passed, reason: result.reason });
+      if (!result.passed) {
+        allPassed = false;
+      }
+    }
+
+    if (!allPassed) {
+      const failureReasons = qualityResults
+        .filter((q) => !q.passed)
+        .map((q) => `${q.name}: ${q.reason}`)
+        .join(' | ');
+      tradeProposal = {
+        ...tradeProposal,
+        trades: [],
+        estimatedPostTradeCash: valuation.cash,
+        warnings: [...tradeProposal.warnings, { code: 'QUALITY_CHECK_FAILED', message: failureReasons }],
+      };
+
+      postTradeSimulation = simulatePostTrade(
+        effectivePortfolioState,
+        input.priceSnapshot,
+        input.targetAllocation,
+        input.policy,
+        tradeProposal,
+      );
+    }
+  }
 
   const explanation = generateExplanation(
     trigger,

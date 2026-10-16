@@ -1,6 +1,7 @@
 import { ProposedTrade, TargetAllocation, RebalancingPolicy } from '../models/domain';
 import { ValuationResult, WeightResult } from './valuation';
 import { calculateDrift } from './drift';
+import { toDecimal } from './numeric';
 
 /**
  * State snapshot used throughout the Quality Evaluation Pipeline.
@@ -51,16 +52,15 @@ export class DriftUtilityTranslator implements UtilityTranslator {
   constructor(private conversionRate: number = 1.0) {}
 
   translateImprovementToBps(scoreBefore: number, scoreAfter: number): number {
-    const driftReduction = scoreBefore - scoreAfter; 
+    const driftReduction = toDecimal(scoreBefore).minus(scoreAfter);
     // Example: If absolute drift sum went from 0.05 to 0.01, reduction is 0.04
     // 0.04 * 10000 = 400 bps. Multiply by conversion rate (e.g. 0.1 -> 40 utility bps).
-    return (driftReduction * 10000) * this.conversionRate;
+    return driftReduction.mul(10000).mul(this.conversionRate).toNumber();
   }
 
   translateTcoToBps(tcoValue: number, portfolioValue: number): number {
     if (portfolioValue <= 0) return 0;
-    const tcoPct = tcoValue / portfolioValue;
-    return tcoPct * 10000;
+    return toDecimal(tcoValue).div(portfolioValue).mul(10000).toNumber();
   }
 }
 
@@ -76,13 +76,17 @@ export class DriftReductionIndicator implements QualityIndicator {
     const preDrift = calculateDrift(preTradeState.weightResults, preTradeState.target, preTradeState.policy, preTradeState.temporaryEquivalencyMapping);
     const postDrift = calculateDrift(postTradeState.weightResults, postTradeState.target, postTradeState.policy, postTradeState.temporaryEquivalencyMapping);
 
-    const sumAbsoluteDriftBefore = preDrift.reduce((acc, d) => acc + Math.abs(d.absoluteDrift), 0);
-    const sumAbsoluteDriftAfter = postDrift.reduce((acc, d) => acc + Math.abs(d.absoluteDrift), 0);
+    const sumAbsoluteDriftBefore = preDrift
+      .reduce((acc, d) => acc.plus(toDecimal(d.absoluteDrift).abs()), toDecimal(0))
+      .toNumber();
+    const sumAbsoluteDriftAfter = postDrift
+      .reduce((acc, d) => acc.plus(toDecimal(d.absoluteDrift).abs()), toDecimal(0))
+      .toNumber();
 
     const improvementBps = this.translator.translateImprovementToBps(sumAbsoluteDriftBefore, sumAbsoluteDriftAfter);
     const tcoBps = this.translator.translateTcoToBps(postTradeState.estimatedTco, preTradeState.valuation.totalPortfolioValue);
 
-    const netUtilityBps = improvementBps - tcoBps;
+    const netUtilityBps = toDecimal(improvementBps).minus(tcoBps).toNumber();
     
     // We require a strictly positive net utility
     const passed = netUtilityBps > 0;
@@ -91,7 +95,7 @@ export class DriftReductionIndicator implements QualityIndicator {
       passed,
       scoreBefore: sumAbsoluteDriftBefore,
       scoreAfter: sumAbsoluteDriftAfter,
-      expectedImprovement: sumAbsoluteDriftBefore - sumAbsoluteDriftAfter,
+      expectedImprovement: toDecimal(sumAbsoluteDriftBefore).minus(sumAbsoluteDriftAfter).toNumber(),
       netUtilityBps,
       reason: passed ? undefined : `Net utility ${netUtilityBps.toFixed(2)} bps is not positive (Improvement: ${improvementBps.toFixed(2)} bps, TCO: ${tcoBps.toFixed(2)} bps)`,
     };

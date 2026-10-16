@@ -96,6 +96,18 @@ export function applyCorporateActionToPortfolio(
         };
       });
 
+      if (newTaxLots && newTaxLots.length > 0) {
+        const sumLots = newTaxLots.reduce((acc, l) => acc.plus(l.quantity), toDecimal(0));
+        const residual = toDecimal(newHoldingQuantity).minus(sumLots);
+        if (!residual.isZero()) {
+          const lastIdx = newTaxLots.length - 1;
+          newTaxLots[lastIdx] = {
+            ...newTaxLots[lastIdx],
+            quantity: roundQuantity(toDecimal(newTaxLots[lastIdx].quantity).plus(residual).toNumber()),
+          };
+        }
+      }
+
       currentHoldings[holdingIndex] = {
         ...holding,
         quantity: newHoldingQuantity,
@@ -166,16 +178,49 @@ export function applyCorporateActionToPortfolio(
         };
       });
 
+      if (convertedTaxLots && convertedTaxLots.length > 0) {
+        const sumLots = convertedTaxLots.reduce((acc, l) => acc.plus(l.quantity), toDecimal(0));
+        const residual = toDecimal(convertedQuantity).minus(sumLots);
+        if (!residual.isZero()) {
+          const lastIdx = convertedTaxLots.length - 1;
+          convertedTaxLots[lastIdx] = {
+            ...convertedTaxLots[lastIdx],
+            quantity: roundQuantity(toDecimal(convertedTaxLots[lastIdx].quantity).plus(residual).toNumber()),
+          };
+        }
+      }
+
       // Remove old holding and insert/merge new holding
       currentHoldings.splice(holdingIndex, 1);
       const existingTargetIndex = currentHoldings.findIndex(h => h.instrumentId === action.targetInstrumentId);
 
       if (existingTargetIndex !== -1) {
         const targetHolding = currentHoldings[existingTargetIndex];
+        const existingLots = targetHolding.taxLots || [];
+        const existingLotIds = new Set(existingLots.map(l => l.lotId));
+        const dedupedConvertedLots = (convertedTaxLots || []).map(lot => {
+          let newLotId = lot.lotId;
+          if (existingLotIds.has(newLotId)) {
+            newLotId = `${action.instrumentId}-${lot.lotId}`;
+            let suffix = 1;
+            while (existingLotIds.has(newLotId)) {
+              newLotId = `${action.instrumentId}-${lot.lotId}-${suffix}`;
+              suffix += 1;
+            }
+          }
+          existingLotIds.add(newLotId);
+          return { ...lot, lotId: newLotId };
+        });
+
+        const mergedTaxLots =
+          targetHolding.taxLots !== undefined || convertedTaxLots !== undefined
+            ? [...existingLots, ...dedupedConvertedLots]
+            : undefined;
+
         currentHoldings[existingTargetIndex] = {
           ...targetHolding,
-          quantity: toDecimal(targetHolding.quantity).plus(toDecimal(convertedQuantity)).toNumber(),
-          taxLots: [...(targetHolding.taxLots || []), ...(convertedTaxLots || [])],
+          quantity: roundQuantity(toDecimal(targetHolding.quantity).plus(toDecimal(convertedQuantity)).toNumber()),
+          taxLots: mergedTaxLots,
         };
       } else {
         currentHoldings.push({
@@ -185,7 +230,7 @@ export function applyCorporateActionToPortfolio(
         });
       }
 
-      const newCash = toDecimal(portfolio.cash).plus(toDecimal(cashInLieu)).toNumber();
+      const newCash = roundMoney(toDecimal(portfolio.cash).plus(toDecimal(cashInLieu)).toNumber());
 
       return {
         updatedPortfolio: {

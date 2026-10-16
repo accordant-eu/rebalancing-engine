@@ -33,9 +33,10 @@ export class OpportunisticLossHarvestingOverlay implements ExecutionOverlay {
       return proposal;
     }
 
-    const lossThreshold = policy.tlhLossThresholdBps / 10000;
+    const lossThreshold = toDecimal(policy.tlhLossThresholdBps).div(10000);
     const newTrades: ProposedTrade[] = [];
     const tlhInjectedSubstitutes = new Map<string, string>(); // substitute -> primary
+    let netHarvestCashDelta = toDecimal(0);
 
     for (const holding of state.valuation.holdings) {
       if (!holding.taxLots) continue;
@@ -56,30 +57,39 @@ export class OpportunisticLossHarvestingOverlay implements ExecutionOverlay {
       const substitutePrice = priceSnapshot.prices[substitute];
       if (substitutePrice === undefined || substitutePrice <= 0 || Number.isNaN(substitutePrice) || !Number.isFinite(substitutePrice)) continue;
 
+      const existingSellQty = proposal.trades
+        .filter(t => t.instrumentId === holding.instrumentId && t.direction === 'SELL')
+        .reduce((acc, t) => acc.plus(t.quantity), toDecimal(0));
+      let remainingSellableQty = toDecimal(holding.quantity).minus(existingSellQty);
+
       for (const lot of holding.taxLots) {
         if (lot.unitCost === undefined || lot.unitCost <= 0 || Number.isNaN(lot.unitCost) || !Number.isFinite(lot.unitCost)) continue;
         if (lot.quantity === undefined || lot.quantity <= 0 || Number.isNaN(lot.quantity) || !Number.isFinite(lot.quantity)) continue;
         if (lot.quantity > holding.quantity) continue;
+        if (remainingSellableQty.lt(lot.quantity)) continue;
 
-        const lossPct = (lot.unitCost - currentPrice) / lot.unitCost;
-        if (lossPct > lossThreshold) {
-          const estimatedValue = lot.quantity * currentPrice;
-          if (estimatedValue <= 0 || Number.isNaN(estimatedValue) || !Number.isFinite(estimatedValue)) continue;
+        const lossPct = toDecimal(lot.unitCost).minus(currentPrice).div(lot.unitCost);
+        if (lossPct.gt(lossThreshold)) {
+          const sellEstimatedValue = toDecimal(lot.quantity).mul(currentPrice).toNumber();
+          if (sellEstimatedValue <= 0 || Number.isNaN(sellEstimatedValue) || !Number.isFinite(sellEstimatedValue)) continue;
           
           const sellAllocation: ProposedLotAllocation = {
             lotId: lot.lotId,
             quantity: lot.quantity,
-            estimatedValue: estimatedValue,
+            estimatedValue: sellEstimatedValue,
             unitCost: lot.unitCost,
             acquisitionDate: lot.acquisitionDate
           };
+
+          const buyQty = toDecimal(sellEstimatedValue).div(substitutePrice).toNumber();
+          const buyEstimatedValue = sellEstimatedValue;
 
           newTrades.push({
             instrumentId: holding.instrumentId,
             direction: 'SELL',
             quantity: lot.quantity,
             estimatedPrice: currentPrice,
-            estimatedValue: estimatedValue,
+            estimatedValue: sellEstimatedValue,
             lotAllocations: [sellAllocation],
             metadata: { origin: 'OpportunisticLossHarvestingOverlay', reason: 'TLH_HARVEST' }
           });
@@ -87,12 +97,14 @@ export class OpportunisticLossHarvestingOverlay implements ExecutionOverlay {
           newTrades.push({
             instrumentId: substitute,
             direction: 'BUY',
-            quantity: estimatedValue / substitutePrice,
+            quantity: buyQty,
             estimatedPrice: substitutePrice,
-            estimatedValue: estimatedValue,
+            estimatedValue: buyEstimatedValue,
             metadata: { origin: 'OpportunisticLossHarvestingOverlay', reason: 'TLH_HARVEST' }
           });
           
+          remainingSellableQty = remainingSellableQty.minus(lot.quantity);
+          netHarvestCashDelta = netHarvestCashDelta.plus(sellEstimatedValue).minus(buyEstimatedValue);
           tlhInjectedSubstitutes.set(substitute, holding.instrumentId);
         }
       }
@@ -105,6 +117,7 @@ export class OpportunisticLossHarvestingOverlay implements ExecutionOverlay {
     const newProposal: TradeProposal = {
       ...proposal,
       trades: [...proposal.trades, ...newTrades],
+      estimatedPostTradeCash: toDecimal(proposal.estimatedPostTradeCash).plus(netHarvestCashDelta).toNumber(),
       warnings: [...proposal.warnings, {
         code: 'TLH_HARVEST_GENERATED',
         message: 'Tax-loss harvesting opportunity identified and injected into the proposal.'
@@ -400,8 +413,8 @@ export class HoldingConcentrationCapOverlay implements ExecutionOverlay {
 
         // Resize BUY trade down to allowable ceiling
         const price = priceSnapshot.prices[trade.instrumentId] || trade.estimatedPrice;
-        const newQty = roundQuantity(allowableBuyVal.div(toDecimal(price)).toNumber());
         const newEstimatedVal = roundMoney(allowableBuyVal.toNumber());
+        const newQty = roundQuantity(toDecimal(newEstimatedVal).div(toDecimal(price)).toNumber());
         const cashRefund = proposedBuyVal.minus(toDecimal(newEstimatedVal));
         cashAdjusted = cashAdjusted.plus(cashRefund);
 

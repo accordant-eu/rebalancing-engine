@@ -213,6 +213,7 @@ function summarizeCashFlows(
   let settledWithdrawals = toDecimal(0);
   let pendingDeposits = toDecimal(0);
   let pendingWithdrawals = toDecimal(0);
+  let creditedDividendDeposits = toDecimal(0);
   let settledCashFlowCount = 0;
   let pendingCashFlowCount = 0;
 
@@ -223,6 +224,9 @@ function summarizeCashFlows(
       settledCashFlowCount += 1;
       if (cashFlow.direction === 'DEPOSIT') {
         settledDeposits = settledDeposits.plus(cashFlow.amount);
+        if (cashFlow.cashFlowId.startsWith('div-')) {
+          creditedDividendDeposits = creditedDividendDeposits.plus(cashFlow.amount);
+        }
       } else {
         settledWithdrawals = settledWithdrawals.plus(cashFlow.amount);
       }
@@ -237,12 +241,13 @@ function summarizeCashFlows(
     }
   }
 
+  const effectiveStartingCash = toDecimal(startingCash).minus(creditedDividendDeposits);
   const netSettledCashFlow = settledDeposits.minus(settledWithdrawals);
   const netPendingCashFlow = pendingDeposits.minus(pendingWithdrawals);
-  const availableCash = toDecimal(startingCash).plus(netSettledCashFlow);
+  const availableCash = effectiveStartingCash.plus(netSettledCashFlow);
 
   return {
-    startingCash,
+    startingCash: effectiveStartingCash.toNumber(),
     settledDeposits: settledDeposits.toNumber(),
     settledWithdrawals: settledWithdrawals.toNumber(),
     pendingDeposits: pendingDeposits.toNumber(),

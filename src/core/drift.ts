@@ -40,7 +40,7 @@ export function calculateDrift(
   for (const cw of currentWeights) {
     const primaryId = temporaryEquivalencyMapping?.get(cw.instrumentId) || cw.instrumentId;
     const existing = effectiveCurrentWeights.get(primaryId) || 0;
-    effectiveCurrentWeights.set(primaryId, existing + cw.weight);
+    effectiveCurrentWeights.set(primaryId, toDecimal(existing).plus(cw.weight).toNumber());
   }
 
   // Calculate drift for all effectively held assets
@@ -79,7 +79,7 @@ export function calculateDrift(
     if (!processedInstruments.has(t.instrumentId)) {
       const currentWeight = 0;
       const targetWeight = t.weight;
-      const absoluteDrift = currentWeight - targetWeight;
+      const absoluteDrift = toDecimal(currentWeight).minus(targetWeight).toNumber();
       const relativeDrift = -1; // -100% since we hold 0
 
       const isAbsoluteBreach = toDecimal(absoluteDrift)

@@ -59,16 +59,39 @@ export function generateTradeProposal(
   const trades: ProposedTrade[] = [];
   let netCashDelta = toDecimal(0);
 
+  const depositAllocationMode = policy?.depositAllocationMode ?? 'REBALANCING';
+  const targetCashReserve = toDecimal(valuation.totalPortfolioValue).mul(target.cashBuffer || 0);
+  const deployableCash = decimalMax(0, toDecimal(valuation.cash).minus(targetCashReserve));
+  const totalTargetAssetWeight = target.targets.reduce((acc, t) => acc.plus(t.weight), toDecimal(0));
+
   for (const instrumentId of instrumentIds) {
     const currentValue = currentValues.get(instrumentId) ?? 0;
-    const targetValue = calculateTargetValue(
-      currentValue,
-      targetWeights.get(instrumentId) ?? 0,
-      valuation.totalPortfolioValue,
-      policy,
-      executionTargetMode,
-      boundaryBandMode,
-    );
+    const instrumentTargetWeight = targetWeights.get(instrumentId) ?? 0;
+
+    let targetValue: ReturnType<typeof toDecimal>;
+    if (depositAllocationMode === 'FIXED_TARGET') {
+      const normalizedTargetWeight = totalTargetAssetWeight.gt(0)
+        ? toDecimal(instrumentTargetWeight).div(totalTargetAssetWeight)
+        : toDecimal(0);
+      targetValue = toDecimal(currentValue).plus(deployableCash.mul(normalizedTargetWeight));
+    } else if (depositAllocationMode === 'CURRENT_WEIGHT') {
+      const allocationShare =
+        valuation.totalHoldingsValue > 0
+          ? toDecimal(currentValue).div(valuation.totalHoldingsValue)
+          : totalTargetAssetWeight.gt(0)
+            ? toDecimal(instrumentTargetWeight).div(totalTargetAssetWeight)
+            : toDecimal(0);
+      targetValue = toDecimal(currentValue).plus(deployableCash.mul(allocationShare));
+    } else {
+      targetValue = calculateTargetValue(
+        currentValue,
+        instrumentTargetWeight,
+        valuation.totalPortfolioValue,
+        policy,
+        executionTargetMode,
+        boundaryBandMode,
+      );
+    }
     const valueDelta = targetValue.minus(currentValue);
 
     if (valueDelta.abs().lte(TRADE_EPSILON)) {
@@ -181,9 +204,12 @@ export function applyQualityEvaluationPipeline(
     return proposal;
   }
 
-  const totalTco = proposal.trades.reduce((acc, trade) => {
-    return acc + (frictionModel ? frictionModel.estimateCost(trade.estimatedValue, trade.instrumentId) : 0);
-  }, 0);
+  const totalTco = proposal.trades
+    .reduce((acc, trade) => {
+      const cost = frictionModel ? frictionModel.estimateCost(trade.estimatedValue, trade.instrumentId) : 0;
+      return acc.plus(cost);
+    }, toDecimal(0))
+    .toNumber();
 
   const preTradeState: EvaluationState = {
     valuation,
@@ -208,9 +234,9 @@ export function applyQualityEvaluationPipeline(
   };
 
   let allPassed = true;
-  let netUtilityBps = 0;
+  let netUtilityBps = toDecimal(0);
   const reasons: string[] = [];
-  let expectedImprovement = 0;
+  let expectedImprovement = toDecimal(0);
   let qualityEvaluation: QualityEvaluationResult | undefined;
 
   for (const indicator of qualityIndicators) {
@@ -220,10 +246,10 @@ export function applyQualityEvaluationPipeline(
       if (result.reason) reasons.push(result.reason);
     }
     if (result.netUtilityBps) {
-      netUtilityBps += result.netUtilityBps;
+      netUtilityBps = netUtilityBps.plus(result.netUtilityBps);
     }
     if (result.expectedImprovement) {
-      expectedImprovement += result.expectedImprovement;
+      expectedImprovement = expectedImprovement.plus(result.expectedImprovement);
     }
     
     if (!qualityEvaluation) {
@@ -239,8 +265,8 @@ export function applyQualityEvaluationPipeline(
   }
 
   if (qualityEvaluation) {
-    qualityEvaluation.netUtilityBps = netUtilityBps;
-    qualityEvaluation.expectedImprovement = expectedImprovement;
+    qualityEvaluation.netUtilityBps = netUtilityBps.toNumber();
+    qualityEvaluation.expectedImprovement = expectedImprovement.toNumber();
   }
 
   if (!allPassed) {
@@ -278,7 +304,7 @@ export function applyFrictionPenalties(
   const warnings: ProposalWarning[] = [...proposal.warnings];
   const trades = proposal.trades.filter((trade) => {
     const estimatedCost = frictionModel.estimateCost(trade.estimatedValue, trade.instrumentId);
-    const maxAcceptableCost = trade.estimatedValue * (maxFrictionBps / 10000);
+    const maxAcceptableCost = toDecimal(trade.estimatedValue).mul(maxFrictionBps).div(10000).toNumber();
 
     if (estimatedCost <= maxAcceptableCost) {
       return true;

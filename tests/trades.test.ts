@@ -571,5 +571,69 @@ describe('Trade Proposal Generation', () => {
     expect(msft.estimatedValue).toBe(1000);
     expect(proposal.estimatedPostTradeCash).toBe(0);
   });
+
+  it('deploys new cash deposits strictly proportional to target weights under FIXED_TARGET mode', () => {
+    const state: PortfolioState = {
+      accountId: 'deposit-fixed-target-test',
+      cash: 5000,
+      holdings: [
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 80 }, // 8000 (overweight)
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 20 }, // 2000 (underweight)
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.6 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.4 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+      depositAllocationMode: 'FIXED_TARGET',
+    });
+
+    // Deploys 5000 cash as 60% (3000) and 40% (2000) without selling overweight asset
+    expect(proposal.trades).toHaveLength(2);
+    expect(proposal.trades.every(t => t.direction === 'BUY')).toBe(true);
+    expect(findTrade(proposal.trades, 'US0378331005:XNAS:USD').estimatedValue).toBe(3000);
+    expect(findTrade(proposal.trades, 'US5949181045:XNAS:USD').estimatedValue).toBe(2000);
+    expect(proposal.estimatedPostTradeCash).toBe(0);
+  });
+
+  it('deploys new cash deposits strictly proportional to current holding weights under CURRENT_WEIGHT mode', () => {
+    const state: PortfolioState = {
+      accountId: 'deposit-current-weight-test',
+      cash: 5000,
+      holdings: [
+        { instrumentId: 'US0378331005:XNAS:USD', quantity: 75 }, // 7500 (75% of holdings)
+        { instrumentId: 'US5949181045:XNAS:USD', quantity: 25 }, // 2500 (25% of holdings)
+      ],
+    };
+    const target: TargetAllocation = {
+      targets: [
+        { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+        { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
+      ],
+    };
+    const prices: PriceSnapshot = { prices: { 'US0378331005:XNAS:USD': 100, 'US5949181045:XNAS:USD': 100 } };
+    const valuation = calculateValuation(state, prices);
+
+    const proposal = generateTradeProposal(valuation, target, prices, {
+      absoluteDriftTolerance: 0.05,
+      minimumTradeSize: 0,
+      depositAllocationMode: 'CURRENT_WEIGHT',
+    });
+
+    // Deploys 5000 cash as 75% (3750) and 25% (1250)
+    expect(proposal.trades).toHaveLength(2);
+    expect(proposal.trades.every(t => t.direction === 'BUY')).toBe(true);
+    expect(findTrade(proposal.trades, 'US0378331005:XNAS:USD').estimatedValue).toBe(3750);
+    expect(findTrade(proposal.trades, 'US5949181045:XNAS:USD').estimatedValue).toBe(1250);
+    expect(proposal.estimatedPostTradeCash).toBe(0);
+  });
 });
 

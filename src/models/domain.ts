@@ -177,6 +177,7 @@ export interface CalendarRebalancingConfig {
   evaluationDate: string; // ISO date string; supplied by caller, never read from system time
   nextRebalanceDate: string; // ISO date string
   frequency?: 'monthly' | 'quarterly' | 'annually' | 'explicit';
+  lastTriggeredRebalanceDate?: string; // Tracks the due date triggered by MandateSchedulerService prior to date advancement
 }
 
 export interface RebalancingPolicy {
@@ -273,7 +274,6 @@ export type ProposalWarningCode =
   | 'FRICTION_COST_EXCEEDED'
   | 'QUALITY_EVALUATION_FAILED'
   | 'TLH_HARVEST_GENERATED'
-  | 'WASH_SALE_LOCKOUT'
   | 'UK_BED_AND_BREAKFAST_LOCKOUT'
   | 'TRADE_SUPPRESSED_BY_OVERLAY'
   | 'TRADE_RESIZED_BY_OVERLAY'
