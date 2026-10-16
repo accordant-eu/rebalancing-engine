@@ -16,6 +16,7 @@ export function createQueueRouter(
   const sendError = middlewares?.sendError || ((res: Response, status: number, code: string, message: string) => {
     res.status(status).json({ code, message });
   });
+  const forbidViewer = middlewares?.forbidViewer || ((_req: Request, _res: Response, next: any) => next());
 
   /**
    * GET /api/queue/status
@@ -43,7 +44,7 @@ export function createQueueRouter(
    * POST /api/queue/process-batch
    * Manually triggers immediate processing of the next batch from the evaluation queue.
    */
-  router.post('/process-batch', async (req: Request, res: Response) => {
+  router.post('/process-batch', forbidViewer, async (req: Request, res: Response) => {
     if (!batchWorker) {
       return sendError(res, 503, 'SERVICE_UNAVAILABLE', 'BatchEvaluationWorker is not initialized on this instance');
     }
@@ -64,12 +65,20 @@ export function createQueueRouter(
    * POST /api/models/:id/fan-out
    * Triggers an asynchronous fan-out re-evaluation for all portfolios subscribed to a model.
    */
-  router.post('/models/:id/fan-out', async (req: Request, res: Response) => {
+  router.post('/models/:id/fan-out', forbidViewer, async (req: Request, res: Response) => {
     const modelId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id as string);
+    const tenantId = (req as any).tenantId;
+    const isSuperadmin = (req as any).isSuperadmin;
     const subscriptionType = (req.body?.subscriptionType as string) || 'discretionary';
     const executeImmediately = req.body?.executeImmediately === true;
 
     try {
+      const models = isSuperadmin ? stateManager.getAllModels() : stateManager.getModels(tenantId);
+      const model = models.find((m: any) => m.modelId === modelId);
+      if (!model || (!isSuperadmin && model.tenantId !== tenantId)) {
+        return sendError(res, 404, 'MODEL_NOT_FOUND', `Model '${modelId}' not found`);
+      }
+
       const queuedAccounts = stateManager.enqueueModelSubscribers(modelId, subscriptionType);
 
       let immediateResult = undefined;

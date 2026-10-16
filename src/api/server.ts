@@ -32,12 +32,18 @@ export function setupExpressApp(
   const app = express();
   const mandateScheduler = scheduler || new MandateSchedulerService(stateManager);
   app.use(cors());
-  app.use(express.json());
+  app.use(
+    express.json({
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf.toString('utf8');
+      },
+    })
+  );
 
   // Apply rate limiting to all requests to address CodeQL alerts (CWE-770, CWE-307, CWE-400)
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    max: 1000, // Limit each IP to 1000 requests per 15-minute window to accommodate UI polling
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     message: 'Too many requests, please try again later.'
@@ -46,6 +52,13 @@ export function setupExpressApp(
 
   const sendError = (res: any, status: number, code: string, message: string, details: any = {}) => {
     res.status(status).json({ error: { code, message, details } });
+  };
+
+  const checkIsSuperadmin = (role?: string, tenantId?: string, tokenFlag?: boolean): boolean => {
+    if (role === 'Superadmin' || tokenFlag === true) {
+      return true;
+    }
+    return role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && tenantId === process.env.SUPERADMIN_TENANT_ID;
   };
 
   let JWT_SECRET = process.env.JWT_SECRET;
@@ -117,7 +130,7 @@ setInterval(() => {
         (req as any).tenantId = keyRecord.tenantId;
         (req as any).userId = 'api-key';
         (req as any).role = 'Admin';
-        (req as any).isSuperadmin = keyRecord.tenantId === process.env.SUPERADMIN_TENANT_ID;
+        (req as any).isSuperadmin = checkIsSuperadmin('Admin', keyRecord.tenantId);
         return next();
       }
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid API key');
@@ -128,7 +141,7 @@ setInterval(() => {
       (req as any).tenantId = decoded.tenantId;
       (req as any).userId = decoded.userId;
       (req as any).role = decoded.role;
-      (req as any).isSuperadmin = decoded.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && decoded.tenantId === process.env.SUPERADMIN_TENANT_ID;
+      (req as any).isSuperadmin = checkIsSuperadmin(decoded.role, decoded.tenantId, decoded.isSuperadmin);
     } catch (_e: any) {
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid token signature');
     }
@@ -137,14 +150,14 @@ setInterval(() => {
 
   // Superadmin Guard Middleware
   const requireSuperadmin = (req: any, res: any, next: any) => {
-    if (req.role !== 'Admin' || !process.env.SUPERADMIN_TENANT_ID || req.tenantId !== process.env.SUPERADMIN_TENANT_ID) {
+    if (!req.isSuperadmin) {
       return sendError(res, 403, 'FORBIDDEN', 'Superadmin access required');
     }
     next();
   };
 
   const requireAdmin = (req: any, res: any, next: any) => {
-    if (req.role !== 'Admin') {
+    if (req.role !== 'Admin' && req.role !== 'Superadmin' && !req.isSuperadmin) {
       return sendError(res, 403, 'FORBIDDEN', 'Admin access required');
     }
     next();
@@ -170,13 +183,12 @@ setInterval(() => {
       return sendError(res, 403, 'FORBIDDEN', 'User account is not active');
     }
     
-    const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role };
+    const isSuperadmin = checkIsSuperadmin(user.role, user.tenantId);
+    const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role, isSuperadmin };
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
     
     const refreshToken = randomBytes(32).toString('hex');
     stateManager.createRefreshToken(user.userId, refreshToken, 7 * 24 * 60 * 60 * 1000);
-    
-    const isSuperadmin = user.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && user.tenantId === process.env.SUPERADMIN_TENANT_ID;
     
     res.json({ token, refreshToken, tenantId: user.tenantId, role: user.role, isSuperadmin });
   });
@@ -195,13 +207,12 @@ setInterval(() => {
       return sendError(res, 403, 'FORBIDDEN', 'User account is not active');
     }
 
-    const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role };
+    const isSuperadmin = checkIsSuperadmin(user.role, user.tenantId);
+    const tokenPayload = { userId: user.userId, tenantId: user.tenantId, role: user.role, isSuperadmin };
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
     
     const newRefreshToken = randomBytes(32).toString('hex');
     stateManager.createRefreshToken(user.userId, newRefreshToken, 7 * 24 * 60 * 60 * 1000);
-
-    const isSuperadmin = user.role === 'Admin' && !!process.env.SUPERADMIN_TENANT_ID && user.tenantId === process.env.SUPERADMIN_TENANT_ID;
 
     res.json({ token, refreshToken: newRefreshToken, isSuperadmin });
   });
@@ -279,7 +290,12 @@ setInterval(() => {
   });
 
   app.post('/api/admin/users', requireSuperadmin, (req, res) => {
-    stateManager.createUser(req.body);
+    const { password, ...rest } = req.body || {};
+    const hashedPassword =
+      password && !String(password).startsWith('$2')
+        ? bcrypt.hashSync(String(password), 10)
+        : password || '';
+    stateManager.createUser({ ...rest, password: hashedPassword });
     res.json({ message: 'User provisioned successfully' });
   });
 
@@ -358,15 +374,15 @@ setInterval(() => {
 
   // --- Tenant Admin Endpoints ---
   app.get('/api/users', (req: any, res: any) => {
-    if (req.role !== 'Admin') {
+    if (req.role !== 'Admin' && req.role !== 'Superadmin' && !req.isSuperadmin) {
       return res.status(403).json({ error: 'Requires Admin role' });
     }
     const users = stateManager.getUsersByTenant(req.tenantId);
     res.json(users);
   });
 
-  app.post('/api/users', express.json(), (req: any, res: any) => {
-    if (req.role !== 'Admin') {
+  app.post('/api/users', (req: any, res: any) => {
+    if (req.role !== 'Admin' && req.role !== 'Superadmin' && !req.isSuperadmin) {
       return res.status(403).json({ error: 'Requires Admin role' });
     }
     const { email, password, role } = req.body;
@@ -379,11 +395,15 @@ setInterval(() => {
         return res.status(400).json({ error: 'Email already exists' });
       }
       const userId = 'usr_' + Date.now().toString(36);
+      const hashedPassword =
+        password && !String(password).startsWith('$2')
+          ? bcrypt.hashSync(String(password), 10)
+          : password || '';
       stateManager.createUser({
         userId,
         tenantId: req.tenantId,
         email,
-        password, // Not hashed in MVP per architecture docs, but would be in prod
+        password: hashedPassword,
         role
       });
       res.status(201).json({ message: 'User created', userId });
@@ -477,12 +497,28 @@ setInterval(() => {
 
   app.put('/api/portfolios/:id/subscription', forbidViewer, (req, res) => {
     const accountId = req.params.id;
+    const tenantId = (req as any).tenantId;
+    const isSuperadmin = (req as any).isSuperadmin;
     const { modelId, subscriptionType } = req.body;
     try {
+      const state = stateManager.getAccountState(accountId);
+      if (!state || (!isSuperadmin && state.portfolioState.tenantId !== tenantId)) {
+        return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
+      }
+      if (modelId) {
+        const models = isSuperadmin ? stateManager.getAllModels() : stateManager.getModels(tenantId);
+        const model = models.find((m: any) => m.modelId === modelId);
+        if (!model || (!isSuperadmin && model.tenantId !== tenantId)) {
+          return sendError(res, 404, 'MODEL_NOT_FOUND', `Model '${modelId}' not found`);
+        }
+      }
       stateManager.assignPortfolioToModel(accountId, modelId, subscriptionType);
       stateManager.enqueuePortfolio(accountId, Date.now());
       res.json({ success: true });
     } catch (e: any) {
+      if (e.message && e.message.includes('not initialized')) {
+        return sendError(res, 404, 'PORTFOLIO_NOT_FOUND', `Portfolio '${accountId}' not found`);
+      }
       res.status(500).json({ error: String(e) });
     }
   });

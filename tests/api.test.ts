@@ -4,6 +4,7 @@ import { SqliteStateManager } from '../src/orchestrator/sqlite-state';
 import { initDb, getDb } from '../src/db/sqlite';
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 describe('API Endpoints (Týr Integration)', () => {
   let app: express.Express;
@@ -495,4 +496,111 @@ describe('API Endpoints (Týr Integration)', () => {
       expect(res.body.length).toBe(1);
     });
   });
+
+  describe('RBAC, Password Hashing, Policy Persistence & Webhooks (ADR-0067)', () => {
+    it('hashes passwords in POST /api/users so newly created users can log in immediately', async () => {
+      const adminLogin = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@example.com', password: 'password' });
+      const adminToken = adminLogin.body.token;
+
+      const createRes = await request(app)
+        .post('/api/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ email: 'newadvisor@example.com', password: 'PlainTextPassword123!', role: 'Advisor' });
+      expect(createRes.status).toBe(201);
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'newadvisor@example.com', password: 'PlainTextPassword123!' });
+      expect(loginRes.status).toBe(200);
+      expect(loginRes.body.role).toBe('Advisor');
+    });
+
+    it('grants Superadmin role full superadmin and admin access', async () => {
+      stateManager.createUser({
+        userId: 'user-sa-role',
+        tenantId: 'tenant-1',
+        email: 'superadmin@example.com',
+        password: bcrypt.hashSync('password', 10),
+        role: 'Superadmin',
+      });
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'superadmin@example.com', password: 'password' });
+      expect(loginRes.status).toBe(200);
+      expect(loginRes.body.isSuperadmin).toBe(true);
+
+      const tenantsRes = await request(app)
+        .get('/api/admin/tenants')
+        .set('Authorization', `Bearer ${loginRes.body.token}`);
+      expect(tenantsRes.status).toBe(200);
+    });
+
+    it('enforces tenant ownership on POST /api/models/:id/fan-out and PUT /api/portfolios/:id/subscription', async () => {
+      const tenant1Login = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@example.com', password: 'password' });
+      const tenant1Token = tenant1Login.body.token;
+
+      // Cross-tenant fan-out attempt on tenant-2-model should 404
+      const fanOutRes = await request(app)
+        .post('/api/models/tenant-2-model/fan-out')
+        .set('Authorization', `Bearer ${tenant1Token}`)
+        .send({});
+      expect(fanOutRes.status).toBe(404);
+
+      // Cross-tenant subscription attempt on acc-other should 404
+      const subRes = await request(app)
+        .put('/api/portfolios/acc-other/subscription')
+        .set('Authorization', `Bearer ${tenant1Token}`)
+        .send({ modelId: 'model-1', subscriptionType: 'discretionary' });
+      expect(subRes.status).toBe(404);
+    });
+
+    it('persists PUT /api/portfolios/:id/policy updates to SQLite across subsequent reads', async () => {
+      const tenant1Login = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'test@example.com', password: 'password' });
+      const tenant1Token = tenant1Login.body.token;
+
+      const putRes = await request(app)
+        .put('/api/portfolios/acc-1/policy')
+        .set('Authorization', `Bearer ${tenant1Token}`)
+        .send({
+          taxJurisdiction: 'UK',
+          taxWrapper: 'UK_ISA',
+          policy: { absoluteDriftTolerance: 0.08, minimumTradeSize: 25 },
+        });
+      expect(putRes.status).toBe(200);
+
+      const reloaded = stateManager.getAccountState('acc-1');
+      expect(reloaded.portfolioState.taxJurisdiction).toBe('UK');
+      expect(reloaded.portfolioState.taxWrapper).toBe('UK_ISA');
+      expect(reloaded.policy.absoluteDriftTolerance).toBe(0.08);
+      expect(reloaded.policy.minimumTradeSize).toBe(25);
+    });
+
+    it('verifies Alpaca webhook HMAC over rawBody with timingSafeEqual', async () => {
+      const rawPayload = '{\n  "event": "fill",\n  "account_id": "acc-1",\n  "order": {\n    "id": "ord-1",\n    "filled_qty": "2",\n    "filled_avg_price": "150"\n  }\n}';
+      const secret = process.env.ALPACA_WEBHOOK_SECRET || 'local-dummy-secret';
+      const sig = crypto.createHmac('sha256', secret).update(rawPayload).digest('hex');
+
+      const okRes = await request(app)
+        .post('/api/webhooks/alpaca')
+        .set('Content-Type', 'application/json')
+        .set('X-Alpaca-Signature', sig)
+        .send(rawPayload);
+      expect(okRes.status).toBe(200);
+
+      const badRes = await request(app)
+        .post('/api/webhooks/alpaca')
+        .set('Content-Type', 'application/json')
+        .set('X-Alpaca-Signature', 'invalid-sig')
+        .send(rawPayload);
+      expect(badRes.status).toBe(401);
+    });
+  });
 });
+
