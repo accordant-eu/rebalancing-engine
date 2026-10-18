@@ -59,6 +59,8 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-08-12 | `orchestrator/circuit-breaker.ts` | Major | Completed Tranche 3 of Issue #103: Circuit breaker safety for tax trades, audit enrichment with tax cost attribution, and REST API jurisdiction validation. |
 | 2026-10-16 | `docs/iterations/2026-10-16-holistic-codebase-review.md` | Major | Documented comprehensive review across ADRs 0001-0066, PRDs, roadmaps, domain math, security, and test coverage. |
 | 2026-10-16 | `docs/iterations/2026-10-16-audit-remediation.md` | Major | Documented 6-chunk remediation addressing domain invariants, SQLite persistence, scheduler lifecycle, API security, and frontend alignment. |
+| 2026-10-18 | `docs/iterations/2026-10-18-dependabot-merges.md` | Minor | Merged Dependabot PRs #129, #130, #131, #132, and #133 for jest-dom, vitejs, prettier, @types/node, and framer-motion. |
 
 &copy; 2026 Johan Hellman. All rights reserved.
+
 

@@ -221,6 +221,8 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 107 | 2026-10-15 | Docker Node 24 Runtime Alignment & Native SQLite Validation | Operations & CI/CD | Upgraded Docker images to Node 24 (Bookworm), added build-time SQLite verification and CI Docker build step resolving Issue #124; merged Dependabot PRs #119-#123 (ADR-0066). | [Log](docs/iterations/2026-10-15-docker-node-24-runtime-alignment.md) |
 | 108 | 2026-10-16 | Holistic Codebase & Architecture Review | Audit & Quality | Conducted comprehensive review across ADRs 0001-0066, PRDs, roadmaps, core financial math, live agent/SQLite/API security, frontend persona/RBAC alignment, documentation hygiene, and test coverage. | [Log](docs/iterations/2026-10-16-holistic-codebase-review.md) |
 | 109 | 2026-10-16 | Holistic Audit Remediation & Hardening | Full Stack Quality & Architecture | Executed 6-chunk remediation addressing core financial math, corporate actions dividend valuation, simulation lot preservation, SQLite persistence, scheduler lifecycle, API auth/RBAC, web persona alignment, and documentation synchronization (ADR-0067). | [Log](docs/iterations/2026-10-16-audit-remediation.md) |
+| 110 | 2026-10-18 | PR Merges & Dependency Upgrades (#129-#133) | Maintenance & Dependencies | Merged Dependabot PRs (#129-#133) for jest-dom, vitejs plugin-react, prettier, @types/node, and framer-motion (v14.2). Verified 46 backend suites and web Vitest. | [Log](docs/iterations/2026-10-18-dependabot-merges.md) |
+
 
 
 
