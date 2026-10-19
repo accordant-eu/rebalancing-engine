@@ -16,6 +16,9 @@ import { LiveState, LiveStateManager } from './state';
 import { ModelRepository } from '../db/repositories/ModelRepository';
 import { PortfolioRepository } from '../db/repositories/PortfolioRepository';
 import { CorporateAction, applyCorporateActionToPortfolio } from '../core/corporate-actions';
+import Decimal from 'decimal.js';
+import { systemEventBus, TradeFillEvent } from '../events/bus';
+import { logger } from '../utils/logger';
 
 export class SqliteStateManager implements LiveStateManager {
   // In-memory cache for lastTradeTimes to avoid writing frequent updates to DB
@@ -514,56 +517,127 @@ export class SqliteStateManager implements LiveStateManager {
 
   public registerOrder(orderId: string, accountId: string, instrumentId: string, direction: 'BUY'|'SELL', quantity: number): void {
     const db = getDb();
+    const now = new Date().toISOString();
     db.prepare(`
-      INSERT OR REPLACE INTO Orders (orderId, accountId, instrumentId, direction, quantity, filledQuantity, status, createdAt)
-      VALUES (?, ?, ?, ?, ?, 0, 'PENDING', ?)
-    `).run(orderId, accountId, instrumentId, direction, quantity, new Date().toISOString());
+      INSERT OR REPLACE INTO Orders (orderId, accountId, instrumentId, direction, quantity, filledQuantity, status, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, 0, 'PENDING', ?, ?)
+    `).run(orderId, accountId, instrumentId, direction, quantity, now, now);
   }
 
-  public processExecutionReport(orderId: string, accountId: string, status: string, filledQuantity: number, fillPrice: number): void {
+  public processExecutionReport(
+    orderId: string,
+    accountId: string,
+    status: string,
+    filledQuantity: number,
+    fillPrice: number,
+    executionTimestamp?: string
+  ): void {
     const db = getDb();
+    let emittedEvent: TradeFillEvent | null = null;
+
     const tx = db.transaction(() => {
-      const order = db.prepare(`SELECT instrumentId, direction, filledQuantity, status FROM Orders WHERE orderId = ?`).get(orderId) as any;
+      const order = db.prepare(`SELECT orderId, accountId, instrumentId, direction, quantity, filledQuantity, status, updatedAt FROM Orders WHERE orderId = ?`).get(orderId) as any;
       if (!order) return; // Order not found, maybe externally generated, skip for now.
 
-      const previousFilled = order.filledQuantity;
-      const deltaFilled = filledQuantity - previousFilled;
+      const actualAccountId = order.accountId || accountId;
+      const portRow = db.prepare(`SELECT tenantId, cash FROM Portfolios WHERE accountId = ?`).get(actualAccountId) as { tenantId?: string; cash: number } | undefined;
 
-      // Update Order Status
-      db.prepare(`UPDATE Orders SET filledQuantity = ?, status = ? WHERE orderId = ?`).run(filledQuantity, status, orderId);
+      const eventTime = executionTimestamp ? new Date(executionTimestamp).getTime() : Date.now();
+      const storedTime = order.updatedAt ? new Date(order.updatedAt).getTime() : 0;
 
-      if (deltaFilled > 0) {
-        // Incrementally update Holdings and Cash
-        const portRow = db.prepare(`SELECT cash FROM Portfolios WHERE accountId = ?`).get(accountId) as { cash: number };
-        const holdingRow = db.prepare(`SELECT quantity FROM Holdings WHERE accountId = ? AND instrumentId = ?`).get(accountId, order.instrumentId) as { quantity: number } | undefined;
-        
-        let newCash = portRow.cash;
-        let newQuantity = holdingRow ? holdingRow.quantity : 0;
-        
-        const valueExchanged = deltaFilled * fillPrice;
+      // 1. Out-of-order check: if event has timestamp and is older than stored updatedAt
+      if (executionTimestamp && order.updatedAt && eventTime < storedTime) {
+        if (filledQuantity <= order.filledQuantity) {
+          logger.warn(`[SqliteStateManager] Ignoring out-of-order execution report for order ${orderId} (event time: ${executionTimestamp} < recorded time: ${order.updatedAt})`);
+          return;
+        }
+      }
+
+      // 2. Terminal state protection: terminal orders should not regress to non-terminal or lower quantity
+      const terminalStatuses = ['FILLED', 'CANCELED', 'REJECTED', 'EXPIRED'];
+      if (terminalStatuses.includes(order.status)) {
+        if (order.status === 'FILLED' && status !== 'FILLED') {
+          logger.warn(`[SqliteStateManager] Ignoring non-fill status ${status} for already FILLED order ${orderId}`);
+          return;
+        }
+        if (filledQuantity <= order.filledQuantity && status === order.status) {
+          // Idempotent duplicate
+          return;
+        }
+      }
+
+      const previousFilled = new Decimal(order.filledQuantity || 0);
+      const newFilled = new Decimal(filledQuantity);
+      const deltaFilled = newFilled.minus(previousFilled);
+
+      if (deltaFilled.isNegative()) {
+        logger.warn(`[SqliteStateManager] Ignoring execution report with decreasing filledQuantity for order ${orderId} (${filledQuantity} < ${order.filledQuantity})`);
+        return;
+      }
+
+      if (deltaFilled.isZero() && status === order.status) {
+        // Pure duplicate report
+        return;
+      }
+
+      const updateTime = executionTimestamp || new Date().toISOString();
+      db.prepare(`UPDATE Orders SET filledQuantity = ?, status = ?, updatedAt = ? WHERE orderId = ?`).run(
+        newFilled.toNumber(),
+        status,
+        updateTime,
+        orderId
+      );
+
+      if (deltaFilled.greaterThan(0) && portRow) {
+        const holdingRow = db.prepare(`SELECT quantity FROM Holdings WHERE accountId = ? AND instrumentId = ?`).get(actualAccountId, order.instrumentId) as { quantity: number } | undefined;
+
+        let currentCash = new Decimal(portRow.cash);
+        let currentQty = new Decimal(holdingRow ? holdingRow.quantity : 0);
+        const valueExchanged = deltaFilled.times(new Decimal(fillPrice));
 
         if (order.direction === 'BUY') {
-          newCash -= valueExchanged;
-          newQuantity += deltaFilled;
+          currentCash = currentCash.minus(valueExchanged);
+          currentQty = currentQty.plus(deltaFilled);
         } else if (order.direction === 'SELL') {
-          newCash += valueExchanged;
-          newQuantity -= deltaFilled;
+          currentCash = currentCash.plus(valueExchanged);
+          currentQty = currentQty.minus(deltaFilled);
         }
 
-        // Apply new values
-        db.prepare(`UPDATE Portfolios SET cash = ? WHERE accountId = ?`).run(newCash, accountId);
-        
-        if (newQuantity > 0) {
-          db.prepare(`INSERT OR REPLACE INTO Holdings (accountId, instrumentId, quantity) VALUES (?, ?, ?)`).run(accountId, order.instrumentId, newQuantity);
+        const newCashNum = currentCash.toNumber();
+        const newQtyNum = currentQty.toNumber();
+
+        db.prepare(`UPDATE Portfolios SET cash = ? WHERE accountId = ?`).run(newCashNum, actualAccountId);
+
+        if (newQtyNum > 0) {
+          db.prepare(`INSERT OR REPLACE INTO Holdings (accountId, instrumentId, quantity) VALUES (?, ?, ?)`).run(actualAccountId, order.instrumentId, newQtyNum);
         } else {
-          db.prepare(`DELETE FROM Holdings WHERE accountId = ? AND instrumentId = ?`).run(accountId, order.instrumentId);
+          db.prepare(`DELETE FROM Holdings WHERE accountId = ? AND instrumentId = ?`).run(actualAccountId, order.instrumentId);
         }
-        
-        // Enqueue portfolio since state changed
-        this.enqueuePortfolio(accountId, Date.now());
+
+        this.enqueuePortfolio(actualAccountId, Date.now());
       }
+
+      emittedEvent = {
+        type: 'TRADE_FILL',
+        accountId: actualAccountId,
+        tenantId: portRow?.tenantId,
+        timestamp: updateTime,
+        orderId,
+        instrumentId: order.instrumentId,
+        direction: order.direction,
+        status,
+        deltaFilled: deltaFilled.toNumber(),
+        totalFilled: newFilled.toNumber(),
+        fillPrice,
+        remainingQuantity: Math.max(0, new Decimal(order.quantity).minus(newFilled).toNumber()),
+      };
     });
+
     tx();
+
+    if (emittedEvent) {
+      systemEventBus.emitEvent(emittedEvent);
+    }
   }
 
   public getPendingOrders(tenantId?: string): { orderId: string, accountId: string, instrumentId: string, direction: string, quantity: number, filledQuantity: number, status: string, brokerAccountId?: string }[] {

@@ -76,6 +76,7 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0066: Align Docker Runtime with Node 24 Engine Specification](0066-align-docker-runtime-with-node-24-engine-specification.md) - Accepted
 * [ADR-0067: Holistic Audit Remediation & Domain Invariants](0067-holistic-audit-remediation-and-domain-invariants.md) - Accepted
 * [ADR-0068: Unauthenticated Health Check and Default Tenant Seeding for Container Reliability](0068-unauthenticated-healthcheck-and-dry-run-tenant-fallback.md) - Accepted
+* [ADR-0069: Streaming Execution Fills and Out-of-Order Reconciliation](0069-streaming-execution-fills-and-out-of-order-reconciliation.md) - Accepted
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

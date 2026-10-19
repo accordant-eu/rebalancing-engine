@@ -62,6 +62,8 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-10-18 | `docs/iterations/2026-10-18-dependabot-merges.md` | Minor | Merged Dependabot PRs #129, #130, #131, #132, and #133 for jest-dom, vitejs, prettier, @types/node, and framer-motion. |
 | 2026-10-19 | `docs/iterations/2026-10-19-issue-134-feedback-remediation.md` | Major | Remediated Issue #134 feedback: added unauthenticated `/health` endpoints, Docker `HEALTHCHECK`, default tenant seeding, dry-run circuit breaker reset (ADR-0068). |
 | 2026-10-19 | `docs/iterations/2026-10-19-persona-e2e-testing-automation.md` | Minor | Automated persona E2E browser verification suite across Advisor, Compliance, Tenant Admin, and Superadmin workflows (Slice 2). |
+| 2026-10-19 | `docs/decisions/0069-streaming-execution-fills-and-out-of-order-reconciliation.md` | Major | Recorded ADR-0069: Streaming Execution Fills and Out-of-Order Reconciliation (Slice 3). |
+| 2026-10-19 | `docs/iterations/2026-10-19-streaming-execution-fills.md` | Major | Implemented WebSocket streaming trade updates, idempotent out-of-order shadow ledger reconciliation, and fill telemetry emission (Slice 3). |
 
 &copy; 2026 Johan Hellman. All rights reserved.
 

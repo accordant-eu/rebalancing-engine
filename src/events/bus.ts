@@ -6,7 +6,8 @@ export type EventType =
   | 'REBALANCE_EXECUTED'
   | 'CIRCUIT_BREAKER_RESET'
   | 'BATCH_EVALUATION_PROGRESS'
-  | 'MANDATE_SCHEDULE_EVALUATED';
+  | 'MANDATE_SCHEDULE_EVALUATED'
+  | 'TRADE_FILL';
 
 export interface BaseEvent {
   type: EventType;
@@ -67,13 +68,27 @@ export interface MandateScheduleEvaluatedEvent extends BaseEvent {
   };
 }
 
+export interface TradeFillEvent extends BaseEvent {
+  type: 'TRADE_FILL';
+  orderId: string;
+  accountId: string;
+  instrumentId: string;
+  direction: 'BUY' | 'SELL';
+  status: string;
+  deltaFilled: number;
+  totalFilled: number;
+  fillPrice: number;
+  remainingQuantity: number;
+}
+
 export type SystemEvent = 
   | ThresholdBreachEvent
   | CircuitBreakerHaltEvent
   | RebalanceExecutedEvent
   | CircuitBreakerResetEvent
   | BatchEvaluationProgressEvent
-  | MandateScheduleEvaluatedEvent;
+  | MandateScheduleEvaluatedEvent
+  | TradeFillEvent;
 
 class EventBus extends EventEmitter {
   emitEvent(event: SystemEvent): boolean {

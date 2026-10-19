@@ -261,9 +261,11 @@ describe('API Endpoints (Týr Integration)', () => {
       const ticket = ticketRes.body.ticket;
 
       // Second connection with same ticket must be rejected (single-use)
-      const server = app.listen(0);
-      const port = (server.address() as any).port;
       const http = await import('http');
+      const server = await new Promise<any>((resolve) => {
+        const s = app.listen(0, '127.0.0.1', () => resolve(s));
+      });
+      const port = (server.address() as any).port;
 
       await new Promise<void>((resolve, reject) => {
         const reqStream = http.get(`http://127.0.0.1:${port}/api/events/stream?ticket=${encodeURIComponent(ticket)}`, (res: any) => {

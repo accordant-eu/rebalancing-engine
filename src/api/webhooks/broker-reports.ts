@@ -46,7 +46,7 @@ export function setupBrokerWebhooks(stateManager: LiveStateManager): Router {
         const fillPrice = parseFloat(order.filled_avg_price || event.price || "0");
         const status = event.event === 'fill' ? 'FILLED' : 'PARTIAL_FILL';
 
-        stateManager.processExecutionReport(orderId, accountId, status, filledQuantity, fillPrice);
+        stateManager.processExecutionReport(orderId, accountId, status, filledQuantity, fillPrice, event.timestamp || order.updated_at);
       }
     } else if (event.event === 'canceled' || event.event === 'rejected') {
       const order = event.order;
@@ -55,7 +55,7 @@ export function setupBrokerWebhooks(stateManager: LiveStateManager): Router {
         const accountId = event.account_id || order.account_id;
         const filledQuantity = parseFloat(order.filled_qty || "0");
         const status = event.event === 'canceled' ? 'CANCELED' : 'REJECTED';
-        stateManager.processExecutionReport(orderId, accountId, status, filledQuantity, 0);
+        stateManager.processExecutionReport(orderId, accountId, status, filledQuantity, 0, event.timestamp || order.updated_at);
       }
     }
 

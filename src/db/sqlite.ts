@@ -146,6 +146,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       filledQuantity REAL DEFAULT 0,
       status TEXT DEFAULT 'PENDING',
       createdAt TEXT NOT NULL,
+      updatedAt TEXT,
       FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS AuditTrails (
@@ -180,8 +181,11 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       filledQuantity REAL DEFAULT 0,
       status TEXT DEFAULT 'PENDING',
       createdAt TEXT NOT NULL,
+      updatedAt TEXT,
       FOREIGN KEY(accountId) REFERENCES Portfolios(accountId) ON DELETE CASCADE
   )`); } catch (_e) { /* ignore if exists */ }
+
+  try { db.exec(`ALTER TABLE Orders ADD COLUMN updatedAt TEXT`); } catch (_e) { /* ignore if exists */ }
 
   try { db.exec(`CREATE TABLE IF NOT EXISTS AuditTrails (
       eventId TEXT PRIMARY KEY,

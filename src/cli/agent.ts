@@ -109,7 +109,8 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
       notifications.notify('info', 'Live Agent (Alpaca Broker API) Started.', { target: scenarioId });
       logger.info(`Press Ctrl+C to stop.\n`);
 
-      if (process.env.ALPACA_BROKER_API_KEY && process.env.ALPACA_BROKER_API_SECRET) {
+      const isStreamingEnabled = process.env.STREAMING_EXECUTION_ENABLED !== 'false';
+      if (isStreamingEnabled && process.env.ALPACA_BROKER_API_KEY && process.env.ALPACA_BROKER_API_SECRET) {
         const streamer = new AlpacaBrokerStreamer(
           process.env.ALPACA_BROKER_API_KEY,
           process.env.ALPACA_BROKER_API_SECRET,
@@ -124,7 +125,8 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
               event.brokerAccountId,
               event.status,
               event.filledQuantity || 0,
-              event.filledPrice || 0
+              event.filledPrice || 0,
+              event.timestamp
             );
           } catch (e: any) {
             logger.error({ e, event }, 'Failed to record streamer execution');
