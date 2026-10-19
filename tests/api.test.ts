@@ -601,6 +601,20 @@ describe('API Endpoints (Týr Integration)', () => {
         .send(rawPayload);
       expect(badRes.status).toBe(401);
     });
+
+    it('responds to unauthenticated GET /health and /api/health with status ok', async () => {
+      const resHealth = await request(app).get('/health');
+      expect(resHealth.status).toBe(200);
+      expect(resHealth.body.status).toBe('ok');
+      expect(typeof resHealth.body.uptime).toBe('number');
+      expect(typeof resHealth.body.timestamp).toBe('string');
+
+      const resApiHealth = await request(app).get('/api/health');
+      expect(resApiHealth.status).toBe(200);
+      expect(resApiHealth.body.status).toBe('ok');
+      expect(typeof resApiHealth.body.uptime).toBe('number');
+      expect(typeof resApiHealth.body.timestamp).toBe('string');
+    });
   });
 });
 

@@ -262,11 +262,10 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   const insertMapping = db.prepare(`INSERT OR IGNORE INTO BrokerSymbolMappings (instrumentId, brokerType, brokerSymbol) VALUES (?, ?, ?)`);
   baselineAssets.forEach(a => insertMapping.run(a.instrumentId, 'Alpaca', a.ticker));
 
-  // Seed baseline tenant and superadmin user if they don't exist
-  const baselineTenant = db.prepare('SELECT tenantId FROM Tenants WHERE tenantId = ?').get('tenant-baseline');
-  if (!baselineTenant) {
-    db.prepare(`INSERT INTO Tenants (tenantId, name, brokerType) VALUES (?, ?, ?)`).run('tenant-baseline', 'Baseline Tenant', 'MOCK');
-  }
+  // Seed baseline tenants if they don't exist
+  const insertTenant = db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name, brokerType) VALUES (?, ?, ?)`);
+  insertTenant.run('tenant-baseline', 'Baseline Tenant', 'MOCK');
+  insertTenant.run('default', 'Default Tenant', 'MOCK');
 
   const superadminEmail = process.env.SUPERADMIN_EMAIL || 'admin@localhost';
   const superadminPassword = process.env.SUPERADMIN_PASSWORD || 'changeme123';

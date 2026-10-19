@@ -129,11 +129,26 @@ Rufus will ensure they are set on the server before deploying.
 
 ---
 
+## Staging Environment & Health Checks
+
+### Staging Pipeline (`ops` branch)
+Rufus maintains an `ops` branch for staging verification before production.
+
+> [!WARNING]
+> Staging workflow `.github/workflows/deploy-dev.yml` on the `ops` branch must target an isolated staging directory (e.g. `/srv/rebalancing-engine-staging` using `docker-compose.dev.yml`) rather than the production path `/srv/rebalancing-engine` to avoid port and container namespace collisions with production.
+
+### Container Health Checks
+The Express server exposes public, unauthenticated health check endpoints for container orchestrators, Docker `HEALTHCHECK`, load balancers, and reverse proxy monitoring:
+* `GET /health`: Returns `{ status: 'ok', uptime: <seconds>, timestamp: <iso_time> }` with HTTP 200 without requiring JWT authentication.
+* `GET /api/health`: Equivalent endpoint under the `/api/` prefix.
+
+---
+
 ## Rufus's dev branch
 
-Rufus maintains a `ops` branch for operational use: infrastructure changes, quick fixes,
+Rufus maintains an `ops` branch for operational use: infrastructure changes, quick fixes,
 and staging verification before production. This branch auto-deploys to
 `ops.rebalancing.accordant.eu` on push.
 
-If a change on `dev` is worth incorporating into `main`, Rufus opens a PR for
+If a change on `dev` or `ops` is worth incorporating into `main`, Rufus opens a PR for
 AntiGravity to review before it enters the development cycle.

@@ -92,12 +92,25 @@ setInterval(() => {
   }
 }, 60000).unref();
 
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+  app.get(['/health', '/api/health'], (_req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString()
+    });
+  });
 
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
   // Auth Middleware
   app.use((req, res, next) => {
-    if (req.path === '/api/auth/login' || req.path === '/api/auth/refresh' || req.path === '/api/webhooks/alpaca') return next();
+    if (
+      req.path === '/health' ||
+      req.path === '/api/health' ||
+      req.path === '/api/auth/login' ||
+      req.path === '/api/auth/refresh' ||
+      req.path === '/api/webhooks/alpaca'
+    ) return next();
     
     // Single-use Stream Ticket authentication for SSE (/api/events/stream?ticket=st_...)
     if (req.path === '/api/events/stream' && req.query.ticket && typeof req.query.ticket === 'string') {

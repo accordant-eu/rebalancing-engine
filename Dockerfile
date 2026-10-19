@@ -44,6 +44,11 @@ COPY --from=builder /app/tests ./tests
 
 ENV NODE_ENV=production
 
+EXPOSE 4444
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD node -e 'require("http").get("http://127.0.0.1:4444/health", (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on("error", () => process.exit(1));'
+
 # Default: start Live Agent with on_target scenario.
 # Override CMD in docker-compose.yml for different scenarios.
 CMD ["node", "dist/cli/index.js", "agent", "start", "--scenarios", "tests/fixtures/scenarios.json", "--scenario-id", "on_target"]

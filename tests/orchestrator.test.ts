@@ -353,5 +353,21 @@ describe('Orchestrator', () => {
 
     expect(executor.execute).not.toHaveBeenCalled();
   });
+
+  it('evaluates portfolios cleanly under seeded default tenant without tripping circuit breaker', async () => {
+    orchestrator.start();
+    // Default tenant seeded in sqlite provides MOCK brokerType
+    (stateManager as any).getTenantBrokerConfig = jest.fn().mockReturnValue({ brokerType: 'MOCK', brokerApiKey: 'mock', brokerApiSecret: 'mock' });
+
+    const currentPrices = stateManager.getGlobalPrices().prices;
+    stateManager.updateGlobalPrices({ 'US0378331005:XNAS:USD': currentPrices['US0378331005:XNAS:USD'] * 2.0 });
+
+    stateManager.enqueuePortfolio(accountId, 1000);
+    await orchestrator.onTick(1000);
+
+    const postState = stateManager.getAccountState(accountId);
+    expect(postState.portfolioState.circuitBreakerStatus).not.toBe('open');
+    expect(executor.execute).toHaveBeenCalled();
+  });
 });
 

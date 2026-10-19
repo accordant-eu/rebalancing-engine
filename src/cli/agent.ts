@@ -149,7 +149,7 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
     if (stateManager.getAllAccountIds().length === 0) {
       for (const s of loadedScenarios) {
         stateManager.registerPortfolio(s.id, {
-          portfolioState: s.portfolioState,
+          portfolioState: { ...s.portfolioState, tenantId: s.portfolioState.tenantId || 'tenant-baseline' },
           priceSnapshot: s.priceSnapshot,
           targetAllocation: s.targetAllocation,
           policy: s.policy,
@@ -157,6 +157,14 @@ export async function executeAgent(parsed: ParsedArgs, _context: CommandContext)
           constraints: s.constraints || []
         });
         stateManager.updateGlobalPrices(s.priceSnapshot.prices, s.priceSnapshot.asOf);
+      }
+    } else {
+      // Reset any leftover open circuit breaker state on dry-run portfolios
+      for (const id of stateManager.getAllAccountIds()) {
+        const state = stateManager.getAccountState(id);
+        if (state && state.portfolioState.circuitBreakerStatus === 'open') {
+          stateManager.updateCircuitBreakerStatus?.(id, 'closed');
+        }
       }
     }
     

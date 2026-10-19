@@ -28,6 +28,52 @@ Authentication is handled via signed JWT tokens (HS256) with refresh token rotat
     },
   ],
   paths: {
+    '/health': {
+      get: {
+        summary: 'Public health check endpoint for container and uptime monitoring',
+        operationId: 'getHealth',
+        responses: {
+          '200': {
+            description: 'Service is healthy and accepting traffic',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'ok' },
+                    uptime: { type: 'number', example: 123.45 },
+                    timestamp: { type: 'string', example: '2026-10-19T08:00:00.000Z' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/health': {
+      get: {
+        summary: 'Public health check endpoint under API prefix',
+        operationId: 'getApiHealth',
+        responses: {
+          '200': {
+            description: 'Service is healthy and accepting traffic',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'ok' },
+                    uptime: { type: 'number', example: 123.45 },
+                    timestamp: { type: 'string', example: '2026-10-19T08:00:00.000Z' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     '/api/auth/login': {
       post: {
         summary: 'Login to obtain signed JWT token',
