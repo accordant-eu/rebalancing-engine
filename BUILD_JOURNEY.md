@@ -16,7 +16,7 @@ This file is the living project journal. It captures the journey from initializa
 - **Languages detected:** TypeScript on Node.js (v20+).
 - **Frameworks detected:** Express.js REST API with SSE event bus; React Command Center dashboard (Tailwind v4, Framer Motion); Jest test framework.
 - **Tooling detected:** TypeScript compiler (`tsc`), Jest, ESLint, Prettier, SQLite (`better-sqlite3`), Docker Compose.
-- **Tests detected:** 46 backend test suites / 362 tests; 2 frontend Vitest suites / 4 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, EOD reconciliation, mandate scheduling, and persona UI.
+- **Tests detected:** 46 backend test suites / 362 tests; 3 frontend Vitest suites / 8 tests spanning math core, strategy triggers, execution overlays, corporate actions, live orchestrator, SQLite repositories, broker synchronization, REST APIs, EOD reconciliation, mandate scheduling, and persona UI.
 - **Documentation detected:** Full architecture docs (`docs/architecture/`), 68 ADRs (`docs/decisions/`), PRDs (`docs/prds/`), API references, audit reports, and daily iteration archives (`docs/iterations/`).
 - **CI/CD detected:** GitHub Actions workflow (`.github/workflows/ci.yml`) with linting, testing, and Docker build verification.
 
@@ -224,6 +224,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 109 | 2026-10-16 | Holistic Audit Remediation & Hardening | Full Stack Quality & Architecture | Executed 6-chunk remediation addressing core financial math, corporate actions dividend valuation, simulation lot preservation, SQLite persistence, scheduler lifecycle, API auth/RBAC, web persona alignment, and documentation synchronization (ADR-0067). | [Log](docs/iterations/2026-10-16-audit-remediation.md) |
 | 110 | 2026-10-18 | PR Merges & Dependency Upgrades (#129-#133) | Maintenance & Dependencies | Merged Dependabot PRs (#129-#133) for jest-dom, vitejs plugin-react, prettier, @types/node, and framer-motion (v14.2). Verified 46 backend suites and web Vitest. | [Log](docs/iterations/2026-10-18-dependabot-merges.md) |
 | 111 | 2026-10-19 | Issue 134 Feedback Remediation & Container Healthchecks | Operations & API | Added unauthenticated /health & /api/health endpoints, Docker HEALTHCHECK, default tenant seeding, and dry-run circuit breaker reset (ADR-0068). | [Log](docs/iterations/2026-10-19-issue-134-feedback-remediation.md) |
+| 112 | 2026-10-19 | Automated Persona E2E Browser Testing Suite | Testing & Quality | Automated all 4 persona verification scenarios from e2e-browser-test-plan.md into web/src/persona-e2e.test.tsx without dependency bloat. | [Log](docs/iterations/2026-10-19-persona-e2e-testing-automation.md) |
 
 
 

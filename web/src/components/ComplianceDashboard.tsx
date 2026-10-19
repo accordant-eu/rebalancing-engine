@@ -90,8 +90,8 @@ export const ComplianceDashboard: React.FC<{ token: string | null }> = ({ token 
               ) : logs.length === 0 ? (
                 <tr><td colSpan={4} className="p-8 text-center text-slate-500">No audit events found.</td></tr>
               ) : (
-                logs.map((log: any) => (
-                  <React.Fragment key={log.eventId}>
+                logs.map((log: any, idx: number) => (
+                  <React.Fragment key={log.eventId || log.id || idx}>
                     <tr className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 text-slate-600 font-mono text-xs">{new Date(log.timestampMs || log.createdAt).toLocaleString()}</td>
                       <td className="px-6 py-4 font-medium text-slate-800">

@@ -3,10 +3,12 @@ type: Plan
 title: E2E Browser Test Plan
 description: End-to-end browser persona verification scenarios for Command Center dashboards.
 tags: [plan, e2e, testing, browser, personas]
-timestamp: 2026-06-20T00:00:00Z
+timestamp: 2026-10-19T14:20:00Z
 ---
 
 # E2E Browser Test Plan
+
+**Status:** AUTOMATED (Implemented in [web/src/persona-e2e.test.tsx](../../web/src/persona-e2e.test.tsx), verified in CI via `npm run --prefix web test`)
 
 ## Scenarios
 
