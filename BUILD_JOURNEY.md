@@ -104,6 +104,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0067 | 2026-10-16 | Holistic Audit Remediation & Domain Invariants | Accepted | [ADR-0067](docs/decisions/0067-holistic-audit-remediation-and-domain-invariants.md) |
 | 0068 | 2026-10-19 | Unauthenticated Health Check and Default Tenant Seeding for Container Reliability | Accepted | [ADR-0068](docs/decisions/0068-unauthenticated-healthcheck-and-dry-run-tenant-fallback.md) |
 | 0069 | 2026-10-19 | Streaming Execution Fills and Out-of-Order Reconciliation | Accepted | [ADR-0069](docs/decisions/0069-streaming-execution-fills-and-out-of-order-reconciliation.md) |
+| 0070 | 2026-10-23 | Pin Node 24 Image to 24.22.1 and Cumulative Fill Reconciliation Alignment | Accepted | [ADR-0070](docs/decisions/0070-pin-node-24-image-and-cumulative-fill-reconciliation.md) |
 
 
 
@@ -227,6 +228,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 111 | 2026-10-19 | Issue 134 Feedback Remediation & Container Healthchecks | Operations & API | Added unauthenticated /health & /api/health endpoints, Docker HEALTHCHECK, default tenant seeding, and dry-run circuit breaker reset (ADR-0068). | [Log](docs/iterations/2026-10-19-issue-134-feedback-remediation.md) |
 | 112 | 2026-10-19 | Automated Persona E2E Browser Testing Suite | Testing & Quality | Automated all 4 persona verification scenarios from e2e-browser-test-plan.md into web/src/persona-e2e.test.tsx without dependency bloat. | [Log](docs/iterations/2026-10-19-persona-e2e-testing-automation.md) |
 | 113 | 2026-10-19 | Streaming Execution Fills & Shadow Ledger Reconciliation | Broker & Scaling Architecture | Implemented WebSocket streaming trade updates, idempotent out-of-order execution reconciliation, and fill telemetry emission (Slice 3). | [Log](docs/iterations/2026-10-19-streaming-execution-fills.md) |
+| 114 | 2026-10-23 | Operational & Security Hardening | Security, Broker & DevOps | Pinned Dockerfile to Node 24.22.1 (CVE-2026-111497), aligned Alpaca cumulative fill quantity mapping, and merged Vite 8.3.5 (ADR-0070). | [Log](docs/iterations/2026-10-23-operational-and-security-hardening.md) |
 
 
 

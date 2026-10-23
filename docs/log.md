@@ -64,6 +64,8 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-10-19 | `docs/iterations/2026-10-19-persona-e2e-testing-automation.md` | Minor | Automated persona E2E browser verification suite across Advisor, Compliance, Tenant Admin, and Superadmin workflows (Slice 2). |
 | 2026-10-19 | `docs/decisions/0069-streaming-execution-fills-and-out-of-order-reconciliation.md` | Major | Recorded ADR-0069: Streaming Execution Fills and Out-of-Order Reconciliation (Slice 3). |
 | 2026-10-19 | `docs/iterations/2026-10-19-streaming-execution-fills.md` | Major | Implemented WebSocket streaming trade updates, idempotent out-of-order shadow ledger reconciliation, and fill telemetry emission (Slice 3). |
+| 2026-10-23 | `docs/decisions/0070-pin-node-24-image-and-cumulative-fill-reconciliation.md` | Major | Recorded ADR-0070: Pin Node 24 Image to 24.22.1 and Cumulative Fill Reconciliation Alignment (Issue #139 & #137 review). |
+| 2026-10-23 | `docs/iterations/2026-10-23-operational-and-security-hardening.md` | Minor | Pinned Dockerfile to Node 24.22.1 (CVE-2026-111497), aligned Alpaca trade fill quantity mapping, and merged Vite 8.3.5. |
 
 &copy; 2026 Johan Hellman. All rights reserved.
 

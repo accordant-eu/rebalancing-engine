@@ -77,6 +77,7 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0067: Holistic Audit Remediation & Domain Invariants](0067-holistic-audit-remediation-and-domain-invariants.md) - Accepted
 * [ADR-0068: Unauthenticated Health Check and Default Tenant Seeding for Container Reliability](0068-unauthenticated-healthcheck-and-dry-run-tenant-fallback.md) - Accepted
 * [ADR-0069: Streaming Execution Fills and Out-of-Order Reconciliation](0069-streaming-execution-fills-and-out-of-order-reconciliation.md) - Accepted
+* [ADR-0070: Pin Node 24 Image to 24.22.1 and Cumulative Fill Reconciliation Alignment](0070-pin-node-24-image-and-cumulative-fill-reconciliation.md) - Accepted
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

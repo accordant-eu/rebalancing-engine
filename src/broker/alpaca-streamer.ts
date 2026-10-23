@@ -158,7 +158,7 @@ export class AlpacaBrokerStreamer implements BrokerStreamer {
     switch (event) {
       case 'fill':
         status = 'FILLED';
-        filledQuantity = parseFloat(data.qty || order.filled_qty || '0');
+        filledQuantity = parseFloat(order.filled_qty || data.qty || '0');
         filledPrice = parseFloat(data.price || order.filled_avg_price || '0');
         break;
       case 'partial_fill':

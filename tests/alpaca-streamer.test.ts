@@ -221,11 +221,74 @@ describe('AlpacaBrokerStreamer', () => {
       data: { status: 'authorized' }
     })));
     await connectPromise;
-
     expect(streamer.isConnected()).toBe(true);
 
     await streamer.disconnect();
     expect(mockWsInstance.close).toHaveBeenCalled();
     expect(streamer.isConnected()).toBe(false);
+  });
+
+  it('reports cumulative filledQuantity across multi-tranche partial_fill and fill sequence', async () => {
+    const connectPromise = streamer.connect();
+    mockWsInstance.on.mock.calls.find((c: any) => c[0] === 'open')[1]();
+    mockWsInstance.on.mock.calls.find((c: any) => c[0] === 'message')[1](Buffer.from(JSON.stringify({
+      stream: 'authorization',
+      data: { status: 'authorized' }
+    })));
+    await connectPromise;
+
+    const emittedEvents: any[] = [];
+    streamer.onTradeExecution((evt) => emittedEvents.push(evt));
+
+    const onMessage = mockWsInstance.on.mock.calls.find((c: any) => c[0] === 'message')[1];
+
+    // Tranche 1: partial fill for 7 shares of a 10-share order
+    onMessage(Buffer.from(JSON.stringify({
+      stream: 'trade_updates',
+      data: {
+        event: 'partial_fill',
+        qty: '7',
+        price: '100',
+        order: {
+          id: 'ord-multi-1',
+          symbol: 'AAPL',
+          qty: '10',
+          filled_qty: '7',
+          filled_avg_price: '100'
+        },
+        timestamp: '2026-10-23T10:00:00Z'
+      }
+    })));
+
+    // Tranche 2: final fill for remaining 3 shares (order.filled_qty = 10, data.qty = 3)
+    onMessage(Buffer.from(JSON.stringify({
+      stream: 'trade_updates',
+      data: {
+        event: 'fill',
+        qty: '3', // single fill slice size
+        price: '102',
+        order: {
+          id: 'ord-multi-1',
+          symbol: 'AAPL',
+          qty: '10',
+          filled_qty: '10', // cumulative size
+          filled_avg_price: '100.6'
+        },
+        timestamp: '2026-10-23T10:00:05Z'
+      }
+    })));
+
+    expect(emittedEvents).toHaveLength(2);
+    expect(emittedEvents[0]).toMatchObject({
+      orderId: 'ord-multi-1',
+      status: 'PARTIALLY_FILLED',
+      filledQuantity: 7,
+    });
+    // Crucial: filledQuantity must be cumulative (10), NOT the incremental tranche size (3)
+    expect(emittedEvents[1]).toMatchObject({
+      orderId: 'ord-multi-1',
+      status: 'FILLED',
+      filledQuantity: 10,
+    });
   });
 });

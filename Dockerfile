@@ -1,5 +1,5 @@
 # ── Builder ───────────────────────────────────────────────────────────────────
-FROM node:24-bookworm AS builder
+FROM node:24.22.1-bookworm AS builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN cd web && npm run build
 RUN npm prune --omit=dev
 
 # ── Production ────────────────────────────────────────────────────────────────
-FROM node:24-bookworm-slim AS production
+FROM node:24.22.1-bookworm-slim AS production
 
 WORKDIR /app
 
