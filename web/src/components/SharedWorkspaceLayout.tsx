@@ -31,6 +31,9 @@ export interface SharedWorkspaceLayoutProps {
   navItems: NavItem[];
   title: string;
   titleIcon: React.ElementType;
+  brandName?: string;
+  brandLogoUrl?: string;
+  primaryColor?: string;
 }
 
 export const SharedWorkspaceLayout: React.FC<SharedWorkspaceLayoutProps> = ({
@@ -42,19 +45,39 @@ export const SharedWorkspaceLayout: React.FC<SharedWorkspaceLayoutProps> = ({
   onTabChange,
   navItems,
   title,
-  titleIcon: TitleIcon
+  titleIcon: TitleIcon,
+  brandName,
+  brandLogoUrl,
+  primaryColor,
 }) => {
   return (
     <LazyMotion features={domAnimation} strict>
-      <div className="flex h-screen bg-slate-50/50 text-slate-800 font-sans overflow-hidden">
+      <div 
+        style={primaryColor ? ({ '--tenant-primary': primaryColor } as React.CSSProperties) : undefined}
+        className="flex h-screen bg-slate-50/50 text-slate-800 font-sans overflow-hidden"
+      >
         {/* Sidebar with Glassmorphism */}
         <aside className="w-72 bg-white/70 backdrop-blur-2xl border-r border-slate-200/50 flex flex-col shadow-[4px_0_30px_rgba(0,0,0,0.03)] z-20 relative transition-all">
           {/* Workspace Title */}
           <div className="p-6 pt-8 pb-8 flex items-center gap-4 text-slate-900 font-extrabold text-xl tracking-tight">
-            <div className="p-2.5 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl shadow-glow-teal border border-teal-300/30">
-              <TitleIcon size={22} className="text-white" strokeWidth={2.5} />
+            {brandLogoUrl ? (
+              <img src={brandLogoUrl} alt={brandName || title} className="w-9 h-9 object-contain rounded-xl" />
+            ) : (
+              <div
+                style={primaryColor ? { background: `linear-gradient(135deg, ${primaryColor}, #0284c7)` } : undefined}
+                className="p-2.5 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl shadow-glow-teal border border-teal-300/30"
+              >
+                <TitleIcon size={22} className="text-white" strokeWidth={2.5} />
+              </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="truncate">{title}</span>
+              {brandName && brandName !== title && (
+                <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase -mt-0.5 truncate">
+                  {brandName}
+                </span>
+              )}
             </div>
-            {title}
           </div>
           
           {/* Navigation */}

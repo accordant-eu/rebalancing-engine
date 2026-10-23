@@ -6,6 +6,14 @@ import { createHash, randomBytes } from 'crypto';
 import { getDb } from '../db/sqlite';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
 import { validateTargetAllocation } from '../core/drift';
+import { evaluateRebalance } from '../core/evaluation';
+import {
+  PortfolioState,
+  PriceSnapshot,
+  RebalancingPolicy,
+  TargetAllocation,
+  TenantBranding,
+} from '../models/domain';
 import { DynamicOptimizerService } from '../optimizer';
 import { logger } from '../utils/logger';
 import swaggerUi from 'swagger-ui-express';
@@ -109,6 +117,9 @@ setInterval(() => {
       req.path === '/api/health' ||
       req.path === '/api/auth/login' ||
       req.path === '/api/auth/refresh' ||
+      req.path === '/api/public/branding' ||
+      req.path === '/api/public/onboarding' ||
+      req.path === '/api/public/sandbox/simulate' ||
       req.path === '/api/webhooks/alpaca'
     ) return next();
     
@@ -242,21 +253,307 @@ setInterval(() => {
     res.json({ ticket: ticketId, expiresInSeconds: 30 });
   });
 
+  // --- Public Marketing Sandbox & Self-Serve Onboarding ---
+  app.post('/api/public/sandbox/simulate', (req, res) => {
+    try {
+      const { holdings = [], cash = 0, targets = [], policy = {}, prices } = req.body;
+      if (!Array.isArray(targets) || targets.length === 0) {
+        return sendError(res, 400, 'BAD_REQUEST', 'targets array is required');
+      }
+
+      const mergedPolicy: RebalancingPolicy = {
+        strategyType: policy.strategyType ?? 'manual',
+        absoluteDriftTolerance: policy.absoluteDriftTolerance ?? 0.05,
+        minimumTradeSize: policy.minimumTradeSize ?? 10,
+        executionTargetMode: policy.executionTargetMode ?? 'full_reset',
+        maxFrictionBps: policy.maxFrictionBps ?? 50,
+        assumedSlippageBps: policy.assumedSlippageBps ?? 5,
+        allowLeverage: policy.allowLeverage ?? false,
+        maxLeverageRatio: policy.maxLeverageRatio ?? 2.0,
+        maintenanceMarginRequirement: policy.maintenanceMarginRequirement ?? 0.25,
+        marginExcessBuffer: policy.marginExcessBuffer ?? 0.10,
+        ...policy,
+      };
+
+      const targetAllocation: TargetAllocation = {
+        targets,
+        cashBuffer: policy.cashBuffer ?? 0,
+      };
+      validateTargetAllocation(targetAllocation, mergedPolicy);
+
+      // Snapshot prices: use user-supplied or fallback to global prices
+      const globalSnapshot = stateManager.getGlobalPrices();
+      const priceMap: Record<string, number> = { ...(globalSnapshot?.prices || {}), ...(prices || {}) };
+
+      // Ensure every targeted or held instrument has a positive price
+      for (const t of targets) {
+        if (!priceMap[t.instrumentId] || priceMap[t.instrumentId] <= 0) {
+          priceMap[t.instrumentId] = 100; // default sandbox price fallback
+        }
+      }
+      for (const h of holdings) {
+        if (!priceMap[h.instrumentId] || priceMap[h.instrumentId] <= 0) {
+          priceMap[h.instrumentId] = 100;
+        }
+      }
+
+      const priceSnapshot: PriceSnapshot = { prices: priceMap, asOf: new Date().toISOString() };
+
+      const syntheticState: PortfolioState = {
+        accountId: 'sandbox-portfolio',
+        tenantId: 'sandbox',
+        cash: Number(cash) || 0,
+        holdings: holdings.map((h: any) => ({
+          instrumentId: h.instrumentId,
+          quantity: Number(h.quantity) || 0,
+        })),
+        cashFlows: [],
+      };
+
+      const evalResult = evaluateRebalance({
+        eventId: 'sandbox-eval-' + Date.now(),
+        createdAt: new Date().toISOString(),
+        portfolioState: syntheticState,
+        targetAllocation,
+        priceSnapshot,
+        policy: mergedPolicy,
+      });
+
+      const totalTradeVolume = evalResult.tradeProposal.trades.reduce(
+        (sum, t) => sum + (t.estimatedValue || 0),
+        0,
+      );
+      const turnoverRate =
+        evalResult.valuation.totalPortfolioValue > 0
+          ? (0.5 * totalTradeVolume) / evalResult.valuation.totalPortfolioValue
+          : 0;
+      const slippageBps = mergedPolicy.assumedSlippageBps ?? 5;
+      const estimatedFrictionValue = (totalTradeVolume * slippageBps) / 10000;
+
+      const maxDriftBefore = Math.max(
+        ...evalResult.driftMeasurements.map((d) => Math.abs(d.absoluteDrift)),
+        0,
+      );
+      const maxDriftAfter = Math.max(
+        ...evalResult.postTradeSimulation.residualDrift.map((d) => Math.abs(d.absoluteDrift)),
+        0,
+      );
+
+      res.json({
+        success: true,
+        initialValuation: {
+          totalEquity: evalResult.valuation.totalPortfolioValue,
+          cash: syntheticState.cash,
+          holdingsValue: evalResult.valuation.totalHoldingsValue,
+        },
+        preTradeDrift: evalResult.driftMeasurements,
+        proposal: evalResult.tradeProposal,
+        simulation: evalResult.postTradeSimulation,
+        explanation: evalResult.explanation,
+        summary: {
+          totalTrades: evalResult.tradeProposal.trades.length,
+          turnoverRate: Number(turnoverRate.toFixed(4)),
+          estimatedFrictionValue: Number(estimatedFrictionValue.toFixed(2)),
+          estimatedFrictionBps: slippageBps,
+          maxDriftBefore: Number(maxDriftBefore.toFixed(4)),
+          maxDriftAfter: Number(maxDriftAfter.toFixed(4)),
+          isRebalanceBeneficial: evalResult.tradeProposal.trades.length > 0,
+        },
+      });
+    } catch (e: any) {
+      return sendError(res, 400, 'SANDBOX_SIMULATION_ERROR', e.message || String(e));
+    }
+  });
+
+  app.post('/api/public/onboarding', (req, res) => {
+    try {
+      const { tenantId, firmName, adminEmail, adminPassword, brokerType = 'MOCK', branding } = req.body;
+
+      if (!tenantId || !firmName || !adminEmail || !adminPassword) {
+        return sendError(res, 400, 'BAD_REQUEST', 'tenantId, firmName, adminEmail, and adminPassword are required');
+      }
+
+      const tenantIdRegex = /^[a-z0-9_-]{3,32}$/i;
+      if (!tenantIdRegex.test(tenantId)) {
+        return sendError(res, 400, 'INVALID_TENANT_ID', 'tenantId must be 3-32 alphanumeric characters, dashes, or underscores');
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(adminEmail)) {
+        return sendError(res, 400, 'INVALID_EMAIL', 'adminEmail must be a valid email address');
+      }
+
+      if (adminPassword.length < 8) {
+        return sendError(res, 400, 'WEAK_PASSWORD', 'adminPassword must be at least 8 characters long');
+      }
+
+      const db = getDb();
+      const existingTenant = db.prepare('SELECT tenantId FROM Tenants WHERE tenantId = ?').get(tenantId);
+      if (existingTenant) {
+        return sendError(res, 409, 'TENANT_EXISTS', `Tenant ID '${tenantId}' is already registered`);
+      }
+
+      const existingUser = db.prepare('SELECT email FROM Users WHERE email = ?').get(adminEmail);
+      if (existingUser) {
+        return sendError(res, 409, 'USER_EXISTS', `User with email '${adminEmail}' already exists`);
+      }
+
+      const effectiveBranding: TenantBranding = {
+        brandName: firmName,
+        primaryColor: branding?.primaryColor || '#0ea5e9',
+        accentColor: branding?.accentColor || '#0284c7',
+        portalTitle: branding?.portalTitle || `${firmName} Rebalancing`,
+        supportEmail: branding?.supportEmail || adminEmail,
+        logoUrl: branding?.logoUrl,
+      };
+
+      // 1. Create Tenant
+      stateManager.createTenant(tenantId, firmName, { brokerType }, effectiveBranding);
+
+      // 2. Create Initial Admin User
+      const userId = 'user-' + randomBytes(6).toString('hex');
+      const hashedPassword = bcrypt.hashSync(adminPassword, 10);
+      stateManager.createUser({
+        userId,
+        tenantId,
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'Admin',
+        status: 'Active',
+      });
+
+      // 3. Issue M2M API Key
+      const apiKey = stateManager.createTenantApiKey(tenantId);
+
+      // 4. Seed Default Sample Mandate & Portfolio
+      const sampleModelId = `model-core-${tenantId}`;
+      const sampleModel: any = {
+        modelId: sampleModelId,
+        tenantId,
+        name: `${firmName} Core 60/40`,
+        archetype: 'StaticWeights',
+        evaluationFrequency: 'realtime',
+        targetAllocation: {
+          targets: [
+            { instrumentId: 'US0378331005:XNAS:USD', weight: 0.6 },
+            { instrumentId: 'US5949181045:XNAS:USD', weight: 0.4 },
+          ],
+          cashBuffer: 0,
+        },
+        policy: {
+          absoluteDriftTolerance: 0.05,
+          minimumTradeSize: 100,
+          executionTargetMode: 'full_reset',
+        },
+      };
+      stateManager.createModel(sampleModel);
+
+      const sampleAccountId = `port-${tenantId}-1`;
+      stateManager.registerPortfolio(sampleAccountId, {
+        portfolioState: {
+          accountId: sampleAccountId,
+          tenantId,
+          modelId: sampleModelId,
+          subscriptionType: 'discretionary',
+          cash: 100000,
+          holdings: [],
+          cashFlows: [],
+        },
+        priceSnapshot: stateManager.getGlobalPrices(),
+        targetAllocation: sampleModel.targetAllocation,
+        policy: sampleModel.policy,
+        archetype: 'StaticWeights',
+      });
+
+      res.status(201).json({
+        success: true,
+        tenant: {
+          tenantId,
+          name: firmName,
+          brokerType,
+          branding: effectiveBranding,
+        },
+        user: {
+          userId,
+          email: adminEmail,
+          role: 'Admin',
+        },
+        apiKey: {
+          keyPrefix: apiKey.keyPrefix,
+          secret: apiKey.secret,
+        },
+        sampleData: {
+          modelId: sampleModelId,
+          accountId: sampleAccountId,
+        },
+        message: 'Tenant and partner firm provisioned successfully. You can now log in or integrate via API.',
+      });
+    } catch (e: any) {
+      return sendError(res, 500, 'ONBOARDING_FAILED', e.message || String(e));
+    }
+  });
+
+  app.get('/api/public/branding', (req, res) => {
+    const tenantId = (req.query.tenantId as string) || 'tenant-baseline';
+    const branding = stateManager.getTenantBranding ? stateManager.getTenantBranding(tenantId) : null;
+    const allTenants = stateManager.getAllTenants();
+    const tenant = allTenants.find((t: any) => t.tenantId === tenantId);
+    res.json({
+      tenantId,
+      name: tenant?.name || 'Accordant',
+      branding: branding || {
+        brandName: tenant?.name || 'Accordant',
+        primaryColor: '#0ea5e9',
+        accentColor: '#0284c7',
+      },
+    });
+  });
+
+  app.get('/api/tenant/branding', (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const branding = stateManager.getTenantBranding ? stateManager.getTenantBranding(tenantId) : null;
+    res.json(branding || {});
+  });
+
+  app.put('/api/tenant/branding', requireAdmin, (req, res) => {
+    const tenantId = (req as any).tenantId;
+    const branding = req.body as TenantBranding;
+    if (stateManager.updateTenantBranding) {
+      stateManager.updateTenantBranding(tenantId, branding);
+    }
+    res.json({ success: true, branding });
+  });
+
+  app.get('/api/admin/tenants/:tenantId/branding', requireSuperadmin, (req, res) => {
+    const tenantId = req.params.tenantId;
+    const branding = stateManager.getTenantBranding ? stateManager.getTenantBranding(tenantId) : null;
+    res.json(branding || {});
+  });
+
+  app.put('/api/admin/tenants/:tenantId/branding', requireSuperadmin, (req, res) => {
+    const tenantId = req.params.tenantId;
+    const branding = req.body as TenantBranding;
+    if (stateManager.updateTenantBranding) {
+      stateManager.updateTenantBranding(tenantId, branding);
+    }
+    res.json({ success: true, branding });
+  });
+
   // --- Admin Endpoints ---
   app.get('/api/admin/tenants', requireSuperadmin, (req, res) => {
     res.json(stateManager.getAllTenants());
   });
 
   app.post('/api/admin/tenants', requireSuperadmin, (req, res) => {
-    const { tenantId, name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl } = req.body;
-    stateManager.createTenant(tenantId, name, { brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl });
+    const { tenantId, name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl, branding } = req.body;
+    stateManager.createTenant(tenantId, name, { brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl }, branding);
     res.json({ message: 'Tenant provisioned successfully' });
   });
 
   app.put('/api/admin/tenants/:tenantId', requireSuperadmin, (req, res) => {
     const tenantId = req.params.tenantId;
-    const { name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl } = req.body;
-    stateManager.updateTenant(tenantId, name, { brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl });
+    const { name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl, branding } = req.body;
+    stateManager.updateTenant(tenantId, name, { brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl }, branding);
     res.json({ message: 'Tenant updated successfully' });
   });
 

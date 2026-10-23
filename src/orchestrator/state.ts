@@ -35,6 +35,8 @@ export interface LiveStateManager {
   getGlobalPrices(): PriceSnapshot;
   isReady(accountId: string): boolean;
   getTenantBrokerConfig?(tenantId: string): any;
+  getTenantBranding?(tenantId: string): any;
+  updateTenantBranding?(tenantId: string, branding: any): void;
   getBrokerSymbol?(instrumentId: string, brokerType: string): string;
   getInstrumentId?(brokerSymbol: string, brokerType: string): string;
   

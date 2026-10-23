@@ -9,6 +9,7 @@ import {
   Holding,
   ModelMandate,
   TenantBrokerConfig,
+  TenantBranding,
 } from '../models/domain';
 import { randomBytes, createHash } from 'crypto';
 import { LiveState, LiveStateManager } from './state';
@@ -29,17 +30,18 @@ export class SqliteStateManager implements LiveStateManager {
   private portfolioRepo: PortfolioRepository = new PortfolioRepository();
 
   // Tenant & Model Management
-  public createTenant(tenantId: string, name: string, brokerConfig?: TenantBrokerConfig): void {
+  public createTenant(tenantId: string, name: string, brokerConfig?: TenantBrokerConfig, branding?: TenantBranding): void {
     const db = getDb();
     const type = brokerConfig?.brokerType || 'MOCK';
     const key = brokerConfig?.brokerApiKey || null;
     const secret = brokerConfig?.brokerApiSecret || null;
     const baseUrl = brokerConfig?.brokerBaseUrl || null;
+    const brandingJson = branding ? JSON.stringify(branding) : null;
     
     db.prepare(`
-      INSERT OR REPLACE INTO Tenants (tenantId, name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl) 
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(tenantId, name, type, key, secret, baseUrl);
+      INSERT OR REPLACE INTO Tenants (tenantId, name, brokerType, brokerApiKey, brokerApiSecret, brokerBaseUrl, branding) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(tenantId, name, type, key, secret, baseUrl, brandingJson);
   }
 
   public getTenantBrokerConfig(tenantId: string): TenantBrokerConfig | null {
@@ -57,8 +59,11 @@ export class SqliteStateManager implements LiveStateManager {
   // --- Superadmin Operations ---
   public getAllTenants(): any[] {
     const db = getDb();
-    const rows = db.prepare(`SELECT tenantId, name, brokerType, brokerBaseUrl FROM Tenants`).all() as any[];
-    return rows;
+    const rows = db.prepare(`SELECT tenantId, name, brokerType, brokerBaseUrl, branding FROM Tenants`).all() as any[];
+    return rows.map(r => ({
+      ...r,
+      branding: r.branding ? JSON.parse(r.branding) : undefined
+    }));
   }
 
   public createUser(user: { userId: string; tenantId: string; email: string; password?: string; role?: string; status?: string }): void {
@@ -113,13 +118,37 @@ export class SqliteStateManager implements LiveStateManager {
   }
 
   // --- Tenant Settings & API Keys ---
-  public updateTenant(tenantId: string, name: string, brokerConfig: TenantBrokerConfig): void {
+  public updateTenant(tenantId: string, name: string, brokerConfig: TenantBrokerConfig, branding?: TenantBranding): void {
     const db = getDb();
-    db.prepare(`
-      UPDATE Tenants 
-      SET name = ?, brokerType = ?, brokerApiKey = ?, brokerApiSecret = ?, brokerBaseUrl = ?
-      WHERE tenantId = ?
-    `).run(name, brokerConfig.brokerType, brokerConfig.brokerApiKey, brokerConfig.brokerApiSecret, brokerConfig.brokerBaseUrl, tenantId);
+    if (branding !== undefined) {
+      db.prepare(`
+        UPDATE Tenants 
+        SET name = ?, brokerType = ?, brokerApiKey = ?, brokerApiSecret = ?, brokerBaseUrl = ?, branding = ?
+        WHERE tenantId = ?
+      `).run(name, brokerConfig.brokerType, brokerConfig.brokerApiKey, brokerConfig.brokerApiSecret, brokerConfig.brokerBaseUrl, JSON.stringify(branding), tenantId);
+    } else {
+      db.prepare(`
+        UPDATE Tenants 
+        SET name = ?, brokerType = ?, brokerApiKey = ?, brokerApiSecret = ?, brokerBaseUrl = ?
+        WHERE tenantId = ?
+      `).run(name, brokerConfig.brokerType, brokerConfig.brokerApiKey, brokerConfig.brokerApiSecret, brokerConfig.brokerBaseUrl, tenantId);
+    }
+  }
+
+  public getTenantBranding(tenantId: string): TenantBranding | null {
+    const db = getDb();
+    const row = db.prepare(`SELECT branding FROM Tenants WHERE tenantId = ?`).get(tenantId) as any;
+    if (!row || !row.branding) return null;
+    try {
+      return JSON.parse(row.branding);
+    } catch {
+      return null;
+    }
+  }
+
+  public updateTenantBranding(tenantId: string, branding: TenantBranding): void {
+    const db = getDb();
+    db.prepare(`UPDATE Tenants SET branding = ? WHERE tenantId = ?`).run(JSON.stringify(branding), tenantId);
   }
 
   public createTenantApiKey(tenantId: string): { keyPrefix: string; secret: string } {

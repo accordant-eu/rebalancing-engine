@@ -8,6 +8,9 @@ interface TenantAdminLayoutProps {
   onSignOut: () => void;
   activeTab: 'overview' | 'users' | 'models';
   onTabChange: (tab: 'overview' | 'users' | 'models') => void;
+  brandName?: string;
+  brandLogoUrl?: string;
+  primaryColor?: string;
 }
 
 export const TenantAdminLayout: React.FC<TenantAdminLayoutProps> = ({ 
@@ -15,7 +18,10 @@ export const TenantAdminLayout: React.FC<TenantAdminLayoutProps> = ({
   identityDisplay, 
   onSignOut,
   activeTab,
-  onTabChange
+  onTabChange,
+  brandName,
+  brandLogoUrl,
+  primaryColor
 }) => {
   
   const navItems: NavItem[] = [
@@ -30,6 +36,9 @@ export const TenantAdminLayout: React.FC<TenantAdminLayoutProps> = ({
       titleIcon={Home}
       roleDisplay="Tenant Administrator"
       identityDisplay={identityDisplay}
+      brandName={brandName}
+      brandLogoUrl={brandLogoUrl}
+      primaryColor={primaryColor}
       activeTab={activeTab}
       onTabChange={onTabChange as (tab: string) => void}
       onSignOut={onSignOut}

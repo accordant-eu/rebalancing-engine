@@ -7,8 +7,8 @@
 
 export interface TenantBrokerConfig {
   brokerType: 'ALPACA' | 'MOCK' | 'IBKR' | string;
-  brokerApiKey: string;
-  brokerApiSecret: string;
+  brokerApiKey?: string;
+  brokerApiSecret?: string;
   brokerBaseUrl?: string;
 }
 
@@ -83,9 +83,23 @@ export interface CashFlowSchedule {
   description?: string;
 }
 
+export interface TenantBranding {
+  primaryColor?: string;
+  accentColor?: string;
+  brandName?: string;
+  logoUrl?: string;
+  portalTitle?: string;
+  supportEmail?: string;
+}
+
 export interface Tenant {
   tenantId: string;
   name: string;
+  brokerType?: string;
+  brokerApiKey?: string;
+  brokerApiSecret?: string;
+  brokerBaseUrl?: string;
+  branding?: TenantBranding;
 }
 
 export type MandateArchetype = 'StaticWeights' | 'EfficientFrontier' | 'MinimumVariance';

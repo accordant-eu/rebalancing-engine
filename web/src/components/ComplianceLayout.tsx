@@ -6,7 +6,10 @@ export const ComplianceLayout: React.FC<{
   children: React.ReactNode; 
   identityDisplay: string; 
   onSignOut: () => void;
-}> = ({ children, identityDisplay, onSignOut }) => {
+  brandName?: string;
+  brandLogoUrl?: string;
+  primaryColor?: string;
+}> = ({ children, identityDisplay, onSignOut, brandName, brandLogoUrl, primaryColor }) => {
   const [activeTab, setActiveTab] = useState('explorer');
 
   const navItems: NavItem[] = [
@@ -20,6 +23,9 @@ export const ComplianceLayout: React.FC<{
       titleIcon={ShieldCheck}
       roleDisplay="Compliance Officer"
       identityDisplay={identityDisplay}
+      brandName={brandName}
+      brandLogoUrl={brandLogoUrl}
+      primaryColor={primaryColor}
       activeTab={activeTab}
       onTabChange={setActiveTab}
       onSignOut={onSignOut}

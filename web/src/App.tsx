@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Info, Zap } from 'lucide-react';
+import { ArrowLeft, Info, Zap, Building } from 'lucide-react';
 
-import type { LiveState, ModelMandate, StatePayload, SystemStreamEvent, TenantMetrics } from './types';
+import type { LiveState, ModelMandate, StatePayload, SystemStreamEvent, TenantMetrics, TenantBranding } from './types';
 import { MandateBuilderForm } from './components/MandateBuilderForm';
 import { TenantManagementTab } from './components/admin/TenantManagementTab';
 import { BrokerIntegrationTab } from './components/admin/BrokerIntegrationTab';
@@ -16,6 +16,8 @@ import { TenantAdminLayout } from './components/TenantAdminLayout';
 import { FirmOverviewDashboard } from './components/FirmOverviewDashboard';
 import { UserManagementDashboard } from './components/UserManagementDashboard';
 import { SuperadminLayout } from './components/SuperadminLayout';
+import { MarketingSandboxModal } from './components/MarketingSandboxModal';
+import { PartnerOnboardingModal } from './components/PartnerOnboardingModal';
 
 // Helper to calculate drift for a single portfolio
 function getPortfolioMetrics(portfolio: LiveState, globalPrices: Record<string, number>) {
@@ -78,6 +80,21 @@ function App() {
   const [streamStatus, setStreamStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [streamEvents, setStreamEvents] = useState<SystemStreamEvent[]>([]);
 
+  // Slice 6: Marketing Sandbox, Partner Onboarding & White-Label Branding
+  const [isSandboxOpen, setIsSandboxOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [branding, setBranding] = useState<TenantBranding | null>(null);
+  const [loginEmail, setLoginEmail] = useState('');
+
+  useEffect(() => {
+    fetch('/api/public/branding')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) setBranding(data);
+      })
+      .catch(() => {});
+  }, []);
+
   const handleRunOptimizer = async () => {
     try {
       const headers = { 'Content-Type': 'application/json' } as any;
@@ -99,6 +116,16 @@ function App() {
     if (!tenantToken) return;
 
     const headers = { 'Authorization': `Bearer ${tenantToken}` };
+
+    const fetchBranding = async () => {
+      try {
+        const res = await fetch('/api/tenant/branding', { headers });
+        if (res.ok) {
+          const data = await res.json();
+          setBranding(data);
+        }
+      } catch (_e) {}
+    };
 
     const fetchState = async () => {
       try {
@@ -147,6 +174,7 @@ function App() {
       }
     };
 
+    fetchBranding();
     fetchState();
     fetchLogs();
     fetchModels();
@@ -259,30 +287,89 @@ function App() {
 
   if (!tenantToken) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4">
         <div className="w-full max-w-md p-10 bg-white rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex items-center justify-center mb-10 gap-3">
-            <div className="p-2 bg-sky-100 rounded-lg">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Accordant</h2>
+          <div className="flex items-center justify-center mb-8 gap-3">
+            {branding?.logoUrl ? (
+              <img src={branding.logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+            ) : (
+              <div 
+                className="p-2.5 rounded-xl text-white shadow-sm flex items-center justify-center"
+                style={{ backgroundColor: branding?.primaryColor || '#0284c7' }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+            )}
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+              {branding?.portalTitle || 'Accordant'}
+            </h2>
           </div>
           <form onSubmit={handleLogin} className="flex flex-col gap-6">
             <div>
               <label className="block mb-2 text-sm font-semibold text-slate-600">Email Address</label>
-              <input name="email" type="email" required className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" placeholder="admin@accordant.eu" />
+              <input 
+                name="email" 
+                type="email" 
+                required 
+                defaultValue={loginEmail}
+                key={loginEmail}
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" 
+                placeholder="admin@accordant.eu" 
+              />
             </div>
             <div>
               <label className="block mb-2 text-sm font-semibold text-slate-600">Password</label>
               <input name="password" type="password" required className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" placeholder="••••••••" />
             </div>
-            <button type="submit" className="mt-4 w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+            <button 
+              type="submit" 
+              style={{ backgroundColor: branding?.primaryColor || '#0284c7' }}
+              className="mt-2 w-full py-3 hover:opacity-90 text-white font-semibold rounded-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+            >
               Sign In to Engine
             </button>
           </form>
+
+          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col gap-3">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">
+              Commercial Exploration
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSandboxOpen(true)}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-semibold transition-all shadow-sm"
+              >
+                <Zap size={14} className="text-amber-600" />
+                Live Sandbox
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOnboardingOpen(true)}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-xl text-xs font-semibold transition-all shadow-sm"
+              >
+                <Building size={14} className="text-sky-600" />
+                Partner Sign-Up
+              </button>
+            </div>
+          </div>
         </div>
+
+        {isSandboxOpen && (
+          <MarketingSandboxModal onClose={() => setIsSandboxOpen(false)} />
+        )}
+
+        {isOnboardingOpen && (
+          <PartnerOnboardingModal 
+            onClose={() => setIsOnboardingOpen(false)}
+            onSuccessLogin={(email, _pwd) => {
+              setLoginEmail(email);
+              setIsOnboardingOpen(false);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -479,6 +566,9 @@ function App() {
         onSignOut={() => { setTenantToken(null); setUserRole(null); }}
         activeTab={layoutTab}
         onTabChange={(tab) => setCurrentTab(tab)}
+        brandName={branding?.portalTitle}
+        brandLogoUrl={branding?.logoUrl}
+        primaryColor={branding?.primaryColor}
       >
         {currentTab === 'inbox' && <div className="p-8 text-slate-500">Action Inbox under construction... Redirecting logic here soon! (Tranche C)</div>}
         {currentTab === 'fleet' && (!selectedAccountId ? renderHeatmap() : renderDetailedView())}
@@ -489,7 +579,13 @@ function App() {
 
   if (userRole === 'Viewer') {
     return (
-      <ComplianceLayout identityDisplay={identityDisplay || ''} onSignOut={() => { setTenantToken(null); setUserRole(null); }}>
+      <ComplianceLayout 
+        identityDisplay={identityDisplay || ''} 
+        onSignOut={() => { setTenantToken(null); setUserRole(null); }}
+        brandName={branding?.portalTitle}
+        brandLogoUrl={branding?.logoUrl}
+        primaryColor={branding?.primaryColor}
+      >
         <ComplianceDashboard token={tenantToken} />
       </ComplianceLayout>
     );
@@ -525,6 +621,9 @@ function App() {
           else if (tab === 'overview') setCurrentTab('fleet'); // or just 'overview'
           else setCurrentTab(tab);
         }}
+        brandName={branding?.portalTitle}
+        brandLogoUrl={branding?.logoUrl}
+        primaryColor={branding?.primaryColor}
       >
         {getAdminTab()}
       </TenantAdminLayout>
@@ -550,6 +649,9 @@ function App() {
         onSignOut={() => { setTenantToken(null); setUserRole(null); }}
         activeTab={layoutTab}
         onTabChange={(tab) => setCurrentTab(tab)}
+        brandName={branding?.portalTitle}
+        brandLogoUrl={branding?.logoUrl}
+        primaryColor={branding?.primaryColor}
       >
         <div style={{ padding: '24px' }}>
           {getSuperTab()}

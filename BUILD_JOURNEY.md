@@ -107,6 +107,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0070 | 2026-10-23 | Pin Node 24 Image to 24.22.1 and Cumulative Fill Reconciliation Alignment | Accepted | [ADR-0070](docs/decisions/0070-pin-node-24-image-and-cumulative-fill-reconciliation.md) |
 | 0071 | 2026-10-23 | Multi-Custodian Interactive Brokers (IBKR) Adapter and Broker Factory | Accepted | [ADR-0071](docs/decisions/0071-multi-custodian-interactive-brokers-adapter.md) |
 | 0072 | 2026-10-23 | Direct Margin and Leveraged Mandates with Maintenance Buffer Constraints | Accepted | [ADR-0072](docs/decisions/0072-direct-margin-and-leveraged-mandates.md) |
+| 0073 | 2026-10-23 | SaaS Commercial Funnel, Interactive Marketing Sandbox, Zero-Touch Partner Onboarding, and White-Label Theming | Accepted | [ADR-0073](docs/decisions/0073-saas-commercial-funnel-and-white-label-theming.md) |
 
 
 
@@ -233,6 +234,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 114 | 2026-10-23 | Operational & Security Hardening | Security, Broker & DevOps | Pinned Dockerfile to Node 24.22.1 (CVE-2026-111497), aligned Alpaca cumulative fill quantity mapping, and merged Vite 8.3.5 (ADR-0070). | [Log](docs/iterations/2026-10-23-operational-and-security-hardening.md) |
 | 115 | 2026-10-23 | Multi-Custodian IBKR Adapter & Broker Factory | Broker, SaaS & Multi-Tenancy | Implemented IbkrBrokerAdapter, BrokerAdapterFactory, multi-custodian sync, SQLite contract mapping, and UI support for Interactive Brokers (Slice 4 / ADR-0071). | [Log](docs/iterations/2026-10-23-multi-custodian-ibkr-adapter.md) |
 | 116 | 2026-10-23 | Direct Margin & Leveraged Mandates | Architecture & Risk Management | Permitted controlled negative cash and target allocations exceeding 100% on margin-enabled portfolios with initial leverage bounds and maintenance margin safety (Slice 5 / ADR-0072). | [Log](docs/iterations/2026-10-23-direct-margin-and-leveraged-mandates.md) |
+| 117 | 2026-10-23 | SaaS Commercial Funnel, Sandbox & White-Label Theming | Commercial, UX & Multi-Tenancy | Implemented interactive marketing sandbox simulation, zero-touch partner onboarding, white-label tenant theming, and merged PR #141 (Slice 6 / ADR-0073). | [Log](docs/iterations/2026-10-23-saas-commercial-funnel-and-white-label-theming.md) |
 
 
 

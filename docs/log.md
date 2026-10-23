@@ -10,6 +10,8 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change | Scope | Description |
 |------|--------|-------|-------------|
+| 2026-10-23 | `docs/decisions/0073-saas-commercial-funnel-and-white-label-theming.md` | Major | Recorded ADR-0073: SaaS Commercial Funnel, Interactive Marketing Sandbox, Zero-Touch Partner Onboarding, and White-Label Theming (Slice 6). |
+| 2026-10-23 | `docs/iterations/2026-10-23-saas-commercial-funnel-and-white-label-theming.md` | Minor | Documented SaaS Commercial Funnel, Sandbox & White-Label Theming implementation (Iteration 117). |
 | 2026-10-23 | `docs/decisions/0072-direct-margin-and-leveraged-mandates.md` | Major | Recorded ADR-0072: Direct Margin & Leveraged Mandates with Maintenance Buffer Constraints (Slice 5). |
 | 2026-10-23 | `docs/iterations/2026-10-23-direct-margin-and-leveraged-mandates.md` | Minor | Documented Direct Margin & Leveraged Mandates implementation (Iteration 116). |
 | 2026-10-23 | `docs/decisions/0071-multi-custodian-interactive-brokers-adapter.md` | Major | Recorded ADR-0071: Multi-Custodian Interactive Brokers (IBKR) Adapter and Broker Factory (Slice 4). |

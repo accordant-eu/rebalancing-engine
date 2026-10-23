@@ -8,6 +8,9 @@ interface SuperadminLayoutProps {
   onSignOut: () => void;
   activeTab: 'tenants' | 'broker' | 'sysops' | 'assets';
   onTabChange: (tab: 'tenants' | 'broker' | 'sysops' | 'assets') => void;
+  brandName?: string;
+  brandLogoUrl?: string;
+  primaryColor?: string;
 }
 
 export const SuperadminLayout: React.FC<SuperadminLayoutProps> = ({ 
@@ -15,7 +18,10 @@ export const SuperadminLayout: React.FC<SuperadminLayoutProps> = ({
   identityDisplay, 
   onSignOut,
   activeTab,
-  onTabChange
+  onTabChange,
+  brandName,
+  brandLogoUrl,
+  primaryColor
 }) => {
   
   const navItems: NavItem[] = [
@@ -31,6 +37,9 @@ export const SuperadminLayout: React.FC<SuperadminLayoutProps> = ({
       titleIcon={Shield}
       roleDisplay="Superadministrator"
       identityDisplay={identityDisplay}
+      brandName={brandName}
+      brandLogoUrl={brandLogoUrl}
+      primaryColor={primaryColor}
       activeTab={activeTab}
       onTabChange={onTabChange as (tab: string) => void}
       onSignOut={onSignOut}

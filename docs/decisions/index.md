@@ -80,6 +80,7 @@ timestamp: 2026-06-14T00:00:00Z
 * [ADR-0070: Pin Node 24 Image to 24.22.1 and Cumulative Fill Reconciliation Alignment](0070-pin-node-24-image-and-cumulative-fill-reconciliation.md) - Accepted
 * [ADR-0071: Multi-Custodian Interactive Brokers (IBKR) Adapter and Broker Factory](0071-multi-custodian-interactive-brokers-adapter.md) - Accepted
 * [ADR-0072: Direct Margin and Leveraged Mandates with Maintenance Buffer Constraints](0072-direct-margin-and-leveraged-mandates.md) - Accepted
+* [ADR-0073: SaaS Commercial Funnel, Interactive Marketing Sandbox, Zero-Touch Partner Onboarding, and White-Label Theming](0073-saas-commercial-funnel-and-white-label-theming.md) - Accepted
 
 
 &copy; 2026 Johan Hellman. All rights reserved.

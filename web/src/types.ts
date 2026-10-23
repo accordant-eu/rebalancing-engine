@@ -123,3 +123,22 @@ export interface MandateScanResult {
   enqueued: number;
   accountIds: string[];
 }
+
+export interface TenantBranding {
+  primaryColor?: string;
+  accentColor?: string;
+  brandName?: string;
+  logoUrl?: string;
+  portalTitle?: string;
+  supportEmail?: string;
+}
+
+export interface Tenant {
+  tenantId: string;
+  name: string;
+  brokerType?: string;
+  brokerApiKey?: string;
+  brokerApiSecret?: string;
+  brokerBaseUrl?: string;
+  branding?: TenantBranding;
+}

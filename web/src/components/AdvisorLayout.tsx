@@ -8,7 +8,10 @@ export const AdvisorLayout: React.FC<{
   onSignOut: () => void;
   activeTab: 'inbox' | 'fleet' | 'models';
   onTabChange: (tab: 'inbox' | 'fleet' | 'models') => void;
-}> = ({ children, identityDisplay, onSignOut, activeTab, onTabChange }) => {
+  brandName?: string;
+  brandLogoUrl?: string;
+  primaryColor?: string;
+}> = ({ children, identityDisplay, onSignOut, activeTab, onTabChange, brandName, brandLogoUrl, primaryColor }) => {
 
   const navItems: NavItem[] = [
     { id: 'inbox', label: 'Action Inbox', icon: Inbox },
@@ -22,6 +25,9 @@ export const AdvisorLayout: React.FC<{
       titleIcon={Briefcase}
       roleDisplay="Portfolio Manager"
       identityDisplay={identityDisplay}
+      brandName={brandName}
+      brandLogoUrl={brandLogoUrl}
+      primaryColor={primaryColor}
       activeTab={activeTab}
       onTabChange={onTabChange as (tab: string) => void}
       onSignOut={onSignOut}

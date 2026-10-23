@@ -21,7 +21,8 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       brokerType TEXT DEFAULT 'MOCK',
       brokerApiKey TEXT,
       brokerApiSecret TEXT,
-      brokerBaseUrl TEXT
+      brokerBaseUrl TEXT,
+      branding TEXT
     );
 
     CREATE TABLE IF NOT EXISTS TenantApiKeys (
@@ -207,6 +208,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiKey TEXT`); } catch (_e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerApiSecret TEXT`); } catch (_e) { /* ignore if exists */ }
   try { db.exec(`ALTER TABLE Tenants ADD COLUMN brokerBaseUrl TEXT`); } catch (_e) { /* ignore if exists */ }
+  try { db.exec(`ALTER TABLE Tenants ADD COLUMN branding TEXT`); } catch (_e) { /* ignore if exists */ }
 
   // Create Users table explicitly as part of migrations (since the initial block is skipped if db exists)
   db.exec(`
@@ -278,9 +280,9 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   });
 
   // Seed baseline tenants if they don't exist
-  const insertTenant = db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name, brokerType) VALUES (?, ?, ?)`);
-  insertTenant.run('tenant-baseline', 'Baseline Tenant', 'MOCK');
-  insertTenant.run('default', 'Default Tenant', 'MOCK');
+  const insertTenant = db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name, brokerType, branding) VALUES (?, ?, ?, ?)`);
+  insertTenant.run('tenant-baseline', 'Baseline Tenant', 'MOCK', JSON.stringify({ brandName: 'Accordant Core', primaryColor: '#0ea5e9' }));
+  insertTenant.run('default', 'Default Tenant', 'MOCK', JSON.stringify({ brandName: 'Default Tenant', primaryColor: '#0ea5e9' }));
 
   const superadminEmail = process.env.SUPERADMIN_EMAIL || 'admin@localhost';
   const superadminPassword = process.env.SUPERADMIN_PASSWORD || 'changeme123';

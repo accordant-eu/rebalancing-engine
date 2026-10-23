@@ -8,6 +8,14 @@ interface Tenant {
   brokerApiKey?: string;
   brokerApiSecret?: string;
   brokerBaseUrl?: string;
+  branding?: {
+    primaryColor?: string;
+    accentColor?: string;
+    brandName?: string;
+    logoUrl?: string;
+    portalTitle?: string;
+    supportEmail?: string;
+  };
 }
 
 interface User {
@@ -30,7 +38,17 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   
-  const [form, setForm] = useState({ tenantId: '', name: '', brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '', brokerBaseUrl: '' });
+  const [form, setForm] = useState({
+    tenantId: '',
+    name: '',
+    brokerType: 'MOCK',
+    brokerApiKey: '',
+    brokerApiSecret: '',
+    brokerBaseUrl: '',
+    primaryColor: '#0ea5e9',
+    accentColor: '#0284c7',
+    portalTitle: '',
+  });
   const [userForm, setUserForm] = useState({ userId: '', email: '', password: '', role: 'Viewer' });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -54,21 +72,46 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
 
   const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      tenantId: form.tenantId,
+      name: form.name,
+      brokerType: form.brokerType,
+      brokerApiKey: form.brokerApiKey,
+      brokerApiSecret: form.brokerApiSecret,
+      brokerBaseUrl: form.brokerBaseUrl,
+      branding: {
+        brandName: form.name,
+        primaryColor: form.primaryColor || '#0ea5e9',
+        accentColor: form.accentColor || '#0284c7',
+        portalTitle: form.portalTitle || `${form.name} Rebalancer`,
+      },
+    };
+
     if (isEditing) {
       await fetch(`/api/admin/tenants/${form.tenantId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       setIsEditing(false);
     } else {
       await fetch('/api/admin/tenants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
     }
-    setForm({ tenantId: '', name: '', brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '', brokerBaseUrl: '' });
+    setForm({
+      tenantId: '',
+      name: '',
+      brokerType: 'MOCK',
+      brokerApiKey: '',
+      brokerApiSecret: '',
+      brokerBaseUrl: '',
+      primaryColor: '#0ea5e9',
+      accentColor: '#0284c7',
+      portalTitle: '',
+    });
     fetchTenants();
   };
 
@@ -80,7 +123,10 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
       brokerType: t.brokerType, 
       brokerApiKey: t.brokerApiKey || '', 
       brokerApiSecret: t.brokerApiSecret || '', 
-      brokerBaseUrl: t.brokerBaseUrl || '' 
+      brokerBaseUrl: t.brokerBaseUrl || '',
+      primaryColor: t.branding?.primaryColor || '#0ea5e9',
+      accentColor: t.branding?.accentColor || '#0284c7',
+      portalTitle: t.branding?.portalTitle || `${t.name} Rebalancer`,
     });
   };
 
@@ -146,6 +192,29 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
               <input className={inputClasses} type="password" placeholder={form.brokerType === 'IBKR' ? "Secret / Password (Optional)" : "API Secret"} value={form.brokerApiSecret} onChange={e => setForm({...form, brokerApiSecret: e.target.value})} />
             </>
           )}
+
+          {/* White-Label Branding Controls */}
+          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50/80 rounded-xl border border-slate-200/60">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Brand Portal Title</label>
+              <input className={inputClasses} placeholder="e.g. Apex Rebalancing Portal" value={form.portalTitle} onChange={e => setForm({...form, portalTitle: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Primary Brand Color</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={form.primaryColor} onChange={e => setForm({...form, primaryColor: e.target.value})} className="w-9 h-9 rounded-lg border-0 cursor-pointer p-0" />
+                <input className={inputClasses} value={form.primaryColor} onChange={e => setForm({...form, primaryColor: e.target.value})} placeholder="#0ea5e9" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Accent Brand Color</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={form.accentColor} onChange={e => setForm({...form, accentColor: e.target.value})} className="w-9 h-9 rounded-lg border-0 cursor-pointer p-0" />
+                <input className={inputClasses} value={form.accentColor} onChange={e => setForm({...form, accentColor: e.target.value})} placeholder="#0284c7" />
+              </div>
+            </div>
+          </div>
+
           <div className="md:col-span-2 flex gap-4 mt-2">
             <button className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold tracking-wide hover:bg-slate-800 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5" type="submit">
               {isEditing ? 'Save Changes' : 'Provision Tenant'}
@@ -154,7 +223,20 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
               <button 
                 type="button" 
                 className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold tracking-wide hover:bg-slate-50 transition-all shadow-sm"
-                onClick={() => { setIsEditing(false); setForm({ tenantId: '', name: '', brokerType: 'MOCK', brokerApiKey: '', brokerApiSecret: '', brokerBaseUrl: '' }); }}
+                onClick={() => {
+                  setIsEditing(false);
+                  setForm({
+                    tenantId: '',
+                    name: '',
+                    brokerType: 'MOCK',
+                    brokerApiKey: '',
+                    brokerApiSecret: '',
+                    brokerBaseUrl: '',
+                    primaryColor: '#0ea5e9',
+                    accentColor: '#0284c7',
+                    portalTitle: '',
+                  });
+                }}
               >
                 Cancel
               </button>
@@ -184,7 +266,16 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
               <tbody className="divide-y divide-slate-100">
                 {tenants.map(t => (
                   <tr key={t.tenantId} className={`hover:bg-slate-50/80 transition-colors group ${selectedTenant === t.tenantId ? 'bg-sky-50/50' : ''}`}>
-                    <td className="px-6 py-4 text-slate-900 font-medium">{t.name}</td>
+                    <td className="px-6 py-4 text-slate-900 font-medium">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0 border border-slate-300/40"
+                          style={{ backgroundColor: t.branding?.primaryColor || '#0ea5e9' }}
+                          title={`Brand Color: ${t.branding?.primaryColor || '#0ea5e9'}`}
+                        />
+                        <span>{t.name}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
                         {t.brokerType}

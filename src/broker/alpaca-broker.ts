@@ -71,8 +71,8 @@ export class AlpacaBrokerAdapter implements BrokerAdapter {
 
     const response = await fetch(dataUrl, {
       headers: {
-        'APCA-API-KEY-ID': dataKey,
-        'APCA-API-SECRET-KEY': dataSecret,
+        'APCA-API-KEY-ID': dataKey || '',
+        'APCA-API-SECRET-KEY': dataSecret || '',
         'Accept': 'application/json'
       }
     });
