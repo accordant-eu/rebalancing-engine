@@ -8,8 +8,12 @@ timestamp: 2026-06-14T00:00:00Z
 
 # Knowledge Base Log
 
-| Date | Change |
-|------|--------|
+| Date | Change | Scope | Description |
+|------|--------|-------|-------------|
+| 2026-10-23 | `docs/decisions/0072-direct-margin-and-leveraged-mandates.md` | Major | Recorded ADR-0072: Direct Margin & Leveraged Mandates with Maintenance Buffer Constraints (Slice 5). |
+| 2026-10-23 | `docs/iterations/2026-10-23-direct-margin-and-leveraged-mandates.md` | Minor | Documented Direct Margin & Leveraged Mandates implementation (Iteration 116). |
+| 2026-10-23 | `docs/decisions/0071-multi-custodian-interactive-brokers-adapter.md` | Major | Recorded ADR-0071: Multi-Custodian Interactive Brokers (IBKR) Adapter and Broker Factory (Slice 4). |
+| 2026-10-23 | `docs/iterations/2026-10-23-multi-custodian-ibkr-adapter.md` | Minor | Documented Multi-Custodian Interactive Brokers (IBKR) Adapter implementation (Iteration 115). |
 | 2026-10-16 | `docs/decisions/0067-holistic-audit-remediation-and-domain-invariants.md` | Major | Recorded ADR-0067 establishing decisions for corporate action dividend valuation, depositAllocationMode, and calendar scheduler trigger handoff. |
 | 2026-10-16 | `docs/plans/holistic-review-remediation-plan.md` | Major | Added 6-chunk dependency-ordered remediation plan for the 2026-10-16 holistic codebase review. |
 | 2026-10-16 | `docs/audits/holistic-codebase-review-2026-10-16.md` | Major | Completed holistic codebase and architecture review across ADRs, PRDs, roadmap, core math, live agent, API security, frontend personas, documentation, and test coverage. |

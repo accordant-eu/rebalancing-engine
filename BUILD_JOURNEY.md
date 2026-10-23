@@ -106,6 +106,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 0069 | 2026-10-19 | Streaming Execution Fills and Out-of-Order Reconciliation | Accepted | [ADR-0069](docs/decisions/0069-streaming-execution-fills-and-out-of-order-reconciliation.md) |
 | 0070 | 2026-10-23 | Pin Node 24 Image to 24.22.1 and Cumulative Fill Reconciliation Alignment | Accepted | [ADR-0070](docs/decisions/0070-pin-node-24-image-and-cumulative-fill-reconciliation.md) |
 | 0071 | 2026-10-23 | Multi-Custodian Interactive Brokers (IBKR) Adapter and Broker Factory | Accepted | [ADR-0071](docs/decisions/0071-multi-custodian-interactive-brokers-adapter.md) |
+| 0072 | 2026-10-23 | Direct Margin and Leveraged Mandates with Maintenance Buffer Constraints | Accepted | [ADR-0072](docs/decisions/0072-direct-margin-and-leveraged-mandates.md) |
 
 
 
@@ -231,6 +232,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 113 | 2026-10-19 | Streaming Execution Fills & Shadow Ledger Reconciliation | Broker & Scaling Architecture | Implemented WebSocket streaming trade updates, idempotent out-of-order execution reconciliation, and fill telemetry emission (Slice 3). | [Log](docs/iterations/2026-10-19-streaming-execution-fills.md) |
 | 114 | 2026-10-23 | Operational & Security Hardening | Security, Broker & DevOps | Pinned Dockerfile to Node 24.22.1 (CVE-2026-111497), aligned Alpaca cumulative fill quantity mapping, and merged Vite 8.3.5 (ADR-0070). | [Log](docs/iterations/2026-10-23-operational-and-security-hardening.md) |
 | 115 | 2026-10-23 | Multi-Custodian IBKR Adapter & Broker Factory | Broker, SaaS & Multi-Tenancy | Implemented IbkrBrokerAdapter, BrokerAdapterFactory, multi-custodian sync, SQLite contract mapping, and UI support for Interactive Brokers (Slice 4 / ADR-0071). | [Log](docs/iterations/2026-10-23-multi-custodian-ibkr-adapter.md) |
+| 116 | 2026-10-23 | Direct Margin & Leveraged Mandates | Architecture & Risk Management | Permitted controlled negative cash and target allocations exceeding 100% on margin-enabled portfolios with initial leverage bounds and maintenance margin safety (Slice 5 / ADR-0072). | [Log](docs/iterations/2026-10-23-direct-margin-and-leveraged-mandates.md) |
 
 
 

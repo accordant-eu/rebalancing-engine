@@ -449,17 +449,17 @@ setInterval(() => {
       throw new Error(`Archetype ${archetype} is not yet supported`);
     }
     if (archetype === 'StaticWeights' && model.targetAllocation) {
-      validateTargetAllocation(model.targetAllocation);
+      validateTargetAllocation(model.targetAllocation, model.policy);
       const totalWeight = model.targetAllocation.targets.reduce((acc: number, t: any) => acc + t.weight, 0);
       const cashBuffer = model.targetAllocation.cashBuffer || 0;
-      if (Math.abs(totalWeight + cashBuffer - 1.0) > 0.0001) {
+      if (!model.policy?.allowLeverage && Math.abs(totalWeight + cashBuffer - 1.0) > 0.0001) {
         throw new Error(`Target allocation weights (${totalWeight}) + cashBuffer (${cashBuffer}) must sum to exactly 1.0`);
       }
     } else if ((archetype === 'EfficientFrontier' || archetype === 'MinimumVariance') && model.targetAllocation?.targets?.length > 0) {
-      validateTargetAllocation(model.targetAllocation);
+      validateTargetAllocation(model.targetAllocation, model.policy);
       const totalWeight = model.targetAllocation.targets.reduce((acc: number, t: any) => acc + t.weight, 0);
       const cashBuffer = model.targetAllocation.cashBuffer || 0;
-      if (Math.abs(totalWeight + cashBuffer - 1.0) > 0.0001) {
+      if (!model.policy?.allowLeverage && Math.abs(totalWeight + cashBuffer - 1.0) > 0.0001) {
         throw new Error(`Target allocation weights (${totalWeight}) + cashBuffer (${cashBuffer}) must sum to exactly 1.0`);
       }
     }

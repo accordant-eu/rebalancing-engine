@@ -63,6 +63,7 @@ This directory contains detailed technical logs for development iterations of th
 - [2026-10-19: Streaming Execution Fills and Shadow Ledger Reconciliation (Slice 3)](2026-10-19-streaming-execution-fills.md)
 - [2026-10-23: Operational & Security Hardening (Node 24.22.1 & Cumulative Fill Mapping)](2026-10-23-operational-and-security-hardening.md)
 - [2026-10-23: Multi-Custodian Interactive Brokers (IBKR) Adapter & Broker Factory (Slice 4)](2026-10-23-multi-custodian-ibkr-adapter.md)
+- [2026-10-23: Direct Margin & Leveraged Mandates (Slice 5)](2026-10-23-direct-margin-and-leveraged-mandates.md)
 
 &copy; 2026 Johan Hellman. All rights reserved.
 

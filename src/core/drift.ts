@@ -3,12 +3,27 @@ import { CALCULATION_EPSILON, formatFixed, toDecimal } from './numeric';
 import { WeightResult } from './valuation';
 
 /**
- * Validates that the target allocation sum is approximately 1.0 (100%).
+ * Validates that the target allocation sum is approximately 1.0 (100%),
+ * or within authorized leverage bounds if allowLeverage is enabled in policy.
  * Uses a small epsilon to account for minor floating point imprecision.
  */
-export function validateTargetAllocation(target: TargetAllocation): void {
+export function validateTargetAllocation(target: TargetAllocation, policy?: RebalancingPolicy): void {
   const assetSum = target.targets.reduce((acc, t) => acc.plus(t.weight), toDecimal(0));
   const totalSum = assetSum.plus(target.cashBuffer || 0);
+
+  if (policy?.allowLeverage) {
+    const maxLeverage = toDecimal(policy.maxLeverageRatio ?? 2.0);
+    if (totalSum.lte(0)) {
+      throw new Error(`Target allocation must be greater than 0%. Total: ${formatFixed(totalSum.mul(100).toNumber(), 2)}%`);
+    }
+    if (totalSum.gt(maxLeverage)) {
+      throw new Error(
+        `Leveraged target allocation exceeds maximum authorized leverage ratio of ${formatFixed(maxLeverage.toNumber(), 2)}x. Total: ${formatFixed(totalSum.mul(100).toNumber(), 2)}%`,
+      );
+    }
+    return;
+  }
+
   if (totalSum.minus(1.0).abs().gt(0.0001)) {
     throw new Error(
       `Target allocation (assets + cash buffer) does not sum to 100%. Total: ${formatFixed(totalSum.mul(100).toNumber(), 2)}%`,

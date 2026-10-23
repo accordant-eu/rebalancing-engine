@@ -60,7 +60,13 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
       if (selectedArchetype === 'StaticWeights') {
         const assetSum = data.targetAllocation.targets?.reduce((acc: number, t: any) => acc + t.weight, 0) || 0;
         const totalSum = assetSum + (data.targetAllocation.cashBuffer || 0);
-        if (Math.abs(totalSum - 1.0) > 0.0001) {
+        if (data.policy?.allowLeverage) {
+          const maxLev = parseFloat(String(data.policy.maxLeverageRatio || '2.0'));
+          if (totalSum <= 0 || totalSum > maxLev) {
+            setErrorMsg(`Leveraged target weights must be between 0 and ${maxLev}x (current sum: ${totalSum.toFixed(4)})`);
+            return;
+          }
+        } else if (Math.abs(totalSum - 1.0) > 0.0001) {
           setErrorMsg(`Target weights (assets + cash buffer) must sum exactly to 1.0 (100%). Current sum: ${totalSum.toFixed(4)}`);
           return;
         }
@@ -75,6 +81,12 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
       }
       if (data.policy.maxFrictionBps) {
         data.policy.maxFrictionBps = parseFloat(data.policy.maxFrictionBps);
+      }
+      if (data.policy.maxLeverageRatio) {
+        data.policy.maxLeverageRatio = parseFloat(String(data.policy.maxLeverageRatio));
+      }
+      if (data.policy.marginExcessBuffer) {
+        data.policy.marginExcessBuffer = parseFloat(String(data.policy.marginExcessBuffer));
       }
     }
     if (data.constraints) {
@@ -210,6 +222,21 @@ export const MandateBuilderForm: React.FC<MandateBuilderFormProps> = ({ initialD
           <div>
             <label className={labelClasses}>Max Friction (bps) Optional</label>
             <input type="number" step="1" {...register('policy.maxFrictionBps')} placeholder="50" className={inputClasses} />
+          </div>
+          <div className="flex flex-col justify-center">
+            <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700">
+              <input type="checkbox" {...register('policy.allowLeverage')} className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500" />
+              <span>Allow Direct Margin & Leverage</span>
+            </label>
+            <span className="text-xs text-slate-400 mt-1">Permits target allocations exceeding 100% up to max leverage ratio.</span>
+          </div>
+          <div>
+            <label className={labelClasses}>Max Leverage Ratio (e.g. 1.5x)</label>
+            <input type="number" step="0.1" min="1.0" max="3.0" {...register('policy.maxLeverageRatio')} placeholder="2.0" className={inputClasses} />
+          </div>
+          <div>
+            <label className={labelClasses}>Margin Excess Buffer (e.g. 0.10 for 10%)</label>
+            <input type="number" step="0.01" min="0" max="0.5" {...register('policy.marginExcessBuffer')} placeholder="0.10" className={inputClasses} />
           </div>
         </div>
       </div>

@@ -38,9 +38,15 @@ export function generateTradeProposal(
   qualityIndicators?: QualityIndicator[],
   executionOverlays?: import('./overlays').ExecutionOverlay[]
 ): TradeProposal {
-  validateTargetAllocation(target);
-  if (valuation.cash < -0.01 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
-    throw new Error('Cannot generate trade proposal for negative cash balance');
+  validateTargetAllocation(target, policy);
+  if (!policy?.allowLeverage) {
+    if (valuation.cash < -0.01 && !valuation.cashFlowSummary?.hasSettledWithdrawalDeficit) {
+      throw new Error('Cannot generate trade proposal for negative cash balance');
+    }
+  } else {
+    if (valuation.totalPortfolioValue <= 0) {
+      throw new Error('Cannot generate trade proposal for insolvent portfolio (zero or negative equity)');
+    }
   }
 
   const executionTargetMode = policy?.executionTargetMode ?? 'full_reset';
@@ -186,6 +192,47 @@ export function generateTradeProposal(
 
   if (evaluationState.temporaryEquivalencyMapping) {
     finalizedProposal.temporaryEquivalencyMapping = evaluationState.temporaryEquivalencyMapping;
+  }
+
+  if (policy?.allowLeverage && finalizedProposal.estimatedPostTradeCash < -0.01) {
+    let postTradeHoldingsValue = toDecimal(valuation.totalHoldingsValue);
+    for (const trade of finalizedProposal.trades) {
+      if (trade.direction === 'BUY') {
+        postTradeHoldingsValue = postTradeHoldingsValue.plus(trade.estimatedValue);
+      } else {
+        postTradeHoldingsValue = postTradeHoldingsValue.minus(trade.estimatedValue);
+      }
+    }
+
+    const postTradeCash = toDecimal(finalizedProposal.estimatedPostTradeCash);
+    const postTradeNav = postTradeHoldingsValue.plus(postTradeCash);
+
+    if (postTradeNav.lte(0)) {
+      throw new Error('Trade proposal results in insolvent portfolio (zero or negative equity)');
+    }
+
+    const maintenanceReq = policy.maintenanceMarginRequirement ?? 0.25;
+    const maintenanceMargin = postTradeHoldingsValue.mul(maintenanceReq);
+    const marginExcess = postTradeNav.minus(maintenanceMargin);
+
+    if (marginExcess.lt(-0.01)) {
+      throw new Error(
+        `Trade proposal causes immediate margin call: equity (${formatFixed(postTradeNav.toNumber(), 2)}) is below maintenance margin requirement (${formatFixed(maintenanceMargin.toNumber(), 2)})`
+      );
+    }
+
+    const marginExcessBuffer = policy.marginExcessBuffer ?? 0.10;
+    const requiredBufferAmount = postTradeNav.mul(marginExcessBuffer);
+    const marginExcessRatio = postTradeNav.gt(0) ? marginExcess.div(postTradeNav).toNumber() : 0;
+
+    if (marginExcess.lt(requiredBufferAmount)) {
+      finalizedProposal.warnings.push({
+        code: 'MARGIN_BUFFER_BREACH',
+        message: `Post-trade margin excess ratio (${formatFixed(marginExcessRatio * 100, 2)}%) is below required margin excess buffer (${formatFixed(marginExcessBuffer * 100, 2)}%). Risk of liquidation under volatility.`,
+        marginExcessRatio,
+        requiredBuffer: marginExcessBuffer
+      });
+    }
   }
 
   return finalizedProposal;

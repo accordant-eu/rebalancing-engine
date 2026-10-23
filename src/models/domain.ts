@@ -229,6 +229,11 @@ export interface RebalancingPolicy {
   maxHoldingConcentration?: number;
   // Tax wrapper governing capital gains taxation and overlay application (defaults to 'TAXABLE')
   taxWrapper?: TaxWrapperType;
+  // Direct Margin & Leverage support (Slice 5 / ADR-0072)
+  allowLeverage?: boolean;
+  maxLeverageRatio?: number; // e.g. 2.0 (200% gross asset value / equity). Defaults to 2.0 if allowLeverage is true.
+  maintenanceMarginRequirement?: number; // Minimum equity ratio, default 0.25 (25% Reg T standard).
+  marginExcessBuffer?: number; // Safety buffer above maintenance margin, default 0.10 (10%).
 }
 
 // Outputs
@@ -279,7 +284,8 @@ export type ProposalWarningCode =
   | 'TRADE_RESIZED_BY_OVERLAY'
   | 'TAX_AWARE_US_STUB'
   | 'TAX_OPTIMIZER_UNREACHABLE_FALLBACK'
-  | 'TAX_OPTIMIZER_SUCCESS';
+  | 'TAX_OPTIMIZER_SUCCESS'
+  | 'MARGIN_BUFFER_BREACH';
 
 export type ProposalWarning =
   | { code: 'ZERO_PRICE'; message: string; instrumentId: string }
@@ -299,7 +305,8 @@ export type ProposalWarning =
   | { code: 'TRADE_RESIZED_BY_OVERLAY'; message: string; instrumentId: string; estimatedValue: number }
   | { code: 'TAX_AWARE_US_STUB'; message: string }
   | { code: 'TAX_OPTIMIZER_UNREACHABLE_FALLBACK'; message: string }
-  | { code: 'TAX_OPTIMIZER_SUCCESS'; message: string };
+  | { code: 'TAX_OPTIMIZER_SUCCESS'; message: string }
+  | { code: 'MARGIN_BUFFER_BREACH'; message: string; marginExcessRatio: number; requiredBuffer: number };
 
 export interface QualityEvaluationResult {
   passed: boolean;

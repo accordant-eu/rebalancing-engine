@@ -8,7 +8,7 @@ import {
   TradeProposal,
 } from '../models/domain';
 import { calculateDrift } from './drift';
-import { CALCULATION_EPSILON, decimalDifference, isWithinEpsilon, toDecimal } from './numeric';
+import { CALCULATION_EPSILON, decimalDifference, formatFixed, isWithinEpsilon, toDecimal } from './numeric';
 import {
   calculateCurrentWeights,
   calculateValuation,
@@ -137,7 +137,7 @@ export function simulatePostTrade(
   if (cashDiff.gt(SIMULATION_EPSILON)) {
     throw new Error('Simulated cash does not reconcile with proposal estimated post-trade cash');
   }
-  if (postTradeCash.lt(-SIMULATION_EPSILON)) {
+  if (postTradeCash.lt(-SIMULATION_EPSILON) && !policy.allowLeverage) {
     throw new Error('Post-trade simulation produced negative cash');
   }
   if (isWithinEpsilon(postTradeCash.toNumber(), SIMULATION_EPSILON)) {
@@ -174,6 +174,23 @@ export function simulatePostTrade(
   delete postTradeState.cashFlowSchedules;
 
   const postTradeValuation = calculateValuation(postTradeState, priceSnapshot);
+
+  if (postTradeCash.lt(-SIMULATION_EPSILON)) {
+    const postTradeNav = toDecimal(postTradeValuation.totalPortfolioValue);
+    if (postTradeNav.lte(0)) {
+      throw new Error('Post-trade simulation produced insolvent portfolio (zero or negative equity)');
+    }
+
+    const req = policy.maintenanceMarginRequirement ?? 0.25;
+    const maintenanceMargin = toDecimal(postTradeValuation.totalHoldingsValue).mul(req);
+    const marginExcess = postTradeNav.minus(maintenanceMargin);
+    if (marginExcess.lt(-SIMULATION_EPSILON)) {
+      throw new Error(
+        `Post-trade simulation breached maintenance margin requirement: equity (${formatFixed(postTradeNav.toNumber(), 2)}) < maintenance margin (${formatFixed(maintenanceMargin.toNumber(), 2)})`
+      );
+    }
+  }
+
   const postTradeWeights = calculateCurrentWeights(postTradeValuation);
   const residualDrift = calculateDrift(postTradeWeights, target, policy);
 

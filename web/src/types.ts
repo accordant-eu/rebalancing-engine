@@ -34,6 +34,10 @@ export interface RebalancingPolicy {
   driftUtilityConversionRate?: number;
   depositAllocationMode?: DepositAllocationMode;
   calendar?: CalendarRebalancingConfig;
+  allowLeverage?: boolean;
+  maxLeverageRatio?: number;
+  maintenanceMarginRequirement?: number;
+  marginExcessBuffer?: number;
 }
 
 export interface ConstraintIndicator {
