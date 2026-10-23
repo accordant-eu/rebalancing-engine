@@ -111,6 +111,7 @@ These rules govern AI-assisted development in this repository. The project is in
   - **Label**: `release-ready`
   - **Title**: `Release ready: [brief description of what changed]`
   - **Body**: Include any relevant notes, breaking changes, migration steps, and explicitly enumerate any new environment variables required (referencing `.env.example`).
+- **Single Active Release Issue**: Maintain strictly only ONE open `release-ready` issue at any time. When opening a new `release-ready` issue, immediately close any preceding open `release-ready` issues with a comment noting they have been superseded.
 - **Deployment Feedback**: The operator will review, verify on staging, and trigger the deployment. If issues arise post-deployment, they will report them by opening an issue labelled `deployment-feedback`. Act on these issues when they appear.
 
 ## 12. UI/UX and Access Control
