@@ -6,7 +6,7 @@
  */
 
 export interface TenantBrokerConfig {
-  brokerType: 'ALPACA' | 'MOCK' | string;
+  brokerType: 'ALPACA' | 'MOCK' | 'IBKR' | string;
   brokerApiKey: string;
   brokerApiSecret: string;
   brokerBaseUrl?: string;

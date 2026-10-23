@@ -262,9 +262,20 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   const insertAsset = db.prepare(`INSERT OR IGNORE INTO Assets (instrumentId, isin, ticker, exchangeMic, currency) VALUES (?, ?, ?, ?, ?)`);
   baselineAssets.forEach(a => insertAsset.run(a.instrumentId, a.isin, a.ticker, a.exchangeMic, a.currency));
 
-  // Seed broker mappings for Alpaca
+  // Seed broker mappings for Alpaca and IBKR
   const insertMapping = db.prepare(`INSERT OR IGNORE INTO BrokerSymbolMappings (instrumentId, brokerType, brokerSymbol) VALUES (?, ?, ?)`);
   baselineAssets.forEach(a => insertMapping.run(a.instrumentId, 'Alpaca', a.ticker));
+
+  const ibkrConids: Record<string, string> = {
+    'US0378331005:XNAS:USD': '265598',   // AAPL
+    'US5949181045:XNAS:USD': '272093',   // MSFT
+    'US38259P5089:XNAS:USD': '208813719' // GOOG
+  };
+  baselineAssets.forEach(a => {
+    if (ibkrConids[a.instrumentId]) {
+      insertMapping.run(a.instrumentId, 'IBKR', ibkrConids[a.instrumentId]);
+    }
+  });
 
   // Seed baseline tenants if they don't exist
   const insertTenant = db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name, brokerType) VALUES (?, ?, ?)`);

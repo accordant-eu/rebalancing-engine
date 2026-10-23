@@ -66,6 +66,8 @@ timestamp: 2026-06-14T00:00:00Z
 | 2026-10-19 | `docs/iterations/2026-10-19-streaming-execution-fills.md` | Major | Implemented WebSocket streaming trade updates, idempotent out-of-order shadow ledger reconciliation, and fill telemetry emission (Slice 3). |
 | 2026-10-23 | `docs/decisions/0070-pin-node-24-image-and-cumulative-fill-reconciliation.md` | Major | Recorded ADR-0070: Pin Node 24 Image to 24.22.1 and Cumulative Fill Reconciliation Alignment (Issue #139 & #137 review). |
 | 2026-10-23 | `docs/iterations/2026-10-23-operational-and-security-hardening.md` | Minor | Pinned Dockerfile to Node 24.22.1 (CVE-2026-111497), aligned Alpaca trade fill quantity mapping, and merged Vite 8.3.5. |
+| 2026-10-23 | `docs/decisions/0071-multi-custodian-interactive-brokers-adapter.md` | Major | Recorded ADR-0071: Multi-Custodian Interactive Brokers (IBKR) Adapter and Broker Factory (Slice 4). |
+| 2026-10-23 | `docs/iterations/2026-10-23-multi-custodian-ibkr-adapter.md` | Major | Implemented `IbkrBrokerAdapter`, `BrokerAdapterFactory`, multi-custodian sync, SQLite contract mapping, and UI support for Interactive Brokers. |
 
 &copy; 2026 Johan Hellman. All rights reserved.
 

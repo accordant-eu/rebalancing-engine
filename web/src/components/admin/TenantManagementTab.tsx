@@ -136,13 +136,14 @@ export const TenantManagementTab: React.FC<{ token: string }> = ({ token }) => {
           <input className={inputClasses} placeholder="Firm Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
           <select className={`${inputClasses} cursor-pointer`} value={form.brokerType} onChange={e => setForm({...form, brokerType: e.target.value})}>
             <option value="MOCK">MOCK (Paper Trading)</option>
-            <option value="ALPACA">ALPACA</option>
+            <option value="ALPACA">Alpaca</option>
+            <option value="IBKR">Interactive Brokers (IBKR)</option>
           </select>
-          <input className={inputClasses} placeholder="Broker Base URL (Optional)" value={form.brokerBaseUrl} onChange={e => setForm({...form, brokerBaseUrl: e.target.value})} />
-          {form.brokerType === 'ALPACA' && (
+          <input className={inputClasses} placeholder={form.brokerType === 'IBKR' ? "Broker Base URL (e.g. https://localhost:5000/v1/api)" : "Broker Base URL (Optional)"} value={form.brokerBaseUrl} onChange={e => setForm({...form, brokerBaseUrl: e.target.value})} />
+          {(form.brokerType === 'ALPACA' || form.brokerType === 'IBKR') && (
             <>
-              <input className={inputClasses} placeholder="API Key" value={form.brokerApiKey} onChange={e => setForm({...form, brokerApiKey: e.target.value})} />
-              <input className={inputClasses} type="password" placeholder="API Secret" value={form.brokerApiSecret} onChange={e => setForm({...form, brokerApiSecret: e.target.value})} />
+              <input className={inputClasses} placeholder={form.brokerType === 'IBKR' ? "Gateway Token / API Key" : "API Key"} value={form.brokerApiKey} onChange={e => setForm({...form, brokerApiKey: e.target.value})} />
+              <input className={inputClasses} type="password" placeholder={form.brokerType === 'IBKR' ? "Secret / Password (Optional)" : "API Secret"} value={form.brokerApiSecret} onChange={e => setForm({...form, brokerApiSecret: e.target.value})} />
             </>
           )}
           <div className="md:col-span-2 flex gap-4 mt-2">

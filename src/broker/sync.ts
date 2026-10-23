@@ -1,5 +1,6 @@
 import { LiveStateManager } from '../orchestrator/state';
-import { AlpacaBrokerAdapter } from './alpaca-broker';
+import { BrokerAdapter } from './adapter';
+import { BrokerAdapterFactory } from './factory';
 import { ExecutionContext } from '../models/domain';
 import { Orchestrator } from '../orchestrator/loop';
 import { logger } from '../utils/logger';
@@ -7,7 +8,7 @@ import { logger } from '../utils/logger';
 export class BrokerSyncService {
   private interval: NodeJS.Timeout | null = null;
   private isRunning: boolean = false;
-  private adapters: Map<string, AlpacaBrokerAdapter> = new Map();
+  private adapters: Map<string, BrokerAdapter> = new Map();
 
   constructor(private stateManager: LiveStateManager, private orchestrator: Orchestrator) {}
 
@@ -56,7 +57,7 @@ export class BrokerSyncService {
         const config = this.stateManager.getTenantBrokerConfig?.(tenantId);
         
         // Skip mock or incomplete configs
-        if (!config || config.brokerType !== 'ALPACA' || !config.brokerApiKey) {
+        if (!config || (config.brokerType !== 'ALPACA' && config.brokerType !== 'IBKR') || !config.brokerApiKey) {
            continue; 
         }
 
@@ -83,7 +84,7 @@ export class BrokerSyncService {
         
         let adapter = this.adapters.get(tenantId);
         if (!adapter) {
-          adapter = new AlpacaBrokerAdapter();
+          adapter = BrokerAdapterFactory.getAdapter(config.brokerType);
           this.adapters.set(tenantId, adapter);
         }
 

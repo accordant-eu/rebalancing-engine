@@ -1,13 +1,13 @@
 import * as cron from 'node-cron';
 import { SqliteStateManager } from '../orchestrator/sqlite-state';
-import { AlpacaBrokerAdapter } from '../broker/alpaca-broker';
+import { BrokerAdapter } from '../broker/adapter';
+import { BrokerAdapterFactory } from '../broker/factory';
 import { logger } from '../utils/logger';
 
 export class EodReconciliationJob {
   private stateManager: SqliteStateManager;
   private task: cron.ScheduledTask | null = null;
-  // In a real multi-tenant app, we'd have a broker factory here instead of hardcoding Alpaca
-  private brokerAdapter = new AlpacaBrokerAdapter();
+  public brokerAdapter?: BrokerAdapter;
 
   constructor(stateManager: SqliteStateManager) {
     this.stateManager = stateManager;
@@ -46,24 +46,26 @@ export class EodReconciliationJob {
     for (const tenant of tenants) {
       const brokerConfig = this.stateManager.getTenantBrokerConfig(tenant.tenantId);
       
-      if (!brokerConfig || brokerConfig.brokerType !== 'ALPACA') {
-        logger.debug({ tenantId: tenant.tenantId }, '[EODRecon] Skipping tenant (No live Alpaca broker config)');
+      if (!brokerConfig || (brokerConfig.brokerType !== 'ALPACA' && brokerConfig.brokerType !== 'IBKR')) {
+        logger.debug({ tenantId: tenant.tenantId }, '[EODRecon] Skipping tenant (No live Alpaca or IBKR broker config)');
         continue;
       }
 
-      logger.info({ tenantId: tenant.tenantId }, '[EODRecon] Reconciling tenant');
+      logger.info({ tenantId: tenant.tenantId, brokerType: brokerConfig.brokerType }, '[EODRecon] Reconciling tenant');
       
       const context = {
         tenantId: tenant.tenantId,
         brokerConfig
       };
 
+      const adapter = this.brokerAdapter || BrokerAdapterFactory.getAdapter(brokerConfig.brokerType);
+
       const accountStates = this.stateManager.getStatesFilteredByTenant(tenant.tenantId);
       for (const [accountId, state] of Object.entries(accountStates)) {
         try {
           // Note: In real life, fetchPositions takes the broker account ID.
           // For MVP, we pass accountId directly (which matches broker ID for system demo).
-          const brokerState = await this.brokerAdapter.getPortfolioState(context, accountId);
+          const brokerState = await adapter.getPortfolioState(context, accountId);
           
           let hasDiscrepancy = false;
           
