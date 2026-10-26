@@ -65,6 +65,7 @@ This directory contains detailed technical logs for development iterations of th
 - [2026-10-23: Multi-Custodian Interactive Brokers (IBKR) Adapter & Broker Factory (Slice 4)](2026-10-23-multi-custodian-ibkr-adapter.md)
 - [2026-10-23: Direct Margin & Leveraged Mandates (Slice 5)](2026-10-23-direct-margin-and-leveraged-mandates.md)
 - [2026-10-23: SaaS Commercial Funnel, Interactive Marketing Sandbox & White-Label Theming (Slice 6)](2026-10-23-saas-commercial-funnel-and-white-label-theming.md)
+- [2026-10-26: Sandbox Numerical Safeguards & Full Walkthrough Verification](2026-10-26.md)
 
 &copy; 2026 Johan Hellman. All rights reserved.
 

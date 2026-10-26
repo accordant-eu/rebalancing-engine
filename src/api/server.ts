@@ -199,8 +199,25 @@ setInterval(() => {
     if (!email || !password) return sendError(res, 400, 'BAD_REQUEST', 'email and password required');
     
     const user = stateManager.getUserByEmail(email);
-    if (!user || !bcrypt.compareSync(password, user.password)) {
+    if (!user) {
       return sendError(res, 401, 'UNAUTHORIZED', 'Invalid credentials');
+    }
+
+    const isMatch = user.password.startsWith('$2')
+      ? bcrypt.compareSync(password, user.password)
+      : user.password === password;
+
+    if (!isMatch) {
+      return sendError(res, 401, 'UNAUTHORIZED', 'Invalid credentials');
+    }
+
+    // Auto-upgrade legacy plaintext password if encountered
+    if (!user.password.startsWith('$2')) {
+      const hashed = bcrypt.hashSync(password, 10);
+      try {
+        const db = (stateManager as any).getDb?.() || require('../db/sqlite').getDb();
+        db.prepare('UPDATE Users SET password = ? WHERE userId = ?').run(hashed, user.userId);
+      } catch (_e) { /* ignore upgrade failure */ }
     }
     
     if (user.status !== 'Active') {
@@ -285,15 +302,23 @@ setInterval(() => {
       const globalSnapshot = stateManager.getGlobalPrices();
       const priceMap: Record<string, number> = { ...(globalSnapshot?.prices || {}), ...(prices || {}) };
 
-      // Ensure every targeted or held instrument has a positive price
+      // Ensure every targeted or held instrument has a positive, finite price
+      const DEFAULT_PRICES: Record<string, number> = {
+        'US0378331005:XNAS:USD': 182.5,
+        'US5949181045:XNAS:USD': 415.2,
+        'US38259P5089:XNAS:USD': 178.0,
+      };
+
       for (const t of targets) {
-        if (!priceMap[t.instrumentId] || priceMap[t.instrumentId] <= 0) {
-          priceMap[t.instrumentId] = 100; // default sandbox price fallback
+        const p = priceMap[t.instrumentId];
+        if (!p || p <= 0 || !isFinite(p)) {
+          priceMap[t.instrumentId] = DEFAULT_PRICES[t.instrumentId] || 100;
         }
       }
       for (const h of holdings) {
-        if (!priceMap[h.instrumentId] || priceMap[h.instrumentId] <= 0) {
-          priceMap[h.instrumentId] = 100;
+        const p = priceMap[h.instrumentId];
+        if (!p || p <= 0 || !isFinite(p)) {
+          priceMap[h.instrumentId] = DEFAULT_PRICES[h.instrumentId] || 100;
         }
       }
 

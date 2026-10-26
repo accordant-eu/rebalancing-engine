@@ -20,6 +20,7 @@ describe('Ticker Simulator', () => {
       DELETE FROM Models;
       DELETE FROM Tenants;
       DELETE FROM EvaluationQueue;
+      DELETE FROM GlobalPrices;
     `);
 
     jest.useFakeTimers();

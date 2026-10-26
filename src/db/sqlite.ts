@@ -279,6 +279,13 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
     }
   });
 
+  // Seed baseline global prices
+  const insertPrice = db.prepare(`INSERT OR IGNORE INTO GlobalPrices (instrumentId, price, asOf) VALUES (?, ?, ?)`);
+  const now = new Date().toISOString();
+  insertPrice.run('US0378331005:XNAS:USD', 182.5, now);
+  insertPrice.run('US5949181045:XNAS:USD', 415.2, now);
+  insertPrice.run('US38259P5089:XNAS:USD', 178.0, now);
+
   // Seed baseline tenants if they don't exist
   const insertTenant = db.prepare(`INSERT OR IGNORE INTO Tenants (tenantId, name, brokerType, branding) VALUES (?, ?, ?, ?)`);
   insertTenant.run('tenant-baseline', 'Baseline Tenant', 'MOCK', JSON.stringify({ brandName: 'Accordant Core', primaryColor: '#0ea5e9' }));
@@ -287,7 +294,7 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
   const superadminEmail = process.env.SUPERADMIN_EMAIL || 'admin@localhost';
   const superadminPassword = process.env.SUPERADMIN_PASSWORD || 'changeme123';
   
-  const superadminUser = db.prepare('SELECT userId FROM Users WHERE email = ?').get(superadminEmail);
+  const superadminUser = db.prepare('SELECT userId, password FROM Users WHERE email = ?').get(superadminEmail) as { userId: string; password: string } | undefined;
   if (!superadminUser) {
     const hashedPassword = bcrypt.hashSync(superadminPassword, 10);
     db.prepare(`INSERT INTO Users (userId, tenantId, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)`).run(
@@ -298,6 +305,9 @@ export function initDb(dbPath: string = './data/state.db'): Database.Database {
       'Superadmin',
       'Active'
     );
+  } else if (!superadminUser.password.startsWith('$2')) {
+    const hashedPassword = bcrypt.hashSync(superadminPassword, 10);
+    db.prepare('UPDATE Users SET password = ? WHERE userId = ?').run(hashedPassword, superadminUser.userId);
   }
 
   // Seed default persona users for testing

@@ -17,6 +17,22 @@ interface MarketingSandboxModalProps {
   brandPrimary?: string;
 }
 
+const INSTRUMENT_METADATA: Record<string, { name: string; ticker: string }> = {
+  'US0378331005:XNAS:USD': { name: 'Apple Inc.', ticker: 'AAPL' },
+  'US5949181045:XNAS:USD': { name: 'Microsoft Corp.', ticker: 'MSFT' },
+  'US38259P5089:XNAS:USD': { name: 'Alphabet Inc.', ticker: 'GOOG' },
+};
+
+export const formatInstrumentLabel = (id: string): string => {
+  if (INSTRUMENT_METADATA[id]) {
+    return `${INSTRUMENT_METADATA[id].name} (${INSTRUMENT_METADATA[id].ticker})`;
+  }
+  if (id.includes('US0378331005') || id.includes('AAPL')) return 'Apple Inc. (AAPL)';
+  if (id.includes('US5949181045') || id.includes('MSFT')) return 'Microsoft Corp. (MSFT)';
+  if (id.includes('US38259P5089') || id.includes('GOOG')) return 'Alphabet Inc. (GOOG)';
+  return id;
+};
+
 export const MarketingSandboxModal: React.FC<MarketingSandboxModalProps> = ({
   isOpen = true,
   onClose,
@@ -24,8 +40,8 @@ export const MarketingSandboxModal: React.FC<MarketingSandboxModalProps> = ({
 }) => {
   const [cash, setCash] = useState<number>(25000);
   const [holdings, setHoldings] = useState<SandboxHolding[]>([
-    { instrumentId: 'US0378331005:XNAS:USD', quantity: 150 }, // AAPL (~$300 = $45k)
-    { instrumentId: 'US5949181045:XNAS:USD', quantity: 40 },  // MSFT (~$150 = $6k)
+    { instrumentId: 'US0378331005:XNAS:USD', quantity: 150 }, // AAPL
+    { instrumentId: 'US5949181045:XNAS:USD', quantity: 40 },  // MSFT
   ]);
   const [targets, setTargets] = useState<SandboxTarget[]>([
     { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
@@ -164,23 +180,28 @@ export const MarketingSandboxModal: React.FC<MarketingSandboxModalProps> = ({
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-slate-600">Initial Holdings (Shares)</label>
                 {holdings.map((h, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={h.instrumentId}
-                      readOnly
-                      className="flex-1 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono font-medium text-slate-600"
-                    />
-                    <input
-                      type="number"
-                      value={h.quantity}
-                      onChange={(e) => {
-                        const newH = [...holdings];
-                        newH[i].quantity = Number(e.target.value);
-                        setHoldings(newH);
-                      }}
-                      className="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="flex-1 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-between min-w-0">
+                      <span className="text-xs font-semibold text-slate-700 truncate">
+                        {formatInstrumentLabel(h.instrumentId)}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-2">
+                        {h.instrumentId.split(':')[0]}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 w-28 shrink-0">
+                      <input
+                        type="number"
+                        value={h.quantity}
+                        onChange={(e) => {
+                          const newH = [...holdings];
+                          newH[i].quantity = Number(e.target.value);
+                          setHoldings(newH);
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 text-right"
+                      />
+                      <span className="text-xs text-slate-400 font-medium">shs</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -206,18 +227,19 @@ export const MarketingSandboxModal: React.FC<MarketingSandboxModalProps> = ({
                 {targets.map((t, i) => (
                   <div key={i} className="flex gap-2 items-center">
                     <span className="flex-1 text-xs font-semibold text-slate-700 truncate">
-                      {t.instrumentId.includes('AAPL') ? 'Apple (AAPL)' : 'Microsoft (MSFT)'}
+                      {formatInstrumentLabel(t.instrumentId)}
                     </span>
-                    <div className="flex items-center gap-1 w-28">
+                    <div className="flex items-center gap-1 w-28 shrink-0">
                       <input
                         type="number"
-                        step="0.05"
+                        step="1"
                         min="0"
-                        max="2.0"
-                        value={t.weight}
+                        max="200"
+                        value={Math.round(t.weight * 100)}
                         onChange={(e) => {
+                          const val = Number(e.target.value);
                           const newT = [...targets];
-                          newT[i].weight = Number(e.target.value);
+                          newT[i].weight = val > 1 ? val / 100 : val;
                           setTargets(newT);
                         }}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 text-right"

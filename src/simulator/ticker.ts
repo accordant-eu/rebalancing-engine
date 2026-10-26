@@ -9,16 +9,26 @@ export function startTickerSimulator(stateManager: SqliteStateManager, orchestra
       const currentPrices = stateManager.getGlobalPrices().prices;
       const newPrices = { ...currentPrices };
 
-      // Artificially drift the prices
+      // Artificially drift the prices within realistic bounds
       const firstAsset = Object.keys(newPrices)[0];
       const secondAsset = Object.keys(newPrices)[1];
       if (firstAsset) {
-        const factor = newPrices[firstAsset] > 200 ? 0.95 : 1.02;
-        newPrices[firstAsset] = newPrices[firstAsset] * factor;
+        const current = Number(newPrices[firstAsset]);
+        if (!isFinite(current) || current <= 0) {
+          newPrices[firstAsset] = 180;
+        } else {
+          const factor = current > 220 ? 0.96 : 1.02;
+          newPrices[firstAsset] = Math.max(50, Math.min(500, current * factor));
+        }
       }
       if (secondAsset) {
-        const factor = newPrices[secondAsset] < 50 ? 1.05 : 0.985;
-        newPrices[secondAsset] = newPrices[secondAsset] * factor;
+        const current = Number(newPrices[secondAsset]);
+        if (!isFinite(current) || current <= 0) {
+          newPrices[secondAsset] = 400;
+        } else {
+          const factor = current < 350 ? 1.04 : 0.985;
+          newPrices[secondAsset] = Math.max(50, Math.min(800, current * factor));
+        }
       }
 
       stateManager.updateGlobalPrices(newPrices, new Date().toISOString());

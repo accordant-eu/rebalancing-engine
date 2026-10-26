@@ -235,6 +235,8 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 115 | 2026-10-23 | Multi-Custodian IBKR Adapter & Broker Factory | Broker, SaaS & Multi-Tenancy | Implemented IbkrBrokerAdapter, BrokerAdapterFactory, multi-custodian sync, SQLite contract mapping, and UI support for Interactive Brokers (Slice 4 / ADR-0071). | [Log](docs/iterations/2026-10-23-multi-custodian-ibkr-adapter.md) |
 | 116 | 2026-10-23 | Direct Margin & Leveraged Mandates | Architecture & Risk Management | Permitted controlled negative cash and target allocations exceeding 100% on margin-enabled portfolios with initial leverage bounds and maintenance margin safety (Slice 5 / ADR-0072). | [Log](docs/iterations/2026-10-23-direct-margin-and-leveraged-mandates.md) |
 | 117 | 2026-10-23 | SaaS Commercial Funnel, Sandbox & White-Label Theming | Commercial, UX & Multi-Tenancy | Implemented interactive marketing sandbox simulation, zero-touch partner onboarding, white-label tenant theming, and merged PR #141 (Slice 6 / ADR-0073). | [Log](docs/iterations/2026-10-23-saas-commercial-funnel-and-white-label-theming.md) |
+| 118 | 2026-10-26 | Sandbox Numerical Safeguards & Full Walkthrough Verification | Quality, UI/UX & E2E Validation | Resolved duplicate target labels, clamped simulator price drift bounds, auto-upgraded superadmin credentials, and completed 5-milestone browser walkthrough verification. | [Log](docs/iterations/2026-10-26.md) |
+
 
 
 
