@@ -9,6 +9,20 @@ interface DashboardProps {
   metrics?: TenantMetrics | null;
   streamStatus?: 'connected' | 'connecting' | 'disconnected';
   streamEvents?: SystemStreamEvent[];
+  onBatchRebalance?: (accountIds: string[]) => Promise<void> | void;
+}
+
+export function formatCompactCurrency(value: number): string {
+  if (value >= 1e12) {
+    return `$${(value / 1e12).toFixed(2)}T`;
+  }
+  if (value >= 1e9) {
+    return `$${(value / 1e9).toFixed(2)}B`;
+  }
+  if (value >= 1e6) {
+    return `$${(value / 1e6).toFixed(2)}M`;
+  }
+  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export const CommandCenterDashboard: React.FC<DashboardProps> = ({
@@ -16,6 +30,7 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({
   setSelectedAccountId,
   streamStatus = 'disconnected',
   streamEvents = [],
+  onBatchRebalance,
 }) => {
   const accountIds = Object.keys(state.portfolios);
 
@@ -134,7 +149,7 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({
           <div className="absolute top-0 right-0 p-4 opacity-[0.03] transform translate-x-4 -translate-y-4 text-emerald-500"><Eye size={120} /></div>
           <div className="text-xs text-slate-500 font-bold tracking-wider uppercase mb-1 relative z-10">Total Fleet AUM</div>
           <div className="text-3xl font-bold tracking-tight text-slate-900 font-mono relative z-10 truncate" title={`$${aggregates.totalAum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>
-            ${aggregates.totalAum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatCompactCurrency(aggregates.totalAum)}
           </div>
         </div>
         <div className="flex-1 p-6 rounded-2xl border border-slate-200/60 bg-white shadow-soft flex flex-col justify-center transition-all duration-300 hover:shadow-soft-hover hover:-translate-y-1 relative overflow-hidden">
@@ -165,7 +180,22 @@ export const CommandCenterDashboard: React.FC<DashboardProps> = ({
               <AlertCircle size={18} />
               Action Required: Breached Drift
             </div>
-            <span className="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">{criticalDrift.length}</span>
+            <div className="flex items-center gap-2">
+              {onBatchRebalance && criticalDrift.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBatchRebalance(criticalDrift.map(p => p.accountId));
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-700 hover:bg-rose-800 text-white shadow-sm transition-all"
+                  title="Trigger rebalance evaluation for all breached portfolios"
+                >
+                  Batch Rebalance ({criticalDrift.length})
+                </button>
+              )}
+              <span className="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">{criticalDrift.length}</span>
+            </div>
           </div>
           <div className="p-4 overflow-auto max-h-96 flex flex-col gap-3 bg-slate-50/30">
             {criticalDrift.length === 0 ? <div className="p-8 text-center text-slate-500 font-medium">No critical drifts. All good! 🎉</div> : (

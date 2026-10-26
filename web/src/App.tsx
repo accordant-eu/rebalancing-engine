@@ -374,6 +374,26 @@ function App() {
     );
   }
 
+  const handleBatchRebalance = async (accountIds: string[]) => {
+    try {
+      await Promise.all(
+        accountIds.map(id =>
+          fetch(`/api/portfolios/${encodeURIComponent(id)}/rebalance`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${tenantToken}`
+            },
+            body: JSON.stringify({ dryRun: false })
+          })
+        )
+      );
+      fetchState();
+    } catch (err) {
+      console.error('Batch rebalance error:', err);
+    }
+  };
+
   const renderHeatmap = () => {
     if (!state) return <div className="metricLabel">Waiting for state...</div>;
     return (
@@ -384,6 +404,7 @@ function App() {
         metrics={metrics}
         streamStatus={streamStatus}
         streamEvents={streamEvents}
+        onBatchRebalance={handleBatchRebalance}
       />
     );
   };
