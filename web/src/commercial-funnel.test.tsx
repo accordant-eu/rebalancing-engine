@@ -161,4 +161,45 @@ describe('Slice 6: Commercial Funnel & White-Label Theming', () => {
     expect(screen.getByText('Apex Capital Platform')).toBeInTheDocument();
     expect(container.querySelector('[style*="--tenant-primary: #10b981"]')).toBeInTheDocument();
   });
+
+  it('supports 1-click model presets and equal-weight normalization in MarketingSandboxModal', () => {
+    const onClose = vi.fn();
+    render(<MarketingSandboxModal onClose={onClose} />);
+
+    // Presets should be rendered
+    expect(screen.getByText('50/50 Core')).toBeInTheDocument();
+    expect(screen.getByText('Tech Trio (AAPL/MSFT/GOOG)')).toBeInTheDocument();
+    expect(screen.getByText('Equal Weight')).toBeInTheDocument();
+
+    // Click Tech Trio preset
+    fireEvent.click(screen.getByText('Tech Trio (AAPL/MSFT/GOOG)'));
+    expect(screen.getByText(/Alphabet Inc\. \(GOOG\)/i)).toBeInTheDocument();
+
+    // Click Equal Weight
+    fireEvent.click(screen.getByText('Equal Weight'));
+    // With 3 items, equal weight sum should still be 100%
+    expect(screen.getByText(/Sum: 100%/i)).toBeInTheDocument();
+  });
+
+  it('provides quick demo persona chips that auto-fill credentials in App', () => {
+    render(<App />);
+
+    expect(screen.getByText(/Quick Demo Personas/i)).toBeInTheDocument();
+
+    const advisorBtn = screen.getByRole('button', { name: /Advisor/i });
+    fireEvent.click(advisorBtn);
+
+    const emailInput = screen.getByPlaceholderText(/admin@accordant.eu/i) as HTMLInputElement;
+    const pwdInput = screen.getByPlaceholderText(/••••••••/i) as HTMLInputElement;
+
+    expect(emailInput.value).toBe('advisor@tenant.com');
+    expect(pwdInput.value).toBe('changeme123');
+
+    const superadminBtn = screen.getByRole('button', { name: /Superadmin/i });
+    fireEvent.click(superadminBtn);
+
+    expect(emailInput.value).toBe('admin@localhost');
+    expect(pwdInput.value).toBe('changeme123');
+  });
 });
+

@@ -223,6 +223,49 @@ export const MarketingSandboxModal: React.FC<MarketingSandboxModalProps> = ({
                 </span>
               </div>
 
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[11px] font-semibold text-slate-400 mr-1">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargets([
+                      { instrumentId: 'US0378331005:XNAS:USD', weight: 0.5 },
+                      { instrumentId: 'US5949181045:XNAS:USD', weight: 0.5 },
+                    ]);
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition-colors shadow-2xs"
+                >
+                  50/50 Core
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargets([
+                      { instrumentId: 'US0378331005:XNAS:USD', weight: 0.4 },
+                      { instrumentId: 'US5949181045:XNAS:USD', weight: 0.4 },
+                      { instrumentId: 'US38259P5089:XNAS:USD', weight: 0.2 },
+                    ]);
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition-colors shadow-2xs"
+                >
+                  Tech Trio (AAPL/MSFT/GOOG)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (targets.length === 0) return;
+                    const equalW = Number((1.0 / targets.length).toFixed(4));
+                    setTargets(targets.map((t, idx) => ({
+                      ...t,
+                      weight: idx === targets.length - 1 ? Number((1.0 - equalW * (targets.length - 1)).toFixed(4)) : equalW
+                    })));
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition-colors shadow-2xs"
+                >
+                  Equal Weight
+                </button>
+              </div>
+
               <div className="space-y-2">
                 {targets.map((t, i) => (
                   <div key={i} className="flex gap-2 items-center">

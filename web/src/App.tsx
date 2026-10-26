@@ -85,6 +85,7 @@ function App() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [branding, setBranding] = useState<TenantBranding | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   useEffect(() => {
     fetch('/api/public/branding')
@@ -234,8 +235,8 @@ function App() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    const email = (formData.get('email') as string) || loginEmail;
+    const password = (formData.get('password') as string) || loginPassword;
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -313,15 +314,23 @@ function App() {
                 name="email" 
                 type="email" 
                 required 
-                defaultValue={loginEmail}
-                key={loginEmail}
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" 
                 placeholder="admin@accordant.eu" 
               />
             </div>
             <div>
               <label className="block mb-2 text-sm font-semibold text-slate-600">Password</label>
-              <input name="password" type="password" required className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" placeholder="••••••••" />
+              <input 
+                name="password" 
+                type="password" 
+                required 
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm" 
+                placeholder="••••••••" 
+              />
             </div>
             <button 
               type="submit" 
@@ -332,7 +341,60 @@ function App() {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col gap-3">
+          {/* Quick Demo Persona Chips */}
+          <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center">
+              Quick Demo Personas
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginEmail('advisor@tenant.com');
+                  setLoginPassword('changeme123');
+                }}
+                className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium text-left truncate transition-colors"
+                title="Advisor (Fleet Rebalancing)"
+              >
+                👤 Advisor
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginEmail('admin@tenant.com');
+                  setLoginPassword('changeme123');
+                }}
+                className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium text-left truncate transition-colors"
+                title="Tenant Admin (Firm & Models)"
+              >
+                🏢 Tenant Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginEmail('compliance@tenant.com');
+                  setLoginPassword('changeme123');
+                }}
+                className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium text-left truncate transition-colors"
+                title="Compliance (Audit Logs)"
+              >
+                🛡️ Compliance
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginEmail('admin@localhost');
+                  setLoginPassword('changeme123');
+                }}
+                className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium text-left truncate transition-colors"
+                title="Superadmin (Multi-Tenant Engine Console)"
+              >
+                ⚡ Superadmin
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-3">
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 text-center">
               Commercial Exploration
             </div>
@@ -364,8 +426,9 @@ function App() {
         {isOnboardingOpen && (
           <PartnerOnboardingModal 
             onClose={() => setIsOnboardingOpen(false)}
-            onSuccessLogin={(email, _pwd) => {
+            onSuccessLogin={(email, pwd) => {
               setLoginEmail(email);
+              if (pwd) setLoginPassword(pwd);
               setIsOnboardingOpen(false);
             }}
           />
