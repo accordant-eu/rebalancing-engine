@@ -10,6 +10,7 @@ timestamp: 2026-06-14T00:00:00Z
 
 | Date | Change | Scope | Description |
 |------|--------|-------|-------------|
+| 2026-10-26 | `docs/iterations/2026-10-26.md` | Minor | Documented Dependabot & Code Scanning security hardening, body-parser/undici/zod upgrades, CodeQL workflow addition, and alert dismissal (Iteration 121). |
 | 2026-10-26 | `docs/iterations/2026-10-26.md` | Minor | Documented Vitest 5.0.5 upgrade, Matchers module augmentation, @testing-library/dom addition, and PR #148 merge (Iteration 120). |
 | 2026-10-26 | `docs/iterations/2026-10-26.md` | Minor | Documented Quick Demo Persona login chips, commercial sandbox model presets, compact currency formatting ($70.05B), and advisor batch rebalance action (Iteration 119). |
 | 2026-10-26 | `docs/iterations/2026-10-26.md` | Minor | Documented sandbox target label fixes, price numerical bounds, password hash upgrades, and verified full 5-milestone browser walkthrough. |
