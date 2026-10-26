@@ -20,14 +20,17 @@ describe('CommandCenterDashboard & formatCompactCurrency', () => {
             tenantId: 'tenant-1',
             cash: 1000,
             holdings: [{ instrumentId: 'AAPL', quantity: 10 }],
-            cashFlows: [],
             circuitBreakerStatus: 'closed',
           },
           targetAllocation: {
             targets: [{ instrumentId: 'AAPL', weight: 0.2 }],
           },
+          priceSnapshot: {
+            prices: { AAPL: 100000000 },
+          },
           policy: {
             absoluteDriftTolerance: 0.05,
+            minimumTradeSize: 10,
           },
         },
       },

@@ -451,7 +451,8 @@ function App() {
           })
         )
       );
-      fetchState();
+      const res = await fetch('/api/state', { headers: { 'Authorization': `Bearer ${tenantToken}` } });
+      if (res.ok) setState(await res.json());
     } catch (err) {
       console.error('Batch rebalance error:', err);
     }
