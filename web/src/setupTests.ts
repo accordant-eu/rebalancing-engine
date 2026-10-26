@@ -3,6 +3,8 @@ import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers'
 
 declare module 'vitest' {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface Matchers<R = void | Promise<void>, _T = unknown>
-    extends TestingLibraryMatchers<any, R> {}
+  interface Matchers<
+    R extends void | Promise<void> = void | Promise<void>,
+    T = unknown
+  > extends TestingLibraryMatchers<any, R> {}
 }
