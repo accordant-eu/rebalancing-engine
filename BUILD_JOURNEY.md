@@ -238,6 +238,7 @@ Detailed decision records are available in the [Architecture Decision Records (A
 | 118 | 2026-10-26 | Sandbox Numerical Safeguards & Full Walkthrough Verification | Quality, UI/UX & E2E Validation | Resolved duplicate target labels, clamped simulator price drift bounds, auto-upgraded superadmin credentials, and completed 5-milestone browser walkthrough verification. | [Log](docs/iterations/2026-10-26.md) |
 | 119 | 2026-10-26 | Demo Persona Switcher, Commercial Presets & Compact Metrics | UI & UX Polish | Added 1-click Quick Demo Persona chips on login, commercial sandbox model presets (50/50 Core, Tech Trio, Equal Weight), compact AUM formatting ($70.05B), and advisor batch rebalance action. | [Log](docs/iterations/2026-10-26.md#5-walkthrough-ux-enhancements--validation-iteration-119) |
 | 120 | 2026-10-26 | Vitest 5 Upgrade & Type-Check Remediation | Quality, Dependencies & CI | Resolved Vitest 5 matcher type mismatch (PR #147), added explicit @testing-library/dom dependency, fixed linter rules, and merged PR #148. | [Log](docs/iterations/2026-10-26.md#8-vitest-505-upgrade--type-check-remediation-iteration-120) |
+| 121 | 2026-10-26 | Dependabot & Code Scanning Security Hardening | Security, Dependencies & CI | Upgraded body-parser, undici, and zod resolving high severity CVEs; triaged and dismissed historical CodeQL alerts as mitigated; configured CodeQL CI workflow. | [Log](docs/iterations/2026-10-26.md#9-dependabot--code-scanning-security-hardening-iteration-121) |
 
 
 
