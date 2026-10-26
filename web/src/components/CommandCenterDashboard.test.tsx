@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { CommandCenterDashboard, formatCompactCurrency } from './CommandCenterDashboard';
+import { CommandCenterDashboard } from './CommandCenterDashboard';
+import { formatCompactCurrency } from '../utils/formatters';
 import type { StatePayload } from '../types';
 
 describe('CommandCenterDashboard & formatCompactCurrency', () => {

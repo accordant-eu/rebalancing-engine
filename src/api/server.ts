@@ -215,7 +215,7 @@ setInterval(() => {
     if (!user.password.startsWith('$2')) {
       const hashed = bcrypt.hashSync(password, 10);
       try {
-        const db = (stateManager as any).getDb?.() || require('../db/sqlite').getDb();
+        const db = (stateManager as any).getDb?.() || getDb();
         db.prepare('UPDATE Users SET password = ? WHERE userId = ?').run(hashed, user.userId);
       } catch (_e) { /* ignore upgrade failure */ }
     }
