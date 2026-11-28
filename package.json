@@ -51,7 +51,7 @@
     "@types/supertest": "^7.2.0",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/ws": "^8.18.1",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-react": "^6.3.0",
     "eslint": "^10.14.0",
     "jest": "^30.5.2",
     "prettier": "^3.9.10",
